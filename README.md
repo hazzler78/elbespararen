@@ -1,36 +1,216 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Elbespararen v7
 
-## Getting Started
+En Next.js-applikation som analyserar elräkningar med OpenAI Vision för att identifiera dolda avgifter och beräkna potentiella besparingar.
 
-First, run the development server:
+## 🚀 Funktioner
+
+- **AI-driven analys** av elräkningar med GPT-4o Vision
+- **Automatisk identifiering** av extra avgifter och dolda kostnader
+- **Besparingsberäkning** baserat på spotpris och billigare alternativ
+- **Leverantörsjämförelse** med databas över elleverantörer
+- **Bytprocess** för kunder som vill byta leverantör
+- **Admin-gränssnitt** för att hantera leverantörer och bytförfrågningar
+- **Cloudflare D1** databas för produktion
+- **Responsiv design** optimerad för mobil
+
+## 🛠️ Teknisk stack
+
+- **Frontend:** Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **AI:** OpenAI GPT-4o Vision med structured output
+- **Databas:** Cloudflare D1 (SQLite) med migrations
+- **Deployment:** Cloudflare Pages
+- **Styling:** Tailwind CSS + Framer Motion
+- **Testing:** Jest + Testing Library
+
+## 📋 Förutsättningar
+
+- Node.js 18+ 
+- npm eller yarn
+- OpenAI API-nyckel
+- Cloudflare-konto (för produktion)
+
+## 🚀 Snabbstart
+
+### 1. Klona repository
+
+```bash
+git clone https://github.com/hazzler78/elbespararen.git
+cd elbespararen
+```
+
+### 2. Installera dependencies
+
+```bash
+npm install
+```
+
+### 3. Konfigurera miljövariabler
+
+```bash
+cp env.example .env.local
+```
+
+Redigera `.env.local` och lägg till din OpenAI API-nyckel:
+
+```env
+OPENAI_API_KEY=your_openai_api_key_here
+```
+
+### 4. Starta utvecklingsserver
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Öppna [http://localhost:3000](http://localhost:3000) i din webbläsare.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## 🗄️ Databas
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+### Utveckling
+Applikationen använder mock data under utveckling. Inga databas-installationer krävs.
 
-## Learn More
+### Produktion med Cloudflare D1
 
-To learn more about Next.js, take a look at the following resources:
+1. **Skapa D1-databas:**
+```bash
+npm run db:create
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+2. **Kör migrations:**
+```bash
+npm run db:migrate
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+3. **Seed data (valfritt):**
+```bash
+npm run db:seed
+```
 
-## Deploy on Vercel
+## 🚀 Deployment till Cloudflare
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 1. Installera Wrangler
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm install -g wrangler
+```
+
+### 2. Logga in på Cloudflare
+
+```bash
+wrangler login
+```
+
+### 3. Konfigurera wrangler.toml
+
+Uppdatera `wrangler.toml` med ditt Cloudflare Account ID och Database ID.
+
+### 4. Deploy
+
+```bash
+npm run deploy
+```
+
+## 📁 Projektstruktur
+
+```
+src/
+├── app/                    # Next.js App Router
+│   ├── api/               # API endpoints
+│   ├── admin/             # Admin-gränssnitt
+│   ├── upload/            # Fakturauppladdning
+│   └── result/            # Analysresultat
+├── components/            # React-komponenter
+├── lib/                   # Utilities och konfiguration
+│   ├── database/          # Databas-abstraktion
+│   └── __tests__/         # Tester
+└── types.ts              # TypeScript-typer
+```
+
+## 🧪 Testing
+
+```bash
+# Kör alla tester
+npm test
+
+# Kör tester en gång (för CI)
+npm run test:ci
+```
+
+## 📊 API Endpoints
+
+- `POST /api/parse-bill-v3` - Analysera elräkning med AI
+- `GET /api/providers` - Hämta elleverantörer
+- `POST /api/providers/compare` - Jämför leverantörer
+- `POST /api/switch-requests` - Skapa bytförfrågan
+- `GET /api/switch-requests` - Hämta bytförfrågningar
+
+## 🔧 Konfiguration
+
+### Miljövariabler
+
+Se `env.example` för alla tillgängliga miljövariabler.
+
+### OpenAI-konfiguration
+
+Applikationen använder GPT-4o för bästa vision-prestanda. Konfigurera i `src/lib/constants.ts`:
+
+```typescript
+export const OPENAI_CONFIG = {
+  model: "gpt-4o",
+  temperature: 0,
+  maxTokens: 2000
+} as const;
+```
+
+## 🎯 Användning
+
+1. **Ladda upp elräkning** - Användaren laddar upp en bild av sin elräkning
+2. **AI-analys** - GPT-4o analyserar fakturan och extraherar data
+3. **Besparingsberäkning** - Systemet beräknar potentiella besparingar
+4. **Leverantörsjämförelse** - Visa billigare alternativ
+5. **Bytprocess** - Kunder kan begära att byta leverantör
+
+## 🔒 Säkerhet
+
+- Alla API-nycklar lagras som miljövariabler
+- GDPR-kompatibel databehandling
+- Validering av alla användarinputs
+- Säker filuppladdning med typvalidering
+
+## 📈 Prestanda
+
+- **Turbopack** för snabb utveckling
+- **Cloudflare CDN** för global distribution
+- **D1 Edge Database** för låg latens
+- **Optimized images** med Next.js Image
+
+## 🤝 Bidrag
+
+1. Forka repository
+2. Skapa feature branch (`git checkout -b feature/amazing-feature`)
+3. Commita ändringar (`git commit -m 'Add amazing feature'`)
+4. Pusha till branch (`git push origin feature/amazing-feature`)
+5. Öppna Pull Request
+
+## 📄 Licens
+
+Detta projekt är licensierat under MIT License - se [LICENSE](LICENSE) filen för detaljer.
+
+## 🆘 Support
+
+För support eller frågor:
+- Skapa en [Issue](https://github.com/hazzler78/elbespararen/issues)
+- Kontakta utvecklaren
+
+## 🗺️ Roadmap
+
+- [ ] E-postnotifikationer
+- [ ] Telegram-bot integration
+- [ ] Avancerad analytics
+- [ ] Multi-språk support
+- [ ] Mobile app
+- [ ] API för tredjepartsintegration
+
+---
+
+**Elbespararen v7** - Gör det enkelt att spara pengar på elräkningen! ⚡💰

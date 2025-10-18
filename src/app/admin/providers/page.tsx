@@ -1,0 +1,514 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone } from "lucide-react";
+import { ElectricityProvider } from "@/lib/types";
+
+export default function ProvidersAdminPage() {
+  const [providers, setProviders] = useState<ElectricityProvider[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<ElectricityProvider | null>(null);
+
+  useEffect(() => {
+    fetchProviders();
+  }, []);
+
+  const fetchProviders = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/providers");
+      const result = await response.json();
+      
+      if (result.success) {
+        setProviders(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching providers:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAddProvider = async (providerData: Partial<ElectricityProvider>) => {
+    try {
+      const response = await fetch("/api/providers", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(providerData),
+      });
+
+      const result = await response.json();
+      
+      if (result.success) {
+        setProviders([...providers, result.data]);
+        setShowAddForm(false);
+      }
+    } catch (error) {
+      console.error("Error adding provider:", error);
+    }
+  };
+
+  const handleToggleActive = async (provider: ElectricityProvider) => {
+    // TODO: Implementera API för att uppdatera provider
+    console.log("Toggle active for provider:", provider.id);
+  };
+
+  const handleDeleteProvider = async (providerId: string) => {
+    if (confirm("Är du säker på att du vill ta bort denna leverantör?")) {
+      // TODO: Implementera API för att ta bort provider
+      console.log("Delete provider:", providerId);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-muted">Laddar leverantörer...</p>
+      </div>
+    );
+  }
+
+  return (
+    <main className="min-h-screen bg-background py-12 px-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-8"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold mb-2">Hantera Elleverantörer</h1>
+              <p className="text-muted">Administrera leverantörer och deras priser</p>
+            </div>
+            <button
+              onClick={() => setShowAddForm(true)}
+              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Lägg till leverantör
+            </button>
+          </div>
+        </motion.div>
+
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="bg-white rounded-lg border border-border p-6"
+          >
+            <p className="text-sm text-muted uppercase tracking-wide mb-2">Totalt leverantörer</p>
+            <p className="text-3xl font-bold">{providers.length}</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-lg border border-border p-6"
+          >
+            <p className="text-sm text-muted uppercase tracking-wide mb-2">Aktiva</p>
+            <p className="text-3xl font-bold text-success">
+              {providers.filter(p => p.isActive).length}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-lg border border-border p-6"
+          >
+            <p className="text-sm text-muted uppercase tracking-wide mb-2">Inaktiva</p>
+            <p className="text-3xl font-bold text-error">
+              {providers.filter(p => !p.isActive).length}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-lg border border-border p-6"
+          >
+            <p className="text-sm text-muted uppercase tracking-wide mb-2">Billigaste pris</p>
+            <p className="text-3xl font-bold text-secondary">
+              {Math.min(...providers.map(p => p.energyPrice)).toFixed(2)} kr/kWh
+            </p>
+          </motion.div>
+        </div>
+
+        {/* Providers List */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          className="bg-white rounded-lg border border-border"
+        >
+          {providers.length === 0 ? (
+            <div className="p-12 text-center">
+              <p className="text-muted">Inga leverantörer ännu</p>
+              <p className="text-sm text-muted mt-2">
+                Lägg till din första leverantör för att komma igång.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y divide-border">
+              {providers.map((provider) => (
+                <div key={provider.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <h3 className="text-xl font-bold">{provider.name}</h3>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          provider.isActive 
+                            ? "bg-success/10 text-success" 
+                            : "bg-error/10 text-error"
+                        }`}>
+                          {provider.isActive ? "Aktiv" : "Inaktiv"}
+                        </span>
+                      </div>
+                      <p className="text-muted mb-3">{provider.description}</p>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                        <div>
+                          <p className="text-muted">Månadskostnad</p>
+                          <p className="font-semibold">
+                            {provider.monthlyFee === 0 ? "0 kr" : `${provider.monthlyFee} kr`}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="text-muted">Energipris</p>
+                          <p className="font-semibold">{provider.energyPrice} kr/kWh</p>
+                        </div>
+                        <div>
+                          <p className="text-muted">Gratis månader</p>
+                          <p className="font-semibold">{provider.freeMonths} mån</p>
+                        </div>
+                        <div>
+                          <p className="text-muted">Bindningstid</p>
+                          <p className="font-semibold">{provider.contractLength} mån</p>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2 mt-3">
+                        {provider.features.map((feature, index) => (
+                          <span
+                            key={index}
+                            className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 ml-4">
+                      <button
+                        onClick={() => handleToggleActive(provider)}
+                        className="p-2 text-muted hover:text-foreground transition-colors"
+                        title={provider.isActive ? "Gör inaktiv" : "Gör aktiv"}
+                      >
+                        {provider.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                      
+                      <button
+                        onClick={() => setEditingProvider(provider)}
+                        className="p-2 text-muted hover:text-primary transition-colors"
+                        title="Redigera"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      
+                      <button
+                        onClick={() => handleDeleteProvider(provider.id)}
+                        className="p-2 text-muted hover:text-error transition-colors"
+                        title="Ta bort"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-4 text-sm text-muted">
+                    {provider.websiteUrl && (
+                      <a
+                        href={provider.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <ExternalLink className="w-3 h-3" />
+                        Hemsida
+                      </a>
+                    )}
+                    {provider.phoneNumber && (
+                      <a
+                        href={`tel:${provider.phoneNumber}`}
+                        className="flex items-center gap-1 hover:text-primary transition-colors"
+                      >
+                        <Phone className="w-3 h-3" />
+                        {provider.phoneNumber}
+                      </a>
+                    )}
+                    <span>Skapad: {new Date(provider.createdAt).toLocaleDateString("sv-SE")}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </motion.div>
+
+        {/* Add Provider Form */}
+        {showAddForm && (
+          <ProviderForm
+            onSave={handleAddProvider}
+            onCancel={() => setShowAddForm(false)}
+          />
+        )}
+
+        {/* Edit Provider Form */}
+        {editingProvider && (
+          <ProviderForm
+            provider={editingProvider}
+            onSave={(data) => {
+              // TODO: Implementera uppdatering
+              console.log("Update provider:", data);
+              setEditingProvider(null);
+            }}
+            onCancel={() => setEditingProvider(null)}
+          />
+        )}
+      </div>
+    </main>
+  );
+}
+
+// Provider Form Component
+function ProviderForm({ 
+  provider, 
+  onSave, 
+  onCancel 
+}: { 
+  provider?: ElectricityProvider; 
+  onSave: (data: Partial<ElectricityProvider>) => void; 
+  onCancel: () => void; 
+}) {
+  const [formData, setFormData] = useState({
+    name: provider?.name || "",
+    description: provider?.description || "",
+    monthlyFee: provider?.monthlyFee || 0,
+    energyPrice: provider?.energyPrice || 0,
+    freeMonths: provider?.freeMonths || 0,
+    contractLength: provider?.contractLength || 12,
+    isActive: provider?.isActive ?? true,
+    features: provider?.features || [],
+    websiteUrl: provider?.websiteUrl || "",
+    phoneNumber: provider?.phoneNumber || "",
+  });
+
+  const [newFeature, setNewFeature] = useState("");
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    onSave(formData);
+  };
+
+  const addFeature = () => {
+    if (newFeature.trim()) {
+      setFormData({
+        ...formData,
+        features: [...formData.features, newFeature.trim()]
+      });
+      setNewFeature("");
+    }
+  };
+
+  const removeFeature = (index: number) => {
+    setFormData({
+      ...formData,
+      features: formData.features.filter((_, i) => i !== index)
+    });
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+    >
+      <motion.div
+        initial={{ scale: 0.95 }}
+        animate={{ scale: 1 }}
+        className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
+      >
+        <h2 className="text-2xl font-bold mb-6">
+          {provider ? "Redigera leverantör" : "Lägg till leverantör"}
+        </h2>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Namn *</label>
+              <input
+                type="text"
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Månadskostnad (kr) *</label>
+              <input
+                type="number"
+                step="0.01"
+                value={formData.monthlyFee}
+                onChange={(e) => setFormData({ ...formData, monthlyFee: Number(e.target.value) })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Energipris (kr/kWh) *</label>
+              <input
+                type="number"
+                step="0.001"
+                value={formData.energyPrice}
+                onChange={(e) => setFormData({ ...formData, energyPrice: Number(e.target.value) })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+                required
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Gratis månader</label>
+              <input
+                type="number"
+                value={formData.freeMonths}
+                onChange={(e) => setFormData({ ...formData, freeMonths: Number(e.target.value) })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Bindningstid (månader)</label>
+              <input
+                type="number"
+                value={formData.contractLength}
+                onChange={(e) => setFormData({ ...formData, contractLength: Number(e.target.value) })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+              />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Telefonnummer</label>
+              <input
+                type="tel"
+                value={formData.phoneNumber}
+                onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Beskrivning *</label>
+            <textarea
+              value={formData.description}
+              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              className="w-full border border-border rounded-lg px-3 py-2 h-20"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Hemsida</label>
+            <input
+              type="url"
+              value={formData.websiteUrl}
+              onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
+              className="w-full border border-border rounded-lg px-3 py-2"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Funktioner</label>
+            <div className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={newFeature}
+                onChange={(e) => setNewFeature(e.target.value)}
+                placeholder="Lägg till funktion..."
+                className="flex-1 border border-border rounded-lg px-3 py-2"
+                onKeyPress={(e) => e.key === "Enter" && (e.preventDefault(), addFeature())}
+              />
+              <button
+                type="button"
+                onClick={addFeature}
+                className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90"
+              >
+                Lägg till
+              </button>
+            </div>
+            <div className="flex flex-wrap gap-2">
+              {formData.features.map((feature, index) => (
+                <span
+                  key={index}
+                  className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
+                >
+                  {feature}
+                  <button
+                    type="button"
+                    onClick={() => removeFeature(index)}
+                    className="text-primary/70 hover:text-primary"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              id="isActive"
+              checked={formData.isActive}
+              onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
+              className="rounded"
+            />
+            <label htmlFor="isActive" className="text-sm font-medium">
+              Aktiv leverantör
+            </label>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              className="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+            >
+              {provider ? "Uppdatera" : "Skapa"} leverantör
+            </button>
+            <button
+              type="button"
+              onClick={onCancel}
+              className="flex-1 border border-border py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              Avbryt
+            </button>
+          </div>
+        </form>
+      </motion.div>
+    </motion.div>
+  );
+}
