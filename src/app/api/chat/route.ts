@@ -18,7 +18,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, context } = await req.json();
+    const body = await req.json() as { message?: string; context?: unknown };
+    const { message, context } = body;
 
     if (!message) {
       return NextResponse.json(

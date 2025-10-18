@@ -223,21 +223,21 @@ class CloudflareDatabase implements Database {
       ORDER BY energy_price ASC
     `).all();
 
-    return result.results.map((row: any) => ({
-      id: row.id,
-      name: row.name,
-      description: row.description,
-      monthlyFee: row.monthly_fee,
-      energyPrice: row.energy_price,
-      freeMonths: row.free_months,
-      contractLength: row.contract_length,
+    return result.results.map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      name: String(row.name),
+      description: String(row.description),
+      monthlyFee: Number(row.monthly_fee),
+      energyPrice: Number(row.energy_price),
+      freeMonths: Number(row.free_months),
+      contractLength: Number(row.contract_length),
       isActive: Boolean(row.is_active),
-      features: JSON.parse(row.features || '[]'),
-      logoUrl: row.logo_url,
-      websiteUrl: row.website_url,
-      phoneNumber: row.phone_number,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
+      features: JSON.parse(String(row.features || '[]')) as string[],
+      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+      websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+      createdAt: new Date(String(row.created_at)),
+      updatedAt: new Date(String(row.updated_at))
     }));
   }
 
@@ -248,21 +248,22 @@ class CloudflareDatabase implements Database {
 
     if (!result) return null;
 
+    const row = result as Record<string, unknown>;
     return {
-      id: result.id,
-      name: result.name,
-      description: result.description,
-      monthlyFee: result.monthly_fee,
-      energyPrice: result.energy_price,
-      freeMonths: result.free_months,
-      contractLength: result.contract_length,
-      isActive: Boolean(result.is_active),
-      features: JSON.parse(result.features || '[]'),
-      logoUrl: result.logo_url,
-      websiteUrl: result.website_url,
-      phoneNumber: result.phone_number,
-      createdAt: new Date(result.created_at),
-      updatedAt: new Date(result.updated_at)
+      id: String(row.id),
+      name: String(row.name),
+      description: String(row.description),
+      monthlyFee: Number(row.monthly_fee),
+      energyPrice: Number(row.energy_price),
+      freeMonths: Number(row.free_months),
+      contractLength: Number(row.contract_length),
+      isActive: Boolean(row.is_active),
+      features: JSON.parse(String(row.features || '[]')) as string[],
+      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+      websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+      createdAt: new Date(String(row.created_at)),
+      updatedAt: new Date(String(row.updated_at))
     };
   }
 
@@ -340,7 +341,7 @@ class CloudflareDatabase implements Database {
       DELETE FROM electricity_providers WHERE id = ?
     `).bind(id).run();
 
-    return result.changes > 0;
+    return (result.meta?.changes || 0) > 0;
   }
 
   // Lead methods (simplified for now)
@@ -349,22 +350,22 @@ class CloudflareDatabase implements Database {
     return [];
   }
 
-  async getLead(id: string): Promise<Lead | null> {
+  async getLead(_id: string): Promise<Lead | null> {
     // TODO: Implementera när vi behöver leads
     return null;
   }
 
-  async createLead(leadData: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> {
+  async createLead(_leadData: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> {
     // TODO: Implementera när vi behöver leads
     throw new Error("Not implemented yet");
   }
 
-  async updateLead(id: string, leadData: Partial<Lead>): Promise<Lead> {
+  async updateLead(_id: string, _leadData: Partial<Lead>): Promise<Lead> {
     // TODO: Implementera när vi behöver leads
     throw new Error("Not implemented yet");
   }
 
-  async deleteLead(id: string): Promise<boolean> {
+  async deleteLead(_id: string): Promise<boolean> {
     // TODO: Implementera när vi behöver leads
     return false;
   }
@@ -376,18 +377,22 @@ class CloudflareDatabase implements Database {
       ORDER BY created_at DESC
     `).all();
 
-    return result.results.map((row: any) => ({
-      id: row.id,
-      customerInfo: JSON.parse(row.customer_info),
-      address: JSON.parse(row.address),
-      currentProvider: JSON.parse(row.current_provider),
-      newProvider: JSON.parse(row.new_provider),
-      billData: JSON.parse(row.bill_data),
-      savings: JSON.parse(row.savings),
-      status: row.status,
-      createdAt: new Date(row.created_at),
-      updatedAt: new Date(row.updated_at)
-    }));
+    return result.results.map((row: Record<string, unknown>) => {
+      const customerInfo = JSON.parse(String(row.customer_info));
+      const address = JSON.parse(String(row.address));
+      
+      return {
+        id: String(row.id),
+        customerInfo: { ...customerInfo, address },
+        currentProvider: JSON.parse(String(row.current_provider)),
+        newProvider: JSON.parse(String(row.new_provider)),
+        billData: JSON.parse(String(row.bill_data)),
+        savings: JSON.parse(String(row.savings)),
+        status: String(row.status) as SwitchRequest['status'],
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at))
+      };
+    });
   }
 
   async getSwitchRequest(id: string): Promise<SwitchRequest | null> {
@@ -397,17 +402,20 @@ class CloudflareDatabase implements Database {
 
     if (!result) return null;
 
+    const row = result as Record<string, unknown>;
+    const customerInfo = JSON.parse(String(row.customer_info));
+    const address = JSON.parse(String(row.address));
+    
     return {
-      id: result.id,
-      customerInfo: JSON.parse(result.customer_info),
-      address: JSON.parse(result.address),
-      currentProvider: JSON.parse(result.current_provider),
-      newProvider: JSON.parse(result.new_provider),
-      billData: JSON.parse(result.bill_data),
-      savings: JSON.parse(result.savings),
-      status: result.status,
-      createdAt: new Date(result.created_at),
-      updatedAt: new Date(result.updated_at)
+      id: String(row.id),
+      customerInfo: { ...customerInfo, address },
+      currentProvider: JSON.parse(String(row.current_provider)),
+      newProvider: JSON.parse(String(row.new_provider)),
+      billData: JSON.parse(String(row.bill_data)),
+      savings: JSON.parse(String(row.savings)),
+      status: String(row.status) as SwitchRequest['status'],
+      createdAt: new Date(String(row.created_at)),
+      updatedAt: new Date(String(row.updated_at))
     };
   }
 
@@ -415,6 +423,8 @@ class CloudflareDatabase implements Database {
     const id = `switch-${Date.now()}`;
     const now = new Date().toISOString();
 
+    const { address, ...customerInfoWithoutAddress } = switchRequestData.customerInfo;
+    
     await this.db.prepare(`
       INSERT INTO switch_requests (
         id, customer_info, address, current_provider, new_provider,
@@ -422,8 +432,8 @@ class CloudflareDatabase implements Database {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
-      JSON.stringify(switchRequestData.customerInfo),
-      JSON.stringify(switchRequestData.address),
+      JSON.stringify(customerInfoWithoutAddress),
+      JSON.stringify(address),
       JSON.stringify(switchRequestData.currentProvider),
       JSON.stringify(switchRequestData.newProvider),
       JSON.stringify(switchRequestData.billData),
@@ -450,6 +460,8 @@ class CloudflareDatabase implements Database {
 
     const updated = { ...existing, ...switchRequestData, updatedAt: new Date() };
     const now = updated.updatedAt.toISOString();
+    
+    const { address, ...customerInfoWithoutAddress } = updated.customerInfo;
 
     await this.db.prepare(`
       UPDATE switch_requests SET
@@ -457,8 +469,8 @@ class CloudflareDatabase implements Database {
         bill_data = ?, savings = ?, status = ?, notes = ?, updated_at = ?
       WHERE id = ?
     `).bind(
-      JSON.stringify(updated.customerInfo),
-      JSON.stringify(updated.address),
+      JSON.stringify(customerInfoWithoutAddress),
+      JSON.stringify(address),
       JSON.stringify(updated.currentProvider),
       JSON.stringify(updated.newProvider),
       JSON.stringify(updated.billData),
@@ -477,7 +489,7 @@ class CloudflareDatabase implements Database {
       DELETE FROM switch_requests WHERE id = ?
     `).bind(id).run();
 
-    return result.changes > 0;
+    return (result.meta?.changes || 0) > 0;
   }
 }
 
@@ -490,7 +502,7 @@ export function createDatabase(): Database {
 
   // I produktion med Cloudflare, använd D1
   if (typeof process.env.DB !== 'undefined') {
-    return new CloudflareDatabase(process.env.DB as D1Database);
+    return new CloudflareDatabase(process.env.DB as unknown as D1Database);
   }
 
   // Fallback till mock

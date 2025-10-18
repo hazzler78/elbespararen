@@ -138,3 +138,10 @@ export interface SwitchProgress {
   estimatedCompletion: Date;
   nextAction?: string;
 }
+
+// API Response types
+export interface ApiResponse<T = unknown> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}

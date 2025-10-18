@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Star, ExternalLink, Phone, Zap } from "lucide-react";
-import { ProviderComparison, BillData, SavingsCalculation } from "@/lib/types";
+import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import SwitchProcess from "./SwitchProcess";
 
@@ -24,7 +24,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSwitchProcess, setShowSwitchProcess] = useState(false);
-  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
 
   useEffect(() => {
     const fetchComparisons = async () => {
@@ -38,9 +38,9 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
           body: JSON.stringify({ billData }),
         });
 
-        const result = await response.json();
+        const result = await response.json() as ApiResponse<ComparisonData>;
 
-        if (result.success) {
+        if (result.success && result.data) {
           setComparisonData(result.data);
         } else {
           setError(result.error || "Kunde inte hämta jämförelser");
@@ -108,7 +108,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     setShowSwitchProcess(true);
   };
 
-  const handleSwitchComplete = (switchRequest: any) => {
+  const handleSwitchComplete = (switchRequest: SwitchRequest) => {
     console.log("Switch request completed:", switchRequest);
     setShowSwitchProcess(false);
     // TODO: Visa bekräftelse eller redirect

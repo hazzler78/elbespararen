@@ -17,7 +17,7 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as { billData?: BillData };
     const { billData } = body;
 
     if (!billData) {

@@ -14,7 +14,7 @@ import {
   X,
   AlertCircle
 } from "lucide-react";
-import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, Address, CurrentProviderInfo } from "@/lib/types";
+import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, Address, CurrentProviderInfo, ApiResponse } from "@/lib/types";
 import SwitchConfirmation from "./SwitchConfirmation";
 
 interface SwitchProcessProps {
@@ -154,9 +154,9 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
         body: JSON.stringify(switchRequest),
       });
 
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<SwitchRequest>;
       
-      if (!result.success) {
+      if (!result.success || !result.data) {
         throw new Error(result.error || "Kunde inte skapa bytförfrågan");
       }
       
@@ -173,11 +173,11 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        return formData.firstName && formData.lastName && formData.email && formData.phone && formData.consentToDataProcessing;
+        return !!(formData.firstName && formData.lastName && formData.email && formData.phone && formData.consentToDataProcessing);
       case 2:
-        return formData.street && formData.streetNumber && formData.postalCode && formData.city;
+        return !!(formData.street && formData.streetNumber && formData.postalCode && formData.city);
       case 3:
-        return formData.currentProviderName;
+        return !!formData.currentProviderName;
       case 4:
         return true;
       default:

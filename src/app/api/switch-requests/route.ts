@@ -4,7 +4,7 @@ import { db } from "@/lib/database";
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     
     // Validera obligatoriska fält
     const requiredFields = ['customerInfo', 'currentProvider', 'newProvider', 'billData', 'savings'];
@@ -19,13 +19,13 @@ export async function POST(request: NextRequest) {
 
     // Skapa ny switch request via databas
     const switchRequest = await db.createSwitchRequest({
-      customerInfo: body.customerInfo,
-      currentProvider: body.currentProvider,
-      newProvider: body.newProvider,
-      billData: body.billData,
-      savings: body.savings,
+      customerInfo: body.customerInfo as import("@/lib/types").CustomerInfo,
+      currentProvider: body.currentProvider as import("@/lib/types").CurrentProviderInfo,
+      newProvider: body.newProvider as import("@/lib/types").ElectricityProvider,
+      billData: body.billData as import("@/lib/types").BillData,
+      savings: body.savings as import("@/lib/types").SavingsCalculation,
       status: "pending",
-      notes: body.notes
+      notes: body.notes as string | undefined
     });
 
     // TODO: Skicka e-post/SMS bekräftelse till kund

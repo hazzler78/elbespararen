@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { Lead } from "@/lib/types";
+import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 
 // TODO: Integrera med databas (PostgreSQL/Supabase/etc)
 // För nu returnerar vi en mockad lista
@@ -25,13 +25,20 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json();
+    const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation };
     const { email, phone, billData, savings } = body;
 
     // Validera input
     if (!email && !phone) {
       return NextResponse.json(
         { success: false, error: "E-post eller telefon krävs" },
+        { status: 400 }
+      );
+    }
+
+    if (!billData || !savings) {
+      return NextResponse.json(
+        { success: false, error: "BillData och savings krävs" },
         { status: 400 }
       );
     }

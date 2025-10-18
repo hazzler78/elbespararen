@@ -16,7 +16,7 @@ import {
   DollarSign
 } from "lucide-react";
 import Link from "next/link";
-import { SwitchRequest } from "@/lib/types";
+import { SwitchRequest, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
 export default function SwitchRequestsAdminPage() {
@@ -32,9 +32,9 @@ export default function SwitchRequestsAdminPage() {
     try {
       setIsLoading(true);
       const response = await fetch("/api/switch-requests");
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<SwitchRequest[]>;
       
-      if (result.success) {
+      if (result.success && result.data) {
         setSwitchRequests(result.data);
       }
     } catch (error) {

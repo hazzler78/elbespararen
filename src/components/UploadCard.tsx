@@ -4,7 +4,7 @@ import { useState, useRef } from "react";
 import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
-import { BillData } from "@/lib/types";
+import { BillData, ApiResponse } from "@/lib/types";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -64,9 +64,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         body: formData
       });
 
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<BillData>;
 
-      if (!response.ok || !result.success) {
+      if (!response.ok || !result.success || !result.data) {
         throw new Error(result.error || "Kunde inte analysera fakturan");
       }
 

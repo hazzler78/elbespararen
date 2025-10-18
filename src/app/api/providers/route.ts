@@ -23,7 +23,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body = await request.json() as Record<string, unknown>;
     
     // Validera obligatoriska fält
     const requiredFields = ['name', 'description', 'monthlyFee', 'energyPrice'];
@@ -37,17 +37,17 @@ export async function POST(request: NextRequest) {
     }
 
     const newProvider = await db.createProvider({
-      name: body.name,
-      description: body.description,
+      name: String(body.name),
+      description: String(body.description),
       monthlyFee: Number(body.monthlyFee),
       energyPrice: Number(body.energyPrice),
       freeMonths: Number(body.freeMonths) || 0,
       contractLength: Number(body.contractLength) || 12,
       isActive: body.isActive !== false,
-      features: body.features || [],
-      logoUrl: body.logoUrl,
-      websiteUrl: body.websiteUrl,
-      phoneNumber: body.phoneNumber
+      features: (body.features as string[]) || [],
+      logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
+      websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
+      phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
     });
 
     return NextResponse.json({

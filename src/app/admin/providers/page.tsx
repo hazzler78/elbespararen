@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone } from "lucide-react";
-import { ElectricityProvider } from "@/lib/types";
+import { ElectricityProvider, ApiResponse } from "@/lib/types";
 
 export default function ProvidersAdminPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
@@ -19,9 +19,9 @@ export default function ProvidersAdminPage() {
     try {
       setIsLoading(true);
       const response = await fetch("/api/providers");
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<ElectricityProvider[]>;
       
-      if (result.success) {
+      if (result.success && result.data) {
         setProviders(result.data);
       }
     } catch (error) {
@@ -41,9 +41,9 @@ export default function ProvidersAdminPage() {
         body: JSON.stringify(providerData),
       });
 
-      const result = await response.json();
+      const result = await response.json() as ApiResponse<ElectricityProvider>;
       
-      if (result.success) {
+      if (result.success && result.data) {
         setProviders([...providers, result.data]);
         setShowAddForm(false);
       }
