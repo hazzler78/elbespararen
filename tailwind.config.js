@@ -20,8 +20,8 @@ module.exports = {
         error: 'var(--error)',
       },
       fontFamily: {
-        sans: ['var(--font-geist-sans)', 'system-ui', '-apple-system', 'sans-serif'],
-        mono: ['var(--font-geist-mono)', 'monospace'],
+        sans: ['system-ui', '-apple-system', 'sans-serif'],
+        mono: ['ui-monospace', 'monospace'],
       },
       spacing: {
         'grid': '8px',
