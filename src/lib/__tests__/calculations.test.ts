@@ -2,6 +2,7 @@
 
 import { calculateSavings } from '../calculations';
 import { BillData } from '../types';
+import '@testing-library/jest-dom';
 
 describe('calculateSavings', () => {
   // Testdata baserat på EON-fakturan
