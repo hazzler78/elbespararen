@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { CheckCircle2, Mail, Phone, Clock, ArrowRight } from "lucide-react";
+import { CheckCircle2, Mail, Clock } from "lucide-react";
 import { SwitchRequest } from "@/lib/types";
 
 interface SwitchConfirmationProps {

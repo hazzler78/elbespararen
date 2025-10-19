@@ -1,9 +1,10 @@
 # Cloudflare Wrangler konfiguration för Elbespararen v7
-# https://developers.cloudflare.com/workers/wrangler/configuration/
+# OpenNext Cloudflare adapter configuration
+# https://opennext.js.org/cloudflare
 
 name = "elbespararen"
-main = "src/index.js"
-compatibility_date = "2024-01-15"
+main = ".open-next/worker.js"
+compatibility_date = "2025-03-25"
 compatibility_flags = ["nodejs_compat"]
 
 # Next.js på Cloudflare Pages
@@ -30,11 +31,6 @@ NEXT_PUBLIC_APP_URL = "https://elbespararen.pages.dev"
 # TELEGRAM_BOT_TOKEN = "your-telegram-bot-token"
 # TELEGRAM_CHAT_ID = "your-telegram-chat-id"
 
-# Build konfiguration
-[build]
-command = "npm run build"
-cwd = "."
-
-# Pages konfiguration
-[pages]
-build_output_dir = ".next"
+# Assets binding för statiska filer
+[site]
+bucket = ".open-next/assets"

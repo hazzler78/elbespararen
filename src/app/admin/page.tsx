@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Settings, Zap, ArrowRight } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Lead } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";

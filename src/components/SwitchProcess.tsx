@@ -4,17 +4,15 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, 
-  Clock, 
   User, 
   Home, 
   FileText, 
-  CreditCard,
   ArrowRight,
   ArrowLeft,
   X,
   AlertCircle
 } from "lucide-react";
-import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, Address, CurrentProviderInfo, ApiResponse } from "@/lib/types";
+import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, CurrentProviderInfo, ApiResponse } from "@/lib/types";
 import SwitchConfirmation from "./SwitchConfirmation";
 
 interface SwitchProcessProps {

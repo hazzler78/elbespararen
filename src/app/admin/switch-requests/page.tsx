@@ -10,7 +10,6 @@ import {
   CheckCircle2, 
   Clock, 
   AlertCircle,
-  Mail,
   Phone,
   Calendar,
   DollarSign

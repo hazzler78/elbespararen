@@ -99,6 +99,7 @@ temp/
 
 # Cloudflare
 .wrangler/
+.open-next/
 
 # Database
 *.db

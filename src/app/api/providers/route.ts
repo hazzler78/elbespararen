@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ElectricityProvider } from "@/lib/types";
 import { db } from "@/lib/database";
 
 export async function GET() {

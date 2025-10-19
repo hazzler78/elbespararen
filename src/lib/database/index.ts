@@ -350,22 +350,22 @@ class CloudflareDatabase implements Database {
     return [];
   }
 
-  async getLead(_id: string): Promise<Lead | null> {
+  async getLead(): Promise<Lead | null> {
     // TODO: Implementera när vi behöver leads
     return null;
   }
 
-  async createLead(_leadData: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> {
+  async createLead(): Promise<Lead> {
     // TODO: Implementera när vi behöver leads
     throw new Error("Not implemented yet");
   }
 
-  async updateLead(_id: string, _leadData: Partial<Lead>): Promise<Lead> {
+  async updateLead(): Promise<Lead> {
     // TODO: Implementera när vi behöver leads
     throw new Error("Not implemented yet");
   }
 
-  async deleteLead(_id: string): Promise<boolean> {
+  async deleteLead(): Promise<boolean> {
     // TODO: Implementera när vi behöver leads
     return false;
   }
