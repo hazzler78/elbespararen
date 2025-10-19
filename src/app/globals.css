@@ -1,4 +1,6 @@
-@import "tailwindcss";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 /* Elbespararen v7 - Förtroendeingivande design */
 /* Inspiration: Skatteverket möter Klarna */
