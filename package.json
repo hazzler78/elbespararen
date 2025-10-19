@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:cloudflare": "opennextjs-cloudflare build",
-    "build:worker": "opennextjs-cloudflare build",
-    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
-    "deploy": "opennextjs-cloudflare build && wrangler deploy",
+    "build:cloudflare": "next build",
+    "build:worker": "next build",
+    "preview": "next build && next start",
+    "deploy": "next build && wrangler deploy",
     "start": "next start",
     "lint": "eslint",
     "test": "jest --watch",
@@ -20,7 +20,6 @@
     "db:seed": "wrangler d1 execute elbespararen-db --file=src/lib/database/seed.sql"
   },
   "dependencies": {
-    "@opennextjs/cloudflare": "^1.11.0",
     "framer-motion": "^12.23.24",
     "lucide-react": "^0.546.0",
     "next": "15.0.3",

@@ -1,15 +1,14 @@
 # Cloudflare Workers konfiguration för Elbespararen v7
-# OpenNext Cloudflare adapter configuration
-# https://opennext.js.org/cloudflare
+# Standard Next.js build configuration
 
 name = "elbespararen"
-main = ".open-next/worker.js"
+main = ".next/server/app.js"
 compatibility_date = "2025-03-25"
 compatibility_flags = ["nodejs_compat"]
 
 # Assets binding för statiska filer
 [site]
-bucket = ".open-next/assets"
+bucket = ".next/static"
 
 # Environment variables
 [vars]
