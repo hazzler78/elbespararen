@@ -4,11 +4,6 @@ import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 
-// Initiera OpenAI client
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 export const runtime = "nodejs";
 export const maxDuration = 30;
 
@@ -25,6 +20,11 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+
+    // Initiera OpenAI client (runtime, inte build-time)
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
 
     // Hämta fil från FormData
     const formData = await req.formData();
