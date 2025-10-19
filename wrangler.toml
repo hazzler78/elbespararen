@@ -1,14 +1,9 @@
-# Cloudflare Workers konfiguration för Elbespararen v7
-# Standard Next.js build configuration
+# Cloudflare Pages konfiguration för Elbespararen v7
+# Next.js med @cloudflare/next-on-pages
 
 name = "elbespararen"
-main = ".next/server/app.js"
 compatibility_date = "2025-03-25"
-compatibility_flags = ["nodejs_compat"]
-
-# Assets binding för statiska filer
-[site]
-bucket = ".next/static"
+pages_build_output_dir = ".vercel/output/static"
 
 # Environment variables
 [vars]
