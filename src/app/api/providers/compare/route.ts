@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { ElectricityProvider, ProviderComparison, BillData } from "@/lib/types";
 import { db } from "@/lib/database";
 
+// Cloudflare Pages requires Edge Runtime
+export const runtime = 'edge';
+
 function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
   const { totalKWh, elnatCost } = billData;
   

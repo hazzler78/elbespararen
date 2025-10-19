@@ -4,7 +4,8 @@ import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 
-export const runtime = "nodejs";
+// Cloudflare Pages requires Edge Runtime
+export const runtime = 'edge';
 export const maxDuration = 30;
 
 /**

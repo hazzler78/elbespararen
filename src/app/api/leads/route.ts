@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 
+// Cloudflare Pages requires Edge Runtime
+export const runtime = 'edge';
+
 // TODO: Integrera med databas (PostgreSQL/Supabase/etc)
 // För nu returnerar vi en mockad lista
 

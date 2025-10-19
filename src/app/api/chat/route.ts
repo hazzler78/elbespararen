@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
+// Cloudflare Pages requires Edge Runtime
+export const runtime = 'edge';
+
 /**
  * POST /api/chat
  * Enkel AI-chatt för att svara på frågor om elbesparingar
