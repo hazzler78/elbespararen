@@ -1,10 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY
-});
-
 /**
  * POST /api/chat
  * Enkel AI-chatt för att svara på frågor om elbesparingar
@@ -17,6 +13,10 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       );
     }
+    
+    const openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY
+    });
 
     const body = await req.json() as { message?: string; context?: unknown };
     const { message, context } = body;
