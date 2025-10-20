@@ -5,10 +5,10 @@
   "scripts": {
     "dev": "next dev --turbopack",
     "build": "next build",
-    "build:cloudflare": "npx open-next@latest build --config ./open-next.config.mjs",
+    "build:cloudflare": "npx open-next@latest build --config ./open-next.config.mjs && rm -rf dist && mv .open-next/cloudflare dist",
     "build:worker": "npm run build:cloudflare",
-    "preview": "npm run build:cloudflare && wrangler pages dev .open-next/cloudflare",
-    "deploy": "npm run build:cloudflare && wrangler pages deploy .open-next/cloudflare",
+    "preview": "npm run build:cloudflare && wrangler pages dev dist",
+    "deploy": "npm run build:cloudflare && wrangler pages deploy dist",
     "start": "next start",
     "lint": "eslint",
     "test": "jest --watch",

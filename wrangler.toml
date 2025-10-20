@@ -4,7 +4,8 @@
 name = "elbespararen"
 compatibility_date = "2025-03-25"
 # OpenNext output directory
-pages_build_output_dir = ".open-next/cloudflare"
+# Use a stable output directory name produced by our build script
+pages_build_output_dir = "dist"
 
 # Node.js compatibility för att hantera node:stream och andra Node.js moduler
 compatibility_flags = ["nodejs_compat"]
