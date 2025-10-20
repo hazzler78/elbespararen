@@ -495,19 +495,26 @@ class CloudflareDatabase implements Database {
 
 // Database factory
 export function createDatabase(): Database {
-  // I utveckling, använd mock database
+  // Behåll lokal mock i utveckling när ingen D1-binding finns
   if (process.env.NODE_ENV === 'development') {
     return new MockDatabase();
   }
 
-  // I produktion med Cloudflare, använd D1
-  if (typeof process.env.DB !== 'undefined') {
-    return new CloudflareDatabase(process.env.DB as unknown as D1Database);
+  // För bakåtkompatibilitet om DB exponeras som env-variabel i Node-miljö
+  if (typeof process !== 'undefined' && typeof process.env !== 'undefined' && typeof (process.env as unknown as Record<string, unknown>).DB !== 'undefined') {
+    return new CloudflareDatabase((process.env as unknown as Record<string, unknown>).DB as unknown as D1Database);
   }
 
-  // Fallback till mock
   return new MockDatabase();
 }
 
-// Export singleton instance
-export const db = createDatabase();
+// Factory för Cloudflare Pages/Workers där DB finns i request context
+export function createDatabaseFromBinding(binding: unknown): Database {
+  if (binding) {
+    return new CloudflareDatabase(binding as D1Database);
+  }
+  return createDatabase();
+}
+
+// Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime
+// Konsumenter bör anropa createDatabaseFromBinding(...) per request

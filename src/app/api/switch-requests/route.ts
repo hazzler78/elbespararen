@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/database";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Cloudflare Pages requires Edge Runtime
 export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
+    // @ts-ignore - getRequestContext finns i next-on-pages runtime
+    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    const db = createDatabaseFromBinding(env?.DB);
     const body = await request.json() as Record<string, unknown>;
     
     // Validera obligatoriska fält
@@ -51,6 +54,9 @@ export async function POST(request: NextRequest) {
 
 export async function GET() {
   try {
+    // @ts-ignore - getRequestContext finns i next-on-pages runtime
+    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    const db = createDatabaseFromBinding(env?.DB);
     // Hämta alla switch requests från databas
     const switchRequests = await db.getSwitchRequests();
     

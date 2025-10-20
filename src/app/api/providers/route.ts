@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
-import { db } from "@/lib/database";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Cloudflare Pages requires Edge Runtime
 export const runtime = 'edge';
 
 export async function GET() {
   try {
+    // Hämta D1-binding från Edge-runtime
+    // @ts-ignore - getRequestContext finns i next-on-pages runtime
+    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    const db = createDatabaseFromBinding(env?.DB);
     const providers = await db.getProviders();
     // Returnera endast aktiva leverantörer
     const activeProviders = providers.filter(p => p.isActive);
@@ -25,6 +29,9 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    // @ts-ignore - getRequestContext finns i next-on-pages runtime
+    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    const db = createDatabaseFromBinding(env?.DB);
     const body = await request.json() as Record<string, unknown>;
     
     // Validera obligatoriska fält
