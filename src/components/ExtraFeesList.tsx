@@ -20,7 +20,9 @@ export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFees
     );
   }
 
-  const totalAmount = fees.reduce((sum, fee) => sum + fee.amount, 0);
+  // Beräkna total inklusive moms (25%) för att matcha resten av systemet
+  const totalAmountExclVAT = fees.reduce((sum, fee) => sum + fee.amount, 0);
+  const totalAmount = totalAmountExclVAT * 1.25;
 
   return (
     <div className="space-y-3">
@@ -29,7 +31,7 @@ export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFees
         <h3 className="font-semibold text-lg">Dolda avgifter & tillägg</h3>
         <div className="text-right">
           <p className="text-2xl font-bold text-error">{formatCurrency(totalAmount)}</p>
-          <p className="text-xs text-muted">per månad</p>
+          <p className="text-xs text-muted">inkl. moms per månad</p>
         </div>
       </div>
 
@@ -55,7 +57,7 @@ export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFees
               )}
             </div>
             <div className="text-right">
-              <p className="font-semibold text-lg">{formatCurrency(fee.amount)}</p>
+              <p className="font-semibold text-lg">{formatCurrency(fee.amount * 1.25)}</p>
             </div>
           </motion.div>
         ))}
