@@ -29,13 +29,13 @@
     "typescript": "^5",
     "@types/react": "^18",
     "@types/node": "^20",
+    "@cloudflare/workers-types": "^4.20251011.0",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.0"
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.5",
-    "@cloudflare/workers-types": "^4.20251011.0",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
