@@ -30,6 +30,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     const fetchComparisons = async () => {
       try {
         setIsLoading(true);
+        console.log('[ProviderComparison] Sending billData:', billData);
         const response = await fetch("/api/providers/compare", {
           method: "POST",
           headers: {
@@ -39,6 +40,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
         });
 
         const result = await response.json() as ApiResponse<ComparisonData>;
+        console.log('[ProviderComparison] API response:', result);
 
         if (result.success && result.data) {
           setComparisonData(result.data);

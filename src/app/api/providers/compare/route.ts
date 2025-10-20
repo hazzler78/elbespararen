@@ -35,6 +35,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as { billData?: BillData };
     const { billData } = body;
 
+    console.log('[providers/compare] Received request body:', body);
+    console.log('[providers/compare] BillData:', billData);
+
     if (!billData) {
       return NextResponse.json(
         { success: false, error: "BillData är obligatoriskt" },
@@ -47,13 +50,18 @@ export async function POST(request: NextRequest) {
 
     // Hämta alla leverantörer från databas
     const providers = await db.getProviders();
+    console.log('[providers/compare] Retrieved providers:', providers);
 
     // Jämför alla aktiva leverantörer
-    const comparisons: ProviderComparison[] = providers
-      .filter(provider => provider.isActive)
+    const activeProviders = providers.filter(provider => provider.isActive);
+    console.log('[providers/compare] Active providers:', activeProviders);
+    
+    const comparisons: ProviderComparison[] = activeProviders
       .map(provider => {
         const estimatedCost = calculateProviderCost(provider, bill);
         const estimatedSavings = currentCost - estimatedCost;
+        
+        console.log(`[providers/compare] Provider ${provider.name}: estimatedCost=${estimatedCost}, estimatedSavings=${estimatedSavings}`);
         
         return {
           provider,
@@ -63,6 +71,8 @@ export async function POST(request: NextRequest) {
         };
       })
       .sort((a, b) => b.estimatedSavings - a.estimatedSavings); // Sortera efter besparing
+    
+    console.log('[providers/compare] Final comparisons:', comparisons);
 
     return NextResponse.json({
       success: true,
