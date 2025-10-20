@@ -2,6 +2,7 @@
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
 import { ElectricityProvider, Lead, SwitchRequest } from "@/lib/types";
+import type { D1Database } from "@cloudflare/workers-types";
 
 // Mock data för utveckling
 const mockProviders: ElectricityProvider[] = [
