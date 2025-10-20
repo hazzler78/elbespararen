@@ -506,7 +506,7 @@ export function createDatabase(): Database {
     return new CloudflareDatabase((process.env as unknown as Record<string, unknown>).DB as unknown as D1Database);
   }
 
-  return new MockDatabase();
+  throw new Error('[Database] No D1 database available - D1 database is required for production');
 }
 
 // Factory för Cloudflare Pages/Workers där DB finns i request context
@@ -514,7 +514,7 @@ export function createDatabaseFromBinding(binding: unknown): Database {
   if (binding) {
     return new CloudflareDatabase(binding as D1Database);
   }
-  return createDatabase();
+  throw new Error('[Database] No D1 binding found - D1 database is required for production');
 }
 
 // Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime

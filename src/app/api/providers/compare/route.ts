@@ -52,6 +52,11 @@ export async function POST(request: NextRequest) {
     const providers = await db.getProviders();
     console.log('[providers/compare] Retrieved providers:', providers);
 
+    // Om inga leverantörer hittades från databas, använd fallback
+    if (providers.length === 0) {
+      console.warn('[providers/compare] No providers found in database, this might indicate D1 database issues');
+    }
+
     // Jämför alla aktiva leverantörer
     const activeProviders = providers.filter(provider => provider.isActive);
     console.log('[providers/compare] Active providers:', activeProviders);
