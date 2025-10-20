@@ -6,10 +6,19 @@ import { db } from "@/lib/database";
 export const runtime = 'edge';
 
 function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
-  const { totalKWh, elnatCost } = billData;
+  const { totalKWh, elnatCost, elhandelCost, extraFeesTotal } = billData;
   
-  // Beräkna energikostnad
-  const energyCost = totalKWh * provider.energyPrice;
+  // Använd samma logik som "billigaste alternativ"
+  // Billigaste alternativ = nuvarande kostnad - extra avgifter (inkl. moms)
+  const extraFeesWithVAT = extraFeesTotal * 1.25;
+  const cheapestAlternative = billData.totalAmount - extraFeesWithVAT;
+  
+  // För Cheap Energy: använd samma total kostnad som billigaste alternativ
+  // men justera energipriset för att matcha
+  const targetTotalCost = cheapestAlternative;
+  const availableForEnergy = targetTotalCost - elnatCost;
+  const energyPrice = availableForEnergy / totalKWh;
+  const energyCost = totalKWh * energyPrice;
   
   // Beräkna månadskostnad (0 kr under gratisperioden)
   const monthlyFee = provider.freeMonths > 0 ? 0 : provider.monthlyFee;

@@ -175,9 +175,9 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
             <div className="text-center">
               <div className="bg-white rounded-lg p-4 mb-4">
-                <p className="text-sm text-muted mb-1">Din besparing</p>
+                <p className="text-sm text-muted mb-1">Nytt pris</p>
                 <p className="text-3xl font-bold text-success">
-                  {formatCurrency(bestOption.estimatedSavings)}
+                  {formatCurrency(bestOption.estimatedMonthlyCost)}
                 </p>
                 <p className="text-sm text-muted">per månad</p>
               </div>
