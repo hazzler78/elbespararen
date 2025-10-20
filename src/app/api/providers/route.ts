@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-// Use Node.js runtime to satisfy OpenNext bundling
-export const runtime = 'nodejs';
+// Edge runtime krävs av next-on-pages
+export const runtime = 'edge';
 
 export async function GET() {
   try {

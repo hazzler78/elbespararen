@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 
-// Use Node.js runtime to satisfy OpenNext bundling
-export const runtime = 'nodejs';
+// Edge runtime krävs av next-on-pages
+export const runtime = 'edge';
 
 // TODO: Integrera med databas (PostgreSQL/Supabase/etc)
 // För nu returnerar vi en mockad lista

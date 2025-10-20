@@ -4,8 +4,8 @@ import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 
-// Use Node.js runtime to satisfy OpenNext bundling
-export const runtime = 'nodejs';
+// Edge runtime krävs av next-on-pages
+export const runtime = 'edge';
 export const maxDuration = 30;
 
 /**

@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ElectricityProvider, ProviderComparison, BillData } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-// Use Node.js runtime to satisfy OpenNext bundling
-export const runtime = 'nodejs';
+// Edge runtime krävs av next-on-pages
+export const runtime = 'edge';
 
 function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
   const { totalKWh, elnatCost, elhandelCost, extraFeesTotal } = billData;
