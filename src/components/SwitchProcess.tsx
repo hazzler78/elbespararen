@@ -456,11 +456,13 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Kundnummer</label>
+                      <label className="block text-sm font-medium mb-1">Anläggnings-id 18 siffror</label>
                       <input
                         type="text"
                         value={formData.currentCustomerNumber}
                         onChange={(e) => updateFormData('currentCustomerNumber', e.target.value)}
+                        placeholder="Ex: 735999123456789012"
+                        maxLength={18}
                         className="w-full border border-border rounded-lg px-3 py-2"
                       />
                     </div>
@@ -543,7 +545,7 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
                     <h4 className="font-semibold mb-2">Nuvarande leverantör</h4>
                     <p>{formData.currentProviderName}</p>
-                    {formData.currentCustomerNumber && <p>Kundnummer: {formData.currentCustomerNumber}</p>}
+                    {formData.currentCustomerNumber && <p>Anläggnings-id: {formData.currentCustomerNumber}</p>}
                     {formData.currentContractEndDate && <p>Avtalslut: {formData.currentContractEndDate}</p>}
                   </div>
 
