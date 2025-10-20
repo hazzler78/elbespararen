@@ -1,20 +1,10 @@
 export default {
   default: {
     override: {
-      wrapper: "cloudflare-node",
-      converter: "edge",
-      proxyExternalRequest: "fetch",
-      incrementalCache: "dummy",
-      tagCache: "dummy",
-      queue: "dummy",
-    },
-  },
-  edgeExternals: ["node:crypto"],
-  middleware: {
-    external: true,
-    override: {
-      wrapper: "cloudflare-edge",
-      converter: "edge",
+      // Target Cloudflare Pages runtime
+      wrapper: "cloudflare-pages",
+      // Use the Pages converter which generates the correct _worker.js and assets
+      converter: "pages",
       proxyExternalRequest: "fetch",
       incrementalCache: "dummy",
       tagCache: "dummy",
