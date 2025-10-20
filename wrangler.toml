@@ -12,12 +12,12 @@ compatibility_flags = ["nodejs_compat"]
 [vars]
 NODE_ENV = "production"
 
-# D1 Database konfiguration (uncomment när du vill använda databas)
-# [[d1_databases]]
-# binding = "DB"
-# database_name = "elbespararen-db"
-# database_id = "your-database-id-here" # Kör 'wrangler d1 create elbespararen-db' för att få ID
-# migrations_dir = "src/lib/database/migrations"
+# D1 Database konfiguration
+[[d1_databases]]
+binding = "DB"
+database_name = "elbespararen-db"
+database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" # Ersätt vid behov om ID:t ändras
+migrations_dir = "src/lib/database/migrations"
 
 # Secrets (sätts via wrangler secret put)
 # OPENAI_API_KEY = "your-openai-api-key"
