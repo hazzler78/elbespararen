@@ -5,7 +5,8 @@ name = "elbespararen"
 compatibility_date = "2025-03-25"
 # OpenNext output directory
 # Use a stable output directory name produced by our build script
-pages_build_output_dir = "dist"
+# OpenNext outputs a directory named .open-next; use that as build output
+pages_build_output_dir = ".open-next"
 
 # Node.js compatibility för att hantera node:stream och andra Node.js moduler
 compatibility_flags = ["nodejs_compat"]
