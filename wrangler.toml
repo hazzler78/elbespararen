@@ -3,7 +3,8 @@
 
 name = "elbespararen"
 compatibility_date = "2025-03-25"
-pages_build_output_dir = ".vercel/output/static"
+# OpenNext output directory
+pages_build_output_dir = ".open-next/cloudflare"
 
 # Node.js compatibility för att hantera node:stream och andra Node.js moduler
 compatibility_flags = ["nodejs_compat"]

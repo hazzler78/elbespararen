@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ElectricityProvider, ProviderComparison, BillData } from "@/lib/types";
-import { db } from "@/lib/database";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Cloudflare Pages requires Edge Runtime
 export const runtime = 'edge';
@@ -29,6 +29,9 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
 
 export async function POST(request: NextRequest) {
   try {
+    // @ts-ignore - getRequestContext finns i next-on-pages runtime
+    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    const db = createDatabaseFromBinding(env?.DB);
     const body = await request.json() as { billData?: BillData };
     const { billData } = body;
 

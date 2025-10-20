@@ -12,7 +12,8 @@ const nextConfig = {
   output: 'standalone',
   // ESLint configuration - behandla warnings som warnings, inte errors
   eslint: {
-    ignoreDuringBuilds: false,
+    // Cloudflare buildmiljö saknar eslint, hoppa över under build
+    ignoreDuringBuilds: true,
   },
   typescript: {
     ignoreBuildErrors: false,
