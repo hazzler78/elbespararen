@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
 
-// Cloudflare Pages requires Edge Runtime
-export const runtime = 'edge';
+// Use Node.js runtime for OpenNext on Cloudflare
+export const runtime = 'nodejs';
 
 /**
  * POST /api/chat
