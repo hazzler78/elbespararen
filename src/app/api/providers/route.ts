@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-// Cloudflare Pages requires Edge Runtime
-export const runtime = 'edge';
+// Use Node.js runtime to satisfy OpenNext bundling
+export const runtime = 'nodejs';
 
 export async function GET() {
   try {
