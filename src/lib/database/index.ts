@@ -514,7 +514,9 @@ export function createDatabaseFromBinding(binding: unknown): Database {
   if (binding) {
     return new CloudflareDatabase(binding as D1Database);
   }
-  throw new Error('[Database] No D1 binding found - D1 database is required for production');
+  // Fallback till mock database om ingen binding finns (för utveckling)
+  console.log('[Database] No binding found, using MockDatabase');
+  return new MockDatabase();
 }
 
 // Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime
