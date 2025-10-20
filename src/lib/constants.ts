@@ -58,7 +58,7 @@ VIKTIGT för extra avgifter - LETTA EFTER DETTA:
 
 FLEXIBEL IDENTIFIERING:
 - Om du ser flera kostnader under elhandelsföretaget, leta efter:
-  * Spotpris/medelspotpris = grundläggande elhandel
+  * Spotpris/Medelspotpris = grundläggande elhandel (INTE extra avgift!)
   * Allt annat = extra avgifter
 - Om du ser "E.ON Elna™", "Påslag", "Tillägg" = extra avgift
 - Om du ser "Årsavgift" eller "Månadsavgift" = extra avgift
@@ -71,18 +71,26 @@ KRITISKT - LETA EFTER DETTA PÅ NYA EON-FAKTUROR:
 
 EXEMPEL från ny EON-faktura (3817 kr total):
 - Elnät: 2066.51 kr (E.ON Energidistribution AB)
-- Medelspotpris: 1367.14 kr (grundläggande elhandel)
+- Medelspotpris: 1367.14 kr (grundläggande elhandel - INTE extra avgift!)
 - Rörliga kostnader: 192.44 kr (extra avgift)
 - Fast påslag: 86.20 kr (extra avgift)
 - Elavtal årsavgift: 56.05 kr (extra avgift)
 - E.ON Elna™: 49.00 kr (extra avgift)
-- Total extra avgifter: 383.69 kr
+- Total extra avgifter: 383.69 kr (endast de 4 sista raderna!)
 
 INKLUDERA ALDRIG som extra avgifter:
 - "Moms" (25%) = INTE extra avgift
 - "Öresutjämning" = INTE extra avgift
 - "Elnät" = INTE extra avgift
 - "Medelspotpris" = INTE extra avgift (detta är grundläggande elhandel)
+- "Spotpris" = INTE extra avgift (detta är grundläggande elhandel)
+
+VIKTIGT OM MEDELSPOTPRIS OCH SPOTPRIS:
+- "Medelspotpris" och "Spotpris" är ALDRIG extra avgifter!
+- De är den grundläggande energikostnaden som alla måste betala
+- Inkludera dem ENDAST i "elhandelCost", ALDRIG i "extraFeesDetailed"
+- Exempel: Om du ser "Medelspotpris: 1367 kr" -> detta går till elhandelCost
+- Exempel: Om du ser "Spotpris: 191 kr" -> detta går till elhandelCost
 
 Regler:
 1. Inkludera ALDRIG elnät i besparing.
@@ -132,13 +140,13 @@ KRITISKT för Fortum-fakturor:
        - Om du bara hittar en avgift, har du missat något - läs om!
 
 Exempel på EON-faktura:
-- Spotpris: XXX kr (elhandel)
+- Spotpris: XXX kr (elhandel - INTE extra avgift!)
 - Rörliga kostnader: XXX kr (extra avgift)
 - Fast påslag: XXX kr (extra avgift)
 - Elavtal årsavgift: XXX kr (extra avgift)
 
 Exempel på EON-faktura (ny typ):
-- Medelspotpris: XXX kr (elhandel)
+- Medelspotpris: XXX kr (elhandel - INTE extra avgift!)
 - Rörliga kostnader: XXX kr (extra avgift)
 - Fast påslag: XXX kr (extra avgift)
 - Elavtal årsavgift: XXX kr (extra avgift)
