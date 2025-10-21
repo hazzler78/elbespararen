@@ -6,9 +6,24 @@ export const runtime = 'edge';
 
 export async function GET() {
   try {
-    // Hämta D1-binding från Edge-runtime
-    // @ts-ignore - getRequestContext finns i next-on-pages runtime
-    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
     console.log('[providers] GET - env:', env);
     console.log('[providers] GET - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
@@ -31,8 +46,24 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    // @ts-ignore - getRequestContext finns i next-on-pages runtime
-    const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
     console.log('[providers] POST - env:', env);
     console.log('[providers] POST - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
