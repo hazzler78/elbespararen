@@ -1,0 +1,57 @@
+name: Automatic Price Update
+
+on:
+  schedule:
+    # Kör varje dag kl 00:05 UTC (02:05 svensk tid)
+    - cron: '5 0 * * *'
+  workflow_dispatch: # Tillåter manuell körning
+
+jobs:
+  update-prices:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Update electricity prices
+        run: |
+          echo "🔄 Starting automatic price update..."
+          
+          # Anropa vår price update API
+          response=$(curl -s -w "\n%{http_code}" -X POST \
+            "https://elbespararen.pages.dev/api/prices/update" \
+            -H "Content-Type: application/json" \
+            -H "User-Agent: GitHub-Actions/1.0")
+          
+          # Separera response body och status code
+          http_code=$(echo "$response" | tail -n1)
+          response_body=$(echo "$response" | head -n -1)
+          
+          echo "📊 Response status: $http_code"
+          echo "📋 Response body: $response_body"
+          
+          # Kontrollera om request lyckades
+          if [ "$http_code" -eq 200 ]; then
+            echo "✅ Price update completed successfully"
+            
+            # Extrahera resultat från JSON response
+            successful=$(echo "$response_body" | grep -o '"successful":[0-9]*' | cut -d':' -f2)
+            errors=$(echo "$response_body" | grep -o '"errors":[0-9]*' | cut -d':' -f2)
+            
+            echo "📈 Summary: $successful successful, $errors errors"
+            
+            # Om det finns fel, visa dem
+            if [ "$errors" -gt 0 ]; then
+              echo "⚠️ Some providers failed to update. Check the response for details."
+            fi
+          else
+            echo "❌ Price update failed with status code: $http_code"
+            echo "Response: $response_body"
+            exit 1
+          fi
+          
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "🚨 Price update job failed!"
+          echo "Please check the logs above for details."
+          echo "You can also manually trigger the update at:"
+          echo "https://elbespararen.pages.dev/admin/price-updates"

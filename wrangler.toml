@@ -7,10 +7,6 @@ binding = "DB"
 database_name = "elbespararen-db"
 database_id = "your-database-id-here"
 
-# Cron job för att uppdatera priser varje natt kl 00:05
-[triggers]
-crons = ["5 0 * * *"]
-
 [env.production]
 name = "elbespararen-prod"
 
@@ -18,6 +14,3 @@ name = "elbespararen-prod"
 binding = "DB"
 database_name = "elbespararen-db"
 database_id = "your-database-id-here"
-
-[env.production.triggers]
-crons = ["5 0 * * *"]
