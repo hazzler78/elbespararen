@@ -10,7 +10,8 @@ const path = require('path');
 console.log('🧹 Cleaning build artifacts...');
 
 const pathsToRemove = [
-  '.next/cache',
+  '.vercel/output/static/cache',
+  '.vercel/output/static/_worker.js/cache',
   'cache',
 ];
 
