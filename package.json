@@ -9,6 +9,7 @@
     "build": "next build",
     "build:cloudflare": "npx @cloudflare/next-on-pages",
     "build:worker": "npx @cloudflare/next-on-pages",
+    "build:standard": "next build",
     "preview": "npm run build:cloudflare && wrangler pages dev",
     "deploy": "npm run build:cloudflare && wrangler pages deploy",
     "start": "next start",
