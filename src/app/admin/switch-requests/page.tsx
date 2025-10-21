@@ -134,11 +134,7 @@ export default function SwitchRequestsAdminPage() {
     <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <div className="flex items-center gap-4 mb-4">
             <Link
               href="/admin"
@@ -161,64 +157,39 @@ export default function SwitchRequestsAdminPage() {
               Uppdatera
             </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Totalt</p>
             <p className="text-3xl font-bold">{switchRequests.length}</p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Väntande</p>
             <p className="text-3xl font-bold text-warning">
               {switchRequests.filter(r => r.status === "pending").length}
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Bearbetas</p>
             <p className="text-3xl font-bold text-primary">
               {switchRequests.filter(r => r.status === "processing").length}
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Genomförda</p>
             <p className="text-3xl font-bold text-success">
               {switchRequests.filter(r => r.status === "completed").length}
             </p>
-          </motion.div>
+          </div>
         </div>
 
         {/* Filter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mb-6 flex gap-2 flex-wrap"
-        >
+        <div className="mb-6 flex gap-2 flex-wrap">
           {(["all", "pending", "processing", "completed"] as const).map((f) => (
             <button
               key={f}
@@ -234,15 +205,10 @@ export default function SwitchRequestsAdminPage() {
               {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
-        </motion.div>
+        </div>
 
         {/* Switch Requests List */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-lg border border-border"
-        >
+        <div className="bg-white rounded-lg border border-border">
           {filteredRequests.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-muted">Inga bytförfrågningar ännu</p>
@@ -427,20 +393,15 @@ export default function SwitchRequestsAdminPage() {
               })}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Info */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mt-8 p-4 bg-success/5 border border-success/10 rounded-lg"
-        >
+        <div className="mt-8 p-4 bg-success/5 border border-success/10 rounded-lg">
           <p className="text-sm text-muted text-center">
             ✅ <strong>Klart!</strong> Bytförfrågningar sparas nu i Cloudflare D1 databasen. 
             Du kan uppdatera status och lägga till anteckningar för varje förfrågan.
           </p>
-        </motion.div>
+        </div>
       </div>
     </main>
   );
