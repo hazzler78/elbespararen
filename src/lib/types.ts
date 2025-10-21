@@ -43,6 +43,14 @@ export interface ContactFormData {
   message?: string;
 }
 
+export interface ContractAlternative {
+  namn: string;
+  fastpris?: number; // kr/kWh för fastpris
+  månadskostnad?: number; // kr/månad
+  bindningstid?: number; // månader
+  gratis_månader?: number;
+}
+
 export interface ElectricityProvider {
   id: string;
   name: string;
@@ -59,6 +67,7 @@ export interface ElectricityProvider {
   phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;
+  avtalsalternativ?: ContractAlternative[]; // Flera avtalsalternativ för fastpris
 }
 
 export interface ProviderComparison {

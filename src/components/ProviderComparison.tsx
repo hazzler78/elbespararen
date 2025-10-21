@@ -2,8 +2,8 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CheckCircle2, Star, ExternalLink, Phone, Zap } from "lucide-react";
-import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse } from "@/lib/types";
+import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
+import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import SwitchProcess from "./SwitchProcess";
 
@@ -25,6 +25,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const [error, setError] = useState<string | null>(null);
   const [showSwitchProcess, setShowSwitchProcess] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
+  const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
 
   useEffect(() => {
     const fetchComparisons = async () => {
@@ -116,6 +117,33 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     // TODO: Visa bekräftelse eller redirect
   };
 
+  const handleContractChange = (providerId: string, contractIndex: number) => {
+    setSelectedContracts(prev => ({
+      ...prev,
+      [providerId]: contractIndex
+    }));
+  };
+
+  const getSelectedContract = (provider: any): ContractAlternative | null => {
+    if (!provider.avtalsalternativ || provider.avtalsalternativ.length === 0) {
+      return null;
+    }
+    
+    const selectedIndex = selectedContracts[provider.id] || 0;
+    return provider.avtalsalternativ[selectedIndex] || provider.avtalsalternativ[0];
+  };
+
+  const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
+    if (!selectedContract || comparison.provider.contractType === "rörligt") {
+      return comparison.estimatedMonthlyCost;
+    }
+
+    // Beräkna kostnad baserat på vald avtalslängd
+    const monthlyKwh = billData.totalKWh;
+    const monthlyCost = (selectedContract.fastpris || 0) * monthlyKwh + (selectedContract.månadskostnad || 0);
+    return monthlyCost;
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -149,18 +177,51 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               <h3 className="text-xl font-bold mb-2">{bestOption.provider.name}</h3>
               <p className="text-muted mb-4">{bestOption.provider.description}</p>
               
+              {/* Avtalslängd dropdown för fastpris */}
+              {bestOption.provider.contractType === "fastpris" && bestOption.provider.avtalsalternativ && bestOption.provider.avtalsalternativ.length > 1 && (
+                <div className="mb-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Välj avtalslängd
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={selectedContracts[bestOption.provider.id] || 0}
+                      onChange={(e) => handleContractChange(bestOption.provider.id, parseInt(e.target.value))}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8"
+                    >
+                      {bestOption.provider.avtalsalternativ.map((contract, index) => (
+                        <option key={index} value={index}>
+                          {contract.namn} - {contract.fastpris} kr/kWh
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                  </div>
+                </div>
+              )}
+              
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div>
                   <p className="text-sm text-muted">Månadskostnad</p>
                   <p className="font-semibold">
-                    {bestOption.provider.monthlyFee === 0 ? "0 kr" : `${bestOption.provider.monthlyFee} kr`}
+                    {(() => {
+                      const selectedContract = getSelectedContract(bestOption.provider);
+                      const monthlyFee = selectedContract?.månadskostnad || bestOption.provider.monthlyFee;
+                      return monthlyFee === 0 ? "0 kr" : `${monthlyFee} kr`;
+                    })()}
                   </p>
                 </div>
                 <div>
                   <p className="text-sm text-muted">
                     {bestOption.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                   </p>
-                  <p className="font-semibold">{bestOption.provider.energyPrice} kr/kWh</p>
+                  <p className="font-semibold">
+                    {(() => {
+                      const selectedContract = getSelectedContract(bestOption.provider);
+                      const price = selectedContract?.fastpris || bestOption.provider.energyPrice;
+                      return `${price} kr/kWh`;
+                    })()}
+                  </p>
                 </div>
               </div>
 
@@ -181,7 +242,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               <div className="bg-white rounded-lg p-4 mb-4">
                 <p className="text-sm text-muted mb-1">Nytt pris</p>
                 <p className="text-3xl font-bold text-success">
-                  {formatCurrency(bestOption.estimatedMonthlyCost)}
+                  {formatCurrency(calculateProviderCost(bestOption, getSelectedContract(bestOption.provider)))}
                 </p>
                 <p className="text-sm text-muted">per månad</p>
               </div>
@@ -233,18 +294,51 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               )}
             </div>
 
+            {/* Avtalslängd dropdown för fastpris */}
+            {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && comparison.provider.avtalsalternativ.length > 1 && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Välj avtalslängd
+                </label>
+                <div className="relative">
+                  <select
+                    value={selectedContracts[comparison.provider.id] || 0}
+                    onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
+                  >
+                    {comparison.provider.avtalsalternativ.map((contract, contractIndex) => (
+                      <option key={contractIndex} value={contractIndex}>
+                        {contract.namn} - {contract.fastpris} kr/kWh
+                      </option>
+                    ))}
+                  </select>
+                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+                </div>
+              </div>
+            )}
+
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <p className="text-sm text-muted">Månadskostnad</p>
                 <p className="font-semibold">
-                  {comparison.provider.monthlyFee === 0 ? "0 kr" : `${comparison.provider.monthlyFee} kr`}
+                  {(() => {
+                    const selectedContract = getSelectedContract(comparison.provider);
+                    const monthlyFee = selectedContract?.månadskostnad || comparison.provider.monthlyFee;
+                    return monthlyFee === 0 ? "0 kr" : `${monthlyFee} kr`;
+                  })()}
                 </p>
               </div>
               <div>
                 <p className="text-sm text-muted">
                   {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                 </p>
-                <p className="font-semibold">{comparison.provider.energyPrice} kr/kWh</p>
+                <p className="font-semibold">
+                  {(() => {
+                    const selectedContract = getSelectedContract(comparison.provider);
+                    const price = selectedContract?.fastpris || comparison.provider.energyPrice;
+                    return `${price} kr/kWh`;
+                  })()}
+                </p>
               </div>
             </div>
 
@@ -252,7 +346,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               <div>
                 <p className="text-sm text-muted">Beräknad kostnad</p>
                 <p className="font-bold text-lg">
-                  {formatCurrency(comparison.estimatedMonthlyCost)}
+                  {formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))}
                 </p>
               </div>
               <div className="text-right">

@@ -249,6 +249,7 @@ class CloudflareDatabase implements Database {
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
       phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
       createdAt: new Date(String(row.created_at)),
       updatedAt: new Date(String(row.updated_at))
     }));
@@ -276,6 +277,7 @@ class CloudflareDatabase implements Database {
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
       phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
       createdAt: new Date(String(row.created_at)),
       updatedAt: new Date(String(row.updated_at))
     };
@@ -285,29 +287,30 @@ class CloudflareDatabase implements Database {
     const id = `provider-${Date.now()}`;
     const now = new Date().toISOString();
 
-    await this.db.prepare(`
-      INSERT INTO electricity_providers (
-        id, name, description, monthly_fee, energy_price, free_months, 
-        contract_length, contract_type, is_active, features, logo_url, website_url, 
-        phone_number, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      id,
-      providerData.name,
-      providerData.description,
-      providerData.monthlyFee,
-      providerData.energyPrice,
-      providerData.freeMonths,
-      providerData.contractLength,
-      providerData.contractType,
-      providerData.isActive ? 1 : 0,
-      JSON.stringify(providerData.features),
-      providerData.logoUrl || null,
-      providerData.websiteUrl || null,
-      providerData.phoneNumber || null,
-      now,
-      now
-    ).run();
+          await this.db.prepare(`
+            INSERT INTO electricity_providers (
+              id, name, description, monthly_fee, energy_price, free_months, 
+              contract_length, contract_type, is_active, features, logo_url, website_url, 
+              phone_number, avtalsalternativ, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `).bind(
+            id,
+            providerData.name,
+            providerData.description,
+            providerData.monthlyFee,
+            providerData.energyPrice,
+            providerData.freeMonths,
+            providerData.contractLength,
+            providerData.contractType,
+            providerData.isActive ? 1 : 0,
+            JSON.stringify(providerData.features),
+            providerData.logoUrl || null,
+            providerData.websiteUrl || null,
+            providerData.phoneNumber || null,
+            JSON.stringify(providerData.avtalsalternativ || []),
+            now,
+            now
+          ).run();
 
     return {
       ...providerData,
@@ -326,28 +329,29 @@ class CloudflareDatabase implements Database {
     const updated = { ...existing, ...providerData, updatedAt: new Date() };
     const now = updated.updatedAt.toISOString();
 
-    await this.db.prepare(`
-      UPDATE electricity_providers SET
-        name = ?, description = ?, monthly_fee = ?, energy_price = ?,
-        free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
-        logo_url = ?, website_url = ?, phone_number = ?, updated_at = ?
-      WHERE id = ?
-    `).bind(
-      updated.name,
-      updated.description,
-      updated.monthlyFee,
-      updated.energyPrice,
-      updated.freeMonths,
-      updated.contractLength,
-      updated.contractType,
-      updated.isActive ? 1 : 0,
-      JSON.stringify(updated.features),
-      updated.logoUrl || null,
-      updated.websiteUrl || null,
-      updated.phoneNumber || null,
-      now,
-      id
-    ).run();
+          await this.db.prepare(`
+            UPDATE electricity_providers SET
+              name = ?, description = ?, monthly_fee = ?, energy_price = ?,
+              free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
+              logo_url = ?, website_url = ?, phone_number = ?, avtalsalternativ = ?, updated_at = ?
+            WHERE id = ?
+          `).bind(
+            updated.name,
+            updated.description,
+            updated.monthlyFee,
+            updated.energyPrice,
+            updated.freeMonths,
+            updated.contractLength,
+            updated.contractType,
+            updated.isActive ? 1 : 0,
+            JSON.stringify(updated.features),
+            updated.logoUrl || null,
+            updated.websiteUrl || null,
+            updated.phoneNumber || null,
+            JSON.stringify(updated.avtalsalternativ || []),
+            now,
+            id
+          ).run();
 
     return updated;
   }
