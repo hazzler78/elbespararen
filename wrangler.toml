@@ -8,7 +8,7 @@ database_name = "elbespararen-db"
 database_id = "your-database-id-here"
 
 # Cron job för att uppdatera priser varje natt kl 00:05
-[[triggers]]
+[triggers]
 crons = ["5 0 * * *"]
 
 [env.production]
