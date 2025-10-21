@@ -37,7 +37,8 @@ export async function POST(request: NextRequest) {
     // Validera obligatoriska fält
     const requiredFields = ['name', 'description', 'monthlyFee', 'energyPrice'];
     for (const field of requiredFields) {
-      if (!body[field]) {
+      // Använd hasOwnProperty och kolla undefined/null, inte falsy (0 är ett giltigt värde)
+      if (body[field] === undefined || body[field] === null || body[field] === '') {
         return NextResponse.json(
           { success: false, error: `Fält ${field} är obligatoriskt` },
           { status: 400 }
