@@ -233,7 +233,7 @@ export default function ProvidersAdminPage() {
                           </p>
                         </div>
                         <div>
-                          <p className="text-muted">Energipris</p>
+                          <p className="text-muted">Påslag</p>
                           <p className="font-semibold">{provider.energyPrice} kr/kWh</p>
                         </div>
                         <div>
@@ -460,7 +460,7 @@ function ProviderForm({
             </div>
 
             <div>
-              <label className="block text-sm font-medium mb-1">Energipris (kr/kWh) *</label>
+              <label className="block text-sm font-medium mb-1">Påslag (kr/kWh) *</label>
               <input
                 type="number"
                 step="0.001"
