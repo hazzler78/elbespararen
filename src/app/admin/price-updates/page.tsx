@@ -19,7 +19,13 @@ interface UpdateResponse {
     total: number;
     successful: number;
     errors: number;
+    preserved_rörliga?: string[];
   };
+  preserved_rörliga?: Array<{
+    name: string;
+    contractType: string;
+    reason: string;
+  }>;
 }
 
 export default function PriceUpdatesAdminPage() {
@@ -93,6 +99,9 @@ export default function PriceUpdatesAdminPage() {
             <h2 className="text-lg font-semibold mb-4">Manuell prisuppdatering</h2>
             <p className="text-gray-600 mb-4">
               Kör prisuppdatering manuellt för att testa systemet eller uppdatera priser direkt.
+              <br />
+              <strong className="text-blue-600">Obs:</strong> Endast Fastpris-leverantörer uppdateras automatiskt. 
+              Rörliga leverantörer bevaras och uppdateras inte.
             </p>
             
             <button
@@ -152,6 +161,7 @@ export default function PriceUpdatesAdminPage() {
                         <p className="font-medium">{result.provider}</p>
                         <p className="text-sm opacity-75">
                           {result.action === 'created' && 'Skapad ny leverantör'}
+                          {result.action === 'created_alternative' && 'Skapad avtalsalternativ'}
                           {result.action === 'updated' && 'Uppdaterad befintlig leverantör'}
                           {result.action === 'fetch_failed' && 'Kunde inte hämta priser'}
                           {result.action === 'error' && 'Fel vid bearbetning'}
@@ -166,12 +176,36 @@ export default function PriceUpdatesAdminPage() {
                   </div>
                 ))}
               </div>
+
+              {/* Visa bevarade Rörliga leverantörer */}
+              {lastUpdate.preserved_rörliga && lastUpdate.preserved_rörliga.length > 0 && (
+                <div className="mt-6 pt-6 border-t border-gray-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <AlertCircle className="w-5 h-5 text-blue-500" />
+                    <h4 className="font-semibold text-blue-800">Bevarade Rörliga leverantörer</h4>
+                  </div>
+                  <div className="grid gap-2">
+                    {lastUpdate.preserved_rörliga.map((provider, index) => (
+                      <div key={index} className="flex items-center gap-3 p-2 bg-blue-50 rounded-lg">
+                        <div className="w-2 h-2 bg-blue-400 rounded-full"></div>
+                        <div>
+                          <p className="font-medium text-blue-900">{provider.name}</p>
+                          <p className="text-sm text-blue-700">{provider.reason}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
           {/* Information om leverantörer */}
           <div className="mt-8 bg-blue-50 rounded-lg p-6">
-            <h3 className="text-lg font-semibold mb-4">Leverantörer som uppdateras</h3>
+            <h3 className="text-lg font-semibold mb-4">Fastpris-leverantörer som uppdateras</h3>
+            <p className="text-sm text-blue-700 mb-4">
+              Dessa leverantörer hämtar priser automatiskt från externa endpoints varje natt kl. 00:05.
+            </p>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
               {[
                 { name: "Cheap Energy", endpoint: "cheapenergy_v2" },
@@ -184,6 +218,7 @@ export default function PriceUpdatesAdminPage() {
                 <div key={provider.endpoint} className="bg-white rounded-lg p-3 border">
                   <h4 className="font-medium text-gray-900">{provider.name}</h4>
                   <p className="text-sm text-gray-500">{provider.endpoint}</p>
+                  <p className="text-xs text-blue-600 mt-1">Fastpris</p>
                 </div>
               ))}
             </div>

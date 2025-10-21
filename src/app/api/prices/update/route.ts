@@ -45,6 +45,13 @@ interface PriceData {
   bindningstid?: number;
   gratis_månader?: number;
   features?: string[];
+  avtalsalternativ?: Array<{
+    namn: string;
+    fastpris?: number;
+    månadskostnad?: number;
+    bindningstid?: number;
+    gratis_månader?: number;
+  }>;
 }
 
 interface ProviderPriceResponse {
@@ -114,75 +121,101 @@ async function fetchProviderPrices(endpoint: string, url: string): Promise<Provi
 
 // Parser funktioner för varje leverantör
 function parseCheapEnergy(data: any): PriceData {
-  // Cheap Energy struktur
+  // Cheap Energy struktur - hantera flera avtalsalternativ
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  
+  // Ta det första eller bästa alternativet
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 0,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 0,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Billigaste alternativet med låga fastpriser",
-    bindningstid: data.bindningstid || 12,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Låga fastpriser", "Ingen bindningstid"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 12,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Låga fastpriser", "Ingen bindningstid"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
 function parseEnergi2(data: any): PriceData {
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 0,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 0,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Stabilt fastpris från Energi2",
-    bindningstid: data.bindningstid || 24,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Stabilt fastpris", "24 månaders bindningstid"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 24,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Stabilt fastpris", "24 månaders bindningstid"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
 function parseStockholmsEl(data: any): PriceData {
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 39,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 39,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Stockholms El fastpris",
-    bindningstid: data.bindningstid || 12,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Stockholms El", "Fastpris"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 12,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Stockholms El", "Fastpris"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
 function parseSvealandsEl(data: any): PriceData {
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 29,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 29,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Svealands EL fastpris",
-    bindningstid: data.bindningstid || 24,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Svealands EL", "Fastpris"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 24,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Svealands EL", "Fastpris"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
 function parseSvekraft(data: any): PriceData {
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 0,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 0,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Svekraft fastpris - flexibelt utan bindningstid",
-    bindningstid: data.bindningstid || 0,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Ingen bindningstid", "Fastpris"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 0,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Ingen bindningstid", "Fastpris"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
 function parseMotalaEl(data: any): PriceData {
+  const avtalsalternativ = data.avtalsalternativ || data.contracts || [];
+  const bestAlternativ = avtalsalternativ[0] || data;
+  
   return {
-    fastpris: data.fastpris || data.fastpris_kwh,
-    månadskostnad: data.månadskostnad || data.monthly_fee || 35,
-    påslag: data.påslag || data.margin,
+    fastpris: bestAlternativ.fastpris || bestAlternativ.fastpris_kwh || data.fastpris,
+    månadskostnad: bestAlternativ.månadskostnad || bestAlternativ.monthly_fee || data.månadskostnad || 35,
+    påslag: bestAlternativ.påslag || bestAlternativ.margin || data.påslag,
     beskrivning: data.beskrivning || "Motala El fastpris",
-    bindningstid: data.bindningstid || 12,
-    gratis_månader: data.gratis_månader || 0,
-    features: data.features || ["Motala El", "Fastpris"]
+    bindningstid: bestAlternativ.bindningstid || data.bindningstid || 12,
+    gratis_månader: bestAlternativ.gratis_månader || data.gratis_månader || 0,
+    features: data.features || ["Motala El", "Fastpris"],
+    avtalsalternativ: avtalsalternativ
   };
 }
 
@@ -215,6 +248,13 @@ export async function POST(request: NextRequest) {
     // Hämta alla leverantörer från databasen
     const existingProviders = await db.getProviders();
     console.log(`[Price Update] Found ${existingProviders.length} existing providers`);
+    
+    // Logga vilka leverantörer som INTE påverkas (Rörliga)
+    const rörligaProviders = existingProviders.filter(p => p.contractType === "rörligt");
+    if (rörligaProviders.length > 0) {
+      console.log(`[Price Update] Found ${rörligaProviders.length} Rörliga providers that will NOT be updated:`, 
+        rörligaProviders.map(p => p.name));
+    }
 
     // Uppdatera priser för varje endpoint
     for (const endpoint of PRICE_ENDPOINTS) {
@@ -222,15 +262,16 @@ export async function POST(request: NextRequest) {
         const priceResponse = await fetchProviderPrices(endpoint.endpoint, endpoint.url);
         
         if (priceResponse.success && priceResponse.data) {
-          // Hitta eller skapa leverantör
+          // Hitta befintlig Fastpris-leverantör för denna endpoint
           let provider = existingProviders.find(p => 
-            p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
-            p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])
+            (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+             p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
+            p.contractType === "fastpris"
           );
 
           if (!provider) {
-            // Skapa ny leverantör om den inte finns
-            console.log(`[Price Update] Creating new provider: ${endpoint.providerName}`);
+            // Skapa ny Fastpris-leverantör om den inte finns
+            console.log(`[Price Update] Creating new Fastpris provider: ${endpoint.providerName}`);
             
             const newProvider = await db.createProvider({
               name: endpoint.providerName,
@@ -253,14 +294,44 @@ export async function POST(request: NextRequest) {
               data: newProvider
             });
             successCount++;
+
+            // Om det finns flera avtalsalternativ, skapa ytterligare leverantörer
+            if (priceResponse.data.avtalsalternativ && priceResponse.data.avtalsalternativ.length > 1) {
+              console.log(`[Price Update] Creating additional contract alternatives for ${endpoint.providerName}`);
+              
+              for (let i = 1; i < priceResponse.data.avtalsalternativ.length; i++) {
+                const alternativ = priceResponse.data.avtalsalternativ[i];
+                const altProvider = await db.createProvider({
+                  name: `${endpoint.providerName} ${alternativ.namn}`,
+                  description: `${endpoint.providerName} - ${alternativ.namn}`,
+                  monthlyFee: alternativ.månadskostnad || 0,
+                  energyPrice: alternativ.fastpris || 1.0,
+                  freeMonths: alternativ.gratis_månader || 0,
+                  contractLength: alternativ.bindningstid || 12,
+                  contractType: "fastpris",
+                  isActive: true,
+                  features: [`${endpoint.providerName}`, alternativ.namn],
+                  websiteUrl: `https://${endpoint.url.split('//')[1].split('/')[0]}`,
+                  phoneNumber: undefined
+                });
+
+                updateResults.push({
+                  provider: `${endpoint.providerName} ${alternativ.namn}`,
+                  action: 'created_alternative',
+                  success: true,
+                  data: altProvider
+                });
+                successCount++;
+              }
+            }
           } else {
-            // Uppdatera befintlig leverantör
-            console.log(`[Price Update] Updating existing provider: ${provider.name}`);
+            // Uppdatera befintlig Fastpris-leverantör (bara Fastpris!)
+            console.log(`[Price Update] Updating existing Fastpris provider: ${provider.name}`);
             
             const updatedProvider = await db.updateProvider(provider.id, {
               monthlyFee: priceResponse.data.månadskostnad || provider.monthlyFee,
               energyPrice: priceResponse.data.fastpris || provider.energyPrice,
-              contractType: "fastpris",
+              // BEHÅLL contractType som fastpris - uppdatera INTE till fastpris
               features: priceResponse.data.features || provider.features
             });
 
@@ -302,8 +373,14 @@ export async function POST(request: NextRequest) {
       summary: {
         total: PRICE_ENDPOINTS.length,
         successful: successCount,
-        errors: errorCount
-      }
+        errors: errorCount,
+        preserved_rörliga: rörligaProviders.map(p => p.name)
+      },
+      preserved_rörliga: rörligaProviders.map(p => ({
+        name: p.name,
+        contractType: p.contractType,
+        reason: "Rörliga leverantörer uppdateras inte automatiskt"
+      }))
     });
 
   } catch (error) {
