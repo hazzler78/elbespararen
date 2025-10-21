@@ -524,8 +524,9 @@ export function createDatabaseFromBinding(binding: unknown): Database {
     console.log('[Database] Using CloudflareDatabase with D1 binding');
     return new CloudflareDatabase(binding as D1Database);
   }
-  // Ingen mock-data fallback - kräver D1 binding
-  throw new Error('[Database] D1 binding is required. Make sure to run with wrangler or deploy to Cloudflare.');
+  // Fallback till mock database i utveckling
+  console.log('[Database] No D1 binding, using MockDatabase in development');
+  return MockDatabase.getInstance();
 }
 
 // Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime

@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "wrangler pages dev --compatibility-date=2025-03-25 --d1=DB=elbespararen-db -- npm run dev:next",
+    "dev": "next dev --turbopack",
+    "dev:wrangler": "wrangler pages dev .next --compatibility-date=2025-03-25 --d1=DB=elbespararen-db",
     "dev:next": "next dev --turbopack",
     "build": "next build",
     "build:cloudflare": "npx @cloudflare/next-on-pages",
