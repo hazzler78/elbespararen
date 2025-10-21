@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 
+export const runtime = 'edge';
+
 // Leverantörer med deras endpoints och URL:er
 const PRICE_ENDPOINTS = [
   {

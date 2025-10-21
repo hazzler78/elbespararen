@@ -1,7 +1,7 @@
 // Cloudflare Pages Functions Cron Trigger
 // Körs automatiskt enligt cron schedule
 
-export async function onScheduled(event: ScheduledEvent, env: any, ctx: ExecutionContext) {
+export async function onScheduled(event: any, env: any, ctx: any) {
   console.log('[Cron] Scheduled price update triggered at:', new Date().toISOString());
 
   try {

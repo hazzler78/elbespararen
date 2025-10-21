@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
+export const runtime = 'edge';
+
 // Cron job handler för att uppdatera priser automatiskt
 export async function GET(request: NextRequest) {
   try {
