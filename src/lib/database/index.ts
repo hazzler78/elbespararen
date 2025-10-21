@@ -76,9 +76,18 @@ export interface Database {
 
 // Mock Database Implementation (för utveckling)
 class MockDatabase implements Database {
+  private static instance: MockDatabase | null = null;
   private providers: ElectricityProvider[] = [...mockProviders];
   private leads: Lead[] = [];
   private switchRequests: SwitchRequest[] = [];
+
+  // Singleton pattern för att behålla state mellan requests i utveckling
+  static getInstance(): MockDatabase {
+    if (!MockDatabase.instance) {
+      MockDatabase.instance = new MockDatabase();
+    }
+    return MockDatabase.instance;
+  }
 
   async getProviders(): Promise<ElectricityProvider[]> {
     return [...this.providers];
@@ -498,7 +507,7 @@ class CloudflareDatabase implements Database {
 export function createDatabase(): Database {
   // Behåll lokal mock i utveckling när ingen D1-binding finns
   if (process.env.NODE_ENV === 'development') {
-    return new MockDatabase();
+    return MockDatabase.getInstance();
   }
 
   // För bakåtkompatibilitet om DB exponeras som env-variabel i Node-miljö
@@ -515,8 +524,8 @@ export function createDatabaseFromBinding(binding: unknown): Database {
     return new CloudflareDatabase(binding as D1Database);
   }
   // Fallback till mock database om ingen binding finns (för utveckling)
-  console.log('[Database] No binding found, using MockDatabase');
-  return new MockDatabase();
+  console.log('[Database] No binding found, using MockDatabase singleton');
+  return MockDatabase.getInstance();
 }
 
 // Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime
