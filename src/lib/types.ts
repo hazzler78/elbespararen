@@ -17,6 +17,8 @@ export interface BillData {
   confidence: number; // 0-1
   warnings?: string[];
   totalAmount: number; // Total belopp att betala
+  postalCode?: string; // Postnummer för prisområdesdetektering
+  priceArea?: string; // Automatiskt detekterat prisområde (se1, se2, se3, se4)
 }
 
 export interface SavingsCalculation {
@@ -49,6 +51,8 @@ export interface ContractAlternative {
   månadskostnad?: number; // kr/månad
   bindningstid?: number; // månader
   gratis_månader?: number;
+  spotpris?: number; // kr/kWh för rörligt (spotpris)
+  påslag?: number; // kr/kWh påslag på spotpris
 }
 
 export interface ElectricityProvider {

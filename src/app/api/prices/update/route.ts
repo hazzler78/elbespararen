@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import type { ContractAlternative } from "@/lib/types";
+import { getPriceAreaFromPostalCode, PRICE_AREAS } from "@/lib/price-areas";
 
 export const runtime = 'edge';
 
@@ -185,6 +186,29 @@ function parseSvekraft(data: any): PriceData {
 
 function parseMotalaEl(data: any): PriceData {
   return parseProviderPrices(data, "Motala El");
+}
+
+// Funktion för att skapa rörliga leverantörer baserat på spotpriser
+function createVariableProvidersFromSpotPrices(data: any, providerName: string): ContractAlternative[] {
+  const spotPrices = data.spot_prices || {};
+  const variableProviders: ContractAlternative[] = [];
+  
+  // Skapa en rörlig leverantör för varje prisområde
+  Object.entries(spotPrices).forEach(([areaCode, spotPrice]: [string, any]) => {
+    if (typeof spotPrice === 'number' && spotPrice > 0) {
+      variableProviders.push({
+        namn: `${providerName} Rörligt (${PRICE_AREAS[areaCode]?.name || areaCode.toUpperCase()})`,
+        fastpris: undefined, // Rörligt har inget fastpris
+        månadskostnad: 0, // Oftast ingen månadskostnad för rörliga avtal
+        bindningstid: 0, // Ingen bindningstid för rörliga avtal
+        gratis_månader: 0,
+        spotpris: spotPrice / 100, // Konvertera från öre till kr
+        påslag: 0 // Kan variera per leverantör
+      });
+    }
+  });
+  
+  return variableProviders;
 }
 
 // Huvudfunktion för att uppdatera priser

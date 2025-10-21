@@ -5,6 +5,7 @@ import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-re
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
+import PostalCodeInput from "./PostalCodeInput";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -16,6 +17,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [postalCode, setPostalCode] = useState("");
+  const [priceArea, setPriceArea] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = (selectedFile: File) => {
@@ -58,6 +61,14 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     try {
       const formData = new FormData();
       formData.append("file", file);
+      
+      // Lägg till postnummer och prisområde om de finns
+      if (postalCode) {
+        formData.append("postalCode", postalCode);
+      }
+      if (priceArea) {
+        formData.append("priceArea", priceArea);
+      }
 
       const response = await fetch("/api/parse-bill-v3", {
         method: "POST",
@@ -70,7 +81,14 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         throw new Error(result.error || "Kunde inte analysera fakturan");
       }
 
-      onUploadSuccess(result.data);
+      // Lägg till postnummer och prisområde i resultatet
+      const enhancedData = {
+        ...result.data,
+        postalCode: postalCode || undefined,
+        priceArea: priceArea || undefined
+      };
+
+      onUploadSuccess(enhancedData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Något gick fel";
       setError(errorMessage);
@@ -151,6 +169,29 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
             )}
           </AnimatePresence>
         </div>
+
+        {/* Postnummer Input */}
+        {file && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-6"
+          >
+            <PostalCodeInput
+              value={postalCode}
+              onChange={(code, area) => {
+                setPostalCode(code);
+                setPriceArea(area);
+              }}
+              className="mb-4"
+            />
+            <div className="text-xs text-gray-500">
+              💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
+              Rörliga elpriser varierar beroende på var du bor i Sverige. 
+              Vi behöver ditt postnummer för att visa dig de korrekta priserna för ditt område.
+            </div>
+          </motion.div>
+        )}
 
         {/* Error Message */}
         <AnimatePresence>
