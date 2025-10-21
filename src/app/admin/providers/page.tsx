@@ -123,11 +123,7 @@ export default function ProvidersAdminPage() {
     <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Hantera Elleverantörer</h1>
@@ -141,64 +137,39 @@ export default function ProvidersAdminPage() {
               Lägg till leverantör
             </button>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Totalt leverantörer</p>
             <p className="text-3xl font-bold">{providers.length}</p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Aktiva</p>
             <p className="text-3xl font-bold text-success">
               {providers.filter(p => p.isActive).length}
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Inaktiva</p>
             <p className="text-3xl font-bold text-error">
               {providers.filter(p => !p.isActive).length}
             </p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Billigaste pris</p>
             <p className="text-3xl font-bold text-secondary">
               {Math.min(...providers.map(p => p.energyPrice)).toFixed(2)} kr/kWh
             </p>
-          </motion.div>
+          </div>
         </div>
 
         {/* Providers List */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="bg-white rounded-lg border border-border"
-        >
+        <div className="bg-white rounded-lg border border-border">
           {providers.length === 0 ? (
             <div className="p-12 text-center">
               <p className="text-muted">Inga leverantörer ännu</p>
@@ -320,7 +291,7 @@ export default function ProvidersAdminPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Add Provider Form */}
         {showAddForm && (
@@ -426,16 +397,8 @@ function ProviderForm({
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
-    >
-      <motion.div
-        initial={{ scale: 0.95 }}
-        animate={{ scale: 1 }}
-        className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto"
-      >
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+      <div className="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <h2 className="text-2xl font-bold mb-6">
           {provider ? "Redigera leverantör" : "Lägg till leverantör"}
         </h2>
@@ -615,7 +578,7 @@ function ProviderForm({
             </button>
           </div>
         </form>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
