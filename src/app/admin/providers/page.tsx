@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone } from "lucide-react";
-import { ElectricityProvider, ApiResponse } from "@/lib/types";
+import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 
 export default function ProvidersAdminPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
@@ -62,14 +62,53 @@ export default function ProvidersAdminPage() {
   };
 
   const handleToggleActive = async (provider: ElectricityProvider) => {
-    // TODO: Implementera API för att uppdatera provider
-    console.log("Toggle active for provider:", provider.id);
+    try {
+      console.log('[Admin] Toggling active for provider:', provider.id);
+      const response = await fetch("/api/providers", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id: provider.id,
+          isActive: !provider.isActive
+        }),
+      });
+
+      const result = await response.json() as ApiResponse<ElectricityProvider>;
+      
+      if (result.success && result.data) {
+        setProviders(providers.map(p => p.id === provider.id ? result.data! : p));
+        alert('✅ Leverantör uppdaterad!');
+      } else {
+        alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
+      }
+    } catch (error) {
+      console.error("Error updating provider:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
   };
 
   const handleDeleteProvider = async (providerId: string) => {
     if (confirm("Är du säker på att du vill ta bort denna leverantör?")) {
-      // TODO: Implementera API för att ta bort provider
-      console.log("Delete provider:", providerId);
+      try {
+        console.log('[Admin] Deleting provider:', providerId);
+        const response = await fetch(`/api/providers?id=${providerId}`, {
+          method: "DELETE",
+        });
+
+        const result = await response.json() as ApiResponse<{ message: string }>;
+        
+        if (result.success) {
+          setProviders(providers.filter(p => p.id !== providerId));
+          alert('✅ Leverantör borttagen!');
+        } else {
+          alert('❌ Kunde inte ta bort leverantör: ' + (result.error || 'Okänt fel'));
+        }
+      } catch (error) {
+        console.error("Error deleting provider:", error);
+        alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+      }
     }
   };
 
@@ -287,10 +326,33 @@ export default function ProvidersAdminPage() {
         {editingProvider && (
           <ProviderForm
             provider={editingProvider}
-            onSave={(data) => {
-              // TODO: Implementera uppdatering
-              console.log("Update provider:", data);
-              setEditingProvider(null);
+            onSave={async (data) => {
+              try {
+                console.log('[Admin] Updating provider:', data);
+                const response = await fetch("/api/providers", {
+                  method: "PUT",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    id: editingProvider.id,
+                    ...data
+                  }),
+                });
+
+                const result = await response.json() as ApiResponse<ElectricityProvider>;
+                
+                if (result.success && result.data) {
+                  setProviders(providers.map(p => p.id === editingProvider.id ? result.data! : p));
+                  setEditingProvider(null);
+                  alert('✅ Leverantör uppdaterad!');
+                } else {
+                  alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
+                }
+              } catch (error) {
+                console.error("Error updating provider:", error);
+                alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+              }
             }}
             onCancel={() => setEditingProvider(null)}
           />
