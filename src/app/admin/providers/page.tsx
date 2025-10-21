@@ -268,7 +268,10 @@ export default function ProvidersAdminPage() {
                       </button>
                       
                       <button
-                        onClick={() => setEditingProvider(provider)}
+                        onClick={() => {
+                          console.log('[Admin] Edit button clicked for provider:', provider.id);
+                          setEditingProvider(provider);
+                        }}
                         className="p-2 text-muted hover:text-primary transition-colors"
                         title="Redigera"
                       >
@@ -328,7 +331,8 @@ export default function ProvidersAdminPage() {
             provider={editingProvider}
             onSave={async (data) => {
               try {
-                console.log('[Admin] Updating provider:', data);
+                console.log('[Admin] Updating provider - onSave called with data:', data);
+                console.log('[Admin] Editing provider ID:', editingProvider.id);
                 const response = await fetch("/api/providers", {
                   method: "PUT",
                   headers: {
