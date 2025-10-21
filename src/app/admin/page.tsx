@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Lead } from "@/lib/types";
@@ -34,11 +33,7 @@ export default function AdminPage() {
     <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="mb-8"
-        >
+        <div className="mb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-3xl font-bold mb-2">Admin Dashboard</h1>
@@ -68,70 +63,45 @@ export default function AdminPage() {
               </Link>
             </div>
           </div>
-        </motion.div>
+        </div>
 
         {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.1 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <div className="flex items-center gap-3 mb-2">
               <Users className="w-5 h-5 text-primary" />
               <p className="text-sm text-muted uppercase tracking-wide">Totalt leads</p>
             </div>
             <p className="text-3xl font-bold">{stats.total}</p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <div className="flex items-center gap-3 mb-2">
               <AlertCircle className="w-5 h-5 text-warning" />
               <p className="text-sm text-muted uppercase tracking-wide">Nya</p>
             </div>
             <p className="text-3xl font-bold">{stats.new}</p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <div className="flex items-center gap-3 mb-2">
               <CheckCircle2 className="w-5 h-5 text-success" />
               <p className="text-sm text-muted uppercase tracking-wide">Konverterade</p>
             </div>
             <p className="text-3xl font-bold">{stats.converted}</p>
-          </motion.div>
+          </div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-lg border border-border p-6"
-          >
+          <div className="bg-white rounded-lg border border-border p-6">
             <div className="flex items-center gap-3 mb-2">
               <TrendingUp className="w-5 h-5 text-secondary" />
               <p className="text-sm text-muted uppercase tracking-wide">Total besparing</p>
             </div>
             <p className="text-3xl font-bold">{formatCurrency(stats.totalSavings)}</p>
-          </motion.div>
+          </div>
         </div>
 
         {/* Filter */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
-          className="mb-6 flex gap-2 flex-wrap"
-        >
+        <div className="mb-6 flex gap-2 flex-wrap">
           {(["all", "new", "contacted", "converted", "rejected"] as const).map((f) => (
             <button
               key={f}
@@ -147,15 +117,10 @@ export default function AdminPage() {
               {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
             </button>
           ))}
-        </motion.div>
+        </div>
 
         {/* Leads List */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="bg-white rounded-lg border border-border"
-        >
+        <div className="bg-white rounded-lg border border-border">
           {isLoading ? (
             <div className="p-12 text-center">
               <p className="text-muted">Laddar leads...</p>
@@ -218,19 +183,14 @@ export default function AdminPage() {
               ))}
             </div>
           )}
-        </motion.div>
+        </div>
 
         {/* Info */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.7 }}
-          className="mt-8 p-4 bg-primary/5 border border-primary/10 rounded-lg"
-        >
+        <div className="mt-8 p-4 bg-primary/5 border border-primary/10 rounded-lg">
           <p className="text-sm text-muted text-center">
             💡 <strong>Tips:</strong> Leads sparas i databasen och Telegram-notiser skickas vid nya kontaktförfrågningar.
           </p>
-        </motion.div>
+        </div>
       </div>
     </main>
   );
