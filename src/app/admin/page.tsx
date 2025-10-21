@@ -59,6 +59,13 @@ export default function AdminPage() {
                 <ArrowRight className="w-4 h-4" />
                 Bytförfrågningar
               </Link>
+              <Link
+                href="/admin/price-updates"
+                className="flex items-center gap-2 bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors"
+              >
+                <TrendingUp className="w-4 h-4" />
+                Prisuppdateringar
+              </Link>
             </div>
           </div>
         </motion.div>

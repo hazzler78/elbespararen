@@ -1,0 +1,211 @@
+"use client";
+
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { RefreshCw, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
+
+interface UpdateResult {
+  provider: string;
+  action: string;
+  success: boolean;
+  error?: string;
+  data?: any;
+}
+
+interface UpdateResponse {
+  success: boolean;
+  message: string;
+  results: UpdateResult[];
+  summary: {
+    total: number;
+    successful: number;
+    errors: number;
+  };
+}
+
+export default function PriceUpdatesAdminPage() {
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [lastUpdate, setLastUpdate] = useState<UpdateResponse | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleUpdatePrices = async () => {
+    try {
+      setIsUpdating(true);
+      setError(null);
+      
+      console.log('[Admin] Starting manual price update...');
+      
+      const response = await fetch("/api/prices/update", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      const result = await response.json() as UpdateResponse;
+      
+      if (result.success) {
+        setLastUpdate(result);
+        console.log('[Admin] Price update completed:', result);
+      } else {
+        setError(result.message || "Kunde inte uppdatera priser");
+      }
+    } catch (error) {
+      console.error('[Admin] Error updating prices:', error);
+      setError(error instanceof Error ? error.message : "Okänt fel");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const getStatusIcon = (success: boolean) => {
+    return success ? (
+      <CheckCircle className="w-4 h-4 text-green-500" />
+    ) : (
+      <XCircle className="w-4 h-4 text-red-500" />
+    );
+  };
+
+  const getStatusColor = (success: boolean) => {
+    return success ? "text-green-700 bg-green-50 border-green-200" : "text-red-700 bg-red-50 border-red-200";
+  };
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-6xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl shadow-sm border p-6"
+        >
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Prisuppdateringar</h1>
+              <p className="text-gray-600 mt-1">
+                Hantera automatiska uppdateringar av fastpriser från externa leverantörer
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-2 text-sm text-gray-500">
+                <Clock className="w-4 h-4" />
+                Automatisk uppdatering: 00:05 varje natt
+              </div>
+            </div>
+          </div>
+
+          {/* Manuell uppdatering */}
+          <div className="bg-gray-50 rounded-lg p-6 mb-6">
+            <h2 className="text-lg font-semibold mb-4">Manuell prisuppdatering</h2>
+            <p className="text-gray-600 mb-4">
+              Kör prisuppdatering manuellt för att testa systemet eller uppdatera priser direkt.
+            </p>
+            
+            <button
+              onClick={handleUpdatePrices}
+              disabled={isUpdating}
+              className={`inline-flex items-center gap-2 px-4 py-2 rounded-lg font-medium transition-colors ${
+                isUpdating
+                  ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              {isUpdating ? (
+                <>
+                  <RefreshCw className="w-4 h-4 animate-spin" />
+                  Uppdaterar priser...
+                </>
+              ) : (
+                <>
+                  <RefreshCw className="w-4 h-4" />
+                  Uppdatera priser nu
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Error display */}
+          {error && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
+            >
+              <div className="flex items-center gap-2">
+                <AlertCircle className="w-5 h-5 text-red-500" />
+                <h3 className="font-medium text-red-800">Fel vid prisuppdatering</h3>
+              </div>
+              <p className="text-red-700 mt-1">{error}</p>
+            </motion.div>
+          )}
+
+          {/* Last update results */}
+          {lastUpdate && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="bg-white border rounded-lg p-6"
+            >
+              <div className="flex items-center gap-2 mb-4">
+                <CheckCircle className="w-5 h-5 text-green-500" />
+                <h3 className="text-lg font-semibold">Senaste uppdatering</h3>
+                <span className="text-sm text-gray-500">
+                  ({lastUpdate.summary.successful} lyckades, {lastUpdate.summary.errors} fel)
+                </span>
+              </div>
+
+              <div className="grid gap-3">
+                {lastUpdate.results.map((result, index) => (
+                  <motion.div
+                    key={index}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor(result.success)}`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {getStatusIcon(result.success)}
+                      <div>
+                        <p className="font-medium">{result.provider}</p>
+                        <p className="text-sm opacity-75">
+                          {result.action === 'created' && 'Skapad ny leverantör'}
+                          {result.action === 'updated' && 'Uppdaterad befintlig leverantör'}
+                          {result.action === 'fetch_failed' && 'Kunde inte hämta priser'}
+                          {result.action === 'error' && 'Fel vid bearbetning'}
+                        </p>
+                      </div>
+                    </div>
+                    {result.error && (
+                      <div className="text-sm opacity-75">
+                        {result.error}
+                      </div>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {/* Information om leverantörer */}
+          <div className="mt-8 bg-blue-50 rounded-lg p-6">
+            <h3 className="text-lg font-semibold mb-4">Leverantörer som uppdateras</h3>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[
+                { name: "Cheap Energy", endpoint: "cheapenergy_v2" },
+                { name: "Energi2", endpoint: "energi2_v2" },
+                { name: "Stockholms El", endpoint: "sthlmsel_v2" },
+                { name: "Svealands EL", endpoint: "svealandsel_v2" },
+                { name: "Svekraft", endpoint: "svekraft_v2" },
+                { name: "Motala El", endpoint: "motala_v2" }
+              ].map((provider) => (
+                <div key={provider.endpoint} className="bg-white rounded-lg p-3 border">
+                  <h4 className="font-medium text-gray-900">{provider.name}</h4>
+                  <p className="text-sm text-gray-500">{provider.endpoint}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

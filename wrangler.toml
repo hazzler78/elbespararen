@@ -1,28 +1,23 @@
-# Cloudflare Pages konfiguration för Elbespararen v7
-# Next.js med @cloudflare/next-on-pages
-
 name = "elbespararen"
-compatibility_date = "2025-03-25"
-# OpenNext output directory
-# Use a stable output directory name produced by our build script
-# next-on-pages output directory
-pages_build_output_dir = ".vercel/output/static"
+compatibility_date = "2024-01-01"
+pages_build_output_dir = ".next"
 
-# Node.js compatibility för att hantera node:stream och andra Node.js moduler
-compatibility_flags = ["nodejs_compat"]
-
-# Environment variables
-[vars]
-NODE_ENV = "production"
-
-# D1 Database konfiguration
 [[d1_databases]]
 binding = "DB"
 database_name = "elbespararen-db"
-database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" # Ersätt vid behov om ID:t ändras
-migrations_dir = "src/lib/database/migrations"
+database_id = "your-database-id-here"
 
-# Secrets (sätts via wrangler secret put)
-# OPENAI_API_KEY = "your-openai-api-key"
-# TELEGRAM_BOT_TOKEN = "your-telegram-bot-token"
-# TELEGRAM_CHAT_ID = "your-telegram-chat-id"
+# Cron job för att uppdatera priser varje natt kl 00:05
+[[triggers]]
+crons = ["5 0 * * *"]
+
+[env.production]
+name = "elbespararen-prod"
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "elbespararen-db"
+database_id = "your-database-id-here"
+
+[env.production.triggers]
+crons = ["5 0 * * *"]
