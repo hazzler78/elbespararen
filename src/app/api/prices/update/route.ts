@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
+import type { ContractAlternative } from "@/lib/types";
 
 export const runtime = 'edge';
 
@@ -45,13 +46,7 @@ interface PriceData {
   bindningstid?: number;
   gratis_månader?: number;
   features?: string[];
-  avtalsalternativ?: Array<{
-    namn: string;
-    fastpris?: number;
-    månadskostnad?: number;
-    bindningstid?: number;
-    gratis_månader?: number;
-  }>;
+  avtalsalternativ?: ContractAlternative[];
 }
 
 interface ProviderPriceResponse {
@@ -126,7 +121,7 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
   const variableRates = data.variable_monthly_rate || {};
   
   // Skapa avtalsalternativ från fastpris-data
-  const avtalsalternativ = [];
+  const avtalsalternativ: ContractAlternative[] = [];
   
   // Lägg till fastpris-alternativ för alla prisområden (se1, se2, se3, se4)
   Object.values(fixedPrices).forEach((regionData: any) => {
