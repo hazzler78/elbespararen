@@ -14,7 +14,6 @@ const nextConfig = {
   },
   // Optimize for Cloudflare Pages - reduce bundle size
   experimental: {
-    optimizeCss: true,
     optimizePackageImports: ['framer-motion', 'lucide-react'],
   },
   // ESLint configuration - behandla warnings som warnings, inte errors
