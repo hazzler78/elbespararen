@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone } from "lucide-react";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 

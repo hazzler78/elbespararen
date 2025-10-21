@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion } from "framer-motion";
 import { RefreshCw, Clock, CheckCircle, XCircle, AlertCircle } from "lucide-react";
 
 interface UpdateResult {
@@ -73,11 +72,7 @@ export default function PriceUpdatesAdminPage() {
   return (
     <div className="min-h-screen bg-gray-50 p-6">
       <div className="max-w-6xl mx-auto">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-xl shadow-sm border p-6"
-        >
+        <div className="bg-white rounded-xl shadow-sm border p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Prisuppdateringar</h1>
@@ -125,26 +120,18 @@ export default function PriceUpdatesAdminPage() {
 
           {/* Error display */}
           {error && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6"
-            >
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center gap-2">
                 <AlertCircle className="w-5 h-5 text-red-500" />
                 <h3 className="font-medium text-red-800">Fel vid prisuppdatering</h3>
               </div>
               <p className="text-red-700 mt-1">{error}</p>
-            </motion.div>
+            </div>
           )}
 
           {/* Last update results */}
           {lastUpdate && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-white border rounded-lg p-6"
-            >
+            <div className="bg-white border rounded-lg p-6">
               <div className="flex items-center gap-2 mb-4">
                 <CheckCircle className="w-5 h-5 text-green-500" />
                 <h3 className="text-lg font-semibold">Senaste uppdatering</h3>
@@ -155,11 +142,8 @@ export default function PriceUpdatesAdminPage() {
 
               <div className="grid gap-3">
                 {lastUpdate.results.map((result, index) => (
-                  <motion.div
+                  <div
                     key={index}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
                     className={`flex items-center justify-between p-3 rounded-lg border ${getStatusColor(result.success)}`}
                   >
                     <div className="flex items-center gap-3">
@@ -179,10 +163,10 @@ export default function PriceUpdatesAdminPage() {
                         {result.error}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
                 ))}
               </div>
-            </motion.div>
+            </div>
           )}
 
           {/* Information om leverantörer */}
@@ -204,7 +188,7 @@ export default function PriceUpdatesAdminPage() {
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );
