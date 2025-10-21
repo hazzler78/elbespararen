@@ -45,8 +45,6 @@ interface FormData {
   currentProviderName: string;
   currentCustomerNumber: string;
   currentContractEndDate: string;
-  currentNoticePeriod: string;
-  hasFixedContract: boolean;
 }
 
 const steps = [
@@ -61,6 +59,13 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [completedSwitchRequest, setCompletedSwitchRequest] = useState<SwitchRequest | null>(null);
+  // Beräkna 14 dagar framåt som standard datum
+  const getDefaultContractEndDate = () => {
+    const date = new Date();
+    date.setDate(date.getDate() + 14);
+    return date.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState<FormData>({
     firstName: "",
     lastName: "",
@@ -77,9 +82,7 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
     city: "",
     currentProviderName: "",
     currentCustomerNumber: "",
-    currentContractEndDate: "",
-    currentNoticePeriod: "30",
-    hasFixedContract: false
+    currentContractEndDate: getDefaultContractEndDate()
   });
 
   const updateFormData = (field: keyof FormData, value: string | boolean) => {
@@ -126,8 +129,6 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
         name: formData.currentProviderName,
         customerNumber: formData.currentCustomerNumber,
         contractEndDate: formData.currentContractEndDate,
-        noticePeriod: parseInt(formData.currentNoticePeriod),
-        hasFixedContract: formData.hasFixedContract,
         currentMonthlyCost: billData.totalAmount
       };
 
@@ -467,37 +468,22 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Avtalslutdatum</label>
+                      <label className="block text-sm font-medium mb-1">När vill du byta leverantör?</label>
                       <input
                         type="date"
                         value={formData.currentContractEndDate}
                         onChange={(e) => updateFormData('currentContractEndDate', e.target.value)}
+                        min={getDefaultContractEndDate()}
+                        max={(() => {
+                          const maxDate = new Date();
+                          maxDate.setMonth(maxDate.getMonth() + 3);
+                          return maxDate.toISOString().split('T')[0];
+                        })()}
                         className="w-full border border-border rounded-lg px-3 py-2"
                       />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Uppsägningstid (dagar)</label>
-                      <input
-                        type="number"
-                        value={formData.currentNoticePeriod}
-                        onChange={(e) => updateFormData('currentNoticePeriod', e.target.value)}
-                        className="w-full border border-border rounded-lg px-3 py-2"
-                      />
-                    </div>
-                  </div>
-                  
-                  <div className="mt-4">
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="hasFixedContract"
-                        checked={formData.hasFixedContract}
-                        onChange={(e) => updateFormData('hasFixedContract', e.target.checked)}
-                        className="mt-1"
-                      />
-                      <label htmlFor="hasFixedContract" className="text-sm">
-                        Jag har ett fastprisavtal (bindningstid)
-                      </label>
+                      <p className="text-xs text-muted mt-1">
+                        Du kan välja datum från idag upp till 3 månader framåt
+                      </p>
                     </div>
                   </div>
                 </div>

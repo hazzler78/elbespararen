@@ -106,8 +106,6 @@ export interface CurrentProviderInfo {
   name: string;
   customerNumber?: string;
   contractEndDate?: string;
-  noticePeriod?: number; // Dagar
-  hasFixedContract: boolean;
   currentMonthlyCost: number;
 }
 
