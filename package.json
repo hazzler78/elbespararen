@@ -3,7 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev --turbopack",
+    "dev": "wrangler pages dev --compatibility-date=2025-03-25 --d1=DB=elbespararen-db -- npm run dev:next",
+    "dev:next": "next dev --turbopack",
     "build": "next build",
     "build:cloudflare": "npx @cloudflare/next-on-pages",
     "build:worker": "npx @cloudflare/next-on-pages",
@@ -16,8 +17,10 @@
     "verify": "node scripts/verify-setup.js",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:migrate": "wrangler d1 migrations apply elbespararen-db",
+    "db:migrate:remote": "wrangler d1 migrations apply elbespararen-db --remote",
     "db:create": "wrangler d1 create elbespararen-db",
-    "db:seed": "wrangler d1 execute elbespararen-db --file=src/lib/database/seed.sql"
+    "db:seed": "wrangler d1 execute elbespararen-db --file=scripts/seed-simple.sql",
+    "db:seed:remote": "wrangler d1 execute elbespararen-db --remote --file=scripts/seed-simple.sql"
   },
   "dependencies": {
     "framer-motion": "^12.23.24",
