@@ -297,9 +297,9 @@ class CloudflareDatabase implements Database {
       providerData.contractLength,
       providerData.isActive ? 1 : 0,
       JSON.stringify(providerData.features),
-      providerData.logoUrl,
-      providerData.websiteUrl,
-      providerData.phoneNumber,
+      providerData.logoUrl || null,
+      providerData.websiteUrl || null,
+      providerData.phoneNumber || null,
       now,
       now
     ).run();
