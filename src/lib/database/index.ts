@@ -336,9 +336,9 @@ class CloudflareDatabase implements Database {
       updated.contractLength,
       updated.isActive ? 1 : 0,
       JSON.stringify(updated.features),
-      updated.logoUrl,
-      updated.websiteUrl,
-      updated.phoneNumber,
+      updated.logoUrl || null,
+      updated.websiteUrl || null,
+      updated.phoneNumber || null,
       now,
       id
     ).run();
