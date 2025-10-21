@@ -1,22 +1,14 @@
-# Cloudflare deployment ignore
-# Exkludera stora filer som inte behövs
-
+# Ignore cache files
 .next/cache/
+cache/
+*.pack
+
+# Ignore development files
 node_modules/
 .git/
-.env*
-*.log
-.DS_Store
-README.md
-*.md
-docs/
-.vscode/
-.idea/
-test/
-tests/
-__tests__/
-*.test.ts
-*.test.tsx
-*.spec.ts
-*.spec.tsx
+.env.local
+.env.development
 
+# Ignore build artifacts
+.vercel/
+*.log
