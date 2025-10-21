@@ -13,6 +13,7 @@ const nextConfig = {
         ...config.optimization,
         splitChunks: {
           chunks: 'all',
+          maxSize: 200000, // 200KB max per chunk
           cacheGroups: {
             default: {
               minChunks: 2,
@@ -24,8 +25,34 @@ const nextConfig = {
               name: 'vendors',
               priority: -10,
               chunks: 'all',
+              maxSize: 200000,
+            },
+            framer: {
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+              name: 'framer-motion',
+              priority: 10,
+              chunks: 'all',
+              maxSize: 100000,
+            },
+            lucide: {
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+              name: 'lucide-react',
+              priority: 10,
+              chunks: 'all',
+              maxSize: 50000,
             },
           },
+        },
+      };
+    }
+    
+    // Reduce server bundle size
+    if (isServer) {
+      config.optimization = {
+        ...config.optimization,
+        splitChunks: {
+          chunks: 'all',
+          maxSize: 200000,
         },
       };
     }
@@ -42,6 +69,9 @@ const nextConfig = {
   },
   // Disable source maps to reduce build size
   productionBrowserSourceMaps: false,
+  // Reduce build size
+  compress: true,
+  poweredByHeader: false,
   // ESLint configuration - behandla warnings som warnings, inte errors
   eslint: {
     // Cloudflare buildmiljö saknar eslint, hoppa över under build
