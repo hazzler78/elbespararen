@@ -108,3 +108,109 @@ export async function GET() {
     );
   }
 }
+
+export async function PUT(request: NextRequest) {
+  try {
+    // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    console.log('[switch-requests] PUT - env:', env);
+    console.log('[switch-requests] PUT - DB binding:', env?.DB);
+    const db = createDatabaseFromBinding(env?.DB);
+    const body = await request.json() as Record<string, unknown>;
+    
+    if (!body.id) {
+      return NextResponse.json(
+        { success: false, error: "Switch request ID är obligatoriskt" },
+        { status: 400 }
+      );
+    }
+
+    const updatedSwitchRequest = await db.updateSwitchRequest(String(body.id), {
+      status: body.status ? (body.status as import("@/lib/types").SwitchStatus) : undefined,
+      notes: body.notes ? String(body.notes) : undefined
+    });
+
+    return NextResponse.json({
+      success: true,
+      data: updatedSwitchRequest
+    });
+  } catch (error) {
+    console.error("[switch-requests] PUT error:", error);
+    return NextResponse.json(
+      { success: false, error: "Kunde inte uppdatera bytförfrågan" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(request: NextRequest) {
+  try {
+    // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    console.log('[switch-requests] DELETE - env:', env);
+    console.log('[switch-requests] DELETE - DB binding:', env?.DB);
+    const db = createDatabaseFromBinding(env?.DB);
+    
+    const url = new URL(request.url);
+    const id = url.searchParams.get('id');
+    
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Switch request ID är obligatoriskt" },
+        { status: 400 }
+      );
+    }
+
+    const success = await db.deleteSwitchRequest(id);
+
+    if (!success) {
+      return NextResponse.json(
+        { success: false, error: "Bytförfrågan hittades inte" },
+        { status: 404 }
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      message: "Bytförfrågan borttagen"
+    });
+  } catch (error) {
+    console.error("[switch-requests] DELETE error:", error);
+    return NextResponse.json(
+      { success: false, error: "Kunde inte ta bort bytförfrågan" },
+      { status: 500 }
+    );
+  }
+}

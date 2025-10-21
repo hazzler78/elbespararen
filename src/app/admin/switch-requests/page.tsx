@@ -43,6 +43,62 @@ export default function SwitchRequestsAdminPage() {
     }
   };
 
+  const updateSwitchRequestStatus = async (id: string, status: string) => {
+    try {
+      console.log('[Admin] Updating switch request status:', id, status);
+      const response = await fetch("/api/switch-requests", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          status
+        }),
+      });
+
+      const result = await response.json() as ApiResponse<SwitchRequest>;
+      
+      if (result.success && result.data) {
+        setSwitchRequests(switchRequests.map(req => req.id === id ? result.data! : req));
+        alert('✅ Status uppdaterad!');
+      } else {
+        alert('❌ Kunde inte uppdatera status: ' + (result.error || 'Okänt fel'));
+      }
+    } catch (error) {
+      console.error("Error updating switch request status:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
+  };
+
+  const addNoteToSwitchRequest = async (id: string, note: string) => {
+    try {
+      console.log('[Admin] Adding note to switch request:', id, note);
+      const response = await fetch("/api/switch-requests", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          id,
+          notes: note
+        }),
+      });
+
+      const result = await response.json() as ApiResponse<SwitchRequest>;
+      
+      if (result.success && result.data) {
+        setSwitchRequests(switchRequests.map(req => req.id === id ? result.data! : req));
+        alert('✅ Anteckning tillagd!');
+      } else {
+        alert('❌ Kunde inte lägga till anteckning: ' + (result.error || 'Okänt fel'));
+      }
+    } catch (error) {
+      console.error("Error adding note to switch request:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
+  };
+
   const filteredRequests = filter === "all" 
     ? switchRequests 
     : switchRequests.filter(req => req.status === filter);
@@ -292,8 +348,80 @@ export default function SwitchRequestsAdminPage() {
                     </div>
 
                     {/* Referensnummer */}
-                    <div className="text-xs text-muted">
+                    <div className="text-xs text-muted mb-4">
                       Referensnummer: {request.id}
+                    </div>
+
+                    {/* Admin Actions */}
+                    <div className="border-t border-border pt-4">
+                      <div className="flex flex-wrap gap-3 mb-4">
+                        {/* Status Update Buttons */}
+                        <div className="flex gap-2">
+                          {request.status !== "processing" && (
+                            <button
+                              onClick={() => updateSwitchRequestStatus(request.id, "processing")}
+                              className="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors"
+                            >
+                              Markera som bearbetas
+                            </button>
+                          )}
+                          {request.status !== "completed" && (
+                            <button
+                              onClick={() => updateSwitchRequestStatus(request.id, "completed")}
+                              className="px-3 py-1 bg-success text-white text-sm rounded-lg hover:bg-success/90 transition-colors"
+                            >
+                              Markera som slutförd
+                            </button>
+                          )}
+                          {request.status !== "cancelled" && (
+                            <button
+                              onClick={() => updateSwitchRequestStatus(request.id, "cancelled")}
+                              className="px-3 py-1 bg-error text-white text-sm rounded-lg hover:bg-error/90 transition-colors"
+                            >
+                              Avbryt
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Notes Section */}
+                      <div className="bg-gray-50 rounded-lg p-4">
+                        <h5 className="font-medium mb-2">Anteckningar</h5>
+                        {request.notes ? (
+                          <p className="text-sm text-muted mb-3">{request.notes}</p>
+                        ) : (
+                          <p className="text-sm text-muted mb-3 italic">Inga anteckningar än</p>
+                        )}
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            placeholder="Lägg till anteckning..."
+                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm"
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                const note = e.currentTarget.value.trim();
+                                if (note) {
+                                  addNoteToSwitchRequest(request.id, note);
+                                  e.currentTarget.value = '';
+                                }
+                              }
+                            }}
+                          />
+                          <button
+                            onClick={(e) => {
+                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                              const note = input.value.trim();
+                              if (note) {
+                                addNoteToSwitchRequest(request.id, note);
+                                input.value = '';
+                              }
+                            }}
+                            className="px-3 py-2 bg-secondary text-white text-sm rounded-lg hover:bg-secondary/90 transition-colors"
+                          >
+                            Lägg till
+                          </button>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 );
@@ -307,11 +435,11 @@ export default function SwitchRequestsAdminPage() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="mt-8 p-4 bg-primary/5 border border-primary/10 rounded-lg"
+          className="mt-8 p-4 bg-success/5 border border-success/10 rounded-lg"
         >
           <p className="text-sm text-muted text-center">
-            💡 <strong>Tips:</strong> Bytförfrågningar sparas för närvarande i mock data. 
-            För produktion, konfigurera Cloudflare D1 eller Supabase.
+            ✅ <strong>Klart!</strong> Bytförfrågningar sparas nu i Cloudflare D1 databasen. 
+            Du kan uppdatera status och lägga till anteckningar för varje förfrågan.
           </p>
         </motion.div>
       </div>
