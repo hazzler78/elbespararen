@@ -48,9 +48,10 @@ export interface ElectricityProvider {
   name: string;
   description: string;
   monthlyFee: number; // kr/månad
-  energyPrice: number; // kr/kWh
+  energyPrice: number; // kr/kWh (för rörligt avtal) eller fastpris (för fastprisavtal)
   freeMonths: number; // Antal gratis månader
   contractLength: number; // Månader
+  contractType: "rörligt" | "fastpris"; // Avtalstyp
   isActive: boolean;
   features: string[];
   logoUrl?: string;

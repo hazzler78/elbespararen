@@ -157,7 +157,9 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   </p>
                 </div>
                 <div>
-                  <p className="text-sm text-muted">Påslag</p>
+                  <p className="text-sm text-muted">
+                    {bestOption.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
+                  </p>
                   <p className="font-semibold">{bestOption.provider.energyPrice} kr/kWh</p>
                 </div>
               </div>
@@ -239,7 +241,9 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                 </p>
               </div>
               <div>
-                <p className="text-sm text-muted">Påslag</p>
+                <p className="text-sm text-muted">
+                  {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
+                </p>
                 <p className="font-semibold">{comparison.provider.energyPrice} kr/kWh</p>
               </div>
             </div>

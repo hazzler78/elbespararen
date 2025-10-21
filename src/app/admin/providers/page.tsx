@@ -244,6 +244,12 @@ export default function ProvidersAdminPage() {
                           <p className="text-muted">Bindningstid</p>
                           <p className="font-semibold">{provider.contractLength} mån</p>
                         </div>
+                        <div>
+                          <p className="text-muted">Avtalstyp</p>
+                          <p className="font-semibold">
+                            {provider.contractType === "rörligt" ? "Rörligt" : "Fastpris"}
+                          </p>
+                        </div>
                       </div>
 
                       <div className="flex flex-wrap gap-2 mt-3">
@@ -383,6 +389,7 @@ function ProviderForm({
     energyPrice: provider?.energyPrice || 0,
     freeMonths: provider?.freeMonths || 0,
     contractLength: provider?.contractLength || 12,
+    contractType: provider?.contractType || "rörligt" as "rörligt" | "fastpris",
     isActive: provider?.isActive ?? true,
     features: provider?.features || [],
     websiteUrl: provider?.websiteUrl || "",
@@ -489,6 +496,24 @@ function ProviderForm({
                 onChange={(e) => setFormData({ ...formData, contractLength: Number(e.target.value) })}
                 className="w-full border border-border rounded-lg px-3 py-2"
               />
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Avtalstyp *</label>
+              <select
+                value={formData.contractType}
+                onChange={(e) => setFormData({ ...formData, contractType: e.target.value as "rörligt" | "fastpris" })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+                required
+              >
+                <option value="rörligt">Rörligt avtal (påslag på spotpris)</option>
+                <option value="fastpris">Fastprisavtal (fast pris per kWh)</option>
+              </select>
+              <p className="text-xs text-muted mt-1">
+                {formData.contractType === "rörligt" 
+                  ? "Priset varierar med spotpriset + påslag" 
+                  : "Fast pris per kWh under hela avtalsperioden"}
+              </p>
             </div>
 
             <div>

@@ -14,6 +14,7 @@ const mockProviders: ElectricityProvider[] = [
     energyPrice: 0.45,
     freeMonths: 12,
     contractLength: 12,
+    contractType: "rörligt",
     isActive: true,
     features: [
       "0 kr månadskostnad",
@@ -35,6 +36,7 @@ const mockProviders: ElectricityProvider[] = [
     energyPrice: 0.52,
     freeMonths: 0,
     contractLength: 24,
+    contractType: "rörligt",
     isActive: true,
     features: [
       "100% förnybar energi",
@@ -241,6 +243,7 @@ class CloudflareDatabase implements Database {
       energyPrice: Number(row.energy_price),
       freeMonths: Number(row.free_months),
       contractLength: Number(row.contract_length),
+      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
       isActive: Boolean(row.is_active),
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
@@ -267,6 +270,7 @@ class CloudflareDatabase implements Database {
       energyPrice: Number(row.energy_price),
       freeMonths: Number(row.free_months),
       contractLength: Number(row.contract_length),
+      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
       isActive: Boolean(row.is_active),
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
@@ -284,9 +288,9 @@ class CloudflareDatabase implements Database {
     await this.db.prepare(`
       INSERT INTO electricity_providers (
         id, name, description, monthly_fee, energy_price, free_months, 
-        contract_length, is_active, features, logo_url, website_url, 
+        contract_length, contract_type, is_active, features, logo_url, website_url, 
         phone_number, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
       providerData.name,
@@ -295,6 +299,7 @@ class CloudflareDatabase implements Database {
       providerData.energyPrice,
       providerData.freeMonths,
       providerData.contractLength,
+      providerData.contractType,
       providerData.isActive ? 1 : 0,
       JSON.stringify(providerData.features),
       providerData.logoUrl || null,
@@ -324,7 +329,7 @@ class CloudflareDatabase implements Database {
     await this.db.prepare(`
       UPDATE electricity_providers SET
         name = ?, description = ?, monthly_fee = ?, energy_price = ?,
-        free_months = ?, contract_length = ?, is_active = ?, features = ?,
+        free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
         logo_url = ?, website_url = ?, phone_number = ?, updated_at = ?
       WHERE id = ?
     `).bind(
@@ -334,6 +339,7 @@ class CloudflareDatabase implements Database {
       updated.energyPrice,
       updated.freeMonths,
       updated.contractLength,
+      updated.contractType,
       updated.isActive ? 1 : 0,
       JSON.stringify(updated.features),
       updated.logoUrl || null,
