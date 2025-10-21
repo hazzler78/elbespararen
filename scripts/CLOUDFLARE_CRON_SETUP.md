@@ -1,7 +1,15 @@
 # 🕐 Cloudflare Pages Cron Jobs Setup
 
 ## Viktigt! 
-Cloudflare Pages stöder INTE `triggers` i wrangler.toml. Vi måste använda Cloudflare Dashboard för att sätta upp Cron Jobs.
+Cloudflare Pages använder **Pages Functions** för cron jobs, inte wrangler.toml triggers.
+
+## Pages Functions Struktur
+
+Vi har nu skapat:
+- **`functions/_cron.ts`** - Cron trigger function som körs automatiskt
+- **`functions/_middleware.ts`** - Middleware för att hantera cron requests
+
+Enligt [Cloudflare Pages Functions dokumentationen](https://developers.cloudflare.com/pages/functions/) använder vi `/functions` directory för att integrera med Workers direkt inom Pages projekt.
 
 ## Setup via Cloudflare Dashboard
 
@@ -15,7 +23,7 @@ Cloudflare Pages stöder INTE `triggers` i wrangler.toml. Vi måste använda Clo
 2. Klicka **"Set up Cron Triggers"**
 3. Lägg till ny cron trigger:
    - **Cron expression:** `5 0 * * *` (00:05 varje dag)
-   - **Function route:** `/api/cron/prices`
+   - **Function:** `_cron` (vår functions/_cron.ts fil)
 
 ### Steg 3: Sätta miljövariabler
 1. Gå till **Settings** → **Environment Variables**
