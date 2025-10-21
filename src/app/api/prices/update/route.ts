@@ -169,49 +169,7 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
 
 // Parser funktioner för varje leverantör
 function parseCheapEnergy(data: any): PriceData {
-  // Cheap Energy struktur - hantera riktig JSON-struktur
-  const fixedPrices = data.fixed_prices || {};
-  const variableRates = data.variable_monthly_rate || {};
-  
-  // Skapa avtalsalternativ från fixed_prices
-  const avtalsalternativ = [];
-  
-  // Lägg till fastpris-alternativ för alla prisområden
-  Object.values(fixedPrices).forEach((regionData: any) => {
-    if (regionData && typeof regionData === 'object') {
-      Object.entries(regionData).forEach(([period, priceData]: [string, any]) => {
-      const months = period === '3_months' ? 3 : 
-                    period === '6_months' ? 6 : 
-                    period === '1_year' ? 12 : 
-                    period === '2_years' ? 24 : 
-                    period === '3_years' ? 36 : 
-                    period === '4_years' ? 48 : 
-                    period === '5_years' ? 60 : 
-                    period === '10_years' ? 120 : 12;
-      
-      avtalsalternativ.push({
-        namn: `${months} månader`,
-        fastpris: priceData.price / 100, // Konvertera från öre till kr
-        månadskostnad: priceData.monthly_fee || 0,
-        bindningstid: months,
-        gratis_månader: 0
-      });
-    });
-  }
-  
-  // Ta det bästa alternativet (1 år)
-  const bestAlternativ = avtalsalternativ.find(a => a.bindningstid === 12) || avtalsalternativ[0];
-  
-  return {
-    fastpris: bestAlternativ?.fastpris || 0.5, // Fallback till 50 öre/kWh
-    månadskostnad: bestAlternativ?.månadskostnad || 0,
-    påslag: 0, // Fastpris har inget påslag
-    beskrivning: "Billigaste alternativet med låga fastpriser",
-    bindningstid: bestAlternativ?.bindningstid || 12,
-    gratis_månader: bestAlternativ?.gratis_månader || 0,
-    features: ["Låga fastpriser", "Ingen bindningstid"],
-    avtalsalternativ: avtalsalternativ
-  };
+  return parseProviderPrices(data, "Cheap Energy");
 }
 
 function parseEnergi2(data: any): PriceData {
