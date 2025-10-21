@@ -17,7 +17,7 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
   // men justera energipriset för att matcha
   const targetTotalCost = cheapestAlternative;
   const availableForEnergy = targetTotalCost - elnatCost;
-  const energyPrice = availableForEnergy / totalKWh;
+  const energyPrice = Number((availableForEnergy / totalKWh).toFixed(2)); // Avrunda till 2 decimaler
   const energyCost = totalKWh * energyPrice;
   
   // Beräkna månadskostnad (0 kr under gratisperioden)

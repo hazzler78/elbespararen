@@ -73,6 +73,13 @@ export function formatCurrency(amount: number): string {
 }
 
 /**
+ * Formaterar pris per kWh till 2 decimaler
+ */
+export function formatPricePerKwh(price: number): string {
+  return `${Number(price).toFixed(2)} kr/kWh`;
+}
+
+/**
  * Returnerar färgklass baserat på confidence
  */
 export function getConfidenceColor(confidence: number): string {

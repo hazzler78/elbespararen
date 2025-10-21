@@ -550,7 +550,7 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                         <p className="text-muted">
                           {provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                         </p>
-                        <p className="font-semibold">{provider.energyPrice} kr/kWh</p>
+                        <p className="font-semibold">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
                       </div>
                     </div>
                   </div>

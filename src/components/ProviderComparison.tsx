@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
-import { formatCurrency } from "@/lib/calculations";
+import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import SwitchProcess from "./SwitchProcess";
 
 interface ProviderComparisonProps {
@@ -191,7 +191,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                     >
                       {bestOption.provider.avtalsalternativ.map((contract, index) => (
                         <option key={index} value={index}>
-                          {contract.namn} - {contract.fastpris} kr/kWh
+                          {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
                         </option>
                       ))}
                     </select>
@@ -219,7 +219,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                     {(() => {
                       const selectedContract = getSelectedContract(bestOption.provider);
                       const price = selectedContract?.fastpris || bestOption.provider.energyPrice;
-                      return `${price} kr/kWh`;
+                      return formatPricePerKwh(price);
                     })()}
                   </p>
                 </div>
@@ -308,7 +308,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   >
                     {comparison.provider.avtalsalternativ.map((contract, contractIndex) => (
                       <option key={contractIndex} value={contractIndex}>
-                        {contract.namn} - {contract.fastpris} kr/kWh
+                        {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
                       </option>
                     ))}
                   </select>
@@ -336,7 +336,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   {(() => {
                     const selectedContract = getSelectedContract(comparison.provider);
                     const price = selectedContract?.fastpris || comparison.provider.energyPrice;
-                    return `${price} kr/kWh`;
+                    return formatPricePerKwh(price);
                   })()}
                 </p>
               </div>

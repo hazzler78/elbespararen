@@ -204,7 +204,7 @@ export default function ProvidersAdminPage() {
                         </div>
                         <div>
                           <p className="text-muted">Påslag</p>
-                          <p className="font-semibold">{provider.energyPrice} kr/kWh</p>
+                          <p className="font-semibold">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
                         </div>
                         <div>
                           <p className="text-muted">Gratis månader</p>

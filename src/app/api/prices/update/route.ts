@@ -139,7 +139,7 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
         
         avtalsalternativ.push({
           namn: `${months} månader`,
-          fastpris: priceData.price / 100, // Konvertera från öre till kr
+          fastpris: Number((priceData.price / 100).toFixed(2)), // Konvertera från öre till kr och avrunda till 2 decimaler
           månadskostnad: priceData.monthly_fee || 0,
           bindningstid: months,
           gratis_månader: 0
@@ -152,7 +152,7 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
   const bestAlternativ = avtalsalternativ.find(a => a.bindningstid === 12) || avtalsalternativ[0];
   
   return {
-    fastpris: bestAlternativ?.fastpris || 0.5, // Fallback till 50 öre/kWh
+    fastpris: Number((bestAlternativ?.fastpris || 0.5).toFixed(2)), // Fallback till 50 öre/kWh, avrunda till 2 decimaler
     månadskostnad: bestAlternativ?.månadskostnad || 0,
     påslag: 0, // Fastpris har inget påslag
     beskrivning: `${providerName} fastpris - flera avtalsalternativ tillgängliga`,
