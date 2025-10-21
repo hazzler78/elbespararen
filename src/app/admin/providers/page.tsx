@@ -33,6 +33,7 @@ export default function ProvidersAdminPage() {
 
   const handleAddProvider = async (providerData: Partial<ElectricityProvider>) => {
     try {
+      console.log('[Admin] Adding provider:', providerData);
       const response = await fetch("/api/providers", {
         method: "POST",
         headers: {
@@ -41,14 +42,22 @@ export default function ProvidersAdminPage() {
         body: JSON.stringify(providerData),
       });
 
+      console.log('[Admin] Response status:', response.status);
       const result = await response.json() as ApiResponse<ElectricityProvider>;
+      console.log('[Admin] Response result:', result);
       
       if (result.success && result.data) {
         setProviders([...providers, result.data]);
         setShowAddForm(false);
+        alert('✅ Leverantör tillagd!');
+        // Uppdatera listan
+        fetchProviders();
+      } else {
+        alert('❌ Kunde inte lägga till leverantör: ' + (result.error || 'Okänt fel'));
       }
     } catch (error) {
       console.error("Error adding provider:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
     }
   };
 
@@ -315,10 +324,16 @@ function ProviderForm({
   });
 
   const [newFeature, setNewFeature] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onSave(formData);
+    setIsSaving(true);
+    try {
+      await onSave(formData);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const addFeature = () => {
@@ -495,14 +510,16 @@ function ProviderForm({
           <div className="flex gap-3 pt-4">
             <button
               type="submit"
-              className="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors"
+              disabled={isSaving}
+              className="flex-1 bg-primary text-white py-2 px-4 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {provider ? "Uppdatera" : "Skapa"} leverantör
+              {isSaving ? "Sparar..." : (provider ? "Uppdatera" : "Skapa")} leverantör
             </button>
             <button
               type="button"
               onClick={onCancel}
-              className="flex-1 border border-border py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors"
+              disabled={isSaving}
+              className="flex-1 border border-border py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50"
             >
               Avbryt
             </button>
