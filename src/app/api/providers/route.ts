@@ -9,6 +9,8 @@ export async function GET() {
     // Hämta D1-binding från Edge-runtime
     // @ts-ignore - getRequestContext finns i next-on-pages runtime
     const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    console.log('[providers] GET - env:', env);
+    console.log('[providers] GET - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
     const providers = await db.getProviders();
     // Returnera endast aktiva leverantörer
@@ -31,6 +33,8 @@ export async function POST(request: NextRequest) {
   try {
     // @ts-ignore - getRequestContext finns i next-on-pages runtime
     const { env } = (globalThis as any).getRequestContext?.() ?? { env: {} };
+    console.log('[providers] POST - env:', env);
+    console.log('[providers] POST - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
     const body = await request.json() as Record<string, unknown>;
     
