@@ -196,7 +196,7 @@ async function cleanupDuplicateProviders(db: any) {
     // Gruppera leverantörer efter namn och avtalstyp
     const groupedProviders: Record<string, any[]> = {};
     
-    allProviders.forEach(provider => {
+    allProviders.forEach((provider: any) => {
       const key = `${provider.name.toLowerCase()}_${provider.contractType}`;
       if (!groupedProviders[key]) {
         groupedProviders[key] = [];
