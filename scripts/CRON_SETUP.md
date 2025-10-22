@@ -1,7 +1,7 @@
 # 🕐 Cloudflare Cron Jobs Setup
 
 ## Översikt
-Detta system uppdaterar automatiskt fastpriser från externa leverantörer varje natt kl 00:05.
+Detta system uppdaterar automatiskt fastpriser från externa leverantörer varje natt kl 00:05 svensk tid.
 
 ## Komponenter
 
@@ -22,7 +22,7 @@ Detta system uppdaterar automatiskt fastpriser från externa leverantörer varje
 ### Steg 1: Konfigurera wrangler.toml
 ```toml
 [[triggers]]
-crons = ["5 0 * * *"]  # 00:05 varje dag
+crons = ["5 22 * * *"]  # 00:05 svensk tid varje dag
 ```
 
 ### Steg 2: Sätta miljövariabler

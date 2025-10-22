@@ -22,7 +22,7 @@ Enligt [Cloudflare Pages Functions dokumentationen](https://developers.cloudflar
 1. Scrolla ner till **Cron Triggers**
 2. Klicka **"Set up Cron Triggers"**
 3. Lägg till ny cron trigger:
-   - **Cron expression:** `5 0 * * *` (00:05 varje dag)
+   - **Cron expression:** `5 22 * * *` (00:05 svensk tid varje dag)
    - **Function:** `_cron` (vår functions/_cron.ts fil)
 
 ### Steg 3: Sätta miljövariabler
@@ -33,7 +33,7 @@ Enligt [Cloudflare Pages Functions dokumentationen](https://developers.cloudflar
 
 ### Steg 4: Verifiera att det fungerar
 1. Gå till **Functions** → **Logs**
-2. Vänta till nästa dag kl 00:05 eller testa manuellt
+2. Vänta till nästa dag kl 00:05 svensk tid eller testa manuellt
 3. Kolla logs för `[Cron]` meddelanden
 
 ## Alternativ: Använda extern cron service
@@ -46,7 +46,7 @@ Om Cloudflare Pages inte stöder cron jobs kan vi använda en extern service:
 name: Price Update
 on:
   schedule:
-    - cron: '5 0 * * *'  # 00:05 UTC varje dag
+    - cron: '5 22 * * *'  # 00:05 svensk tid varje dag
   workflow_dispatch:  # Manuell körning
 
 jobs:
@@ -60,7 +60,7 @@ jobs:
 ```
 
 ### Uptime Robot eller liknande
-- Skapa en monitor som pingar `/api/prices/update` varje dag kl 00:05
+- Skapa en monitor som pingar `/api/prices/update` varje dag kl 00:05 svensk tid
 - Använd HTTP POST request
 
 ## Testning
@@ -84,7 +84,7 @@ curl -X GET "https://elbespararen.pages.dev/api/cron/prices" \
 3. **Använd extern cron service** som backup
 
 ### Vanliga problem:
-- **Cron expression fel:** Använd `5 0 * * *` för daglig 00:05
+- **Cron expression fel:** Använd `5 22 * * *` för daglig 00:05 svensk tid
 - **Miljövariabler:** Kontrollera att `CRON_SECRET` är satt
 - **Function route:** Måste vara `/api/cron/prices`
 

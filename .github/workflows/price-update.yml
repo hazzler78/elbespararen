@@ -2,8 +2,8 @@ name: Automatic Price Update
 
 on:
   schedule:
-    # Kör varje dag kl 00:05 UTC (02:05 svensk tid)
-    - cron: '5 0 * * *'
+    # Kör varje dag kl 22:05 UTC (00:05 svensk tid)
+    - cron: '5 22 * * *'
   workflow_dispatch: # Tillåter manuell körning
 
 jobs:
