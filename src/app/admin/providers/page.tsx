@@ -88,8 +88,7 @@ export default function ProvidersAdminPage() {
           return prevProviders.map(p => p.id === provider.id ? result.data! : p);
         });
         
-        // Refresh the page to ensure UI is in sync with database
-        window.location.reload();
+        alert('✅ Leverantör uppdaterad!');
       } else {
         alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
       }

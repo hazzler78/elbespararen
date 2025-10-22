@@ -28,12 +28,10 @@ export async function GET() {
     console.log('[providers] GET - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
     const providers = await db.getProviders();
-    // Returnera endast aktiva leverantörer
-    const activeProviders = providers.filter(p => p.isActive);
     
     return NextResponse.json({
       success: true,
-      data: activeProviders
+      data: providers
     });
   } catch (error) {
     console.error("[providers] GET error:", error);
