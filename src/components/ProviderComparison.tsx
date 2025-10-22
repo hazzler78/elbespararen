@@ -206,7 +206,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   alt={`${bestOption.provider.name} logo`}
                   data-provider-name={bestOption.provider.name}
                   onError={handleLogoError}
-                  className="h-16 w-auto object-contain"
+                  className="h-20 w-auto object-contain"
                   loading="lazy"
                 />
                 <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
@@ -325,7 +325,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                     alt={`${comparison.provider.name} logo`}
                     data-provider-name={comparison.provider.name}
                     onError={handleLogoError}
-                    className="h-10 w-auto object-contain"
+                    className="h-12 w-auto object-contain"
                     loading="lazy"
                   />
                   <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
