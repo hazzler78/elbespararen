@@ -288,34 +288,9 @@ export async function POST(request: NextRequest) {
             });
             successCount++;
 
-            // Om det finns flera avtalsalternativ, skapa ytterligare leverantörer
+            // Logga antal avtalsalternativ som lagras i den enda leverantören
             if (priceResponse.data.avtalsalternativ && priceResponse.data.avtalsalternativ.length > 1) {
-              console.log(`[Price Update] Creating additional contract alternatives for ${endpoint.providerName}`);
-              
-              for (let i = 1; i < priceResponse.data.avtalsalternativ.length; i++) {
-                const alternativ = priceResponse.data.avtalsalternativ[i];
-                const altProvider = await db.createProvider({
-                  name: `${endpoint.providerName} ${alternativ.namn}`,
-                  description: `${endpoint.providerName} - ${alternativ.namn}`,
-                  monthlyFee: alternativ.månadskostnad || 0,
-                  energyPrice: alternativ.fastpris || 1.0,
-                  freeMonths: alternativ.gratis_månader || 0,
-                  contractLength: alternativ.bindningstid || 12,
-                  contractType: "fastpris",
-                  isActive: true,
-                  features: [`${endpoint.providerName}`, alternativ.namn],
-                  websiteUrl: `https://${endpoint.url.split('//')[1].split('/')[0]}`,
-                  phoneNumber: undefined
-                });
-
-                updateResults.push({
-                  provider: `${endpoint.providerName} ${alternativ.namn}`,
-                  action: 'created_alternative',
-                  success: true,
-                  data: altProvider
-                });
-                successCount++;
-              }
+              console.log(`[Price Update] Storing ${priceResponse.data.avtalsalternativ.length} contract alternatives in single provider: ${endpoint.providerName}`);
             }
           } else {
             // Uppdatera befintlig Fastpris-leverantör (bara Fastpris!)
