@@ -74,10 +74,19 @@ export default function ProvidersAdminPage() {
         }),
       });
 
+      console.log('[Admin] Toggle response status:', response.status);
       const result = await response.json() as ApiResponse<ElectricityProvider>;
+      console.log('[Admin] Toggle response result:', result);
       
       if (result.success && result.data) {
-        setProviders(providers.map(p => p.id === provider.id ? result.data! : p));
+        // Use functional update to avoid stale closure issues
+        setProviders(prevProviders => {
+          if (!prevProviders || !Array.isArray(prevProviders)) {
+            console.error('[Admin] Providers state is not an array:', prevProviders);
+            return [];
+          }
+          return prevProviders.map(p => p.id === provider.id ? result.data! : p);
+        });
         alert('✅ Leverantör uppdaterad!');
       } else {
         alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
@@ -163,7 +172,7 @@ export default function ProvidersAdminPage() {
           <div className="bg-white rounded-lg border border-border p-6">
             <p className="text-sm text-muted uppercase tracking-wide mb-2">Billigaste pris</p>
             <p className="text-3xl font-bold text-secondary">
-              {Math.min(...providers.map(p => p.energyPrice)).toFixed(2)} kr/kWh
+              {providers && providers.length > 0 ? Math.min(...providers.map(p => p.energyPrice)).toFixed(2) : '0.00'} kr/kWh
             </p>
           </div>
         </div>
@@ -179,7 +188,7 @@ export default function ProvidersAdminPage() {
             </div>
           ) : (
             <div className="divide-y divide-border">
-              {providers.map((provider) => (
+              {providers && providers.length > 0 ? providers.map((provider) => (
                 <div key={provider.id} className="p-6 hover:bg-gray-50 transition-colors">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex-1">
@@ -288,7 +297,7 @@ export default function ProvidersAdminPage() {
                     <span>Skapad: {new Date(provider.createdAt).toLocaleDateString("sv-SE")}</span>
                   </div>
                 </div>
-              ))}
+              )) : null}
             </div>
           )}
         </div>
@@ -323,7 +332,13 @@ export default function ProvidersAdminPage() {
                 const result = await response.json() as ApiResponse<ElectricityProvider>;
                 
                 if (result.success && result.data) {
-                  setProviders(providers.map(p => p.id === editingProvider.id ? result.data! : p));
+                  setProviders(prevProviders => {
+                    if (!prevProviders || !Array.isArray(prevProviders)) {
+                      console.error('[Admin] Providers state is not an array during edit:', prevProviders);
+                      return [];
+                    }
+                    return prevProviders.map(p => p.id === editingProvider.id ? result.data! : p);
+                  });
                   setEditingProvider(null);
                   alert('✅ Leverantör uppdaterad!');
                 } else {
