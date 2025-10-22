@@ -28,6 +28,8 @@ export default function ResultPage() {
         const data: BillData = JSON.parse(stored);
         console.log('[result] Laddade billData från sessionStorage:', data);
         console.log('[result] totalAmount:', data.totalAmount);
+        console.log('[result] extraFeesTotal:', data.extraFeesTotal);
+        console.log('[result] extraFeesDetailed:', data.extraFeesDetailed);
         setBillData(data);
         const savingsResult = calculateSavings(data);
         console.log('[result] Beräknade besparingar:', savingsResult);
@@ -112,7 +114,7 @@ export default function ResultPage() {
               transition={{ delay: 0.2 }}
               className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6"
             >
-              <ExtraFeesList fees={billData.extraFeesDetailed} showConfidence={true} />
+              <ExtraFeesList fees={billData.extraFeesDetailed} totalAmount={billData.extraFeesTotal} showConfidence={true} />
             </motion.div>
           )}
 

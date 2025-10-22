@@ -8,10 +8,11 @@ import { AlertTriangle } from "lucide-react";
 
 interface ExtraFeesListProps {
   fees: ExtraFeeDetailed[];
+  totalAmount?: number; // Total belopp från extraFeesTotal
   showConfidence?: boolean;
 }
 
-export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFeesListProps) {
+export default function ExtraFeesList({ fees, totalAmount, showConfidence = true }: ExtraFeesListProps) {
   if (fees.length === 0) {
     return (
       <div className="p-6 text-center text-muted">
@@ -20,9 +21,8 @@ export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFees
     );
   }
 
-  // Beräkna total inklusive moms (25%) för att matcha resten av systemet
-  const totalAmountExclVAT = fees.reduce((sum, fee) => sum + fee.amount, 0);
-  const totalAmount = totalAmountExclVAT * 1.25;
+  // Använd summan av fees + moms (25%) för konsistens
+  const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (
     <div className="space-y-3">
@@ -30,7 +30,7 @@ export default function ExtraFeesList({ fees, showConfidence = true }: ExtraFees
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <h3 className="font-semibold text-lg">Dolda avgifter & tillägg</h3>
         <div className="text-right">
-          <p className="text-2xl font-bold text-error">{formatCurrency(totalAmount)}</p>
+          <p className="text-2xl font-bold text-error">{formatCurrency(displayTotal)}</p>
           <p className="text-xs text-muted">inkl. moms per månad</p>
         </div>
       </div>

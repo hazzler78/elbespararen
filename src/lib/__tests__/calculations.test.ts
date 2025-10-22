@@ -9,7 +9,7 @@ describe('calculateSavings', () => {
   const eonBillData: BillData = {
     elnatCost: 575.89,
     elhandelCost: 270.99,
-    extraFeesTotal: 79.39, // Inkl. moms (som AI:n läser från fakturan)
+    extraFeesTotal: 79.39, // Används inte längre för beräkning
     extraFeesDetailed: [
       { label: "Rörliga kostnader", amount: 17.53, confidence: 0.9 },
       { label: "Fast påslag", amount: 17.02, confidence: 0.9 },
@@ -29,15 +29,16 @@ describe('calculateSavings', () => {
     // Nuvarande kostnad ska vara samma som "Belopp att betala" på fakturan
     expect(result.currentCost).toBe(1059);
 
-    // Besparing = endast extra avgifter (redan inkl. moms från AI)
-    // Extra avgifter: 79.39 kr (inkl. moms)
-    expect(result.potentialSavings).toBe(79);
+    // Besparing = summan av extraFeesDetailed + moms (25%)
+    // Extra avgifter: 17.53 + 17.02 + 44.84 = 79.39 kr (exkl. moms)
+    // Med moms: 79.39 * 1.25 = 99.24 kr ≈ 99 kr (inkl. moms)
+    expect(result.potentialSavings).toBe(99);
 
-    // Billigaste alternativ: 1059 - 79 = 980 kr
-    expect(result.cheapestAlternative).toBe(980);
+    // Billigaste alternativ: 1059 - 99 = 960 kr
+    expect(result.cheapestAlternative).toBe(960);
 
-    // Besparing i procent: (79 / 1059) * 100 = 7.46% ≈ 7.5%
-    expect(result.savingsPercentage).toBe(7.5);
+    // Besparing i procent: (99 / 1059) * 100 = 9.35% ≈ 9.4%
+    expect(result.savingsPercentage).toBe(9.4);
   });
 
   test('ska hantera faktura utan extra avgifter', () => {
@@ -66,8 +67,8 @@ describe('calculateSavings', () => {
 
     expect(result.currentCost).toBe(1055);
     
-    // Besparing = endast extra avgifter (redan inkl. moms): 79.39 kr
-    expect(result.potentialSavings).toBe(79);
+    // Besparing = endast extra avgifter + moms: 79.39 * 1.25 = 99 kr
+    expect(result.potentialSavings).toBe(99);
   });
 
   test('ska hantera faktura med billigare elhandel än spotpris', () => {
@@ -81,8 +82,8 @@ describe('calculateSavings', () => {
 
     expect(result.currentCost).toBe(855);
     
-    // Besparing = endast extra avgifter (redan inkl. moms): 79.39 kr
-    expect(result.potentialSavings).toBe(79);
+    // Besparing = endast extra avgifter + moms: 79.39 * 1.25 = 99 kr
+    expect(result.potentialSavings).toBe(99);
   });
 
   test('ska hantera olika förbrukningar', () => {
@@ -97,8 +98,8 @@ describe('calculateSavings', () => {
 
     expect(result.currentCost).toBe(1155);
     
-    // Besparing = endast extra avgifter (redan inkl. moms): 79.39 kr
-    expect(result.potentialSavings).toBe(79);
+    // Besparing = endast extra avgifter + moms: 79.39 * 1.25 = 99 kr
+    expect(result.potentialSavings).toBe(99);
   });
 
   test('ska hantera ny EON-faktura med fler extra avgifter', () => {
@@ -124,14 +125,14 @@ describe('calculateSavings', () => {
 
     expect(result.currentCost).toBe(3817);
 
-    // Besparing = endast extra avgifter (redan inkl. moms): 383.69 kr
-    expect(result.potentialSavings).toBe(384);
+    // Besparing = endast extra avgifter + moms: 383.69 * 1.25 = 480 kr
+    expect(result.potentialSavings).toBe(480);
 
-    // Billigaste alternativ: 3817 - 384 = 3433 kr
-    expect(result.cheapestAlternative).toBe(3433);
+    // Billigaste alternativ: 3817 - 480 = 3337 kr
+    expect(result.cheapestAlternative).toBe(3337);
 
-    // Besparing i procent: (384 / 3817) * 100 = 10.06% ≈ 10.1%
-    expect(result.savingsPercentage).toBe(10.1);
+    // Besparing i procent: (480 / 3817) * 100 = 12.58% ≈ 12.6%
+    expect(result.savingsPercentage).toBe(12.6);
   });
 
   test('ska beräkna rätt besparing för EON-faktura från bilden (1921 kr)', () => {
@@ -157,13 +158,13 @@ describe('calculateSavings', () => {
 
     expect(result.currentCost).toBe(1921);
 
-    // Besparing = endast extra avgifter (redan inkl. moms): 81.67 kr ≈ 82 kr
-    expect(result.potentialSavings).toBe(82);
+    // Besparing = endast extra avgifter + moms: 81.67 * 1.25 = 102.09 kr ≈ 102 kr
+    expect(result.potentialSavings).toBe(102);
 
-    // Billigaste alternativ: 1921 - 82 = 1839 kr
-    expect(result.cheapestAlternative).toBe(1839);
+    // Billigaste alternativ: 1921 - 102 = 1819 kr
+    expect(result.cheapestAlternative).toBe(1819);
 
-    // Besparing i procent: (82 / 1921) * 100 = 4.27% ≈ 4.3%
-    expect(result.savingsPercentage).toBe(4.3);
+    // Besparing i procent: (102 / 1921) * 100 = 5.31% ≈ 5.3%
+    expect(result.savingsPercentage).toBe(5.3);
   });
 });

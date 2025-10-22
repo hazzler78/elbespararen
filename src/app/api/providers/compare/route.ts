@@ -6,18 +6,18 @@ import { createDatabaseFromBinding } from "@/lib/database";
 export const runtime = 'edge';
 
 function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
-  const { totalKWh, elnatCost, elhandelCost, extraFeesTotal } = billData;
+  const { totalKWh, elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed } = billData;
   
   // Använd samma logik som "billigaste alternativ"
-  // Billigaste alternativ = nuvarande kostnad - extra avgifter (redan inkl. moms)
-  const extraFeesWithVAT = extraFeesTotal; // Redan inkl. moms från AI
+  // Billigaste alternativ = nuvarande kostnad - besparing
+  // Använd summan av extraFeesDetailed och lägg till moms (25%)
+  const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+  const extraFeesWithVAT = calculatedExtraFees * 1.25;
   const cheapestAlternative = billData.totalAmount - extraFeesWithVAT;
   
-  // För Cheap Energy: använd samma total kostnad som billigaste alternativ
-  // men justera energipriset för att matcha
-  const targetTotalCost = cheapestAlternative;
-  const availableForEnergy = targetTotalCost - elnatCost;
-  const energyPrice = Number((availableForEnergy / totalKWh).toFixed(2)); // Avrunda till 2 decimaler
+  // Beräkna energipris baserat på billigaste alternativ
+  const availableForEnergy = cheapestAlternative - elnatCost;
+  const energyPrice = availableForEnergy / totalKWh;
   const energyCost = totalKWh * energyPrice;
   
   // Beräkna månadskostnad (0 kr under gratisperioden)
