@@ -36,9 +36,21 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
       .replace(/[^a-z0-9]+/g, '-')
       .replace(/(^-|-$)/g, '');
 
+  const getFallbackLogo = (name: string) => `/logos/${toKebab(name)}.svg`;
+
   const getLogoUrl = (name: string, logoUrl?: string) => {
+    // Use provided URL if present; otherwise fallback to kebab-case svg
     if (logoUrl && logoUrl.trim().length > 0) return logoUrl;
-    return `/logos/${toKebab(name)}.svg`;
+    return getFallbackLogo(name);
+  };
+
+  const handleLogoError: React.ReactEventHandler<HTMLImageElement> = (e) => {
+    const element = e.currentTarget;
+    const providerName = element.getAttribute('data-provider-name');
+    if (!providerName) return;
+    const fallback = getFallbackLogo(providerName);
+    if (element.src.endsWith(fallback)) return; // already tried
+    element.src = fallback;
   };
 
   useEffect(() => {
@@ -192,6 +204,8 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                 <img
                   src={getLogoUrl(bestOption.provider.name, bestOption.provider.logoUrl)}
                     alt={`${bestOption.provider.name} logo`}
+                  data-provider-name={bestOption.provider.name}
+                  onError={handleLogoError}
                     className="h-8 w-auto object-contain"
                     loading="lazy"
                 />
@@ -309,6 +323,8 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   <img
                     src={getLogoUrl(comparison.provider.name, comparison.provider.logoUrl)}
                       alt={`${comparison.provider.name} logo`}
+                    data-provider-name={comparison.provider.name}
+                    onError={handleLogoError}
                       className="h-6 w-auto object-contain"
                       loading="lazy"
                   />
