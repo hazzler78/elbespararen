@@ -107,7 +107,7 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
       >
         <p className="text-xs text-muted text-center">
           💡 <strong>Obs!</strong> Elnätkostnader är ej inkluderade i besparingen eftersom de inte går att påverka.
-          Beräkningen baseras på spotpris ~0.50 kr/kWh + minimal månadskostnad.
+          Beräkningar baseras på AI-analys och kan variera från faktiska priser.
         </p>
       </motion.div>
     </motion.div>
