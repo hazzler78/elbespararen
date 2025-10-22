@@ -163,234 +163,236 @@ export default function ProvidersAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Hantera Elleverantörer</h1>
-              <p className="text-muted">Administrera leverantörer och deras priser</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Hantera Elleverantörer</h1>
+                <p className="text-gray-600">Administrera leverantörer och deras priser</p>
+              </div>
+              <button
+                onClick={() => setShowAddForm(true)}
+                className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors self-start sm:self-auto"
+              >
+                <Plus className="w-4 h-4" />
+                Lägg till leverantör
+              </button>
             </div>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              <Plus className="w-4 h-4" />
-              Lägg till leverantör
-            </button>
-            
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Totalt leverantörer</p>
-            <p className="text-3xl font-bold">{providers.length}</p>
           </div>
 
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Aktiva</p>
-            <p className="text-3xl font-bold text-success">
-              {providers.filter(p => p.isActive).length}
-            </p>
-          </div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Totalt leverantörer</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{providers.length}</p>
+            </div>
 
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Inaktiva</p>
-            <p className="text-3xl font-bold text-error">
-              {providers.filter(p => !p.isActive).length}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Billigaste pris</p>
-            <p className="text-3xl font-bold text-secondary">
-              {providers && providers.length > 0 ? Math.min(...providers.map(p => p.energyPrice)).toFixed(2) : '0.00'} kr/kWh
-            </p>
-          </div>
-        </div>
-
-        {/* Providers List */}
-        <div className="bg-white rounded-lg border border-border">
-          {providers.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-muted">Inga leverantörer ännu</p>
-              <p className="text-sm text-muted mt-2">
-                Lägg till din första leverantör för att komma igång.
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Aktiva</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">
+                {providers.filter(p => p.isActive).length}
               </p>
             </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {providers && providers.length > 0 ? providers.map((provider) => (
-                <div key={provider.id} className="p-6 hover:bg-gray-50 transition-colors">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-xl font-bold">{provider.name}</h3>
-                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                          provider.isActive 
-                            ? "bg-success/10 text-success" 
-                            : provider.userHidden 
-                            ? "bg-orange-100 text-orange-700"
-                            : "bg-error/10 text-error"
-                        }`}>
-                          {provider.isActive ? "Aktiv" : provider.userHidden ? "Dold av användare" : "Inaktiv"}
-                        </span>
-                      </div>
-                      <p className="text-muted mb-3">{provider.description}</p>
-                      
-                      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                        <div>
-                          <p className="text-muted">Månadskostnad</p>
-                          <p className="font-semibold">
-                            {provider.monthlyFee === 0 ? "0 kr" : `${provider.monthlyFee} kr`}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-muted">Påslag</p>
-                          <p className="font-semibold">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
-                        </div>
-                        <div>
-                          <p className="text-muted">Gratis månader</p>
-                          <p className="font-semibold">{provider.freeMonths} mån</p>
-                        </div>
-                        <div>
-                          <p className="text-muted">Bindningstid</p>
-                          <p className="font-semibold">{provider.contractLength} mån</p>
-                        </div>
-                        <div>
-                          <p className="text-muted">Avtalstyp</p>
-                          <p className="font-semibold">
-                            {provider.contractType === "rörligt" ? "Rörligt" : "Fastpris"}
-                          </p>
-                        </div>
-                      </div>
 
-                      <div className="flex flex-wrap gap-2 mt-3">
-                        {provider.features && Array.isArray(provider.features) ? provider.features.map((feature, index) => (
-                          <span
-                            key={index}
-                            className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs"
-                          >
-                            {feature}
-                          </span>
-                        )) : null}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-2 ml-4">
-                      <button
-                        onClick={() => handleToggleActive(provider)}
-                        className="p-2 text-muted hover:text-foreground transition-colors"
-                        title={provider.isActive ? "Gör inaktiv" : "Gör aktiv"}
-                      >
-                        {provider.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                      </button>
-                      
-                      <button
-                        onClick={() => {
-                          console.log('[Admin] Edit button clicked for provider:', provider.id);
-                          setEditingProvider(provider);
-                        }}
-                        className="p-2 text-muted hover:text-primary transition-colors"
-                        title="Redigera"
-                      >
-                        <Edit className="w-4 h-4" />
-                      </button>
-                      
-                      <button
-                        onClick={() => handleDeleteProvider(provider.id)}
-                        className="p-2 text-muted hover:text-error transition-colors"
-                        title="Ta bort"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 text-sm text-muted">
-                    {provider.websiteUrl && (
-                      <a
-                        href={provider.websiteUrl}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
-                      >
-                        <ExternalLink className="w-3 h-3" />
-                        Hemsida
-                      </a>
-                    )}
-                    {provider.phoneNumber && (
-                      <a
-                        href={`tel:${provider.phoneNumber}`}
-                        className="flex items-center gap-1 hover:text-primary transition-colors"
-                      >
-                        <Phone className="w-3 h-3" />
-                        {provider.phoneNumber}
-                      </a>
-                    )}
-                    <span>Skapad: {new Date(provider.createdAt).toLocaleDateString("sv-SE")}</span>
-                  </div>
-                </div>
-              )) : null}
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Inaktiva</p>
+              <p className="text-2xl sm:text-3xl font-bold text-red-600">
+                {providers.filter(p => !p.isActive).length}
+              </p>
             </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Billigaste pris</p>
+              <p className="text-2xl sm:text-3xl font-bold text-purple-600">
+                {providers && providers.length > 0 ? Math.min(...providers.map(p => p.energyPrice)).toFixed(2) : '0.00'} kr/kWh
+              </p>
+            </div>
+          </div>
+
+          {/* Providers List */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            {providers.length === 0 ? (
+              <div className="p-8 sm:p-12 text-center">
+                <Zap className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">Inga leverantörer ännu</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  Lägg till din första leverantör för att komma igång.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {providers && providers.length > 0 ? providers.map((provider) => (
+                  <div key={provider.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+                      <div className="flex-1">
+                        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">{provider.name}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium self-start ${
+                            provider.isActive 
+                              ? "bg-green-100 text-green-800" 
+                              : provider.userHidden 
+                              ? "bg-orange-100 text-orange-700"
+                              : "bg-red-100 text-red-800"
+                          }`}>
+                            {provider.isActive ? "Aktiv" : provider.userHidden ? "Dold av användare" : "Inaktiv"}
+                          </span>
+                        </div>
+                        <p className="text-gray-600 mb-3 text-sm sm:text-base">{provider.description}</p>
+                        
+                        <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 sm:gap-4 text-sm">
+                          <div>
+                            <p className="text-gray-500 text-xs">Månadskostnad</p>
+                            <p className="font-semibold text-gray-900">
+                              {provider.monthlyFee === 0 ? "0 kr" : `${provider.monthlyFee} kr`}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Pris</p>
+                            <p className="font-semibold text-gray-900">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Gratis månader</p>
+                            <p className="font-semibold text-gray-900">{provider.freeMonths} mån</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Bindningstid</p>
+                            <p className="font-semibold text-gray-900">{provider.contractLength} mån</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 text-xs">Avtalstyp</p>
+                            <p className="font-semibold text-gray-900">
+                              {provider.contractType === "rörligt" ? "Rörligt" : "Fastpris"}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {provider.features && Array.isArray(provider.features) ? provider.features.map((feature, index) => (
+                            <span
+                              key={index}
+                              className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs"
+                            >
+                              {feature}
+                            </span>
+                          )) : null}
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 lg:flex-col lg:items-end">
+                        <button
+                          onClick={() => handleToggleActive(provider)}
+                          className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                          title={provider.isActive ? "Gör inaktiv" : "Gör aktiv"}
+                        >
+                          {provider.isActive ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                        </button>
+                        
+                        <button
+                          onClick={() => {
+                            console.log('[Admin] Edit button clicked for provider:', provider.id);
+                            setEditingProvider(provider);
+                          }}
+                          className="p-2 text-gray-400 hover:text-blue-600 transition-colors"
+                          title="Redigera"
+                        >
+                          <Edit className="w-4 h-4" />
+                        </button>
+                        
+                        <button
+                          onClick={() => handleDeleteProvider(provider.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 transition-colors"
+                          title="Ta bort"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500">
+                      {provider.websiteUrl && (
+                        <a
+                          href={provider.websiteUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          Hemsida
+                        </a>
+                      )}
+                      {provider.phoneNumber && (
+                        <a
+                          href={`tel:${provider.phoneNumber}`}
+                          className="flex items-center gap-1 hover:text-blue-600 transition-colors"
+                        >
+                          <Phone className="w-3 h-3" />
+                          {provider.phoneNumber}
+                        </a>
+                      )}
+                      <span>Skapad: {new Date(provider.createdAt).toLocaleDateString("sv-SE")}</span>
+                    </div>
+                  </div>
+                )) : null}
+              </div>
+            )}
+          </div>
+
+          {/* Add Provider Form */}
+          {showAddForm && (
+            <ProviderForm
+              onSave={handleAddProvider}
+              onCancel={() => setShowAddForm(false)}
+            />
+          )}
+
+          {/* Edit Provider Form */}
+          {editingProvider && (
+            <ProviderForm
+              provider={editingProvider}
+              onSave={async (data) => {
+                try {
+                  console.log('[Admin] Updating provider - onSave called with data:', data);
+                  console.log('[Admin] Editing provider ID:', editingProvider.id);
+                  const response = await fetch("/api/providers", {
+                    method: "PUT",
+                    headers: {
+                      "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                      id: editingProvider.id,
+                      ...data
+                    }),
+                  });
+
+                  const result = await response.json() as ApiResponse<ElectricityProvider>;
+                  
+                  if (result.success && result.data) {
+                    setProviders(prevProviders => {
+                      if (!prevProviders || !Array.isArray(prevProviders)) {
+                        console.error('[Admin] Providers state is not an array during edit:', prevProviders);
+                        return [];
+                      }
+                      return prevProviders.map(p => p.id === editingProvider.id ? result.data! : p);
+                    });
+                    setEditingProvider(null);
+                    alert('✅ Leverantör uppdaterad!');
+                  } else {
+                    alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
+                  }
+                } catch (error) {
+                  console.error("Error updating provider:", error);
+                  alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+                }
+              }}
+              onCancel={() => setEditingProvider(null)}
+            />
           )}
         </div>
-
-        {/* Add Provider Form */}
-        {showAddForm && (
-          <ProviderForm
-            onSave={handleAddProvider}
-            onCancel={() => setShowAddForm(false)}
-          />
-        )}
-
-        {/* Edit Provider Form */}
-        {editingProvider && (
-          <ProviderForm
-            provider={editingProvider}
-            onSave={async (data) => {
-              try {
-                console.log('[Admin] Updating provider - onSave called with data:', data);
-                console.log('[Admin] Editing provider ID:', editingProvider.id);
-                const response = await fetch("/api/providers", {
-                  method: "PUT",
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                  body: JSON.stringify({
-                    id: editingProvider.id,
-                    ...data
-                  }),
-                });
-
-                const result = await response.json() as ApiResponse<ElectricityProvider>;
-                
-                if (result.success && result.data) {
-                  setProviders(prevProviders => {
-                    if (!prevProviders || !Array.isArray(prevProviders)) {
-                      console.error('[Admin] Providers state is not an array during edit:', prevProviders);
-                      return [];
-                    }
-                    return prevProviders.map(p => p.id === editingProvider.id ? result.data! : p);
-                  });
-                  setEditingProvider(null);
-                  alert('✅ Leverantör uppdaterad!');
-                } else {
-                  alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
-                }
-              } catch (error) {
-                console.error("Error updating provider:", error);
-                alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
-              }
-            }}
-            onCancel={() => setEditingProvider(null)}
-          />
-        )}
       </div>
-    </main>
+    </div>
   );
 }
 
