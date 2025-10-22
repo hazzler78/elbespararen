@@ -56,6 +56,12 @@ VIKTIGT för extra avgifter - LETTA EFTER DETTA:
 - "Avgift" = extra avgift
 - "Kostnad" = extra avgift (om det inte är elnät eller grundläggande elhandel)
 
+KRITISKT - MOMS-HANTERING:
+- Extra avgifter ska ALLTID läsas som de står på fakturan (inkl. moms)
+- Om fakturan visar "23,36 kr" för rörliga kostnader, använd 23,36 kr
+- Multiplicera ALDRIG extra avgifter med 1,25 - de är redan inkl. moms
+- Endast "Belopp att betala" är det slutliga beloppet inkl. moms
+
 FLEXIBEL IDENTIFIERING:
 - Om du ser flera kostnader under elhandelsföretaget, leta efter:
   * Spotpris/Medelspotpris = grundläggande elhandel (INTE extra avgift!)
@@ -94,11 +100,12 @@ VIKTIGT OM MEDELSPOTPRIS OCH SPOTPRIS:
 
 Regler:
 1. Inkludera ALDRIG elnät i besparing.
-2. Alla belopp ska inkludera moms (25%).
+2. Extra avgifter ska läsas som de står på fakturan (inkl. moms).
 3. Elhandel = ENDAST spotpris/energikostnad (inte påslag).
 4. Extra avgifter = ALLA andra kostnader utöver spotpris.
-5. Returnera JSON enligt schema, med confidence per del.
-6. Om något är oklart, ange en varning i "warnings".
+5. Använd MÄTARSTÄLLNINGAR för förbrukning, inte bar charts.
+6. Returnera JSON enligt schema, med confidence per del.
+7. Om något är oklart, ange en varning i "warnings".
 
 VIKTIGT: Om du ser en EON-faktura med totalt ~3817 kr, leta SPECIFIKT efter:
 - "Rörliga kostnader" (oftast ~192 kr)
@@ -110,8 +117,18 @@ Dessa är ALLA extra avgifter som ska inkluderas i besparingsberäkningen!
 VIKTIGT för alla EON-fakturor:
 - Läs ALDRIG årsavgiften som månadsavgift
 - "Elavtal årsavgift, XXX kr, Y dagar: ZZZ kr" = använd ZZZ kr (inte XXX kr!)
+- Använd MÄTARSTÄLLNINGAR för förbrukning, INTE bar charts
 - Kontrollera att summan av extra avgifter stämmer
 - Om summan inte stämmer, dubbelkolla varje enskild avgift
+
+EXEMPEL för EON-faktura med 1921 kr total:
+- Belopp att betala: 1921,00 kr
+- Förbrukning: 459 kWh (från mätarställningar, INTE från bar chart)
+- Extra avgifter från E.ON Energilösningar AB:
+  * Rörliga kostnader: 23,36 kr (inkl. moms)
+  * Fast påslag: 18,36 kr (inkl. moms)
+  * Elavtal årsavgift: 39,95 kr (inkl. moms)
+- Total extra avgifter: 81,67 kr (inkl. moms)
 
 VIKTIGT för FORTUM-fakturor:
 - Fortum är bara elhandlare, så elnät = 0 kr

@@ -7,14 +7,15 @@ import { BillData, SavingsCalculation } from "./types";
  * 
  * Regler:
  * 1. Elnät exkluderas ALLTID (ej påverkbart)
- * 2. Alla belopp inkluderar moms (25%)
+ * 2. Extra avgifter kommer redan inkl. moms från AI-analysen
  * 3. Jämför mot spotpris + minimal avgift
  */
 export function calculateSavings(billData: BillData): SavingsCalculation {
   const { elnatCost, elhandelCost, extraFeesTotal, totalKWh, totalAmount } = billData;
 
-  // Extra avgifter inkl. moms (25%)
-  const extraFeesWithVAT = extraFeesTotal * 1.25;
+  // Extra avgifter är redan inkl. moms från AI-analysen
+  // (AI:n läser dem som de står på fakturan)
+  const extraFeesWithVAT = extraFeesTotal;
 
   // Nuvarande total kostnad = exakt som "Belopp att betala" på fakturan
   const currentCost = totalAmount;
@@ -49,7 +50,7 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     cheapestElhandelCost,
     cheapestAlternative,
     potentialSavings,
-    note: "Besparing = endast extra avgifter (inkl. moms)"
+    note: "Besparing = endast extra avgifter (redan inkl. moms från AI)"
   });
 
   return {
