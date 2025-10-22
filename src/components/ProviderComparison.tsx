@@ -203,11 +203,11 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               <div className="flex items-center gap-3 mb-2">
                 <img
                   src={getLogoUrl(bestOption.provider.name, bestOption.provider.logoUrl)}
-                    alt={`${bestOption.provider.name} logo`}
+                  alt={`${bestOption.provider.name} logo`}
                   data-provider-name={bestOption.provider.name}
                   onError={handleLogoError}
-                    className="h-8 w-auto object-contain"
-                    loading="lazy"
+                  className="h-12 w-auto object-contain bg-white/50 rounded-lg p-2 shadow-sm border border-white/20"
+                  loading="lazy"
                 />
                 <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
               </div>
@@ -322,11 +322,11 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                 <div className="flex items-center gap-2 mb-1">
                   <img
                     src={getLogoUrl(comparison.provider.name, comparison.provider.logoUrl)}
-                      alt={`${comparison.provider.name} logo`}
+                    alt={`${comparison.provider.name} logo`}
                     data-provider-name={comparison.provider.name}
                     onError={handleLogoError}
-                      className="h-6 w-auto object-contain"
-                      loading="lazy"
+                    className="h-8 w-auto object-contain bg-white rounded p-1.5 shadow-sm border border-gray-200"
+                    loading="lazy"
                   />
                   <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
                 </div>
