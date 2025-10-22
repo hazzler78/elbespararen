@@ -56,6 +56,7 @@ const mockProviders: ElectricityProvider[] = [
 export interface Database {
   // Providers
   getProviders(): Promise<ElectricityProvider[]>;
+  getAllProviders(): Promise<ElectricityProvider[]>;
   getProvider(id: string): Promise<ElectricityProvider | null>;
   createProvider(provider: Omit<ElectricityProvider, 'id' | 'createdAt' | 'updatedAt'>): Promise<ElectricityProvider>;
   updateProvider(id: string, provider: Partial<ElectricityProvider>): Promise<ElectricityProvider>;
@@ -92,6 +93,10 @@ class MockDatabase implements Database {
   }
 
   async getProviders(): Promise<ElectricityProvider[]> {
+    return [...this.providers];
+  }
+
+  async getAllProviders(): Promise<ElectricityProvider[]> {
     return [...this.providers];
   }
 
@@ -245,6 +250,34 @@ class CloudflareDatabase implements Database {
       contractLength: Number(row.contract_length),
       contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
       isActive: Boolean(row.is_active),
+      userHidden: Boolean(row.user_hidden),
+      features: JSON.parse(String(row.features || '[]')) as string[],
+      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+      websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
+      createdAt: new Date(String(row.created_at)),
+      updatedAt: new Date(String(row.updated_at))
+    }));
+  }
+
+  async getAllProviders(): Promise<ElectricityProvider[]> {
+    const result = await this.db.prepare(`
+      SELECT * FROM electricity_providers 
+      ORDER BY energy_price ASC
+    `).all();
+
+    return result.results.map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      name: String(row.name),
+      description: String(row.description),
+      monthlyFee: Number(row.monthly_fee),
+      energyPrice: Number(row.energy_price),
+      freeMonths: Number(row.free_months),
+      contractLength: Number(row.contract_length),
+      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
+      isActive: Boolean(row.is_active),
+      userHidden: Boolean(row.user_hidden),
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
@@ -273,6 +306,7 @@ class CloudflareDatabase implements Database {
       contractLength: Number(row.contract_length),
       contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
       isActive: Boolean(row.is_active),
+      userHidden: Boolean(row.user_hidden),
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
@@ -290,9 +324,9 @@ class CloudflareDatabase implements Database {
           await this.db.prepare(`
             INSERT INTO electricity_providers (
               id, name, description, monthly_fee, energy_price, free_months, 
-              contract_length, contract_type, is_active, features, logo_url, website_url, 
+              contract_length, contract_type, is_active, user_hidden, features, logo_url, website_url, 
               phone_number, avtalsalternativ, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             id,
             providerData.name,
@@ -303,6 +337,7 @@ class CloudflareDatabase implements Database {
             providerData.contractLength,
             providerData.contractType,
             providerData.isActive ? 1 : 0,
+            providerData.userHidden ? 1 : 0,
             JSON.stringify(providerData.features),
             providerData.logoUrl || null,
             providerData.websiteUrl || null,
@@ -366,6 +401,10 @@ class CloudflareDatabase implements Database {
       if (providerData.isActive !== undefined) {
         fieldsToUpdate.push('is_active = ?');
         values.push(providerData.isActive ? 1 : 0);
+      }
+      if (providerData.userHidden !== undefined) {
+        fieldsToUpdate.push('user_hidden = ?');
+        values.push(providerData.userHidden ? 1 : 0);
       }
       if (providerData.features !== undefined) {
         fieldsToUpdate.push('features = ?');

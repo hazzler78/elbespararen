@@ -102,6 +102,8 @@ export default function PriceUpdatesAdminPage() {
               <br />
               <strong className="text-blue-600">Obs:</strong> Endast Fastpris-leverantörer uppdateras automatiskt. 
               Rörliga leverantörer bevaras och uppdateras inte.
+              <br />
+              <strong className="text-orange-600">Varning:</strong> Dolda Fastpris-leverantörer kommer att återaktiveras med nya priser.
             </p>
             
             <button
@@ -163,6 +165,8 @@ export default function PriceUpdatesAdminPage() {
                           {result.action === 'created' && 'Skapad ny leverantör'}
                           {result.action === 'created_alternative' && 'Skapad avtalsalternativ'}
                           {result.action === 'updated' && 'Uppdaterad befintlig leverantör'}
+                          {result.action === 'reactivated' && 'Återaktiverad leverantör med nya priser'}
+                          {result.action === 'updated_hidden' && 'Uppdaterad dold leverantör (förblir dold)'}
                           {result.action === 'fetch_failed' && 'Kunde inte hämta priser'}
                           {result.action === 'error' && 'Fel vid bearbetning'}
                         </p>

@@ -62,7 +62,8 @@ export default function ProvidersAdminPage() {
 
   const handleToggleActive = async (provider: ElectricityProvider) => {
     try {
-      console.log('[Admin] Toggling active for provider:', provider.id, 'from', provider.isActive, 'to', !provider.isActive);
+      const newIsActive = !provider.isActive;
+      console.log('[Admin] Toggling active for provider:', provider.id, 'from', provider.isActive, 'to', newIsActive);
       
       const response = await fetch("/api/providers", {
         method: "PUT",
@@ -71,7 +72,9 @@ export default function ProvidersAdminPage() {
         },
         body: JSON.stringify({
           id: provider.id,
-          isActive: !provider.isActive
+          isActive: newIsActive,
+          // Om vi döljer leverantören, markera det som userHidden
+          userHidden: !newIsActive
         }),
       });
 

@@ -150,6 +150,7 @@ export async function PUT(request: NextRequest) {
       contractLength: body.contractLength !== undefined ? Number(body.contractLength) : undefined,
       contractType: body.contractType ? (body.contractType as "rörligt" | "fastpris") : undefined,
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
+      userHidden: body.userHidden !== undefined ? Boolean(body.userHidden) : undefined,
       features: body.features ? (body.features as string[]) : undefined,
       logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,

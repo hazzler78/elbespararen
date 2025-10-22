@@ -237,9 +237,9 @@ export async function POST(request: NextRequest) {
     let successCount = 0;
     let errorCount = 0;
 
-    // Hämta alla leverantörer från databasen
-    const existingProviders = await db.getProviders();
-    console.log(`[Price Update] Found ${existingProviders.length} existing providers`);
+    // Hämta alla leverantörer från databasen (inklusive inaktiva för prisuppdatering)
+    const existingProviders = await db.getAllProviders();
+    console.log(`[Price Update] Found ${existingProviders.length} existing providers (including inactive)`);
     
     // Logga vilka leverantörer som INTE påverkas (Rörliga)
     const rörligaProviders = existingProviders.filter(p => p.contractType === "rörligt");
@@ -294,23 +294,48 @@ export async function POST(request: NextRequest) {
             }
           } else {
             // Uppdatera befintlig Fastpris-leverantör (bara Fastpris!)
-            console.log(`[Price Update] Updating existing Fastpris provider: ${provider.name}`);
+            console.log(`[Price Update] Found existing Fastpris provider: ${provider.name} (active: ${provider.isActive}, userHidden: ${provider.userHidden})`);
             
-            const updatedProvider = await db.updateProvider(provider.id, {
-              monthlyFee: priceResponse.data.månadskostnad || provider.monthlyFee,
-              energyPrice: priceResponse.data.fastpris || provider.energyPrice,
-              // BEHÅLL contractType som fastpris - uppdatera INTE till fastpris
-              features: priceResponse.data.features || provider.features,
-              avtalsalternativ: priceResponse.data.avtalsalternativ || provider.avtalsalternativ || []
-            });
+            // Om användaren dolt leverantören medvetet, respektera det och uppdatera bara priser
+            if (provider.userHidden) {
+              console.log(`[Price Update] Provider ${provider.name} was hidden by user, keeping it hidden but updating prices`);
+              
+              const updatedProvider = await db.updateProvider(provider.id, {
+                monthlyFee: priceResponse.data.månadskostnad || provider.monthlyFee,
+                energyPrice: priceResponse.data.fastpris || provider.energyPrice,
+                features: priceResponse.data.features || provider.features,
+                avtalsalternativ: priceResponse.data.avtalsalternativ || provider.avtalsalternativ || []
+                // BEHÅLL isActive = false och userHidden = true
+              });
 
-            updateResults.push({
-              provider: endpoint.providerName,
-              action: 'updated',
-              success: true,
-              data: updatedProvider
-            });
-            successCount++;
+              updateResults.push({
+                provider: endpoint.providerName,
+                action: 'updated_hidden',
+                success: true,
+                data: updatedProvider
+              });
+              successCount++;
+            } else {
+              // Om leverantören inte var dold av användaren, uppdatera och aktivera den
+              console.log(`[Price Update] Updating and reactivating provider: ${provider.name}`);
+              
+              const updatedProvider = await db.updateProvider(provider.id, {
+                monthlyFee: priceResponse.data.månadskostnad || provider.monthlyFee,
+                energyPrice: priceResponse.data.fastpris || provider.energyPrice,
+                features: priceResponse.data.features || provider.features,
+                avtalsalternativ: priceResponse.data.avtalsalternativ || provider.avtalsalternativ || [],
+                // AKTIVERA leverantören igen om den var inaktiv
+                isActive: true
+              });
+
+              updateResults.push({
+                provider: endpoint.providerName,
+                action: provider.isActive ? 'updated' : 'reactivated',
+                success: true,
+                data: updatedProvider
+              });
+              successCount++;
+            }
           }
         } else {
           updateResults.push({
