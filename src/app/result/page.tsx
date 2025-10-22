@@ -161,7 +161,7 @@ export default function ResultPage() {
             transition={{ delay: 0.5 }}
             className="mb-8"
           >
-            <div className="bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl p-8 text-center border-2 border-secondary/20">
+            <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 text-center border-2 border-primary/20">
               <h2 className="text-2xl font-bold mb-3">
                 Vill du byta till ett billigare elavtal?
               </h2>
@@ -170,7 +170,7 @@ export default function ResultPage() {
               </p>
               <button
                 onClick={handleScrollToContact}
-                className="px-8 py-3 bg-secondary text-white font-semibold rounded-lg hover:bg-secondary/90 transition-all"
+                className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
               >
                 Ja, hjälp mig byta
               </button>

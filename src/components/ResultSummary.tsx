@@ -40,9 +40,9 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", duration: 0.6 }}
-          className="inline-flex items-center justify-center w-16 h-16 bg-secondary/10 rounded-full mb-4"
+          className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full mb-4"
         >
-          <Sparkles className="w-8 h-8 text-secondary" />
+          <Sparkles className="w-8 h-8 text-primary" />
         </motion.div>
         <h2 className="text-3xl font-bold mb-2">Din besparingspotential</h2>
         <p className="text-muted">Baserat på AI-analys av din faktura</p>
@@ -87,13 +87,13 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.4 }}
-          className="p-4 bg-secondary/5 rounded-lg border border-secondary/20"
+          className="p-4 bg-primary/5 rounded-lg border border-primary/20"
         >
           <div className="flex items-center gap-2 mb-2">
-            <Sparkles className="w-4 h-4 text-secondary" />
-            <p className="text-sm text-secondary uppercase tracking-wide font-medium">Billigaste alternativ</p>
+            <Sparkles className="w-4 h-4 text-primary" />
+            <p className="text-sm text-primary uppercase tracking-wide font-medium">Billigaste alternativ</p>
           </div>
-          <p className="text-2xl font-bold text-secondary">{formatCurrency(cheapestAlternative)}</p>
+          <p className="text-2xl font-bold text-primary">{formatCurrency(cheapestAlternative)}</p>
           <p className="text-xs text-muted mt-1">med spotpris + minimal avgift</p>
         </motion.div>
       </div>
