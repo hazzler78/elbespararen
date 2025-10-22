@@ -492,8 +492,8 @@ function ProviderForm({
           <div>
             <label className="block text-sm font-medium mb-1">Logotyp URL</label>
             <input
-              type="url"
-              placeholder="/logos/cheap-energy.svg"
+              type="text"
+              placeholder="/logos/cheap-energy.svg eller https://..."
               value={formData.logoUrl}
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               className="w-full border border-border rounded-lg px-3 py-2"
