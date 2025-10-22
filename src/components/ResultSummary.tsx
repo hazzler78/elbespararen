@@ -53,12 +53,12 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         initial={{ scale: 0.9, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.2 }}
-        className="bg-gradient-to-br from-secondary/10 to-secondary/5 rounded-xl p-8 mb-6 text-center border-2 border-secondary/20"
+        className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 mb-6 text-center border-2 border-primary/20"
       >
-        <p className="text-sm uppercase tracking-wide text-muted mb-2">Du kan spara upp till</p>
+        <p className="text-sm uppercase tracking-wide text-primary mb-2">Du kan spara upp till</p>
         <div className="flex items-center justify-center gap-3 mb-2">
-          <TrendingDown className="w-8 h-8 text-secondary" />
-          <p className="text-5xl font-bold text-secondary">{formatCurrency(potentialSavings)}</p>
+          <TrendingDown className="w-8 h-8 text-primary" />
+          <p className="text-5xl font-bold text-primary">{formatCurrency(potentialSavings)}</p>
         </div>
         <p className="text-lg text-muted">
           per månad ({savingsPercentage}% lägre)
