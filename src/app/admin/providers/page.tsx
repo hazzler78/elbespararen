@@ -121,6 +121,76 @@ export default function ProvidersAdminPage() {
     }
   };
 
+  const handleCleanupDuplicates = async () => {
+    if (confirm("Detta kommer att ta bort duplicerade leverantörer (t.ex. flera Energi2-kort). Är du säker?")) {
+      try {
+        console.log('[Admin] Starting cleanup of duplicate providers...');
+        
+        // Hitta duplicerade leverantörer
+        const duplicates = findDuplicateProviders();
+        
+        if (duplicates.length === 0) {
+          alert('✅ Inga duplicerade leverantörer hittades!');
+          return;
+        }
+        
+        console.log(`[Admin] Found ${duplicates.length} duplicate providers to remove`);
+        
+        // Ta bort duplicerade leverantörer
+        let removedCount = 0;
+        for (const duplicate of duplicates) {
+          try {
+            const response = await fetch(`/api/providers?id=${duplicate.id}`, {
+              method: "DELETE",
+            });
+            
+            if (response.ok) {
+              removedCount++;
+              console.log(`[Admin] Removed duplicate: ${duplicate.name}`);
+            }
+          } catch (error) {
+            console.error(`[Admin] Error removing ${duplicate.name}:`, error);
+          }
+        }
+        
+        // Uppdatera listan
+        await fetchProviders();
+        
+        alert(`✅ Rensning klar! Tog bort ${removedCount} duplicerade leverantörer.`);
+      } catch (error) {
+        console.error("Error during cleanup:", error);
+        alert('❌ Fel under rensning: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+      }
+    }
+  };
+
+  const findDuplicateProviders = () => {
+    const duplicates = [];
+    const providerGroups = new Map();
+    
+    // Gruppera leverantörer efter basnamn
+    providers.forEach(provider => {
+      const baseName = provider.name.split(' ')[0]; // Ta första ordet som basnamn
+      if (!providerGroups.has(baseName)) {
+        providerGroups.set(baseName, []);
+      }
+      providerGroups.get(baseName).push(provider);
+    });
+    
+    // Hitta grupper med fler än 1 leverantör
+    providerGroups.forEach((group, baseName) => {
+      if (group.length > 1) {
+        // Sortera efter skapelsedatum (behåll den äldsta)
+        group.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
+        // Lägg till alla utom den första som duplicer
+        duplicates.push(...group.slice(1));
+      }
+    });
+    
+    return duplicates;
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -145,6 +215,13 @@ export default function ProvidersAdminPage() {
             >
               <Plus className="w-4 h-4" />
               Lägg till leverantör
+            </button>
+            
+            <button
+              onClick={handleCleanupDuplicates}
+              className="flex items-center gap-2 bg-orange-500 text-white px-4 py-2 rounded-lg hover:bg-orange-600 transition-colors"
+            >
+              🧹 Rensa duplicer
             </button>
           </div>
         </div>
