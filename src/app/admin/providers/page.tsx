@@ -370,6 +370,16 @@ function ProviderForm({
   const [newFeature, setNewFeature] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
+  const resolveLogoUrl = (raw: string) => {
+    const value = (raw || "").trim();
+    if (!value) return "";
+    if (/^https?:\/\//i.test(value)) return value; // absolute URL
+    if (value.startsWith("/")) return value; // already relative from public
+    const withFolder = `/logos/${value}`;
+    // append .svg if no extension provided
+    return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -501,7 +511,8 @@ function ProviderForm({
             {formData.logoUrl && (
               <div className="mt-2 p-2 border border-border rounded-lg bg-white">
                 <p className="text-xs text-muted mb-1">Förhandsgranskning</p>
-                <img src={formData.logoUrl} alt="Logo preview" className="h-10 w-auto object-contain" />
+                <img src={resolveLogoUrl(formData.logoUrl)} alt="Logo preview" className="h-10 w-auto object-contain" />
+                <p className="mt-1 text-[11px] text-muted">Visar: {resolveLogoUrl(formData.logoUrl)}</p>
               </div>
             )}
           </div>
