@@ -62,7 +62,8 @@ export default function ProvidersAdminPage() {
 
   const handleToggleActive = async (provider: ElectricityProvider) => {
     try {
-      console.log('[Admin] Toggling active for provider:', provider.id);
+      console.log('[Admin] Toggling active for provider:', provider.id, 'from', provider.isActive, 'to', !provider.isActive);
+      
       const response = await fetch("/api/providers", {
         method: "PUT",
         headers: {
@@ -75,21 +76,40 @@ export default function ProvidersAdminPage() {
       });
 
       console.log('[Admin] Toggle response status:', response.status);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
       const result = await response.json() as ApiResponse<ElectricityProvider>;
       console.log('[Admin] Toggle response result:', result);
       
       if (result.success && result.data) {
+        console.log('[Admin] Successfully updated provider:', result.data);
+        
         // Use functional update to avoid stale closure issues
         setProviders(prevProviders => {
+          console.log('[Admin] Current providers before update:', prevProviders?.length);
           if (!prevProviders || !Array.isArray(prevProviders)) {
             console.error('[Admin] Providers state is not an array:', prevProviders);
             return [];
           }
-          return prevProviders.map(p => p.id === provider.id ? result.data! : p);
+          
+          const updated = prevProviders.map(p => {
+            if (p.id === provider.id) {
+              console.log('[Admin] Updating provider:', p.name, 'from', p.isActive, 'to', result.data!.isActive);
+              return result.data!;
+            }
+            return p;
+          });
+          
+          console.log('[Admin] Providers after update:', updated.length);
+          return updated;
         });
         
         alert('✅ Leverantör uppdaterad!');
       } else {
+        console.error('[Admin] API returned error:', result.error);
         alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
       }
     } catch (error) {
