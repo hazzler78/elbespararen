@@ -337,15 +337,15 @@ class CloudflareDatabase implements Database {
           logo_url = ?, website_url = ?, phone_number = ?, avtalsalternativ = ?, updated_at = ?
         WHERE id = ?
       `).bind(
-        updated.name,
-        updated.description,
-        updated.monthlyFee,
-        updated.energyPrice,
-        updated.freeMonths,
-        updated.contractLength,
+        updated.name || null,
+        updated.description || null,
+        updated.monthlyFee ?? null,
+        updated.energyPrice ?? null,
+        updated.freeMonths ?? null,
+        updated.contractLength ?? null,
         updated.contractType || 'rörligt',
         updated.isActive ? 1 : 0,
-        JSON.stringify(updated.features),
+        JSON.stringify(updated.features || []),
         updated.logoUrl || null,
         updated.websiteUrl || null,
         updated.phoneNumber || null,
