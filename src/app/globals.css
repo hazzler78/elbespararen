@@ -8,8 +8,8 @@
 :root {
   --background: #fafafa;
   --foreground: #1a1a1a;
-  --primary: #0052cc;
-  --secondary: #00875a;
+  --primary: #00875a;
+  --secondary: #0052cc;
   --accent: #ff991f;
   --muted: #6b7280;
   --border: #e5e7eb;
@@ -49,7 +49,7 @@ body {
 }
 
 .from-primary\/5 {
-  background: linear-gradient(to bottom, rgba(0, 82, 204, 0.05), transparent);
+  background: linear-gradient(to bottom, rgba(0, 135, 90, 0.05), transparent);
 }
 
 .to-background {
@@ -92,7 +92,7 @@ body {
 }
 
 .bg-primary\/10 {
-  background-color: rgba(0, 82, 204, 0.1);
+  background-color: rgba(0, 135, 90, 0.1);
 }
 
 .px-4 {
