@@ -362,6 +362,7 @@ function ProviderForm({
     contractType: provider?.contractType || "rörligt" as "rörligt" | "fastpris",
     isActive: provider?.isActive ?? true,
     features: provider?.features || [],
+    logoUrl: provider?.logoUrl || "",
     websiteUrl: provider?.websiteUrl || "",
     phoneNumber: provider?.phoneNumber || "",
   });
@@ -487,6 +488,23 @@ function ProviderForm({
                 className="w-full border border-border rounded-lg px-3 py-2"
               />
             </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Logotyp URL</label>
+            <input
+              type="url"
+              placeholder="/logos/cheap-energy.svg"
+              value={formData.logoUrl}
+              onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
+              className="w-full border border-border rounded-lg px-3 py-2"
+            />
+            {formData.logoUrl && (
+              <div className="mt-2 p-2 border border-border rounded-lg bg-white">
+                <p className="text-xs text-muted mb-1">Förhandsgranskning</p>
+                <img src={formData.logoUrl} alt="Logo preview" className="h-10 w-auto object-contain" />
+              </div>
+            )}
+          </div>
           </div>
 
           <div>

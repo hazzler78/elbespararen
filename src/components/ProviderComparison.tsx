@@ -174,7 +174,17 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
-              <h3 className="text-xl font-bold mb-2">{bestOption.provider.name}</h3>
+              <div className="flex items-center gap-3 mb-2">
+                {bestOption.provider.logoUrl && (
+                  <img
+                    src={bestOption.provider.logoUrl}
+                    alt={`${bestOption.provider.name} logo`}
+                    className="h-8 w-auto object-contain"
+                    loading="lazy"
+                  />
+                )}
+                <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
+              </div>
               <p className="text-muted mb-4">{bestOption.provider.description}</p>
               
               {/* Avtalslängd dropdown för fastpris */}
@@ -283,7 +293,17 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
           >
             <div className="flex items-start justify-between mb-4">
               <div>
-                <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
+                <div className="flex items-center gap-2 mb-1">
+                  {comparison.provider.logoUrl && (
+                    <img
+                      src={comparison.provider.logoUrl}
+                      alt={`${comparison.provider.name} logo`}
+                      className="h-6 w-auto object-contain"
+                      loading="lazy"
+                    />
+                  )}
+                  <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
+                </div>
                 <p className="text-sm text-muted">{comparison.provider.description}</p>
               </div>
               {comparison.isRecommended && (
