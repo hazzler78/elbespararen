@@ -388,20 +388,22 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               </div>
             </div>
 
-            <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted">Beräknad kostnad</p>
-                <p className="font-bold text-lg">
-                  {formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))}
-                </p>
+            {comparison.provider.contractType === "rörligt" && (
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <p className="text-sm text-muted">Beräknad kostnad</p>
+                  <p className="font-bold text-lg">
+                    {formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm text-muted">Besparing</p>
+                  <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
+                    {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
+                  </p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm text-muted">Besparing</p>
-                <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
-                  {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
-                </p>
-              </div>
-            </div>
+            )}
 
             <div className="flex gap-2">
               <button 

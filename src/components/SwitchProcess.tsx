@@ -501,16 +501,36 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                 <div>
                   <h3 className="text-xl font-bold mb-4">Sammanfattning</h3>
                   
-                  {/* Besparing */}
-                  <div className="bg-success/10 border border-success/20 rounded-lg p-4 mb-6">
-                    <h4 className="font-bold text-success mb-2">Din besparing med {provider.name}</h4>
-                    <p className="text-2xl font-bold text-success">
-                      {savings.potentialSavings} kr per månad
-                    </p>
-                    <p className="text-sm text-muted">
-                      Från {savings.currentCost} kr till {savings.cheapestAlternative} kr
-                    </p>
-                  </div>
+                  {/* Pris/Besparing */}
+                  {provider.contractType === "fastpris" ? (
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
+                      <h4 className="font-bold text-primary mb-2">Ditt pris med {provider.name}</h4>
+                      <p className="text-2xl font-bold text-primary">
+                        {(() => {
+                          const selectedContract = provider.avtalsalternativ?.[0];
+                          if (selectedContract?.fastpris) {
+                            const monthlyKwh = billData.totalKWh;
+                            const monthlyCost = (selectedContract.fastpris * monthlyKwh) + (selectedContract.månadskostnad || 0);
+                            return `${Math.round(monthlyCost)} kr per månad`;
+                          }
+                          return `${provider.energyPrice} kr/kWh`;
+                        })()}
+                      </p>
+                      <p className="text-sm text-muted">
+                        {provider.contractType === "fastpris" ? "Fastpris under hela avtalsperioden" : "Rörligt pris"}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="bg-success/10 border border-success/20 rounded-lg p-4 mb-6">
+                      <h4 className="font-bold text-success mb-2">Din besparing med {provider.name}</h4>
+                      <p className="text-2xl font-bold text-success">
+                        {savings.potentialSavings} kr per månad
+                      </p>
+                      <p className="text-sm text-muted">
+                        Från {savings.currentCost} kr till {savings.cheapestAlternative} kr
+                      </p>
+                    </div>
+                  )}
 
                   {/* Kunduppgifter */}
                   <div className="bg-gray-50 rounded-lg p-4 mb-4">
