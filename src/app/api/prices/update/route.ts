@@ -261,7 +261,47 @@ export async function POST(request: NextRequest) {
             p.contractType === "fastpris"
           );
 
+          // Om vi inte hittar en fastpris-leverantör, kolla om det finns en dold fastpris-leverantör
           if (!provider) {
+            provider = existingProviders.find(p => 
+              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+               p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
+              p.contractType === "fastpris" &&
+              p.userHidden === true
+            );
+          }
+
+          if (!provider) {
+            // Kontrollera om det finns en dold fastpris-leverantör som vi kan uppdatera
+            const hiddenProvider = existingProviders.find(p => 
+              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+               p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
+              p.contractType === "fastpris" &&
+              p.userHidden === true
+            );
+
+            if (hiddenProvider) {
+              // Uppdatera den dolda leverantören men håll den dold
+              console.log(`[Price Update] Updating hidden Fastpris provider: ${hiddenProvider.name}`);
+              
+              const updatedProvider = await db.updateProvider(hiddenProvider.id, {
+                monthlyFee: priceResponse.data.månadskostnad || hiddenProvider.monthlyFee,
+                energyPrice: priceResponse.data.fastpris || hiddenProvider.energyPrice,
+                features: priceResponse.data.features || hiddenProvider.features,
+                avtalsalternativ: priceResponse.data.avtalsalternativ || hiddenProvider.avtalsalternativ || []
+                // BEHÅLL userHidden = true och isActive = false
+              });
+
+              updateResults.push({
+                provider: endpoint.providerName,
+                action: 'updated_hidden',
+                success: true,
+                data: updatedProvider
+              });
+              successCount++;
+              continue; // Gå till nästa endpoint
+            }
+
             // Skapa ny Fastpris-leverantör om den inte finns
             console.log(`[Price Update] Creating new Fastpris provider: ${endpoint.providerName}`);
             
