@@ -188,6 +188,47 @@ function parseMotalaEl(data: any): PriceData {
   return parseProviderPrices(data, "Motala El");
 }
 
+// Funktion för att rensa dubbletter av leverantörer
+async function cleanupDuplicateProviders(db: any) {
+  try {
+    const allProviders = await db.getAllProviders();
+    
+    // Gruppera leverantörer efter namn och avtalstyp
+    const groupedProviders: Record<string, any[]> = {};
+    
+    allProviders.forEach(provider => {
+      const key = `${provider.name.toLowerCase()}_${provider.contractType}`;
+      if (!groupedProviders[key]) {
+        groupedProviders[key] = [];
+      }
+      groupedProviders[key].push(provider);
+    });
+    
+    // Hitta och ta bort dubbletter
+    for (const [key, providers] of Object.entries(groupedProviders)) {
+      if (providers.length > 1) {
+        console.log(`[Cleanup] Found ${providers.length} duplicates for ${key}`);
+        
+        // Sortera efter created_at (behåll den äldsta)
+        providers.sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+        
+        const keepProvider = providers[0]; // Behåll den första (äldsta)
+        const duplicateProviders = providers.slice(1); // Ta bort resten
+        
+        console.log(`[Cleanup] Keeping provider: ${keepProvider.name} (${keepProvider.id})`);
+        
+        // Ta bort dubbletter
+        for (const duplicate of duplicateProviders) {
+          console.log(`[Cleanup] Removing duplicate: ${duplicate.name} (${duplicate.id})`);
+          await db.deleteProvider(duplicate.id);
+        }
+      }
+    }
+  } catch (error) {
+    console.error('[Cleanup] Error cleaning up duplicates:', error);
+  }
+}
+
 // Funktion för att skapa rörliga leverantörer baserat på spotpriser
 function createVariableProvidersFromSpotPrices(data: any, providerName: string): ContractAlternative[] {
   const spotPrices = data.spot_prices || {};
@@ -255,13 +296,22 @@ export async function POST(request: NextRequest) {
         
         if (priceResponse.success && priceResponse.data) {
           // Hitta befintlig Fastpris-leverantör för denna endpoint
+          // Prioritera att hitta en befintlig leverantör istället för att skapa nya
           let provider = existingProviders.find(p => 
-            (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
-             p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
+            p.name.toLowerCase() === endpoint.providerName.toLowerCase() &&
             p.contractType === "fastpris"
           );
 
-          // Om vi inte hittar en fastpris-leverantör, kolla om det finns en dold fastpris-leverantör
+          // Om vi inte hittar exakt match, prova mer flexibel sökning
+          if (!provider) {
+            provider = existingProviders.find(p => 
+              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+               p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
+              p.contractType === "fastpris"
+            );
+          }
+
+          // Om vi fortfarande inte hittar, kolla om det finns en dold fastpris-leverantör
           if (!provider) {
             provider = existingProviders.find(p => 
               (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
@@ -272,36 +322,6 @@ export async function POST(request: NextRequest) {
           }
 
           if (!provider) {
-            // Kontrollera om det finns en dold fastpris-leverantör som vi kan uppdatera
-            const hiddenProvider = existingProviders.find(p => 
-              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
-               p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
-              p.contractType === "fastpris" &&
-              p.userHidden === true
-            );
-
-            if (hiddenProvider) {
-              // Uppdatera den dolda leverantören men håll den dold
-              console.log(`[Price Update] Updating hidden Fastpris provider: ${hiddenProvider.name}`);
-              
-              const updatedProvider = await db.updateProvider(hiddenProvider.id, {
-                monthlyFee: priceResponse.data.månadskostnad || hiddenProvider.monthlyFee,
-                energyPrice: priceResponse.data.fastpris || hiddenProvider.energyPrice,
-                features: priceResponse.data.features || hiddenProvider.features,
-                avtalsalternativ: priceResponse.data.avtalsalternativ || hiddenProvider.avtalsalternativ || []
-                // BEHÅLL userHidden = true och isActive = false
-              });
-
-              updateResults.push({
-                provider: endpoint.providerName,
-                action: 'updated_hidden',
-                success: true,
-                data: updatedProvider
-              });
-              successCount++;
-              continue; // Gå till nästa endpoint
-            }
-
             // Skapa ny Fastpris-leverantör om den inte finns
             console.log(`[Price Update] Creating new Fastpris provider: ${endpoint.providerName}`);
             
@@ -397,6 +417,10 @@ export async function POST(request: NextRequest) {
         errorCount++;
       }
     }
+
+    // Rensa dubbletter av leverantörer efter prisuppdatering
+    console.log(`[Price Update] Cleaning up duplicate providers...`);
+    await cleanupDuplicateProviders(db);
 
     console.log(`[Price Update] Completed: ${successCount} successful, ${errorCount} errors`);
 
