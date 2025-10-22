@@ -90,7 +90,11 @@ jspm_packages/
 
 # Gatsby files
 .cache/
-public
+# Track public assets; previously ignored the entire folder which prevented deployment
+!public/
+!public/**
+!public/logos/
+!public/logos/**
 
 # Storybook build outputs
 .out
