@@ -79,15 +79,24 @@ export default function ProvidersAdminPage() {
       console.log('[Admin] Toggle response result:', result);
       
       if (result.success && result.data) {
-        // Use functional update to avoid stale closure issues
-        setProviders(prevProviders => {
-          if (!prevProviders || !Array.isArray(prevProviders)) {
-            console.error('[Admin] Providers state is not an array:', prevProviders);
-            return [];
-          }
-          return prevProviders.map(p => p.id === provider.id ? result.data! : p);
-        });
-        alert('✅ Leverantör uppdaterad!');
+        try {
+          // Use functional update to avoid stale closure issues
+          setProviders(prevProviders => {
+            if (!prevProviders || !Array.isArray(prevProviders)) {
+              console.error('[Admin] Providers state is not an array:', prevProviders);
+              return [];
+            }
+            return prevProviders.map(p => p.id === provider.id ? result.data! : p);
+          });
+          
+          // Show success message after state update
+          setTimeout(() => {
+            alert('✅ Leverantör uppdaterad!');
+          }, 100);
+        } catch (stateError) {
+          console.error('[Admin] Error updating state:', stateError);
+          alert('⚠️ Leverantör uppdaterad i databasen, men kunde inte uppdatera gränssnittet. Ladda om sidan.');
+        }
       } else {
         alert('❌ Kunde inte uppdatera leverantör: ' + (result.error || 'Okänt fel'));
       }
