@@ -309,7 +309,13 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
       {/* Andra alternativ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {comparisons.slice(1).map((comparison, index) => (
+        {comparisons.filter((comparison, index) => {
+          // Om första leverantören har besparingar, visa den inte här (den visas redan i "Bästa val")
+          if (index === 0 && bestOption && bestOption.estimatedSavings > 0) {
+            return false;
+          }
+          return true;
+        }).map((comparison, index) => (
           <motion.div
             key={comparison.provider.id}
             initial={{ opacity: 0, y: 20 }}
