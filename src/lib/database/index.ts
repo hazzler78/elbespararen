@@ -330,29 +330,79 @@ class CloudflareDatabase implements Database {
     const now = updated.updatedAt.toISOString();
 
     try {
-      const result = await this.db.prepare(`
-        UPDATE electricity_providers SET
-          name = ?, description = ?, monthly_fee = ?, energy_price = ?,
-          free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
-          logo_url = ?, website_url = ?, phone_number = ?, avtalsalternativ = ?, updated_at = ?
-        WHERE id = ?
-      `).bind(
-        updated.name || null,
-        updated.description || null,
-        updated.monthlyFee ?? null,
-        updated.energyPrice ?? null,
-        updated.freeMonths ?? null,
-        updated.contractLength ?? null,
-        updated.contractType || 'rörligt',
-        updated.isActive ? 1 : 0,
-        JSON.stringify(updated.features || []),
-        updated.logoUrl || null,
-        updated.websiteUrl || null,
-        updated.phoneNumber || null,
-        JSON.stringify(updated.avtalsalternativ || []),
-        now,
-        id
-      ).run();
+      // Build dynamic SQL query based on what fields are being updated
+      const fieldsToUpdate: string[] = [];
+      const values: any[] = [];
+
+      // Only include fields that are actually being updated
+      if (providerData.name !== undefined) {
+        fieldsToUpdate.push('name = ?');
+        values.push(providerData.name);
+      }
+      if (providerData.description !== undefined) {
+        fieldsToUpdate.push('description = ?');
+        values.push(providerData.description);
+      }
+      if (providerData.monthlyFee !== undefined) {
+        fieldsToUpdate.push('monthly_fee = ?');
+        values.push(providerData.monthlyFee);
+      }
+      if (providerData.energyPrice !== undefined) {
+        fieldsToUpdate.push('energy_price = ?');
+        values.push(providerData.energyPrice);
+      }
+      if (providerData.freeMonths !== undefined) {
+        fieldsToUpdate.push('free_months = ?');
+        values.push(providerData.freeMonths);
+      }
+      if (providerData.contractLength !== undefined) {
+        fieldsToUpdate.push('contract_length = ?');
+        values.push(providerData.contractLength);
+      }
+      if (providerData.contractType !== undefined) {
+        fieldsToUpdate.push('contract_type = ?');
+        values.push(providerData.contractType);
+      }
+      if (providerData.isActive !== undefined) {
+        fieldsToUpdate.push('is_active = ?');
+        values.push(providerData.isActive ? 1 : 0);
+      }
+      if (providerData.features !== undefined) {
+        fieldsToUpdate.push('features = ?');
+        values.push(JSON.stringify(providerData.features));
+      }
+      if (providerData.logoUrl !== undefined) {
+        fieldsToUpdate.push('logo_url = ?');
+        values.push(providerData.logoUrl || null);
+      }
+      if (providerData.websiteUrl !== undefined) {
+        fieldsToUpdate.push('website_url = ?');
+        values.push(providerData.websiteUrl || null);
+      }
+      if (providerData.phoneNumber !== undefined) {
+        fieldsToUpdate.push('phone_number = ?');
+        values.push(providerData.phoneNumber || null);
+      }
+      if (providerData.avtalsalternativ !== undefined) {
+        fieldsToUpdate.push('avtalsalternativ = ?');
+        values.push(JSON.stringify(providerData.avtalsalternativ || []));
+      }
+
+      // Always update the timestamp
+      fieldsToUpdate.push('updated_at = ?');
+      values.push(now);
+
+      if (fieldsToUpdate.length === 1) { // Only timestamp
+        throw new Error('No fields to update');
+      }
+
+      const sql = `UPDATE electricity_providers SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+      values.push(id);
+
+      console.log('[Database] updateProvider SQL:', sql);
+      console.log('[Database] updateProvider values:', values);
+
+      const result = await this.db.prepare(sql).bind(...values).run();
 
       console.log('[Database] updateProvider result:', result);
       
