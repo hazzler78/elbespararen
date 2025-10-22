@@ -163,7 +163,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
-          className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg border-2 border-primary/20 p-6 relative overflow-hidden"
+          className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg shadow-lg border-2 border-primary/20 p-6 relative overflow-hidden"
         >
           <div className="absolute top-4 right-4">
             <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
