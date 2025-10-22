@@ -4,7 +4,7 @@ import { createDatabaseFromBinding } from "@/lib/database";
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
     let env: any = {};
@@ -27,7 +27,12 @@ export async function GET() {
     console.log('[providers] GET - env:', env);
     console.log('[providers] GET - DB binding:', env?.DB);
     const db = createDatabaseFromBinding(env?.DB);
-    const providers = await db.getProviders();
+    
+    // Kontrollera om vi ska inkludera dolda leverantörer
+    const url = new URL(request.url);
+    const includeHidden = url.searchParams.get('includeHidden') === 'true';
+    
+    const providers = includeHidden ? await db.getAllProviders() : await db.getProviders();
     
     return NextResponse.json({
       success: true,

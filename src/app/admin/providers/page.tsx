@@ -17,7 +17,8 @@ export default function ProvidersAdminPage() {
   const fetchProviders = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/providers");
+      // Hämta alla leverantörer (inklusive dolda) för admin-gränssnittet
+      const response = await fetch("/api/providers?includeHidden=true");
       const result = await response.json() as ApiResponse<ElectricityProvider[]>;
       
       if (result.success && result.data) {
@@ -74,7 +75,8 @@ export default function ProvidersAdminPage() {
           id: provider.id,
           isActive: newIsActive,
           // Om vi döljer leverantören, markera det som userHidden
-          userHidden: !newIsActive
+          // Om vi aktiverar leverantören, ta bort userHidden
+          userHidden: newIsActive ? false : true
         }),
       });
 
@@ -230,9 +232,11 @@ export default function ProvidersAdminPage() {
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${
                           provider.isActive 
                             ? "bg-success/10 text-success" 
+                            : provider.userHidden 
+                            ? "bg-orange-100 text-orange-700"
                             : "bg-error/10 text-error"
                         }`}>
-                          {provider.isActive ? "Aktiv" : "Inaktiv"}
+                          {provider.isActive ? "Aktiv" : provider.userHidden ? "Dold av användare" : "Inaktiv"}
                         </span>
                       </div>
                       <p className="text-muted mb-3">{provider.description}</p>
