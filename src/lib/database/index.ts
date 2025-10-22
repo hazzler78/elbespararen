@@ -329,31 +329,43 @@ class CloudflareDatabase implements Database {
     const updated = { ...existing, ...providerData, updatedAt: new Date() };
     const now = updated.updatedAt.toISOString();
 
-          await this.db.prepare(`
-            UPDATE electricity_providers SET
-              name = ?, description = ?, monthly_fee = ?, energy_price = ?,
-              free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
-              logo_url = ?, website_url = ?, phone_number = ?, avtalsalternativ = ?, updated_at = ?
-            WHERE id = ?
-          `).bind(
-            updated.name,
-            updated.description,
-            updated.monthlyFee,
-            updated.energyPrice,
-            updated.freeMonths,
-            updated.contractLength,
-            updated.contractType,
-            updated.isActive ? 1 : 0,
-            JSON.stringify(updated.features),
-            updated.logoUrl || null,
-            updated.websiteUrl || null,
-            updated.phoneNumber || null,
-            JSON.stringify(updated.avtalsalternativ || []),
-            now,
-            id
-          ).run();
+    try {
+      const result = await this.db.prepare(`
+        UPDATE electricity_providers SET
+          name = ?, description = ?, monthly_fee = ?, energy_price = ?,
+          free_months = ?, contract_length = ?, contract_type = ?, is_active = ?, features = ?,
+          logo_url = ?, website_url = ?, phone_number = ?, avtalsalternativ = ?, updated_at = ?
+        WHERE id = ?
+      `).bind(
+        updated.name,
+        updated.description,
+        updated.monthlyFee,
+        updated.energyPrice,
+        updated.freeMonths,
+        updated.contractLength,
+        updated.contractType || 'rörligt',
+        updated.isActive ? 1 : 0,
+        JSON.stringify(updated.features),
+        updated.logoUrl || null,
+        updated.websiteUrl || null,
+        updated.phoneNumber || null,
+        JSON.stringify(updated.avtalsalternativ || []),
+        now,
+        id
+      ).run();
 
-    return updated;
+      console.log('[Database] updateProvider result:', result);
+      
+      if (result.meta?.changes === 0) {
+        throw new Error(`No rows were updated for provider ${id}`);
+      }
+
+      return updated;
+    } catch (error) {
+      console.error('[Database] updateProvider error:', error);
+      console.error('[Database] Provider data:', updated);
+      throw error;
+    }
   }
 
   async deleteProvider(id: string): Promise<boolean> {

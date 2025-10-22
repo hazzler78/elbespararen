@@ -141,6 +141,8 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    console.log('[providers] PUT - updating provider with data:', body);
+    
     const updatedProvider = await db.updateProvider(String(body.id), {
       name: body.name ? String(body.name) : undefined,
       description: body.description ? String(body.description) : undefined,
@@ -156,14 +158,17 @@ export async function PUT(request: NextRequest) {
       phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
     });
 
+    console.log('[providers] PUT - successfully updated provider:', updatedProvider);
+
     return NextResponse.json({
       success: true,
       data: updatedProvider
     });
   } catch (error) {
     console.error("[providers] PUT error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Okänt fel";
     return NextResponse.json(
-      { success: false, error: "Kunde inte uppdatera leverantör" },
+      { success: false, error: `Kunde inte uppdatera leverantör: ${errorMessage}` },
       { status: 500 }
     );
   }
