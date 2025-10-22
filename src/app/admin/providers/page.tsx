@@ -95,6 +95,13 @@ export default function ProvidersAdminPage() {
             return [];
           }
           
+          // Check if provider is already updated to prevent double updates
+          const existingProvider = prevProviders.find(p => p.id === provider.id);
+          if (existingProvider && existingProvider.isActive === result.data!.isActive) {
+            console.log('[Admin] Provider already has correct state, skipping update');
+            return prevProviders;
+          }
+          
           const updated = prevProviders.map(p => {
             if (p.id === provider.id) {
               console.log('[Admin] Updating provider:', p.name, 'from', p.isActive, 'to', result.data!.isActive);
@@ -255,14 +262,14 @@ export default function ProvidersAdminPage() {
                       </div>
 
                       <div className="flex flex-wrap gap-2 mt-3">
-                        {provider.features.map((feature, index) => (
+                        {provider.features && Array.isArray(provider.features) ? provider.features.map((feature, index) => (
                           <span
                             key={index}
                             className="bg-primary/10 text-primary px-2 py-1 rounded-full text-xs"
                           >
                             {feature}
                           </span>
-                        ))}
+                        )) : null}
                       </div>
                     </div>
 
@@ -596,7 +603,7 @@ function ProviderForm({
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
-              {formData.features.map((feature, index) => (
+              {formData.features && Array.isArray(formData.features) ? formData.features.map((feature, index) => (
                 <span
                   key={index}
                   className="flex items-center gap-1 bg-primary/10 text-primary px-3 py-1 rounded-full text-sm"
@@ -610,7 +617,7 @@ function ProviderForm({
                     ×
                   </button>
                 </span>
-              ))}
+              )) : null}
             </div>
           </div>
 
