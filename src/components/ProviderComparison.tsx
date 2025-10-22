@@ -27,6 +27,20 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
 
+  const toKebab = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/å/g, 'a')
+      .replace(/ä/g, 'a')
+      .replace(/ö/g, 'o')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+
+  const getLogoUrl = (name: string, logoUrl?: string) => {
+    if (logoUrl && logoUrl.trim().length > 0) return logoUrl;
+    return `/logos/${toKebab(name)}.svg`;
+  };
+
   useEffect(() => {
     const fetchComparisons = async () => {
       try {
@@ -175,14 +189,12 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-2">
-                {bestOption.provider.logoUrl && (
-                  <img
-                    src={bestOption.provider.logoUrl}
+                <img
+                  src={getLogoUrl(bestOption.provider.name, bestOption.provider.logoUrl)}
                     alt={`${bestOption.provider.name} logo`}
                     className="h-8 w-auto object-contain"
                     loading="lazy"
-                  />
-                )}
+                />
                 <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
               </div>
               <p className="text-muted mb-4">{bestOption.provider.description}</p>
@@ -294,14 +306,12 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
             <div className="flex items-start justify-between mb-4">
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  {comparison.provider.logoUrl && (
-                    <img
-                      src={comparison.provider.logoUrl}
+                  <img
+                    src={getLogoUrl(comparison.provider.name, comparison.provider.logoUrl)}
                       alt={`${comparison.provider.name} logo`}
                       className="h-6 w-auto object-contain"
                       loading="lazy"
-                    />
-                  )}
+                  />
                   <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
                 </div>
                 <p className="text-sm text-muted">{comparison.provider.description}</p>
