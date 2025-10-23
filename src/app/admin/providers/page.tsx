@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone, Zap } from "lucide-react";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 
 export default function ProvidersAdminPage() {
