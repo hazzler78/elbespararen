@@ -87,7 +87,7 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
         }),
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success?: boolean; reply?: string; error?: string };
 
       if (!response.ok) {
         throw new Error(data.error || 'Något gick fel');
