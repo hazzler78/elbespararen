@@ -140,7 +140,10 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
                   Dra och släpp eller klicka för att välja fil
                 </p>
                 <p className="text-xs text-muted">
-                  JPEG, PNG, WebP eller PDF • Max {APP_CONFIG.maxFileSize / 1024 / 1024}MB
+                  JPEG, PNG, WebP • Max {APP_CONFIG.maxFileSize / 1024 / 1024}MB
+                </p>
+                <p className="text-xs text-muted mt-1">
+                  💡 PDF:er: Ta en skärmdump eller konvertera till bild först
                 </p>
               </motion.div>
             ) : (

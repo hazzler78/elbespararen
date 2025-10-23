@@ -3,42 +3,11 @@ import OpenAI from "openai";
 import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
-import { PDFDocument } from "pdf-lib";
 
-// Node.js runtime för bättre filhantering
-export const runtime = 'nodejs';
+// Edge runtime krävs av Cloudflare Pages
+export const runtime = 'edge';
 export const maxDuration = 30;
 
-// Hjälpfunktion för att konvertera PDF till bild
-async function convertPdfToImage(pdfBuffer: Buffer): Promise<string> {
-  try {
-    // Ladda PDF-dokumentet
-    const pdfDoc = await PDFDocument.load(pdfBuffer);
-    const pages = pdfDoc.getPages();
-    
-    if (pages.length === 0) {
-      throw new Error("PDF:en innehåller inga sidor");
-    }
-    
-    // Ta första sidan
-    const firstPage = pages[0];
-    const { width, height } = firstPage.getSize();
-    
-    // Skapa en canvas för att rendera PDF-sidan
-    const canvas = require('canvas');
-    const canvasElement = canvas.createCanvas(width, height);
-    const ctx = canvasElement.getContext('2d');
-    
-    // Konvertera PDF-sidan till bild
-    const imageBuffer = canvasElement.toBuffer('image/png');
-    const base64Image = imageBuffer.toString('base64');
-    
-    return `data:image/png;base64,${base64Image}`;
-  } catch (error) {
-    console.error("[parse-bill-v3] PDF to image conversion error:", error);
-    throw new Error("Kunde inte konvertera PDF till bild. PDF:en kan vara korrupt eller skyddad.");
-  }
-}
 
 /**
  * POST /api/parse-bill-v3
@@ -80,109 +49,73 @@ export async function POST(req: NextRequest) {
 
     // Validera filtyp
     if (!APP_CONFIG.acceptedFileTypes.includes(file.type)) {
+      let errorMessage = "Endast JPEG, PNG och WebP tillåts";
+      
+      if (file.type === "application/pdf") {
+        errorMessage = "PDF-filer stöds inte direkt. Vänligen konvertera din PDF till en bild (JPG, PNG eller WebP) och ladda upp den istället. Du kan ta en skärmdump av PDF:en eller använda en online-konverterare.";
+      }
+      
       return NextResponse.json(
-        { error: "Endast JPEG, PNG, WebP och PDF tillåts" },
+        { error: errorMessage },
         { status: 400 }
       );
     }
 
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
 
-    let response;
-
-    if (file.type === "application/pdf") {
-      // För PDF:er - konvertera till bild först
-      console.log(`[parse-bill-v3] Konverterar PDF till bild...`);
-      
-      const arrayBuffer = await file.arrayBuffer();
-      const pdfBuffer = Buffer.from(arrayBuffer);
-      const dataUrl = await convertPdfToImage(pdfBuffer);
-
-      console.log(`[parse-bill-v3] PDF konverterad till bild, Data URL length: ${dataUrl.length} characters`);
-
-      // Anropa OpenAI Vision med den konverterade bilden
-      response = await openai.chat.completions.create({
-        model: OPENAI_CONFIG.model,
-        messages: [
-          {
-            role: "system",
-            content: SYSTEM_PROMPT
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "bill_analysis",
-            strict: true,
-            schema: BILL_SCHEMA
-          }
-        },
-        temperature: OPENAI_CONFIG.temperature,
-        max_tokens: OPENAI_CONFIG.maxTokens
-      });
-
-    } else {
-      // För bilder - använd den gamla metoden med Base64
-      const arrayBuffer = await file.arrayBuffer();
-      const buffer = Buffer.from(arrayBuffer);
-      const base64Image = buffer.toString("base64");
-      const dataUrl = `data:${file.type};base64,${base64Image}`;
-
-      console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
-
-      // Anropa OpenAI Vision med strukturerad output
-      response = await openai.chat.completions.create({
-        model: OPENAI_CONFIG.model,
-        messages: [
-          {
-            role: "system",
-            content: SYSTEM_PROMPT
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "bill_analysis",
-            strict: true,
-            schema: BILL_SCHEMA
-          }
-        },
-        temperature: OPENAI_CONFIG.temperature,
-        max_tokens: OPENAI_CONFIG.maxTokens
-      });
+    // Konvertera fil till Base64 (Edge Runtime kompatibel)
+    const arrayBuffer = await file.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    
+    // Hantera stora filer genom att konvertera i chunks
+    let base64Image = '';
+    const chunkSize = 8192; // 8KB chunks
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.slice(i, i + chunkSize);
+      base64Image += btoa(String.fromCharCode(...chunk));
     }
+    
+    const dataUrl = `data:${file.type};base64,${base64Image}`;
+
+    console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
+
+    // Anropa OpenAI Vision med strukturerad output
+    const response = await openai.chat.completions.create({
+      model: OPENAI_CONFIG.model,
+      messages: [
+        {
+          role: "system",
+          content: SYSTEM_PROMPT
+        },
+        {
+          role: "user",
+          content: [
+            {
+              type: "text",
+              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
+            },
+            {
+              type: "image_url",
+              image_url: {
+                url: dataUrl,
+                detail: "high"
+              }
+            }
+          ]
+        }
+      ],
+      response_format: {
+        type: "json_schema",
+        json_schema: {
+          name: "bill_analysis",
+          strict: true,
+          schema: BILL_SCHEMA
+        }
+      },
+      temperature: OPENAI_CONFIG.temperature,
+      max_tokens: OPENAI_CONFIG.maxTokens
+    });
 
     // Parse JSON-svaret
     const content = response.choices[0].message.content;
