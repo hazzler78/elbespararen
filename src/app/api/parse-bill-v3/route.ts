@@ -54,13 +54,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Konvertera fil till Base64
+    // Konvertera fil till Base64 (Edge Runtime kompatibel)
     const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Image = buffer.toString("base64");
+    const uint8Array = new Uint8Array(arrayBuffer);
+    const base64Image = btoa(String.fromCharCode(...uint8Array));
     const dataUrl = `data:${file.type};base64,${base64Image}`;
 
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
+    console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
 
     // Anropa OpenAI Vision med strukturerad output
     const response = await openai.chat.completions.create({
@@ -145,10 +146,23 @@ export async function POST(req: NextRequest) {
     
     const errorMessage = error instanceof Error ? error.message : "Okänt fel";
     
+    // Specifika felmeddelanden för olika typer av fel
+    let userFriendlyError = "Kunde inte analysera fakturan";
+    
+    if (errorMessage.includes("rate limit")) {
+      userFriendlyError = "AI:n är för tillfället överbelastad. Försök igen om en stund.";
+    } else if (errorMessage.includes("timeout")) {
+      userFriendlyError = "Analysen tog för lång tid. Försök igen med en mindre fil.";
+    } else if (errorMessage.includes("invalid image")) {
+      userFriendlyError = "Filen kunde inte läsas. Kontrollera att det är en giltig PDF eller bild.";
+    } else if (errorMessage.includes("file too large")) {
+      userFriendlyError = "Filen är för stor. Max storlek är 10MB.";
+    }
+    
     return NextResponse.json(
       {
         success: false,
-        error: "Kunde inte analysera fakturan",
+        error: userFriendlyError,
         details: errorMessage
       },
       { status: 500 }

@@ -78,7 +78,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
       const result = await response.json() as ApiResponse<BillData>;
 
       if (!response.ok || !result.success || !result.data) {
-        throw new Error(result.error || "Kunde inte analysera fakturan");
+        const errorMsg = result.error || "Kunde inte analysera fakturan";
+        console.error("[UploadCard] API Error:", errorMsg, result);
+        throw new Error(errorMsg);
       }
 
       // Lägg till postnummer och prisområde i resultatet
