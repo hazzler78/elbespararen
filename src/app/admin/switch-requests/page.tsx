@@ -131,278 +131,278 @@ export default function SwitchRequestsAdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-4 mb-4">
-            <Link
-              href="/admin"
-              className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Tillbaka till admin
-            </Link>
-          </div>
-          
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold mb-2">Bytförfrågningar</h1>
-              <p className="text-muted">Hantera alla bytförfrågningar från kunder</p>
+    <div className="min-h-screen bg-gray-50">
+      <div className="py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Bytförfrågningar</h1>
+                <p className="text-gray-600">Hantera alla bytförfrågningar från kunder</p>
+              </div>
+              <button
+                onClick={fetchSwitchRequests}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors self-start sm:self-auto"
+              >
+                Uppdatera
+              </button>
             </div>
-            <button
-              onClick={fetchSwitchRequests}
-              className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Uppdatera
-            </button>
-          </div>
-        </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Totalt</p>
-            <p className="text-3xl font-bold">{switchRequests.length}</p>
           </div>
 
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Väntande</p>
-            <p className="text-3xl font-bold text-warning">
-              {switchRequests.filter(r => r.status === "pending").length}
-            </p>
-          </div>
+          {/* Stats */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Totalt</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{switchRequests.length}</p>
+            </div>
 
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Bearbetas</p>
-            <p className="text-3xl font-bold text-primary">
-              {switchRequests.filter(r => r.status === "processing").length}
-            </p>
-          </div>
-
-          <div className="bg-white rounded-lg border border-border p-6">
-            <p className="text-sm text-muted uppercase tracking-wide mb-2">Genomförda</p>
-            <p className="text-3xl font-bold text-success">
-              {switchRequests.filter(r => r.status === "completed").length}
-            </p>
-          </div>
-        </div>
-
-        {/* Filter */}
-        <div className="mb-6 flex gap-2 flex-wrap">
-          {(["all", "pending", "processing", "completed"] as const).map((f) => (
-            <button
-              key={f}
-              onClick={() => setFilter(f)}
-              className={`
-                px-4 py-2 rounded-lg font-medium text-sm transition-all
-                ${filter === f 
-                  ? "bg-primary text-white" 
-                  : "bg-white border border-border text-muted hover:bg-gray-50"
-                }
-              `}
-            >
-              {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
-            </button>
-          ))}
-        </div>
-
-        {/* Switch Requests List */}
-        <div className="bg-white rounded-lg border border-border">
-          {filteredRequests.length === 0 ? (
-            <div className="p-12 text-center">
-              <p className="text-muted">Inga bytförfrågningar ännu</p>
-              <p className="text-sm text-muted mt-2">
-                När kunder skickar bytförfrågningar dyker de upp här.
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Väntande</p>
+              <p className="text-2xl sm:text-3xl font-bold text-yellow-600">
+                {switchRequests.filter(r => r.status === "pending").length}
               </p>
             </div>
-          ) : (
-            <div className="divide-y divide-border">
-              {filteredRequests.map((request) => {
-                const StatusIcon = getStatusIcon(request.status);
-                
-                return (
-                  <div key={request.id} className="p-6 hover:bg-gray-50 transition-colors">
-                    <div className="flex items-start justify-between mb-4">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <h3 className="text-xl font-bold">
-                            {request.customerInfo.firstName} {request.customerInfo.lastName}
-                          </h3>
-                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(request.status)}`}>
-                            {request.status}
-                          </span>
-                        </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Bearbetas</p>
+              <p className="text-2xl sm:text-3xl font-bold text-blue-600">
+                {switchRequests.filter(r => r.status === "processing").length}
+              </p>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+              <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Genomförda</p>
+              <p className="text-2xl sm:text-3xl font-bold text-green-600">
+                {switchRequests.filter(r => r.status === "completed").length}
+              </p>
+            </div>
+          </div>
+
+          {/* Filter */}
+          <div className="mb-6">
+            <div className="flex gap-2 flex-wrap">
+              {(["all", "pending", "processing", "completed"] as const).map((f) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  className={`
+                    px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all
+                    ${filter === f 
+                      ? "bg-blue-600 text-white" 
+                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                    }
+                  `}
+                >
+                  {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Switch Requests List */}
+          <div className="bg-white rounded-lg border border-gray-200">
+            {filteredRequests.length === 0 ? (
+              <div className="p-8 sm:p-12 text-center">
+                <ArrowRight className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500 text-lg font-medium">Inga bytförfrågningar ännu</p>
+                <p className="text-sm text-gray-400 mt-2">
+                  När kunder skickar bytförfrågningar dyker de upp här.
+                </p>
+              </div>
+            ) : (
+              <div className="divide-y divide-gray-200">
+                {filteredRequests.map((request) => {
+                  const StatusIcon = getStatusIcon(request.status);
+                  
+                  return (
+                    <div key={request.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
+                      <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
+                        <div className="flex-1">
+                          <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900">
+                              {request.customerInfo.firstName} {request.customerInfo.lastName}
+                            </h3>
+                            <span className={`px-3 py-1 rounded-full text-xs font-medium self-start ${
+                              request.status === "pending" ? "bg-yellow-100 text-yellow-800" :
+                              request.status === "processing" ? "bg-blue-100 text-blue-800" :
+                              request.status === "completed" ? "bg-green-100 text-green-800" :
+                              "bg-red-100 text-red-800"
+                            }`}>
+                              {request.status}
+                            </span>
+                          </div>
                         
-                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                          <div className="flex items-center gap-2 text-sm text-muted">
-                            <User className="w-4 h-4" />
-                            <span>{request.customerInfo.email}</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <User className="w-4 h-4" />
+                              <span>{request.customerInfo.email}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Phone className="w-4 h-4" />
+                              <span>{request.customerInfo.phone}</span>
+                            </div>
+                            <div className="flex items-center gap-2 text-sm text-gray-500">
+                              <Calendar className="w-4 h-4" />
+                              <span>{new Date(request.createdAt).toLocaleDateString("sv-SE")}</span>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted">
-                            <Phone className="w-4 h-4" />
-                            <span>{request.customerInfo.phone}</span>
+
+                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
+                            {/* Nuvarande leverantör */}
+                            <div className="bg-gray-50 rounded-lg p-4">
+                              <h4 className="font-semibold mb-2 flex items-center gap-2 text-gray-900">
+                                <FileText className="w-4 h-4" />
+                                Nuvarande leverantör
+                              </h4>
+                              <p className="font-medium text-gray-900">{request.currentProvider.name}</p>
+                              <p className="text-sm text-gray-600">
+                                {formatCurrency(request.currentProvider.currentMonthlyCost)}/månad
+                              </p>
+                              {request.currentProvider.contractEndDate && (
+                                <p className="text-sm text-gray-600">
+                                  Avtalslut: {new Date(request.currentProvider.contractEndDate).toLocaleDateString("sv-SE")}
+                                </p>
+                              )}
+                            </div>
+
+                            {/* Ny leverantör */}
+                            <div className="bg-blue-50 rounded-lg p-4">
+                              <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-900">
+                                <CheckCircle2 className="w-4 h-4" />
+                                Ny leverantör
+                              </h4>
+                              <p className="font-medium text-gray-900">{request.newProvider.name}</p>
+                              <p className="text-sm text-gray-600">{request.newProvider.description}</p>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 text-sm text-muted">
-                            <Calendar className="w-4 h-4" />
-                            <span>{new Date(request.createdAt).toLocaleDateString("sv-SE")}</span>
+
+                          {/* Besparing */}
+                          <div className="mt-4 bg-green-50 border border-green-200 rounded-lg p-4">
+                            <h4 className="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                              <DollarSign className="w-4 h-4" />
+                              Besparing
+                            </h4>
+                            <p className="text-xl sm:text-2xl font-bold text-green-600">
+                              {formatCurrency(request.savings.potentialSavings)} per månad
+                            </p>
+                            <p className="text-sm text-gray-600">
+                              Från {formatCurrency(request.savings.currentCost)} till {formatCurrency(request.savings.cheapestAlternative)}
+                            </p>
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                          {/* Nuvarande leverantör */}
-                          <div className="bg-gray-50 rounded-lg p-4">
-                            <h4 className="font-semibold mb-2 flex items-center gap-2">
-                              <FileText className="w-4 h-4" />
-                              Nuvarande leverantör
-                            </h4>
-                            <p className="font-medium">{request.currentProvider.name}</p>
-                            <p className="text-sm text-muted">
-                              {formatCurrency(request.currentProvider.currentMonthlyCost)}/månad
-                            </p>
-                            {request.currentProvider.contractEndDate && (
-                              <p className="text-sm text-muted">
-                                Avtalslut: {new Date(request.currentProvider.contractEndDate).toLocaleDateString("sv-SE")}
-                              </p>
+                        <div className="flex items-center gap-2 lg:ml-4 lg:mt-0 mt-4">
+                          <StatusIcon className="w-5 h-5 text-gray-400" />
+                        </div>
+                      </div>
+
+                      {/* Adress */}
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-2">
+                        <Home className="w-4 h-4" />
+                        <span>
+                          {request.customerInfo.address.street} {request.customerInfo.address.streetNumber}
+                          {request.customerInfo.address.apartment && `, ${request.customerInfo.address.apartment}`}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-500 mb-4">
+                        <span>
+                          {request.customerInfo.address.postalCode} {request.customerInfo.address.city}
+                        </span>
+                      </div>
+
+                      {/* Referensnummer */}
+                      <div className="text-xs text-gray-500 mb-4">
+                        Referensnummer: {request.id}
+                      </div>
+
+                      {/* Admin Actions */}
+                      <div className="border-t border-gray-200 pt-4">
+                        <div className="flex flex-wrap gap-3 mb-4">
+                          {/* Status Update Buttons */}
+                          <div className="flex flex-wrap gap-2">
+                            {request.status !== "processing" && (
+                              <button
+                                onClick={() => updateSwitchRequestStatus(request.id, "processing")}
+                                className="px-3 py-1 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                              >
+                                Markera som bearbetas
+                              </button>
+                            )}
+                            {request.status !== "completed" && (
+                              <button
+                                onClick={() => updateSwitchRequestStatus(request.id, "completed")}
+                                className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors"
+                              >
+                                Markera som slutförd
+                              </button>
+                            )}
+                            {request.status !== "cancelled" && (
+                              <button
+                                onClick={() => updateSwitchRequestStatus(request.id, "cancelled")}
+                                className="px-3 py-1 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors"
+                              >
+                                Avbryt
+                              </button>
                             )}
                           </div>
-
-                          {/* Ny leverantör */}
-                          <div className="bg-primary/10 rounded-lg p-4">
-                            <h4 className="font-semibold mb-2 flex items-center gap-2">
-                              <CheckCircle2 className="w-4 h-4" />
-                              Ny leverantör
-                            </h4>
-                            <p className="font-medium">{request.newProvider.name}</p>
-                            <p className="text-sm text-muted">{request.newProvider.description}</p>
-                          </div>
                         </div>
 
-                        {/* Besparing */}
-                        <div className="mt-4 bg-success/10 border border-success/20 rounded-lg p-4">
-                          <h4 className="font-semibold text-success mb-2 flex items-center gap-2">
-                            <DollarSign className="w-4 h-4" />
-                            Besparing
-                          </h4>
-                          <p className="text-2xl font-bold text-success">
-                            {formatCurrency(request.savings.potentialSavings)} per månad
-                          </p>
-                          <p className="text-sm text-muted">
-                            Från {formatCurrency(request.savings.currentCost)} till {formatCurrency(request.savings.cheapestAlternative)}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="flex items-center gap-2 ml-4">
-                        <StatusIcon className="w-5 h-5 text-muted" />
-                      </div>
-                    </div>
-
-                    {/* Adress */}
-                    <div className="flex items-center gap-2 text-sm text-muted mb-2">
-                      <Home className="w-4 h-4" />
-                      <span>
-                        {request.customerInfo.address.street} {request.customerInfo.address.streetNumber}
-                        {request.customerInfo.address.apartment && `, ${request.customerInfo.address.apartment}`}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted mb-4">
-                      <span>
-                        {request.customerInfo.address.postalCode} {request.customerInfo.address.city}
-                      </span>
-                    </div>
-
-                    {/* Referensnummer */}
-                    <div className="text-xs text-muted mb-4">
-                      Referensnummer: {request.id}
-                    </div>
-
-                    {/* Admin Actions */}
-                    <div className="border-t border-border pt-4">
-                      <div className="flex flex-wrap gap-3 mb-4">
-                        {/* Status Update Buttons */}
-                        <div className="flex gap-2">
-                          {request.status !== "processing" && (
-                            <button
-                              onClick={() => updateSwitchRequestStatus(request.id, "processing")}
-                              className="px-3 py-1 bg-primary text-white text-sm rounded-lg hover:bg-primary/90 transition-colors"
-                            >
-                              Markera som bearbetas
-                            </button>
+                        {/* Notes Section */}
+                        <div className="bg-gray-50 rounded-lg p-4">
+                          <h5 className="font-medium mb-2 text-gray-900">Anteckningar</h5>
+                          {request.notes ? (
+                            <p className="text-sm text-gray-600 mb-3">{request.notes}</p>
+                          ) : (
+                            <p className="text-sm text-gray-500 mb-3 italic">Inga anteckningar än</p>
                           )}
-                          {request.status !== "completed" && (
+                          <div className="flex gap-2">
+                            <input
+                              type="text"
+                              placeholder="Lägg till anteckning..."
+                              className="flex-1 px-3 py-2 border border-gray-200 rounded-lg text-sm"
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter') {
+                                  const note = e.currentTarget.value.trim();
+                                  if (note) {
+                                    addNoteToSwitchRequest(request.id, note);
+                                    e.currentTarget.value = '';
+                                  }
+                                }
+                              }}
+                            />
                             <button
-                              onClick={() => updateSwitchRequestStatus(request.id, "completed")}
-                              className="px-3 py-1 bg-success text-white text-sm rounded-lg hover:bg-success/90 transition-colors"
-                            >
-                              Markera som slutförd
-                            </button>
-                          )}
-                          {request.status !== "cancelled" && (
-                            <button
-                              onClick={() => updateSwitchRequestStatus(request.id, "cancelled")}
-                              className="px-3 py-1 bg-error text-white text-sm rounded-lg hover:bg-error/90 transition-colors"
-                            >
-                              Avbryt
-                            </button>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Notes Section */}
-                      <div className="bg-gray-50 rounded-lg p-4">
-                        <h5 className="font-medium mb-2">Anteckningar</h5>
-                        {request.notes ? (
-                          <p className="text-sm text-muted mb-3">{request.notes}</p>
-                        ) : (
-                          <p className="text-sm text-muted mb-3 italic">Inga anteckningar än</p>
-                        )}
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Lägg till anteckning..."
-                            className="flex-1 px-3 py-2 border border-border rounded-lg text-sm"
-                            onKeyDown={(e) => {
-                              if (e.key === 'Enter') {
-                                const note = e.currentTarget.value.trim();
+                              onClick={(e) => {
+                                const input = e.currentTarget.previousElementSibling as HTMLInputElement;
+                                const note = input.value.trim();
                                 if (note) {
                                   addNoteToSwitchRequest(request.id, note);
-                                  e.currentTarget.value = '';
+                                  input.value = '';
                                 }
-                              }
-                            }}
-                          />
-                          <button
-                            onClick={(e) => {
-                              const input = e.currentTarget.previousElementSibling as HTMLInputElement;
-                              const note = input.value.trim();
-                              if (note) {
-                                addNoteToSwitchRequest(request.id, note);
-                                input.value = '';
-                              }
-                            }}
-                            className="px-3 py-2 bg-secondary text-white text-sm rounded-lg hover:bg-secondary/90 transition-colors"
-                          >
-                            Lägg till
-                          </button>
+                              }}
+                              className="px-3 py-2 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
+                            >
+                              Lägg till
+                            </button>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
 
-        {/* Info */}
-        <div className="mt-8 p-4 bg-success/5 border border-success/10 rounded-lg">
-          <p className="text-sm text-muted text-center">
-            ✅ <strong>Klart!</strong> Bytförfrågningar sparas nu i Cloudflare D1 databasen. 
-            Du kan uppdatera status och lägga till anteckningar för varje förfrågan.
-          </p>
+          {/* Info */}
+          <div className="mt-8 p-4 bg-green-50 border border-green-200 rounded-lg">
+            <p className="text-sm text-green-700 text-center">
+              ✅ <strong>Klart!</strong> Bytförfrågningar sparas nu i Cloudflare D1 databasen. 
+              Du kan uppdatera status och lägga till anteckningar för varje förfrågan.
+            </p>
+          </div>
         </div>
       </div>
-    </main>
+    </div>
   );
 }
