@@ -334,10 +334,10 @@ export async function POST(request: NextRequest) {
               contractLength: priceResponse.data.bindningstid || 12,
               contractType: "fastpris",
               isActive: true,
-              features: priceResponse.data.features || [`${endpoint.providerName} fastpris`],
+              features: Array.isArray(priceResponse.data.features) ? priceResponse.data.features : [`${endpoint.providerName} fastpris`],
               websiteUrl: `https://${endpoint.url.split('//')[1].split('/')[0]}`,
               phoneNumber: undefined,
-              avtalsalternativ: priceResponse.data.avtalsalternativ || []
+              avtalsalternativ: Array.isArray(priceResponse.data.avtalsalternativ) ? priceResponse.data.avtalsalternativ : []
             });
 
             updateResults.push({
