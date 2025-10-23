@@ -338,7 +338,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                 </div>
                 <p className="text-sm text-muted">{comparison.provider.description}</p>
               </div>
-              {comparison.isRecommended && (
+              {comparison.isRecommended && comparison.estimatedSavings > 0 && (
                 <div className="flex items-center gap-1 bg-success/10 text-success px-2 py-1 rounded-full text-xs">
                   <Zap className="w-3 h-3" />
                   Rekommenderad

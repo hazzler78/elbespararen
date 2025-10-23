@@ -90,10 +90,18 @@ export async function POST(request: NextRequest) {
           provider,
           estimatedMonthlyCost: Math.round(estimatedCost),
           estimatedSavings: Math.round(estimatedSavings),
-          isRecommended: estimatedSavings > 0
+          isRecommended: false // Sätt till false som default, vi hanterar detta i frontend
         };
       })
       .sort((a, b) => b.estimatedSavings - a.estimatedSavings); // Sortera efter besparing
+    
+    // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
+    const recommendedCount = Math.min(3, comparisons.filter(c => c.estimatedSavings > 0).length);
+    for (let i = 0; i < recommendedCount; i++) {
+      if (comparisons[i].estimatedSavings > 0) {
+        comparisons[i].isRecommended = true;
+      }
+    }
     
     console.log('[providers/compare] Final comparisons:', comparisons);
 
