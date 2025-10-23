@@ -54,51 +54,112 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Konvertera fil till Base64 (Node.js Runtime)
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Image = buffer.toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64Image}`;
-
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
-    console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
 
-    // Anropa OpenAI Vision med strukturerad output
-    const response = await openai.chat.completions.create({
-      model: OPENAI_CONFIG.model,
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: dataUrl,
-                detail: "high"
+    let response;
+
+    if (file.type === "application/pdf") {
+      // För PDF:er - använd OpenAI Files API (ny metod från mars 2025)
+      console.log(`[parse-bill-v3] Laddar upp PDF via Files API...`);
+      
+      // Ladda upp PDF till OpenAI Files API
+      const uploadedFile = await openai.files.create({
+        file: file,
+        purpose: "vision"
+      });
+
+      console.log(`[parse-bill-v3] PDF uppladdad med ID: ${uploadedFile.id}`);
+
+      // Anropa OpenAI med fil-ID
+      response = await openai.chat.completions.create({
+        model: OPENAI_CONFIG.model,
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
+              },
+              {
+                type: "file",
+                file: {
+                  file_id: uploadedFile.id
+                }
               }
-            }
-          ]
-        }
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "bill_analysis",
-          strict: true,
-          schema: BILL_SCHEMA
-        }
-      },
-      temperature: OPENAI_CONFIG.temperature,
-      max_tokens: OPENAI_CONFIG.maxTokens
-    });
+            ]
+          }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "bill_analysis",
+            strict: true,
+            schema: BILL_SCHEMA
+          }
+        },
+        temperature: OPENAI_CONFIG.temperature,
+        max_tokens: OPENAI_CONFIG.maxTokens
+      });
+
+      // Rensa upp - ta bort den uppladdade filen
+      try {
+        await openai.files.delete(uploadedFile.id);
+        console.log(`[parse-bill-v3] Rensade upp fil: ${uploadedFile.id}`);
+      } catch (cleanupError) {
+        console.warn(`[parse-bill-v3] Kunde inte rensa upp fil: ${uploadedFile.id}`, cleanupError);
+      }
+
+    } else {
+      // För bilder - använd den gamla metoden med Base64
+      const arrayBuffer = await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      const base64Image = buffer.toString("base64");
+      const dataUrl = `data:${file.type};base64,${base64Image}`;
+
+      console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
+
+      // Anropa OpenAI Vision med strukturerad output
+      response = await openai.chat.completions.create({
+        model: OPENAI_CONFIG.model,
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUrl,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "bill_analysis",
+            strict: true,
+            schema: BILL_SCHEMA
+          }
+        },
+        temperature: OPENAI_CONFIG.temperature,
+        max_tokens: OPENAI_CONFIG.maxTokens
+      });
+    }
 
     // Parse JSON-svaret
     const content = response.choices[0].message.content;
