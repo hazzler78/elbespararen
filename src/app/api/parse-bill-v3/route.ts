@@ -4,8 +4,8 @@ import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 
-// Edge runtime krävs av next-on-pages
-export const runtime = 'edge';
+// Node.js runtime för bättre filhantering
+export const runtime = 'nodejs';
 export const maxDuration = 30;
 
 /**
@@ -54,10 +54,10 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Konvertera fil till Base64 (Edge Runtime kompatibel)
+    // Konvertera fil till Base64 (Node.js Runtime)
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    const base64Image = btoa(String.fromCharCode(...uint8Array));
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString("base64");
     const dataUrl = `data:${file.type};base64,${base64Image}`;
 
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
