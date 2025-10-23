@@ -1,7 +1,7 @@
 // Konstanter för Elbespararen v7
 
 export const SYSTEM_PROMPT = `Du är en expert på svenska elräkningar.
-Analysera bilden eller PDF:en visuellt och textmässigt.
+Analysera bilden visuellt och textmässigt.
 
 Identifiera:
 - Elnätkostnader (ej påverkbara) - oftast ~500-600 kr för en vanlig villa

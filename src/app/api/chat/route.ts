@@ -95,7 +95,7 @@ export async function POST(req: NextRequest) {
 - Helt kostnadsfritt och säkert
 
 ## Hur analysen fungerar:
-1. Användaren laddar upp sin elräkning (PDF/bild)
+1. Användaren laddar upp sin elräkning (bild)
 2. AI:n läser och analyserar fakturan visuellt
 3. Identifierar alla kostnader: elnät, elhandel, extra avgifter
 4. Beräknar besparingspotential genom att jämföra mot spotpris

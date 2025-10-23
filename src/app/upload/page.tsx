@@ -61,7 +61,7 @@ export default function UploadPage() {
             Ladda upp din elräkning
           </h1>
           <p className="text-lg text-muted">
-            Ta ett foto eller ladda upp PDF:en. Vår AI analyserar den på några sekunder.
+            Ta ett foto av din elräkning. Vår AI analyserar den på några sekunder.
           </p>
         </motion.div>
 

@@ -94,7 +94,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-semibold mb-2">1. Ladda upp faktura</h3>
               <p className="text-muted">
-                Ta ett foto eller ladda upp PDF:en av din senaste elräkning.
+                Ta ett foto av din senaste elräkning.
               </p>
             </motion.div>
 

@@ -4,10 +4,9 @@ import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 
-// Edge runtime krävs av Cloudflare Pages
+// Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 export const maxDuration = 30;
-
 
 /**
  * POST /api/parse-bill-v3
@@ -49,36 +48,19 @@ export async function POST(req: NextRequest) {
 
     // Validera filtyp
     if (!APP_CONFIG.acceptedFileTypes.includes(file.type)) {
-      let errorMessage = "Endast JPEG, PNG och WebP tillåts";
-      
-      if (file.type === "application/pdf") {
-        errorMessage = "PDF-filer stöds inte direkt. Vänligen konvertera din PDF till en bild (JPG, PNG eller WebP) och ladda upp den istället. Du kan ta en skärmdump av PDF:en eller använda en online-konverterare.";
-      }
-      
       return NextResponse.json(
-        { error: errorMessage },
+        { error: "Endast JPEG, PNG och WebP tillåts" },
         { status: 400 }
       );
     }
 
-    console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
-
-    // Konvertera fil till Base64 (Edge Runtime kompatibel)
+    // Konvertera fil till Base64
     const arrayBuffer = await file.arrayBuffer();
-    const uint8Array = new Uint8Array(arrayBuffer);
-    
-    // Hantera stora filer genom att konvertera i chunks
-    let base64Image = '';
-    const chunkSize = 8192; // 8KB chunks
-    
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize);
-      base64Image += btoa(String.fromCharCode(...chunk));
-    }
-    
+    const buffer = Buffer.from(arrayBuffer);
+    const base64Image = buffer.toString("base64");
     const dataUrl = `data:${file.type};base64,${base64Image}`;
 
-    console.log(`[parse-bill-v3] Data URL length: ${dataUrl.length} characters`);
+    console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
 
     // Anropa OpenAI Vision med strukturerad output
     const response = await openai.chat.completions.create({
@@ -163,23 +145,10 @@ export async function POST(req: NextRequest) {
     
     const errorMessage = error instanceof Error ? error.message : "Okänt fel";
     
-    // Specifika felmeddelanden för olika typer av fel
-    let userFriendlyError = "Kunde inte analysera fakturan";
-    
-    if (errorMessage.includes("rate limit")) {
-      userFriendlyError = "AI:n är för tillfället överbelastad. Försök igen om en stund.";
-    } else if (errorMessage.includes("timeout")) {
-      userFriendlyError = "Analysen tog för lång tid. Försök igen med en mindre fil.";
-    } else if (errorMessage.includes("invalid image")) {
-      userFriendlyError = "Filen kunde inte läsas. Kontrollera att det är en giltig PDF eller bild.";
-    } else if (errorMessage.includes("file too large")) {
-      userFriendlyError = "Filen är för stor. Max storlek är 10MB.";
-    }
-    
     return NextResponse.json(
       {
         success: false,
-        error: userFriendlyError,
+        error: "Kunde inte analysera fakturan",
         details: errorMessage
       },
       { status: 500 }

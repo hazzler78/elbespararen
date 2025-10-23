@@ -32,8 +32,6 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         setPreview(e.target?.result as string);
       };
       reader.readAsDataURL(selectedFile);
-    } else {
-      setPreview(null); // PDF har ingen preview
     }
   };
 
@@ -78,9 +76,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
       const result = await response.json() as ApiResponse<BillData>;
 
       if (!response.ok || !result.success || !result.data) {
-        const errorMsg = result.error || "Kunde inte analysera fakturan";
-        console.error("[UploadCard] API Error:", errorMsg, result);
-        throw new Error(errorMsg);
+        throw new Error(result.error || "Kunde inte analysera fakturan");
       }
 
       // Lägg till postnummer och prisområde i resultatet
@@ -140,10 +136,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
                   Dra och släpp eller klicka för att välja fil
                 </p>
                 <p className="text-xs text-muted">
-                  JPEG, PNG, WebP • Max {APP_CONFIG.maxFileSize / 1024 / 1024}MB
-                </p>
-                <p className="text-xs text-muted mt-1">
-                  💡 PDF:er: Ta en skärmdump eller konvertera till bild först
+                  JPEG, PNG eller WebP • Max {APP_CONFIG.maxFileSize / 1024 / 1024}MB
                 </p>
               </motion.div>
             ) : (
