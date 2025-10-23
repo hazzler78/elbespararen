@@ -117,8 +117,7 @@ Regler:
       model: "gpt-4o-mini",
       messages,
       temperature: 0.7,
-      max_tokens: 300,
-      timeout: 30000 // 30 second timeout
+      max_tokens: 300
     });
 
     const reply = response.choices[0]?.message?.content;
