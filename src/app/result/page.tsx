@@ -12,6 +12,7 @@ import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import StickyCTA from "@/components/StickyCTA";
 import ProviderComparison from "@/components/ProviderComparison";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -213,6 +214,9 @@ export default function ResultPage() {
       {!showContactForm && (
         <StickyCTA onClick={handleScrollToContact} text="Byt och spara" />
       )}
+
+      {/* Chat Widget */}
+      <ChatWidget billData={billData || undefined} />
     </>
   );
 }
