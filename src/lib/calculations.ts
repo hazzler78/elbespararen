@@ -13,10 +13,10 @@ import { BillData, SavingsCalculation } from "./types";
 export function calculateSavings(billData: BillData): SavingsCalculation {
   const { elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed, totalKWh, totalAmount } = billData;
 
-  // Använd summan av extraFeesDetailed och lägg till moms (25%)
-  // (AI:n läser extra avgifter exkl. moms från fakturan)
+  // Använd summan av extraFeesDetailed (samma som visas under "Extra avgifter & tillägg")
+  // Detta ger konsistent visning - samma belopp överallt
   const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
-  const extraFeesWithVAT = calculatedExtraFees * 1.25;
+  const extraFeesWithVAT = calculatedExtraFees * 1.25; // Samma beräkning som Extra avgifter
 
   // Nuvarande total kostnad = exakt som "Belopp att betala" på fakturan
   const currentCost = totalAmount;
@@ -53,7 +53,7 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     cheapestAlternative,
     potentialSavings,
     extraFeesDetailed: billData.extraFeesDetailed,
-    note: "Besparing = summan av extraFeesDetailed + moms (25%)"
+    note: "Besparing = samma som Extra avgifter & tillägg (konsistent visning)"
   });
 
   return {

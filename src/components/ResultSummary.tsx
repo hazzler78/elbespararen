@@ -61,9 +61,8 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
           <p className="text-5xl font-bold text-primary">{formatCurrency(potentialSavings)}</p>
         </div>
         <p className="text-lg text-muted">
-          per månad ({savingsPercentage}% lägre)
+          per månad ({savingsPercentage}% lägre) inkl. moms
         </p>
-        <p className="text-xs text-muted mt-1">inkl. moms</p>
       </motion.div>
 
       {/* Detaljerad uppdelning */}

@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
           content: [
             {
               type: "text",
-              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Hitta ALLA dolda avgifter och extra kostnader."
+              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."
             },
             {
               type: "image_url",

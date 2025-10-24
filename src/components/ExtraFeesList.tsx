@@ -21,14 +21,14 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
     );
   }
 
-  // Använd summan av fees + moms (25%) för konsistens
+  // Använd summan av fees och lägg till moms (25%) för visning
   const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (
     <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
-        <h3 className="font-semibold text-lg">Dolda avgifter & tillägg</h3>
+        <h3 className="font-semibold text-lg">Extra avgifter & tillägg</h3>
         <div className="text-right">
           <p className="text-2xl font-bold text-error">{formatCurrency(displayTotal)}</p>
           <p className="text-xs text-muted">inkl. moms per månad</p>
