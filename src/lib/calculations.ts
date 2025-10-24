@@ -3,6 +3,57 @@
 import { BillData, SavingsCalculation } from "./types";
 
 /**
+ * Validerar fakturadata för att upptäcka fel
+ */
+function validateBillData(billData: BillData): { isValid: boolean; errors: string[] } {
+  const errors: string[] = [];
+  
+  // Validera att totalAmount är rimligt
+  if (billData.totalAmount < 100 || billData.totalAmount > 10000) {
+    errors.push(`TotalAmount ${billData.totalAmount} kr verkar orimligt`);
+  }
+  
+  // Validera att elnät inte är negativt
+  if (billData.elnatCost < 0) {
+    errors.push(`ElnatCost ${billData.elnatCost} kr kan inte vara negativt`);
+  }
+  
+  // Validera att elhandel inte är negativt
+  if (billData.elhandelCost < 0) {
+    errors.push(`ElhandelCost ${billData.elhandelCost} kr kan inte vara negativt`);
+  }
+  
+  // Validera att extra avgifter inte är negativa
+  if (billData.extraFeesTotal < 0) {
+    errors.push(`ExtraFeesTotal ${billData.extraFeesTotal} kr kan inte vara negativt`);
+  }
+  
+  // Validera att förbrukning är rimlig
+  if (billData.totalKWh < 10 || billData.totalKWh > 5000) {
+    errors.push(`TotalKWh ${billData.totalKWh} kWh verkar orimligt`);
+  }
+  
+  // Validera att summan av extra avgifter stämmer
+  const calculatedExtraFees = billData.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+  const tolerance = 0.01;
+  if (Math.abs(calculatedExtraFees - billData.extraFeesTotal) > tolerance) {
+    errors.push(`ExtraFeesDetailed summa ${calculatedExtraFees} kr matchar inte extraFeesTotal ${billData.extraFeesTotal} kr`);
+  }
+  
+  // Validera att totalAmount är rimligt jämfört med komponenter
+  const expectedTotal = billData.elnatCost + billData.elhandelCost + billData.extraFeesTotal;
+  const totalTolerance = 50; // 50 kr tolerans för moms och avrundning
+  if (Math.abs(expectedTotal - billData.totalAmount) > totalTolerance) {
+    errors.push(`Förväntad total ${expectedTotal} kr matchar inte totalAmount ${billData.totalAmount} kr`);
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+}
+
+/**
  * Beräknar potentiella besparingar baserat på fakturadata
  * 
  * Regler:
@@ -40,6 +91,12 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     ? (potentialSavings / currentCost) * 100 
     : 0;
 
+  // Validera resultat
+  const validation = validateBillData(billData);
+  if (!validation.isValid) {
+    console.warn('[calculateSavings] Validation failed:', validation.errors);
+  }
+
   console.log('[calculateSavings] Debug:', {
     elnatCost,
     elhandelCost,
@@ -53,6 +110,7 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     cheapestAlternative,
     potentialSavings,
     extraFeesDetailed: billData.extraFeesDetailed,
+    validation: validation,
     note: "Besparing = samma som Extra avgifter & tillägg (konsistent visning)"
   });
 
