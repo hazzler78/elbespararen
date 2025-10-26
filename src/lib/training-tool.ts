@@ -139,10 +139,10 @@ ${Object.entries(results.analysis.promptPerformance).map(([name, perf]: [string,
 `).join('')}
 
 ## Vanliga fel
-${results.analysis.commonErrors.map(error => `- ${error}`).join('\n')}
+${results.analysis.commonErrors.map((error: string) => `- ${error}`).join('\n')}
 
 ## Rekommendationer
-${results.recommendations.map(rec => `- ${rec}`).join('\n')}
+${results.recommendations.map((rec: string) => `- ${rec}`).join('\n')}
 `;
 
   return report;
