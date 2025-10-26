@@ -38,7 +38,7 @@ export default function TrainingAdminPage() {
   const handleExport = async () => {
     try {
       const response = await fetch('/api/training/export');
-      const data = await response.json() as { success: boolean; data: any };
+      const data = await response.json() as { success: boolean; data: any; error?: string };
       
       if (data.success) {
         const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
