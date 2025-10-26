@@ -21,7 +21,7 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
     );
   }
 
-  // Använd summan av fees och lägg till moms (25%) för visning
+  // Använd summan av fees och lägg till moms (25%) för konsumentvisning
   const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (

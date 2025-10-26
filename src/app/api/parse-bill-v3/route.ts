@@ -119,9 +119,9 @@ export async function POST(req: NextRequest) {
       billData = JSON.parse(content);
     }
 
-    // AI-korrektioner är avstängda - vi förlitar oss på perfekta prompts istället
-    console.log(`[parse-bill-v3] Hoppar över AI-korrektioner - använder perfekta prompts istället`);
-    // billData = applyCorrections(billData);
+    // Tillämpa AI-korrektioner för att fixa kända problem
+    console.log(`[parse-bill-v3] Tillämpar AI-korrektioner...`);
+    billData = applyCorrections(billData);
 
     // Validera att extraFeesDetailed summerar till extraFeesTotal
     const calculatedTotal = billData.extraFeesDetailed.reduce(

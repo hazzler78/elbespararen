@@ -64,10 +64,10 @@ function validateBillData(billData: BillData): { isValid: boolean; errors: strin
 export function calculateSavings(billData: BillData): SavingsCalculation {
   const { elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed, totalKWh, totalAmount } = billData;
 
-  // Använd summan av extraFeesDetailed (samma som visas under "Extra avgifter & tillägg")
-  // Detta ger konsistent visning - samma belopp överallt
+  // Använd summan av extraFeesDetailed
+  // AI:n returnerar belopp EXKL. moms, men konsumenter behöver se priser INKL. moms
   const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
-  const extraFeesWithVAT = calculatedExtraFees * 1.25; // Samma beräkning som Extra avgifter
+  const calculatedExtraFeesWithVAT = calculatedExtraFees * 1.25;
 
   // Nuvarande total kostnad = exakt som "Belopp att betala" på fakturan
   const currentCost = totalAmount;
@@ -79,9 +79,9 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
 
   const cheapestElhandelCost = totalKWh * estimatedSpotPrice + minimalMonthlyFee;
   
-  // Potentiell besparing = endast extra avgifter (inkl. moms)
+  // Potentiell besparing = endast extra avgifter INKL. moms (för konsumenter)
   // Elhandelsbesparing räknas inte eftersom spotpris kan variera
-  const potentialSavings = extraFeesWithVAT;
+  const potentialSavings = calculatedExtraFeesWithVAT;
 
   // Billigaste alternativ = nuvarande kostnad - besparing
   const cheapestAlternative = currentCost - potentialSavings;
@@ -102,7 +102,6 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     elhandelCost,
     extraFeesTotal,
     calculatedExtraFees,
-    extraFeesWithVAT,
     totalAmount,
     totalKWh,
     currentCost,
@@ -111,7 +110,7 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     potentialSavings,
     extraFeesDetailed: billData.extraFeesDetailed,
     validation: validation,
-    note: "Besparing = samma som Extra avgifter & tillägg (konsistent visning)"
+    note: "Besparing = summan av extra avgifter (inkl. moms)"
   });
 
   return {

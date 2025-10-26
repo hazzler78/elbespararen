@@ -10,10 +10,10 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
   
   // Använd samma logik som "billigaste alternativ"
   // Billigaste alternativ = nuvarande kostnad - besparing
-  // Använd samma beräkning som Extra avgifter & tillägg (konsistent visning)
+  // AI:n returnerar belopp EXKL. moms, men konsumenter behöver se priser INKL. moms
   const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
-  const extraFeesWithVAT = calculatedExtraFees * 1.25; // Samma beräkning som Extra avgifter
-  const cheapestAlternative = billData.totalAmount - extraFeesWithVAT;
+  const calculatedExtraFeesWithVAT = calculatedExtraFees * 1.25;
+  const cheapestAlternative = billData.totalAmount - calculatedExtraFeesWithVAT;
   
   // Beräkna energipris baserat på billigaste alternativ
   const availableForEnergy = cheapestAlternative - elnatCost;

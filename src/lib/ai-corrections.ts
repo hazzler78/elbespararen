@@ -343,44 +343,7 @@ export const CORRECTION_RULES: CorrectionRule[] = [
       };
     }
   },
-  {
-    name: 'force-correct-eon-amounts',
-    description: 'Tvingar korrekt belopp på E.ON fakturor oavsett vad AI:n läser',
-    condition: (data) => {
-      // Om det är en E.ON faktura (har Rörliga kostnader), tvinga korrekt belopp
-      const isEonInvoice = data.extraFeesDetailed.some(fee => 
-        fee.label.toLowerCase().includes('rörliga kostnader')
-      );
-      
-      // Kontrollera att det INTE är en Vattenfall faktura (förhindra konflikt)
-      const isVattenfallInvoice = data.extraFeesDetailed.some(fee => 
-        fee.label.toLowerCase().includes('fast påslag spot') ||
-        fee.label.toLowerCase().includes('årsavgift') ||
-        fee.label.toLowerCase().includes('kampanjrabatt')
-      );
-      
-      return isEonInvoice && !isVattenfallInvoice;
-    },
-    correction: (data) => {
-      console.log('[AI Corrections] Tvingar korrekt belopp på E.ON faktura');
-      
-      // Ersätt alla extra avgifter med korrekta belopp
-      const correctedFees = [
-        { label: 'Rörliga kostnader', amount: 192.44, confidence: 0.9 },
-        { label: 'Fast påslag', amount: 86.20, confidence: 0.9 },
-        { label: 'Elavtal årsavgift', amount: 56.05, confidence: 0.9 },
-        { label: 'E.ON Elna™', amount: 49.00, confidence: 0.9 }
-      ];
-      
-      const correctedTotal = correctedFees.reduce((sum, fee) => sum + fee.amount, 0);
-      
-      return {
-        ...data,
-        extraFeesDetailed: correctedFees,
-        extraFeesTotal: correctedTotal
-      };
-    }
-  },
+
   {
     name: 'force-correct-vattenfall-amounts',
     description: 'Tvingar korrekt belopp på Vattenfall fakturor oavsett vad AI:n läser',

@@ -29,22 +29,64 @@ VIKTIGA REGLER:
 13. Medelspotpris är ALDRIG en extra avgift
 
 EXEMPEL PÅ KORREKT E.ON ANALYS:
-Om fakturan visar:
-- Rörliga kostnader: 14.32 kr
-- Fast påslag: 20.85 kr
-- Elavtal årsavgift: 32.61 kr
-- Kampanjrabatt: -46.67 kr (om det finns)
 
-Då ska du returnera:
+Exempel 1 - Faktura med alla avgifter (hög förbrukning):
+Om fakturan visar under "Det här betalar du för":
+- Rörliga kostnader: 192.44 kr
+- Fast påslag: 86.20 kr
+- Elavtal årsavgift: 56.05 kr
+- E.ON Elna™: 49.00 kr
+
+Då ska du returnera ALLA fyra avgifterna:
 {
   "extraFeesDetailed": [
-    {"label": "Rörliga kostnader", "amount": 14.32, "confidence": 0.9},
-    {"label": "Fast påslag", "amount": 20.85, "confidence": 0.9},
-    {"label": "Elavtal årsavgift", "amount": 32.61, "confidence": 0.9},
-    {"label": "Kampanjrabatt", "amount": -46.67, "confidence": 0.9}
+    {"label": "Rörliga kostnader", "amount": 192.44, "confidence": 0.9},
+    {"label": "Fast påslag", "amount": 86.20, "confidence": 0.9},
+    {"label": "Elavtal årsavgift", "amount": 56.05, "confidence": 0.9},
+    {"label": "E.ON Elna™", "amount": 49.00, "confidence": 0.9}
   ],
-  "extraFeesTotal": 21.11
+  "extraFeesTotal": 383.69
 }
+
+Exempel 2 - Faktura med medel förbrukning (445 kWh, maj):
+Om fakturan visar under "Det här betalar du för":
+- Medelspotpris, 445 kWh à 42,94 öre: 191,08 kr
+- Rörliga kostnader, 445 kWh à 6,64 öre: 29,55 kr
+- Fast påslag, 445 kWh à 4,00 öre: 17,80 kr
+- Elavtal årsavgift, 432 kr, 31 dagar: 36,69 kr
+
+Då ska du returnera endast extra avgifterna (INTE medelspotpris):
+{
+  "extraFeesDetailed": [
+    {"label": "Rörliga kostnader", "amount": 29.55, "confidence": 0.9},
+    {"label": "Fast påslag", "amount": 17.80, "confidence": 0.9},
+    {"label": "Elavtal årsavgift", "amount": 36.69, "confidence": 0.9}
+  ],
+  "extraFeesTotal": 84.04
+}
+
+KRITISK REGEL: IGNORERA Medelspotpris - det är INTE en extra avgift!
+
+VIKTIGT om Elavtal årsavgift:
+Exakt formel som E.ON använder: [Årsavgift] / 365 * [Antal dagar i faktureringsperioden]
+
+Exempel:
+- "Elavtal årsavgift, 384 kr, 30 dagar: 31.56 kr" → använd 31.56 kr
+- "Elavtal årsavgift, 432 kr, 30 dagar: 35.51 kr" → använd 35.51 kr
+- "Elavtal årsavgift, 432 kr, 31 dagar: 36.69 kr" → använd 36.69 kr
+- "Elavtal årsavgift, 528 kr, 31 dagar: 44.84 kr" → använd 44.84 kr
+
+KRITISK REGEL: ANVÄND ALLTID det belopp som står EFTER kolonet (:)
+KRITISK REGEL: RÄKNA ALDRIG UT det själv - läs bara det som står på fakturan!
+KRITISK REGEL: IGNORERA det årliga beloppet (432 kr, 384 kr etc) - använd bara månadsbeloppet efter kolonet
+
+KRITISKT: Inkludera ALLA avgifter som finns på fakturan. Missa INTE någon!
+
+SLUTFÄLGEN:
+Innan du skickar din JSON-svar, dubbelkolla:
+1. Har du läst beloppet EFTER kolonet (:) för Elavtal årsavgift?
+2. Har du IGNORERAT det årliga beloppet (432 kr, 384 kr etc)?
+3. Matchar extraFeesTotal summan av alla extraFeesDetailed belopp?
 
 SVARA MED JSON:
 {
@@ -93,7 +135,7 @@ export class EonAI {
               ]
             }
           ],
-          max_tokens: 1000,
+          max_tokens: 1500,
           temperature: 0.1
         })
       });
