@@ -3,6 +3,8 @@ import OpenAI from "openai";
 import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
+import { applyCorrections, validateBillData } from "@/lib/ai-corrections";
+import { providerRouter } from "@/lib/ai-provider-routing";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -30,6 +32,7 @@ export async function POST(req: NextRequest) {
     // Hämta fil från FormData
     const formData = await req.formData();
     const file = formData.get("file") as File;
+    const customPrompt = formData.get("prompt") as string;
 
     if (!file) {
       return NextResponse.json(
@@ -62,51 +65,63 @@ export async function POST(req: NextRequest) {
 
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
 
-    // Anropa OpenAI Vision med strukturerad output
-    const response = await openai.chat.completions.create({
-      model: OPENAI_CONFIG.model,
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT
-        },
-        {
-          role: "user",
-          content: [
-            {
-              type: "text",
-              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."
-            },
-            {
-              type: "image_url",
-              image_url: {
-                url: dataUrl,
-                detail: "high"
-              }
-            }
-          ]
-        }
-      ],
-      response_format: {
-        type: "json_schema",
-        json_schema: {
-          name: "bill_analysis",
-          strict: true,
-          schema: BILL_SCHEMA
-        }
-      },
-      temperature: OPENAI_CONFIG.temperature,
-      max_tokens: OPENAI_CONFIG.maxTokens
-    });
-
-    // Parse JSON-svaret
-    const content = response.choices[0].message.content;
+    // Använd ny provider routing system
+    console.log(`[parse-bill-v3] Använder provider routing system...`);
+    let billData: BillData;
     
-    if (!content) {
-      throw new Error("Tom respons från OpenAI");
+    try {
+      billData = await providerRouter.routeToProvider(dataUrl);
+    } catch (routingError) {
+      console.warn(`[parse-bill-v3] Provider routing misslyckades, fallback till generell AI:`, routingError);
+      
+      // Fallback till original AI-logik
+      const promptToUse = customPrompt || SYSTEM_PROMPT;
+      const response = await openai.chat.completions.create({
+        model: OPENAI_CONFIG.model,
+        messages: [
+          {
+            role: "system",
+            content: promptToUse
+          },
+          {
+            role: "user",
+            content: [
+              {
+                type: "text",
+                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."
+              },
+              {
+                type: "image_url",
+                image_url: {
+                  url: dataUrl,
+                  detail: "high"
+                }
+              }
+            ]
+          }
+        ],
+        response_format: {
+          type: "json_schema",
+          json_schema: {
+            name: "bill_analysis",
+            strict: true,
+            schema: BILL_SCHEMA
+          }
+        },
+        temperature: OPENAI_CONFIG.temperature,
+        max_tokens: OPENAI_CONFIG.maxTokens
+      });
+
+      const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error("Tom respons från OpenAI");
+      }
+      billData = JSON.parse(content);
     }
 
-    const billData: BillData = JSON.parse(content);
+    // AI-korrektioner är avstängda - vi förlitar oss på perfekta prompts istället
+    console.log(`[parse-bill-v3] Hoppar över AI-korrektioner - använder perfekta prompts istället`);
+    // billData = applyCorrections(billData);
 
     // Validera att extraFeesDetailed summerar till extraFeesTotal
     const calculatedTotal = billData.extraFeesDetailed.reduce(
@@ -122,6 +137,12 @@ export async function POST(req: NextRequest) {
       );
       // Justera till beräknad summa
       billData.extraFeesTotal = Math.round(calculatedTotal * 100) / 100;
+    }
+
+    // Validera slutresultatet
+    const validation = validateBillData(billData);
+    if (!validation.isValid) {
+      console.warn(`[parse-bill-v3] Valideringsvarningar:`, validation.warnings);
     }
 
     console.log(`[parse-bill-v3] Analys klar. Confidence: ${(billData.confidence * 100).toFixed(0)}%`);

@@ -1,0 +1,140 @@
+warning: in the working copy of 'src/app/api/parse-bill-v3/route.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/src/app/api/parse-bill-v3/route.ts b/src/app/api/parse-bill-v3/route.ts[m
+[1mindex 891fd98..c31b8b2 100644[m
+[1m--- a/src/app/api/parse-bill-v3/route.ts[m
+[1m+++ b/src/app/api/parse-bill-v3/route.ts[m
+[36m@@ -3,6 +3,8 @@[m [mimport OpenAI from "openai";[m
+ import { BILL_SCHEMA } from "@/lib/schema";[m
+ import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";[m
+ import { BillData } from "@/lib/types";[m
+[32m+[m[32mimport { applyCorrections, validateBillData } from "@/lib/ai-corrections";[m
+[32m+[m[32mimport { providerRouter } from "@/lib/ai-provider-routing";[m
+ [m
+ // Edge runtime krävs av next-on-pages[m
+ export const runtime = 'edge';[m
+[36m@@ -30,6 +32,7 @@[m [mexport async function POST(req: NextRequest) {[m
+     // Hämta fil från FormData[m
+     const formData = await req.formData();[m
+     const file = formData.get("file") as File;[m
+[32m+[m[32m    const customPrompt = formData.get("prompt") as string;[m
+ [m
+     if (!file) {[m
+       return NextResponse.json([m
+[36m@@ -62,51 +65,63 @@[m [mexport async function POST(req: NextRequest) {[m
+ [m
+     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);[m
+ [m
+[31m-    // Anropa OpenAI Vision med strukturerad output[m
+[31m-    const response = await openai.chat.completions.create({[m
+[31m-      model: OPENAI_CONFIG.model,[m
+[31m-      messages: [[m
+[31m-        {[m
+[31m-          role: "system",[m
+[31m-          content: SYSTEM_PROMPT[m
+[31m-        },[m
+[31m-        {[m
+[31m-          role: "user",[m
+[31m-          content: [[m
+[31m-            {[m
+[31m-              type: "text",[m
+[31m-              text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."[m
+[31m-            },[m
+[31m-            {[m
+[31m-              type: "image_url",[m
+[31m-              image_url: {[m
+[31m-                url: dataUrl,[m
+[31m-                detail: "high"[m
+[32m+[m[32m    // Använd ny provider routing system[m
+[32m+[m[32m    console.log(`[parse-bill-v3] Använder provider routing system...`);[m
+[32m+[m[32m    let billData: BillData;[m
+[32m+[m[41m    [m
+[32m+[m[32m    try {[m
+[32m+[m[32m      billData = await providerRouter.routeToProvider(dataUrl);[m
+[32m+[m[32m    } catch (routingError) {[m
+[32m+[m[32m      console.warn(`[parse-bill-v3] Provider routing misslyckades, fallback till generell AI:`, routingError);[m
+[32m+[m[41m      [m
+[32m+[m[32m      // Fallback till original AI-logik[m
+[32m+[m[32m      const promptToUse = customPrompt || SYSTEM_PROMPT;[m
+[32m+[m[32m      const response = await openai.chat.completions.create({[m
+[32m+[m[32m        model: OPENAI_CONFIG.model,[m
+[32m+[m[32m        messages: [[m
+[32m+[m[32m          {[m
+[32m+[m[32m            role: "system",[m
+[32m+[m[32m            content: promptToUse[m
+[32m+[m[32m          },[m
+[32m+[m[32m          {[m
+[32m+[m[32m            role: "user",[m
+[32m+[m[32m            content: [[m
+[32m+[m[32m              {[m
+[32m+[m[32m                type: "text",[m
+[32m+[m[32m                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."[m
+[32m+[m[32m              },[m
+[32m+[m[32m              {[m
+[32m+[m[32m                type: "image_url",[m
+[32m+[m[32m                image_url: {[m
+[32m+[m[32m                  url: dataUrl,[m
+[32m+[m[32m                  detail: "high"[m
+[32m+[m[32m                }[m
+               }[m
+[31m-            }[m
+[31m-          ][m
+[31m-        }[m
+[31m-      ],[m
+[31m-      response_format: {[m
+[31m-        type: "json_schema",[m
+[31m-        json_schema: {[m
+[31m-          name: "bill_analysis",[m
+[31m-          strict: true,[m
+[31m-          schema: BILL_SCHEMA[m
+[31m-        }[m
+[31m-      },[m
+[31m-      temperature: OPENAI_CONFIG.temperature,[m
+[31m-      max_tokens: OPENAI_CONFIG.maxTokens[m
+[31m-    });[m
+[32m+[m[32m            ][m
+[32m+[m[32m          }[m
+[32m+[m[32m        ],[m
+[32m+[m[32m        response_format: {[m
+[32m+[m[32m          type: "json_schema",[m
+[32m+[m[32m          json_schema: {[m
+[32m+[m[32m            name: "bill_analysis",[m
+[32m+[m[32m            strict: true,[m
+[32m+[m[32m            schema: BILL_SCHEMA[m
+[32m+[m[32m          }[m
+[32m+[m[32m        },[m
+[32m+[m[32m        temperature: OPENAI_CONFIG.temperature,[m
+[32m+[m[32m        max_tokens: OPENAI_CONFIG.maxTokens[m
+[32m+[m[32m      });[m
+ [m
+[31m-    // Parse JSON-svaret[m
+[31m-    const content = response.choices[0].message.content;[m
+[31m-    [m
+[31m-    if (!content) {[m
+[31m-      throw new Error("Tom respons från OpenAI");[m
+[32m+[m[32m      const content = response.choices[0].message.content;[m
+[32m+[m[32m      if (!content) {[m
+[32m+[m[32m        throw new Error("Tom respons från OpenAI");[m
+[32m+[m[32m      }[m
+[32m+[m[32m      billData = JSON.parse(content);[m
+     }[m
+ [m
+[31m-    const billData: BillData = JSON.parse(content);[m
+[32m+[m[32m    // AI-korrektioner är avstängda - vi förlitar oss på perfekta prompts istället[m
+[32m+[m[32m    console.log(`[parse-bill-v3] Hoppar över AI-korrektioner - använder perfekta prompts istället`);[m
+[32m+[m[32m    // billData = applyCorrections(billData);[m
+ [m
+     // Validera att extraFeesDetailed summerar till extraFeesTotal[m
+     const calculatedTotal = billData.extraFeesDetailed.reduce([m
+[36m@@ -124,6 +139,12 @@[m [mexport async function POST(req: NextRequest) {[m
+       billData.extraFeesTotal = Math.round(calculatedTotal * 100) / 100;[m
+     }[m
+ [m
+[32m+[m[32m    // Validera slutresultatet[m
+[32m+[m[32m    const validation = validateBillData(billData);[m
+[32m+[m[32m    if (!validation.isValid) {[m
+[32m+[m[32m      console.warn(`[parse-bill-v3] Valideringsvarningar:`, validation.warnings);[m
+[32m+[m[32m    }[m
+[32m+[m
+     console.log(`[parse-bill-v3] Analys klar. Confidence: ${(billData.confidence * 100).toFixed(0)}%`);[m
+     console.log(`[parse-bill-v3] Elnät: ${billData.elnatCost} kr, Elhandel: ${billData.elhandelCost} kr, Extra: ${billData.extraFeesTotal} kr`);[m
+     console.log(`[parse-bill-v3] Total belopp: ${billData.totalAmount} kr`);[m
