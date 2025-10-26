@@ -37,7 +37,7 @@ export default function TestPromptsPage() {
           body: formData
         });
 
-        const data = await response.json();
+        const data = await response.json() as { success: boolean; data: any; error?: string };
         
         testResults.push({
           promptName: variant.name,
