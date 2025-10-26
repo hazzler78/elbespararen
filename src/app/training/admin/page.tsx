@@ -17,7 +17,7 @@ export default function TrainingAdminPage() {
     try {
       // Ladda statistik från API
       const response = await fetch('/api/training/feedback');
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; stats: any };
       
       if (data.success) {
         setStats(data.stats);
@@ -38,7 +38,7 @@ export default function TrainingAdminPage() {
   const handleExport = async () => {
     try {
       const response = await fetch('/api/training/export');
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; data: any };
       
       if (data.success) {
         const blob = new Blob([JSON.stringify(data.data, null, 2)], { type: 'application/json' });
@@ -71,7 +71,7 @@ export default function TrainingAdminPage() {
           body: JSON.stringify(data)
         });
         
-        const result = await response.json();
+        const result = await response.json() as { success: boolean; error?: string };
         
         if (result.success) {
           alert('Träningsdata importerad!');
@@ -90,7 +90,7 @@ export default function TrainingAdminPage() {
     if (confirm('Är du säker på att du vill rensa all träningsdata? Detta går inte att ångra!')) {
       try {
         const response = await fetch('/api/training/clear', { method: 'POST' });
-        const result = await response.json();
+        const result = await response.json() as { success: boolean; error?: string };
         
         if (result.success) {
           alert('All träningsdata rensad!');
