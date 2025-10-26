@@ -57,14 +57,15 @@ function analyzeTestResults(results: any[]) {
   
   // Analysera varje prompt
   for (const [promptName, results] of Object.entries(promptGroups)) {
-    const accuracies = results.map(r => r.accuracy);
+    const resultsArray = results as any[];
+    const accuracies = resultsArray.map(r => r.accuracy);
     const avgAccuracy = accuracies.reduce((sum, acc) => sum + acc, 0) / accuracies.length;
-    const avgExecutionTime = results.reduce((sum, r) => sum + r.executionTime, 0) / results.length;
+    const avgExecutionTime = resultsArray.reduce((sum, r) => sum + r.executionTime, 0) / resultsArray.length;
     
     analysis.promptPerformance[promptName] = {
       averageAccuracy: avgAccuracy,
       averageExecutionTime: avgExecutionTime,
-      totalTests: results.length,
+      totalTests: resultsArray.length,
       successRate: accuracies.filter(acc => acc > 80).length / accuracies.length
     };
     
