@@ -28,7 +28,7 @@ export default function TrainingDashboard() {
   const fetchStats = async () => {
     try {
       const response = await fetch('/api/training/feedback');
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; stats: any };
       
       if (data.success) {
         setStats(data.stats);
