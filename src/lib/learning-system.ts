@@ -114,9 +114,8 @@ function identifyImprovementAreas(incorrectData: LearningData[]): string[] {
     areas.push('Förtydliga kolumn-instruktioner');
   }
   
-  if (incorrectData.some(d => d.aiResult.contractType === 'okänd')) {
-    areas.push('Förbättra avtalstyp-detektering');
-  }
+  // Kontrollera om avtalstyp-detektering behöver förbättras
+  // (contractType kan bara vara "fast" | "rörligt", så "okänd" är inte möjligt)
   
   return areas;
 }
