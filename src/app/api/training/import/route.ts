@@ -1,8 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { importTrainingData } from '@/lib/server-database';
 
-export const runtime = 'edge';
-
 export async function POST(request: NextRequest) {
   try {
     const data = await request.json() as {
