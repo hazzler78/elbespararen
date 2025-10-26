@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { clearTrainingData } from '@/lib/server-database';
 
+export const runtime = 'edge';
+
 export async function POST() {
   try {
     await clearTrainingData();

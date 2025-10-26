@@ -3,6 +3,8 @@ import { analyzeLearningData, calculateImprovementTrend, LearningData } from '@/
 import { saveTrainingExample, loadTrainingExamples } from '@/lib/server-database';
 import { TrainingExample } from '@/lib/ai-training';
 
+export const runtime = 'edge';
+
 interface TrainingFeedback {
   id: string;
   image: string;
