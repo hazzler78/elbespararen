@@ -84,7 +84,7 @@ function analyzeTestResults(results: any[]) {
   }, {} as Record<string, number>);
   
   analysis.commonErrors = Object.entries(errorCounts)
-    .sort(([,a], [,b]) => b - a)
+    .sort(([,a], [,b]) => (b as number) - (a as number))
     .slice(0, 5)
     .map(([error]) => error);
   
