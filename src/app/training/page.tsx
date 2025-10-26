@@ -65,7 +65,7 @@ export default function TrainingPage() {
   const handleFeedback = async (isCorrect: boolean) => {
     if (!currentResult) return;
 
-    const updatedResult = {
+    const updatedResult: TrainingResult = {
       ...currentResult,
       userFeedback: isCorrect ? 'correct' : 'incorrect'
     };
