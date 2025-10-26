@@ -3,7 +3,11 @@ import { importTrainingData } from '@/lib/server-database';
 
 export async function POST(request: NextRequest) {
   try {
-    const data = await request.json();
+    const data = await request.json() as {
+      examples: any[];
+      promptVersions: any[];
+      currentPromptId: string | null;
+    };
     
     await importTrainingData(data);
     
