@@ -30,7 +30,7 @@ export default function ValidateOptimalPage() {
         body: formData
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; data: any; error?: string };
       console.log('API response:', data);
 
       if (data.success) {
