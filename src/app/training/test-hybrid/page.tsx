@@ -30,7 +30,7 @@ export default function TestHybridPage() {
         body: formData
       });
 
-      const data = await response.json();
+      const data = await response.json() as { success: boolean; data: any; error?: string };
       console.log('Hybrid system response:', data);
 
       if (data.success) {
