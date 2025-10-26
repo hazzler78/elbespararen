@@ -38,7 +38,7 @@ export default function TrainingPage() {
         body: formData
       });
 
-      const result = await response.json();
+      const result = await response.json() as { success: boolean; data: any; error?: string };
       console.log('API Response:', result);
       
       if (result.success && result.data) {
@@ -79,7 +79,7 @@ export default function TrainingPage() {
       });
 
       if (response.ok) {
-        const result = await response.json();
+        const result = await response.json() as { insights?: any };
         setTrainingHistory(prev => [...prev, updatedResult]);
         setCurrentResult(null);
         
