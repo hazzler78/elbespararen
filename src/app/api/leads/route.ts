@@ -1,16 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Lead, BillData, SavingsCalculation } from "@/lib/types";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
-// TODO: Integrera med databas (PostgreSQL/Supabase/etc)
-// För nu returnerar vi en mockad lista
-
 export async function GET() {
   try {
-    // TODO: Hämta från databas
-    const leads: Lead[] = [];
+    // Hämta D1-binding från Edge-runtime
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    const db = createDatabaseFromBinding(env?.DB);
+    const leads = await db.getLeads();
     
     return NextResponse.json({
       success: true,
@@ -46,23 +62,39 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Hämta D1-binding från Edge-runtime
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    const db = createDatabaseFromBinding(env?.DB);
+
     // Skapa lead-objekt
-    const lead: Lead = {
-      id: crypto.randomUUID(),
-      email,
-      phone,
+    const leadData = {
+      email: email || "",
+      phone: phone || "",
       billData,
       savings,
-      createdAt: new Date(),
-      status: "new"
+      status: "new" as const
     };
 
+    const lead = await db.createLead(leadData);
     console.log("[leads] Ny lead skapad:", lead.id);
 
-    // TODO: Spara till databas
-    // await db.leads.create(lead);
-
-    // TODO: Skicka Telegram-notis
+    // Skicka Telegram-notis
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
       await sendTelegramNotification(lead);
     }

@@ -7,14 +7,28 @@ import { Lead } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
 export default function AdminPage() {
-  const [leads] = useState<Lead[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "new" | "contacted" | "converted" | "rejected">("all");
 
   useEffect(() => {
-    // TODO: Hämta leads från databas via API
-    // För nu, visa mockdata
-    setIsLoading(false);
+    const fetchLeads = async () => {
+      try {
+        const response = await fetch('/api/leads');
+        if (response.ok) {
+          const data = await response.json();
+          setLeads(data.data || []);
+        } else {
+          console.error('Kunde inte hämta leads:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av leads:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchLeads();
   }, []);
 
   const filteredLeads = filter === "all" 
