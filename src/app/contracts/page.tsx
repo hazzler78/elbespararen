@@ -38,14 +38,14 @@ export default function ContractsPage() {
       extraFeesTotal: 150,
       extraFeesDetailed: [
         {
-          name: "Nätavgift",
+          label: "Nätavgift",
           amount: 100,
-          description: "Månadsavgift för elnätet"
+          confidence: 0.9
         },
         {
-          name: "Energiskatt",
+          label: "Energiskatt",
           amount: 50,
-          description: "Statlig skatt på el"
+          confidence: 0.9
         }
       ],
       confidence: 0.8,
