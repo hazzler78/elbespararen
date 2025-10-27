@@ -198,23 +198,28 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
   return (
     <div
-      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
+      className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 overflow-hidden"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
     >
       <div
-        className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] flex flex-col"
       >
         {/* Header */}
-        <div className="bg-primary text-white p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">Byt till {provider.name}</h2>
-              <p className="text-primary-foreground/80 mt-1">
+        <div className="bg-primary text-white p-4 sm:p-6 flex-shrink-0">
+          <div className="flex items-start justify-between">
+            <div className="pr-4">
+              <h2 className="text-xl sm:text-2xl font-bold">Byt till {provider.name}</h2>
+              <p className="text-primary-foreground/80 mt-1 text-sm hidden sm:block">
                 Vi hjälper dig genom hela bytet - det tar bara några minuter
               </p>
             </div>
             <button
               onClick={onClose}
-              className="text-primary-foreground/80 hover:text-white transition-colors"
+              className="text-primary-foreground/80 hover:text-white transition-colors flex-shrink-0"
             >
               <X className="w-6 h-6" />
             </button>
@@ -222,8 +227,8 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
         </div>
 
         {/* Progress Steps */}
-        <div className="px-6 py-4 border-b border-border">
-          <div className="flex items-center justify-between">
+        <div className="px-4 sm:px-6 py-4 border-b border-border flex-shrink-0">
+          <div className="hidden md:flex items-center justify-between">
             {steps.map((step, index) => {
               const Icon = step.icon;
               const isActive = currentStep === step.id;
@@ -252,10 +257,28 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
               );
             })}
           </div>
+          {/* Mobile progress indicator */}
+          <div className="md:hidden">
+            {(() => {
+              const step = steps.find(s => s.id === currentStep);
+              const Icon = step?.icon || User;
+              return (
+                <div className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-full border-2 border-primary bg-primary text-white">
+                    <Icon className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-primary">{step?.title}</p>
+                    <p className="text-sm text-muted">Steg {currentStep} av {steps.length}</p>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
         </div>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[60vh]">
+                {/* Content */}
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1" style={{ minHeight: 0 }}>
           <div>
             {currentStep === 1 && (
               <div
@@ -478,62 +501,62 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
             {currentStep === 4 && (
               <div
                 key="step4"
-                className="space-y-6"
+                className="space-y-4 pb-8"
               >
                 <div>
                   <h3 className="text-xl font-bold mb-4">Sammanfattning</h3>
                   
                   {/* Pris/Besparing */}
                   {provider.contractType === "fastpris" ? (
-                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
-                      <h4 className="font-bold text-primary mb-2">Ditt valda avtal med {provider.name}</h4>
-                      <p className="text-2xl font-bold text-primary">
+                    <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+                      <h4 className="font-bold text-primary mb-1 text-sm">Ditt valda avtal med {provider.name}</h4>
+                      <p className="text-xl font-bold text-primary">
                         {selectedContract?.fastpris ? `${selectedContract.fastpris.toFixed(2)} kr/kWh` : `${provider.energyPrice} kr/kWh`}
                       </p>
-                      <p className="text-sm text-muted">
+                      <p className="text-xs text-muted">
                         {selectedContract?.namn || "Fastpris under hela avtalsperioden"}
                       </p>
                     </div>
                   ) : (
-                    <div className="bg-success/10 border border-success/20 rounded-lg p-4 mb-6">
-                      <h4 className="font-bold text-success mb-2">Din besparing med {provider.name}</h4>
-                      <p className="text-2xl font-bold text-success">
+                    <div className="bg-success/10 border border-success/20 rounded-lg p-3 mb-4">
+                      <h4 className="font-bold text-success mb-1 text-sm">Din besparing med {provider.name}</h4>
+                      <p className="text-xl font-bold text-success">
                         {savings.potentialSavings} kr per månad
                       </p>
-                      <p className="text-sm text-muted">
+                      <p className="text-xs text-muted">
                         Från {savings.currentCost} kr till {savings.cheapestAlternative} kr
                       </p>
                     </div>
                   )}
 
                   {/* Kunduppgifter */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold mb-2">Kunduppgifter</h4>
-                    <p>{formData.firstName} {formData.lastName}</p>
-                    <p>{formData.email}</p>
-                    <p>{formData.phone}</p>
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                    <h4 className="font-semibold mb-1 text-sm">Kunduppgifter</h4>
+                    <p className="text-sm">{formData.firstName} {formData.lastName}</p>
+                    <p className="text-sm">{formData.email}</p>
+                    <p className="text-sm">{formData.phone}</p>
                   </div>
 
                   {/* Adress */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold mb-2">Adress</h4>
-                    <p>{formData.street} {formData.streetNumber}{formData.apartment && `, ${formData.apartment}`}</p>
-                    <p>{formData.postalCode} {formData.city}</p>
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                    <h4 className="font-semibold mb-1 text-sm">Adress</h4>
+                    <p className="text-sm">{formData.street} {formData.streetNumber}{formData.apartment && `, ${formData.apartment}`}</p>
+                    <p className="text-sm">{formData.postalCode} {formData.city}</p>
                   </div>
 
                   {/* Nuvarande leverantör */}
-                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                    <h4 className="font-semibold mb-2">Nuvarande leverantör</h4>
-                    <p>{formData.currentProviderName}</p>
-                    {formData.currentCustomerNumber && <p>Anläggnings-id: {formData.currentCustomerNumber}</p>}
-                    {formData.currentContractEndDate && <p>Avtalslut: {formData.currentContractEndDate}</p>}
+                  <div className="bg-gray-50 rounded-lg p-3 mb-3">
+                    <h4 className="font-semibold mb-1 text-sm">Nuvarande leverantör</h4>
+                    <p className="text-sm">{formData.currentProviderName}</p>
+                    {formData.currentCustomerNumber && <p className="text-sm">Anläggnings-id: {formData.currentCustomerNumber}</p>}
+                    {formData.currentContractEndDate && <p className="text-sm">Avtalslut: {formData.currentContractEndDate}</p>}
                   </div>
 
                   {/* Ny leverantör */}
-                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
-                    <h4 className="font-semibold mb-2">Ny leverantör: {provider.name}</h4>
-                    <p className="text-sm text-muted mb-2">{provider.description}</p>
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
+                    <h4 className="font-semibold mb-1 text-sm">Ny leverantör: {provider.name}</h4>
+                    <p className="text-xs text-muted mb-2">{provider.description}</p>
+                    <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
                         <p className="text-muted">Månadskostnad</p>
                         <p className="font-semibold">
@@ -552,12 +575,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   </div>
 
                   {/* Viktig information */}
-                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-                    <div className="flex items-start gap-3">
-                      <AlertCircle className="w-5 h-5 text-warning mt-0.5" />
+                  <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+                    <div className="flex items-start gap-2">
+                      <AlertCircle className="w-4 h-4 text-warning mt-0.5 flex-shrink-0" />
                       <div>
-                        <h4 className="font-semibold text-warning mb-2">Viktig information</h4>
-                        <ul className="text-sm text-muted space-y-1">
+                        <h4 className="font-semibold text-warning mb-1 text-sm">Viktig information</h4>
+                        <ul className="text-xs text-muted space-y-0.5">
                           <li>• Vi sköter hela bytet åt dig</li>
                           <li>• Du får bekräftelse via {formData.preferredContactMethod === 'email' ? 'e-post' : formData.preferredContactMethod === 'phone' ? 'telefon' : 'SMS'}</li>
                           <li>• Bytet genomförs enligt uppsägningstiden från din nuvarande leverantör</li>
@@ -573,19 +596,19 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border p-6">
-          <div className="flex items-center justify-between">
+        <div className="border-t border-border p-4 sm:p-6 bg-white flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4">
             <button
               onClick={prevStep}
               disabled={currentStep === 1}
-              className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center justify-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ArrowLeft className="w-4 h-4" />
               Tillbaka
             </button>
 
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-muted">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+              <span className="text-sm text-muted text-center sm:text-left">
                 Steg {currentStep} av {steps.length}
               </span>
               
@@ -593,7 +616,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                 <button
                   onClick={nextStep}
                   disabled={!isStepValid(currentStep)}
-                  className="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex items-center justify-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Nästa
                   <ArrowRight className="w-4 h-4" />
@@ -602,7 +625,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                 <button
                   onClick={handleSubmit}
                   disabled={isSubmitting}
-                  className="flex items-center gap-2 bg-success text-white px-6 py-2 rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
+                  className="flex items-center justify-center gap-2 bg-success text-white px-6 py-2 rounded-lg hover:bg-success/90 transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? (
                     <>
