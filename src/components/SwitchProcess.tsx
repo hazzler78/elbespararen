@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
 import { 
   CheckCircle2, 
   User, 
@@ -198,16 +197,10 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   }
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+    <div
       className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
     >
-      <motion.div
-        initial={{ scale: 0.95, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        exit={{ scale: 0.95, opacity: 0 }}
+      <div
         className="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-hidden"
       >
         {/* Header */}
@@ -263,13 +256,10 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
-          <AnimatePresence mode="wait">
+          <div mode="wait">
             {currentStep === 1 && (
-              <motion.div
+              <div
                 key="step1"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
                 <div>
@@ -367,15 +357,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {currentStep === 2 && (
-              <motion.div
+              <div
                 key="step2"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
                 <div>
@@ -432,15 +419,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {currentStep === 3 && (
-              <motion.div
+              <div
                 key="step3"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
                 <div>
@@ -488,15 +472,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
 
             {currentStep === 4 && (
-              <motion.div
+              <div
                 key="step4"
-                initial={{ opacity: 0, x: 20 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
                 <div>
@@ -586,9 +567,9 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     </div>
                   </div>
                 </div>
-              </motion.div>
+              </div>
             )}
-          </AnimatePresence>
+          </div>
         </div>
 
         {/* Footer */}
@@ -639,7 +620,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
             </div>
           </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 }
