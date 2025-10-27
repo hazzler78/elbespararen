@@ -30,11 +30,12 @@ export default function ContractsPage() {
   // Skapa mock data för att visa avtal baserat på postnummer
   const createMockBillData = (area: string): BillData => {
     return {
-      totalAmount: 1200, // Exempel belopp
+      elnatCost: 200, // Nätavgift
+      elhandelCost: 800, // Elhandelskostnad
+      totalAmount: 1200, // Total belopp
       totalKWh: 400, // Exempel förbrukning
       period: "2024-01-01 - 2024-01-31",
       contractType: "rörligt",
-      provider: "Okänd leverantör",
       extraFeesTotal: 150,
       extraFeesDetailed: [
         {
