@@ -78,7 +78,11 @@ export default function ResultPage() {
 
             <div className="flex gap-2">
               <button
-                onClick={() => window.print()}
+                onClick={() => {
+                  if (typeof window !== "undefined") {
+                    window.print();
+                  }
+                }}
                 className="p-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
                 title="Skriv ut"
               >
@@ -86,7 +90,7 @@ export default function ResultPage() {
               </button>
               <button
                 onClick={() => {
-                  if (navigator.share) {
+                  if (typeof window !== "undefined" && navigator.share) {
                     navigator.share({
                       title: "Elbespararen",
                       text: `Jag kan spara ${savings.potentialSavings} kr/mån på min elräkning!`,
