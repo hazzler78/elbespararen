@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/calculations";
 import ConfidenceBadge from "./ConfidenceBadge";
 import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
+import ClientOnly from "./ClientOnly";
 
 interface ExtraFeesListProps {
   fees: ExtraFeeDetailed[];
@@ -25,7 +26,8 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
   const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (
-    <div className="space-y-3">
+    <ClientOnly>
+      <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <h3 className="font-semibold text-lg">Extra avgifter & tillägg</h3>
@@ -77,6 +79,7 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
         </motion.div>
       )}
     </div>
+    </ClientOnly>
   );
 }
 

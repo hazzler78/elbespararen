@@ -4,6 +4,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Send, CheckCircle2, Loader2 } from "lucide-react";
 import { ContactFormData } from "@/lib/types";
+import ClientOnly from "./ClientOnly";
 
 interface ContactFormProps {
   onSubmit?: (data: ContactFormData) => void | Promise<void>;
@@ -54,25 +55,28 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
 
   if (isSuccess) {
     return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        className="bg-success/10 border border-success/20 rounded-lg p-8 text-center"
-      >
+      <ClientOnly>
+        <motion.div
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="bg-success/10 border border-success/20 rounded-lg p-8 text-center"
+        >
         <CheckCircle2 className="w-12 h-12 text-success mx-auto mb-4" />
         <h3 className="text-xl font-semibold mb-2">Tack för ditt intresse!</h3>
         <p className="text-muted">Vi hör av oss inom kort.</p>
       </motion.div>
+      </ClientOnly>
     );
   }
 
   return (
-    <motion.form
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      onSubmit={handleSubmit}
-      className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4"
-    >
+    <ClientOnly>
+      <motion.form
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        onSubmit={handleSubmit}
+        className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4"
+      >
       <div>
         <h3 className="text-xl font-semibold mb-2">Få hjälp att byta</h3>
         <p className="text-sm text-muted">Fyll i dina uppgifter så hjälper vi dig komma igång.</p>
@@ -178,6 +182,7 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
         )}
       </button>
     </motion.form>
+    </ClientOnly>
   );
 }
 

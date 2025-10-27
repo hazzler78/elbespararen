@@ -6,6 +6,7 @@ import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucid
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import SwitchProcess from "./SwitchProcess";
+import ClientOnly from "./ClientOnly";
 
 interface ProviderComparisonProps {
   billData: BillData;
@@ -171,11 +172,12 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   };
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="space-y-6"
-    >
+    <ClientOnly>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6"
+      >
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Bästa alternativen för dig</h2>
@@ -461,5 +463,6 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
         />
       )}
     </motion.div>
+    </ClientOnly>
   );
 }

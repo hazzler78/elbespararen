@@ -13,6 +13,7 @@ import ContactForm from "@/components/ContactForm";
 import StickyCTA from "@/components/StickyCTA";
 import ProviderComparison from "@/components/ProviderComparison";
 import ChatWidget from "@/components/ChatWidget";
+import ClientOnly from "@/components/ClientOnly";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -59,7 +60,7 @@ export default function ResultPage() {
   }
 
   return (
-    <>
+    <ClientOnly>
       <main className="min-h-screen bg-background py-12 px-4 pb-24">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
@@ -243,7 +244,7 @@ export default function ResultPage() {
 
       {/* Chat Widget */}
       <ChatWidget billData={billData || undefined} />
-    </>
+    </ClientOnly>
   );
 }
 

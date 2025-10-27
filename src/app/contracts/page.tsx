@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import dynamic from "next/dynamic";
+import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import PostalCodeInput from "@/components/PostalCodeInput";
@@ -10,11 +10,8 @@ import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
+import ClientOnly from "@/components/ClientOnly";
 
-// Dynamically import motion to avoid SSR issues
-const MotionDiv = dynamic(() => import("framer-motion").then((mod) => mod.MotionDiv), {
-  ssr: false,
-});
 
 export default function ContractsPage() {
   const router = useRouter();
@@ -72,10 +69,11 @@ export default function ContractsPage() {
   const savings = mockBillData ? calculateSavings(mockBillData) : null;
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4">
+    <ClientOnly>
+      <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
-        <MotionDiv
+        <motion.div
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="mb-8"
@@ -87,10 +85,10 @@ export default function ContractsPage() {
             <ArrowLeft className="w-4 h-4" />
             Tillbaka
           </Link>
-        </MotionDiv>
+        </motion.div>
 
         {/* Header */}
-        <MotionDiv
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
@@ -101,11 +99,11 @@ export default function ContractsPage() {
           <p className="text-lg text-muted">
             Ange ditt postnummer för att se de bästa elavtalen i ditt område.
           </p>
-        </MotionDiv>
+        </motion.div>
 
         {!showContracts ? (
           /* Postal Code Input */
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -137,10 +135,10 @@ export default function ContractsPage() {
                 {!postalCode ? 'Ange postnummer först' : !priceArea ? 'Ogiltigt postnummer' : 'Visa avtal för mitt område'}
               </button>
             </div>
-          </MotionDiv>
+          </motion.div>
         ) : (
           /* Contracts Display */
-          <MotionDiv
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -166,7 +164,7 @@ export default function ContractsPage() {
             )}
 
             {/* CTA Section */}
-            <MotionDiv
+            <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -192,11 +190,11 @@ export default function ContractsPage() {
                   Ladda upp min faktura
                 </Link>
               </div>
-            </MotionDiv>
+            </motion.div>
 
             {/* Contact Form */}
             {showContactForm && (
-              <MotionDiv
+              <motion.div
                 ref={contactFormRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -230,13 +228,13 @@ export default function ContractsPage() {
                     }
                   }}
                 />
-              </MotionDiv>
+              </motion.div>
             )}
-          </MotionDiv>
+          </motion.div>
         )}
 
         {/* Info */}
-        <MotionDiv
+        <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -244,8 +242,9 @@ export default function ContractsPage() {
         >
           <p>🔒 Din information behandlas enligt GDPR</p>
           <p className="mt-2">Priser baseras på aktuella marknadspriser och kan variera</p>
-        </MotionDiv>
+        </motion.div>
       </div>
-    </main>
+      </main>
+    </ClientOnly>
   );
 }

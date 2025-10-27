@@ -5,6 +5,7 @@ import { formatCurrency } from "@/lib/calculations";
 import { motion } from "framer-motion";
 import { TrendingDown, Sparkles, Calculator } from "lucide-react";
 import { useEffect, useState } from "react";
+import ClientOnly from "./ClientOnly";
 
 interface ResultSummaryProps {
   savings: SavingsCalculation;
@@ -29,11 +30,12 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
   console.log('[ResultSummary] Displaying:', { currentCost, cheapestAlternative, potentialSavings, savingsPercentage });
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-xl shadow-lg border border-border p-8"
-    >
+    <ClientOnly>
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white rounded-xl shadow-lg border border-border p-8"
+      >
       {/* Huvudrubrik */}
       <div className="text-center mb-8">
         <motion.div
@@ -111,6 +113,7 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         </p>
       </motion.div>
     </motion.div>
+    </ClientOnly>
   );
 }
 
