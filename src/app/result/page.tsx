@@ -166,16 +166,16 @@ export default function ResultPage() {
           >
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 text-center border-2 border-primary/20">
               <h2 className="text-2xl font-bold mb-3">
-                Vill du byta till ett billigare elavtal?
+                Behöver du personlig hjälp att välja?
               </h2>
               <p className="text-muted mb-6">
-                Vi hjälper dig hitta det bästa alternativet och sköter bytet åt dig.
+                Vi hjälper dig hitta det bästa elavtalet för just din situation och sköter bytet åt dig.
               </p>
               <button
                 onClick={handleScrollToContact}
                 className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
               >
-                Ja, hjälp mig byta
+                Ja, jag vill ha personlig hjälp
               </button>
             </div>
           </motion.div>
@@ -190,8 +190,30 @@ export default function ResultPage() {
             >
               <ContactForm
                 onSubmit={async (data) => {
-                  console.log("Contact form submitted:", data);
-                  // TODO: Spara lead till databas och skicka Telegram-notis
+                  try {
+                    const response = await fetch('/api/leads', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        email: data.email,
+                        phone: data.phone,
+                        billData: billData,
+                        savings: savings
+                      })
+                    });
+
+                    if (!response.ok) {
+                      throw new Error('Kunde inte skicka förfrågan');
+                    }
+
+                    const result = await response.json();
+                    console.log("Lead skapad:", result);
+                  } catch (error) {
+                    console.error("Fel vid skapande av lead:", error);
+                    throw error; // Låt ContactForm hantera felet
+                  }
                 }}
               />
             </motion.div>

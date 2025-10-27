@@ -31,8 +31,8 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.email) {
-      setError("Namn och e-post krävs");
+    if (!formData.name || !formData.email || !formData.phone) {
+      setError("Namn, e-post och telefon krävs");
       return;
     }
 
@@ -115,7 +115,7 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
       {/* Telefon */}
       <div>
         <label htmlFor="phone" className="block text-sm font-medium mb-1">
-          Telefon (valfritt)
+          Telefon <span className="text-error">*</span>
         </label>
         <input
           type="tel"
@@ -123,6 +123,7 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
           name="phone"
           value={formData.phone}
           onChange={handleChange}
+          required
           className="w-full px-4 py-2 border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50"
           placeholder="070-123 45 67"
         />
