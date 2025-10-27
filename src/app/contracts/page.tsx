@@ -2,7 +2,7 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import dynamic from "next/dynamic";
 import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import PostalCodeInput from "@/components/PostalCodeInput";
@@ -10,6 +10,11 @@ import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
+
+// Dynamically import motion to avoid SSR issues
+const motion = dynamic(() => import("framer-motion").then((mod) => ({ default: mod.motion })), {
+  ssr: false,
+});
 
 export default function ContractsPage() {
   const router = useRouter();
