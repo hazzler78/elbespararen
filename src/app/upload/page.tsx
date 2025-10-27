@@ -108,7 +108,7 @@ export default function UploadPage() {
                   />
                 </div>
                 <p className="text-sm text-muted">
-                  Otydlig text, dålig belysning, delar av fakturan saknas
+                  Otydlig text, bara elnät, elhandel saknas
                 </p>
               </div>
             </div>
