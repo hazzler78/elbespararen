@@ -46,6 +46,8 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation };
     const { email, phone, billData, savings } = body;
+    
+    console.log("[leads] POST request received:", { email, phone, hasBillData: !!billData, hasSavings: !!savings });
 
     // Validera input
     if (!email && !phone) {
@@ -81,6 +83,7 @@ export async function POST(req: NextRequest) {
     }
     
     const db = createDatabaseFromBinding(env?.DB);
+    console.log("[leads] Database created, type:", db.constructor.name);
 
     // Skapa lead-objekt
     const leadData = {
@@ -91,12 +94,16 @@ export async function POST(req: NextRequest) {
       status: "new" as const
     };
 
+    console.log("[leads] Creating lead with data:", leadData);
     const lead = await db.createLead(leadData);
     console.log("[leads] Ny lead skapad:", lead.id);
 
     // Skicka Telegram-notis
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      console.log("[leads] Sending Telegram notification...");
       await sendTelegramNotification(lead);
+    } else {
+      console.log("[leads] Telegram not configured - skipping notification");
     }
 
     return NextResponse.json({
@@ -105,8 +112,9 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     console.error("[leads] POST error:", error);
+    const errorMessage = error instanceof Error ? error.message : "Okänt fel";
     return NextResponse.json(
-      { success: false, error: "Kunde inte skapa lead" },
+      { success: false, error: `Kunde inte skapa lead: ${errorMessage}` },
       { status: 500 }
     );
   }

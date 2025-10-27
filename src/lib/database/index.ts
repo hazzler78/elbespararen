@@ -467,30 +467,99 @@ class CloudflareDatabase implements Database {
     return (result.meta?.changes || 0) > 0;
   }
 
-  // Lead methods (simplified for now)
+  // Lead methods
   async getLeads(): Promise<Lead[]> {
-    // TODO: Implementera när vi behöver leads
-    return [];
+    const result = await this.db.prepare(`
+      SELECT * FROM leads 
+      ORDER BY created_at DESC
+    `).all();
+
+    return result.results.map((row: Record<string, unknown>) => ({
+      id: String(row.id),
+      email: String(row.email || ''),
+      phone: String(row.phone || ''),
+      billData: JSON.parse(String(row.bill_data)),
+      savings: JSON.parse(String(row.savings)),
+      status: String(row.status) as Lead['status'],
+      createdAt: new Date(String(row.created_at))
+    }));
   }
 
-  async getLead(): Promise<Lead | null> {
-    // TODO: Implementera när vi behöver leads
-    return null;
+  async getLead(id: string): Promise<Lead | null> {
+    const result = await this.db.prepare(`
+      SELECT * FROM leads WHERE id = ?
+    `).bind(id).first();
+
+    if (!result) return null;
+
+    const row = result as Record<string, unknown>;
+    return {
+      id: String(row.id),
+      email: String(row.email || ''),
+      phone: String(row.phone || ''),
+      billData: JSON.parse(String(row.bill_data)),
+      savings: JSON.parse(String(row.savings)),
+      status: String(row.status) as Lead['status'],
+      createdAt: new Date(String(row.created_at))
+    };
   }
 
-  async createLead(): Promise<Lead> {
-    // TODO: Implementera när vi behöver leads
-    throw new Error("Not implemented yet");
+  async createLead(leadData: Omit<Lead, 'id' | 'createdAt'>): Promise<Lead> {
+    const id = `lead-${Date.now()}`;
+    const now = new Date().toISOString();
+
+    await this.db.prepare(`
+      INSERT INTO leads (
+        id, email, phone, bill_data, savings, status, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(
+      id,
+      leadData.email,
+      leadData.phone,
+      JSON.stringify(leadData.billData),
+      JSON.stringify(leadData.savings),
+      leadData.status,
+      now
+    ).run();
+
+    return {
+      ...leadData,
+      id,
+      createdAt: new Date(now)
+    };
   }
 
-  async updateLead(): Promise<Lead> {
-    // TODO: Implementera när vi behöver leads
-    throw new Error("Not implemented yet");
+  async updateLead(id: string, leadData: Partial<Lead>): Promise<Lead> {
+    const existing = await this.getLead(id);
+    if (!existing) {
+      throw new Error(`Lead with id ${id} not found`);
+    }
+
+    const updated = { ...existing, ...leadData };
+    const now = new Date().toISOString();
+
+    await this.db.prepare(`
+      UPDATE leads SET
+        email = ?, phone = ?, bill_data = ?, savings = ?, status = ?
+      WHERE id = ?
+    `).bind(
+      updated.email,
+      updated.phone,
+      JSON.stringify(updated.billData),
+      JSON.stringify(updated.savings),
+      updated.status,
+      id
+    ).run();
+
+    return updated;
   }
 
-  async deleteLead(): Promise<boolean> {
-    // TODO: Implementera när vi behöver leads
-    return false;
+  async deleteLead(id: string): Promise<boolean> {
+    const result = await this.db.prepare(`
+      DELETE FROM leads WHERE id = ?
+    `).bind(id).run();
+
+    return (result.meta?.changes || 0) > 0;
   }
 
   // Switch Request methods
