@@ -58,7 +58,8 @@ export default function ResultPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4 pb-24">
+    <>
+      <main className="min-h-screen bg-background py-12 px-4 pb-24">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div
@@ -222,6 +223,7 @@ export default function ResultPage() {
 
       {/* Chat Widget */}
       <ChatWidget billData={billData || undefined} />
+    </>
   );
 }
 
