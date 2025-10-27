@@ -240,8 +240,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         {/* Info Text */}
         <div className="mt-6 pt-6 border-t border-border">
           <p className="text-xs text-muted text-center">
-            🔒 Din faktura analyseras säkert och raderas direkt efter analysen.
-            Vi sparar aldrig dina personuppgifter.
+            🔒 Din faktura analyseras säkert och används för att förbättra vår AI.
+            Personuppgifter anonymiseras.
           </p>
         </div>
       </div>
