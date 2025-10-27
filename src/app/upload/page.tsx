@@ -88,7 +88,7 @@ export default function UploadPage() {
                   />
                 </div>
                 <p className="text-sm text-muted">
-                  Tydlig text, bra belysning, hela fakturan synlig
+                  Tydlig text, rätt faktura (elhandel), visar specifikationerna
                 </p>
               </div>
             </div>
