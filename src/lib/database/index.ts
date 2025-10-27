@@ -479,7 +479,7 @@ class CloudflareDatabase implements Database {
       email: String(row.email || ''),
       phone: String(row.phone || ''),
       billData: JSON.parse(String(row.bill_data)),
-      savings: JSON.parse(String(row.savings)),
+      savings: JSON.parse(String(row.savings_data)),
       status: String(row.status) as Lead['status'],
       createdAt: new Date(String(row.created_at))
     }));
@@ -498,7 +498,7 @@ class CloudflareDatabase implements Database {
       email: String(row.email || ''),
       phone: String(row.phone || ''),
       billData: JSON.parse(String(row.bill_data)),
-      savings: JSON.parse(String(row.savings)),
+      savings: JSON.parse(String(row.savings_data)),
       status: String(row.status) as Lead['status'],
       createdAt: new Date(String(row.created_at))
     };
@@ -510,7 +510,7 @@ class CloudflareDatabase implements Database {
 
     await this.db.prepare(`
       INSERT INTO leads (
-        id, email, phone, bill_data, savings, status, created_at
+        id, email, phone, bill_data, savings_data, status, created_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?)
     `).bind(
       id,
@@ -540,7 +540,7 @@ class CloudflareDatabase implements Database {
 
     await this.db.prepare(`
       UPDATE leads SET
-        email = ?, phone = ?, bill_data = ?, savings = ?, status = ?
+        email = ?, phone = ?, bill_data = ?, savings_data = ?, status = ?
       WHERE id = ?
     `).bind(
       updated.email,
