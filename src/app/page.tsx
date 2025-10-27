@@ -3,6 +3,7 @@
 import { motion } from "framer-motion";
 import { Zap, Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import Footer from "@/components/Footer";
 
 export default function Home() {
   return (
@@ -28,7 +29,7 @@ export default function Home() {
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
               AI-driven analys hittar dolda avgifter och visar exakt hur mycket du kan spara. 
-              Enkelt, säkert och helt kostnadsfritt.
+              Din faktura hjälper oss att träna AI:n för bättre analyser. Enkelt, säkert och helt kostnadsfritt.
             </p>
 
             {/* CTA */}
@@ -59,7 +60,7 @@ export default function Home() {
               className="mt-6 text-sm text-muted flex items-center justify-center gap-2"
             >
               <Shield className="w-4 h-4" />
-              100% säkert • Inga personuppgifter sparas
+              100% säkert • Personuppgifter anonymiseras
             </motion.p>
           </motion.div>
         </div>
@@ -165,7 +166,7 @@ export default function Home() {
               },
               {
                 title: "Säker & privat",
-                desc: "Din faktura analyseras och raderas direkt. Inga personuppgifter sparas."
+                desc: "Din faktura analyseras säkert och personuppgifter anonymiseras omedelbart. Du kan begära radering när som helst."
               }
             ].map((benefit, i) => (
               <motion.div
@@ -214,10 +215,7 @@ export default function Home() {
       </section>
 
       {/* Footer */}
-      <footer className="py-8 px-4 bg-gray-100 text-center text-sm text-muted">
-        <p>© 2025 Elbespararen. AI-driven elfaktura-analys.</p>
-        <p className="mt-2">Byggd med ❤️ för att göra elmarknaden mer transparent.</p>
-      </footer>
+      <Footer />
     </main>
   );
 }

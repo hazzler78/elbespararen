@@ -67,8 +67,8 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
       className="bg-white rounded-lg shadow-sm border border-border p-6 space-y-4"
     >
       <div>
-        <h3 className="text-xl font-semibold mb-2">Få hjälp att byta</h3>
-        <p className="text-sm text-muted">Fyll i dina uppgifter så hjälper vi dig komma igång.</p>
+        <h3 className="text-xl font-semibold mb-2">Kontakta oss</h3>
+        <p className="text-sm text-muted">Fyll i dina uppgifter så hör vi av oss inom 24 timmar.</p>
       </div>
 
       {/* Namn */}
