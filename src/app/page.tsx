@@ -46,7 +46,7 @@ export default function Home() {
                   transition-all duration-200 shadow-lg hover:shadow-xl
                 "
               >
-                Analysera min faktura
+                Kom igång
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </motion.div>

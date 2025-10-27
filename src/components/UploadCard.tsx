@@ -231,7 +231,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
               </>
             ) : (
               <>
-                Analysera min faktura
+                Kom igång
               </>
             )}
           </motion.button>

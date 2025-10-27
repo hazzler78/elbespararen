@@ -65,11 +65,90 @@ export default function UploadPage() {
           </p>
         </motion.div>
 
+        {/* Example Images Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-12 max-w-4xl mx-auto"
+        >
+          <div className="grid md:grid-cols-2 gap-6">
+            {/* Good Example */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center justify-center gap-2">
+                <span className="text-2xl">✓</span>
+                Bra exempel
+              </h3>
+              <div className="bg-white rounded-lg border-2 border-green-200 p-4 shadow-sm">
+                <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                  <img 
+                    src="/good-invoice-example.jpg" 
+                    alt="Bra exempel på faktura" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-sm text-muted">
+                  Tydlig text, bra belysning, hela fakturan synlig
+                </p>
+              </div>
+            </div>
+
+            {/* Bad Example */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-3 text-red-600 flex items-center justify-center gap-2">
+                <span className="text-2xl">✗</span>
+                Dåligt exempel
+              </h3>
+              <div className="bg-white rounded-lg border-2 border-red-200 p-4 shadow-sm">
+                <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                  <img 
+                    src="/bad-invoice-example.jpg" 
+                    alt="Dåligt exempel på faktura" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <p className="text-sm text-muted">
+                  Otydlig text, dålig belysning, delar av fakturan saknas
+                </p>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
         {/* Upload Card */}
         <UploadCard
           onUploadSuccess={handleUploadSuccess}
           onUploadError={handleUploadError}
         />
+
+        {/* Alternative: View contracts without invoice */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+          className="mt-8 text-center"
+        >
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border"></div>
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="px-4 bg-background text-muted">eller</span>
+            </div>
+          </div>
+          
+          <div className="mt-6">
+            <Link
+              href="/contracts"
+              className="inline-flex items-center gap-2 px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+            >
+              Se avtal utan faktura
+            </Link>
+            <p className="text-sm text-muted mt-2">
+              Vill du bara se tillgängliga avtal? Ange ditt postnummer.
+            </p>
+          </div>
+        </motion.div>
 
         {/* Info */}
         <motion.div
