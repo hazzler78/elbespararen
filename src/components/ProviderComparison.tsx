@@ -455,6 +455,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
             potentialSavings: selectedProvider.estimatedSavings,
             savingsPercentage: 0
           }}
+          selectedContract={getSelectedContract(selectedProvider.provider)}
           onClose={() => setShowSwitchProcess(false)}
           onComplete={handleSwitchComplete}
         />

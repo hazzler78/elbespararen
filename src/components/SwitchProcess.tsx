@@ -12,13 +12,14 @@ import {
   X,
   AlertCircle
 } from "lucide-react";
-import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, CurrentProviderInfo, ApiResponse } from "@/lib/types";
+import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, CurrentProviderInfo, ApiResponse, ContractAlternative } from "@/lib/types";
 import SwitchConfirmation from "./SwitchConfirmation";
 
 interface SwitchProcessProps {
   provider: ElectricityProvider;
   billData: BillData;
   savings: SavingsCalculation;
+  selectedContract?: ContractAlternative | null;
   onClose: () => void;
   onComplete: (switchRequest: SwitchRequest) => void;
 }
@@ -54,7 +55,7 @@ const steps = [
   { id: 4, title: "Sammanfattning", icon: CheckCircle2, description: "Granska och bekräfta" }
 ];
 
-export default function SwitchProcess({ provider, billData, savings, onClose, onComplete }: SwitchProcessProps) {
+export default function SwitchProcess({ provider, billData, savings, selectedContract, onClose, onComplete }: SwitchProcessProps) {
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -504,20 +505,12 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                   {/* Pris/Besparing */}
                   {provider.contractType === "fastpris" ? (
                     <div className="bg-primary/10 border border-primary/20 rounded-lg p-4 mb-6">
-                      <h4 className="font-bold text-primary mb-2">Ditt pris med {provider.name}</h4>
+                      <h4 className="font-bold text-primary mb-2">Ditt valda avtal med {provider.name}</h4>
                       <p className="text-2xl font-bold text-primary">
-                        {(() => {
-                          const selectedContract = provider.avtalsalternativ?.[0];
-                          if (selectedContract?.fastpris) {
-                            const monthlyKwh = billData.totalKWh;
-                            const monthlyCost = (selectedContract.fastpris * monthlyKwh) + (selectedContract.månadskostnad || 0);
-                            return `${Math.round(monthlyCost)} kr per månad`;
-                          }
-                          return `${provider.energyPrice} kr/kWh`;
-                        })()}
+                        {selectedContract?.fastpris ? `${selectedContract.fastpris.toFixed(2)} kr/kWh` : `${provider.energyPrice} kr/kWh`}
                       </p>
                       <p className="text-sm text-muted">
-                        {provider.contractType === "fastpris" ? "Fastpris under hela avtalsperioden" : "Rörligt pris"}
+                        {selectedContract?.namn || "Fastpris under hela avtalsperioden"}
                       </p>
                     </div>
                   ) : (
@@ -570,7 +563,9 @@ export default function SwitchProcess({ provider, billData, savings, onClose, on
                         <p className="text-muted">
                           {provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                         </p>
-                        <p className="font-semibold">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
+                        <p className="font-semibold">
+                          {selectedContract?.fastpris ? `${selectedContract.fastpris.toFixed(2)} kr/kWh` : `${Number(provider.energyPrice).toFixed(2)} kr/kWh`}
+                        </p>
                       </div>
                     </div>
                   </div>
