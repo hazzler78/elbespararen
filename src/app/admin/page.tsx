@@ -16,7 +16,7 @@ export default function AdminPage() {
       try {
         const response = await fetch('/api/leads');
         if (response.ok) {
-          const data = await response.json();
+          const data = await response.json() as { success: boolean; data: Lead[]; count: number };
           setLeads(data.data || []);
         } else {
           console.error('Kunde inte hämta leads:', response.statusText);
