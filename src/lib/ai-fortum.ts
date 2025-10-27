@@ -21,21 +21,23 @@ VIKTIGA REGLER:
 4. Påslag är ALLTID en extra avgift
 5. Fossilfri är ALLTID en extra avgift (även om 0 kr)
 6. Priskollen är en extra avgift ENDAST om det finns på fakturan
-7. Miljöpaket är ALLTID en extra avgift
-8. Miljöpaket, påslag förnybar el är ALLTID en extra avgift
+7. Miljöpaket är ALLTID en extra avgift om det finns på fakturan
+8. Miljöpaket, påslag förnybar el är ALLTID en extra avgift om det finns på fakturan
 9. Läs EXAKTA belopp från fakturan
-10. Moms är ALDRIG en extra avgift
-11. Energiskatt är ALDRIG en extra avgift
-12. Elöverföring är ALDRIG en extra avgift
-13. Elnätsabonnemang är ALDRIG en extra avgift
-14. Medelspotpris är ALDRIG en extra avgift
+10. Inkludera ALLA avgifter som finns på fakturan - missa INTE någon!
+11. Moms är ALDRIG en extra avgift
+12. Energiskatt är ALDRIG en extra avgift
+13. Elöverföring är ALDRIG en extra avgift
+14. Elnätsabonnemang är ALDRIG en extra avgift
+15. Medelspotpris är ALDRIG en extra avgift
 
 EXEMPEL PÅ KORREKT FORTUM ANALYS:
+
+Exempel 1 - Enkel faktura:
 Om fakturan visar:
 - Elcertifikat: 3.26 kr
 - Månadsavgift: 39.20 kr
 - Fossilfri: 0.00 kr
-- (Ingen Priskollen på denna faktura)
 
 Då ska du returnera:
 {
@@ -45,6 +47,28 @@ Då ska du returnera:
     {"label": "Fossilfri", "amount": 0.00, "confidence": 0.9}
   ],
   "extraFeesTotal": 42.46
+}
+
+Exempel 2 - Faktura med alla avgifter:
+Om fakturan visar:
+- Elcertifikat: 11.04 kr
+- Månadsavgift: 55.20 kr
+- Påslag: 11.62 kr
+- Miljöpaket: 36.00 kr
+- Priskollen: 39.20 kr
+- Miljöpaket, påslag förnybar el: 32.07 kr
+
+Då ska du returnera ALLA sex avgifterna:
+{
+  "extraFeesDetailed": [
+    {"label": "Elcertifikat", "amount": 11.04, "confidence": 0.9},
+    {"label": "Månadsavgift", "amount": 55.20, "confidence": 0.9},
+    {"label": "Påslag", "amount": 11.62, "confidence": 0.9},
+    {"label": "Miljöpaket", "amount": 36.00, "confidence": 0.9},
+    {"label": "Priskollen", "amount": 39.20, "confidence": 0.9},
+    {"label": "Miljöpaket, påslag förnybar el", "amount": 32.07, "confidence": 0.9}
+  ],
+  "extraFeesTotal": 185.13
 }
 
 SVARA MED JSON:

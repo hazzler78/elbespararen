@@ -58,10 +58,10 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         <p className="text-sm uppercase tracking-wide text-primary mb-2">Du kan spara upp till</p>
         <div className="flex items-center justify-center gap-3 mb-2">
           <TrendingDown className="w-8 h-8 text-primary" />
-          <p className="text-5xl font-bold text-primary">{formatCurrency(potentialSavings)}</p>
+          <p className="text-5xl font-bold text-primary">{formatCurrency(potentialSavings * 12)}</p>
         </div>
         <p className="text-lg text-muted">
-          per månad ({savingsPercentage}% lägre) inkl. moms
+          per år ({savingsPercentage}% lägre) inkl. moms
         </p>
       </motion.div>
 

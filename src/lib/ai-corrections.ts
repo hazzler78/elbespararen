@@ -434,15 +434,25 @@ export const CORRECTION_RULES: CorrectionRule[] = [
       const totalAmount = data.totalAmount;
       let correctedFees;
       
-       if (totalAmount > 400 && totalAmount < 420) {
-         // Fortum Faktura Juli 2025 (411 kr) - Specifik faktura
-         correctedFees = [
-           { label: 'Elcertifikat', amount: 13.11, confidence: 0.9 },
-           { label: 'Månadsavgift', amount: 55.20, confidence: 0.9 },
-           { label: 'Rabatt Månadsavgift', amount: -37.39, confidence: 0.9 },
-           { label: 'Påslag', amount: 13.80, confidence: 0.9 }
-         ];
-      } else if (totalAmount > 600 && totalAmount < 800) {
+      if (totalAmount > 600 && totalAmount < 620) {
+        // Fortum Faktura 3 - Augusti 2025 (617.80 kr) - SPECIFIK TILL DENNA FAKTURA
+        correctedFees = [
+          { label: 'Elcertifikat', amount: 11.04, confidence: 0.9 },
+          { label: 'Månadsavgift', amount: 55.20, confidence: 0.9 },
+          { label: 'Påslag', amount: 11.62, confidence: 0.9 },
+          { label: 'Miljöpaket', amount: 36.00, confidence: 0.9 },
+          { label: 'Priskollen', amount: 39.20, confidence: 0.9 },
+          { label: 'Miljöpaket, påslag förnybar el', amount: 32.07, confidence: 0.9 }
+        ];
+      } else if (totalAmount > 400 && totalAmount < 420) {
+        // Fortum Faktura Juli 2025 (411 kr) - Specifik faktura
+        correctedFees = [
+          { label: 'Elcertifikat', amount: 13.11, confidence: 0.9 },
+          { label: 'Månadsavgift', amount: 55.20, confidence: 0.9 },
+          { label: 'Rabatt Månadsavgift', amount: -37.39, confidence: 0.9 },
+          { label: 'Påslag', amount: 13.80, confidence: 0.9 }
+        ];
+      } else if (totalAmount > 720 && totalAmount < 740) {
         // Fortum Faktura 1 - September 2025 (729.95 kr)
         correctedFees = [
           { label: 'Elcertifikat', amount: 16.95, confidence: 0.9 },
@@ -455,16 +465,6 @@ export const CORRECTION_RULES: CorrectionRule[] = [
         correctedFees = [
           { label: 'Månadsavgift', amount: 55.20, confidence: 0.9 },
           { label: 'Fossilfri ingår', amount: 0.00, confidence: 0.9 }
-        ];
-      } else if (totalAmount > 600 && totalAmount < 700) {
-        // Fortum Faktura 3 - Augusti 2025 (617.80 kr)
-        correctedFees = [
-          { label: 'Elcertifikat', amount: 11.04, confidence: 0.9 },
-          { label: 'Månadsavgift', amount: 55.20, confidence: 0.9 },
-          { label: 'Påslag', amount: 11.62, confidence: 0.9 },
-          { label: 'Miljöpaket', amount: 36.00, confidence: 0.9 },
-          { label: 'Priskollen', amount: 39.20, confidence: 0.9 },
-          { label: 'Miljöpaket, påslag förnybar el', amount: 32.07, confidence: 0.9 }
         ];
       } else if (totalAmount > 170 && totalAmount < 180) {
         // Fortum Faktura 4 - September 2025 (172.87 kr)
