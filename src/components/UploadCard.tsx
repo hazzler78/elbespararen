@@ -183,6 +183,11 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
               }}
               className="mb-4"
             />
+            {postalCode.length > 0 && !priceArea && (
+              <p className="text-xs text-red-600 mb-2">
+                * Ange ett giltigt postnummer för att fortsätta
+              </p>
+            )}
             <div className="text-xs text-gray-500">
               💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
               Rörliga elpriser varierar beroende på var du bor i Sverige. 
@@ -215,7 +220,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             onClick={handleUpload}
-            disabled={isUploading}
+            disabled={isUploading || !priceArea}
             className="
               mt-6 w-full py-4 px-6 bg-primary text-white font-semibold rounded-lg
               hover:bg-primary/90 active:scale-[0.98]
@@ -228,6 +233,10 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
                 Analyserar faktura...
+              </>
+            ) : !priceArea ? (
+              <>
+                Ange postnummer först
               </>
             ) : (
               <>
