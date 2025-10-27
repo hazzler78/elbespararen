@@ -61,7 +61,7 @@ export default function UploadPage() {
             Ladda upp din elräkning
           </h1>
           <p className="text-lg text-muted">
-            Ta ett foto av din elräkning. Vår AI analyserar den på några sekunder.
+            Ta en skärmbild eller ett foto av din elräkning. Vår AI analyserar den på några sekunder.
           </p>
         </motion.div>
 
@@ -166,11 +166,7 @@ export default function UploadPage() {
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>
-                <span>Vi hittar alla avgifter, både synliga och dolda</span>
-              </li>
-              <li className="flex items-start gap-2">
-                <span className="text-primary mt-0.5">✓</span>
-                <span>Dina personuppgifter raderas direkt efter analysen</span>
+                <span>Vi hittar alla avgifter</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>
