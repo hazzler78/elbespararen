@@ -16,7 +16,6 @@ export default function ContractsPage() {
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
   const [showContracts, setShowContracts] = useState(false);
-  const [showContactForm, setShowContactForm] = useState(false);
   const contactFormRef = useRef<HTMLDivElement>(null);
 
   const handlePostalCodeChange = (code: string, area: string | null) => {
@@ -32,7 +31,6 @@ export default function ContractsPage() {
 
   const handleScrollToContact = () => {
     contactFormRef.current?.scrollIntoView({ behavior: "smooth" });
-    setShowContactForm(true);
   };
 
   // Skapa mock data för att visa avtal baserat på postnummer
@@ -177,41 +175,39 @@ export default function ContractsPage() {
             </div>
 
             {/* Contact Form */}
-            {showContactForm && (
-              <div
-                ref={contactFormRef}
-                className="mt-8"
-              >
-                <ContactForm
-                  onSubmit={async (data) => {
-                    try {
-                      const response = await fetch('/api/leads', {
-                        method: 'POST',
-                        headers: {
-                          'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                          email: data.email,
-                          phone: data.phone,
-                          billData: mockBillData,
-                          savings: savings
-                        })
-                      });
+            <div
+              ref={contactFormRef}
+              className="mt-8"
+            >
+              <ContactForm
+                onSubmit={async (data) => {
+                  try {
+                    const response = await fetch('/api/leads', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                      },
+                      body: JSON.stringify({
+                        email: data.email,
+                        phone: data.phone,
+                        billData: mockBillData,
+                        savings: savings
+                      })
+                    });
 
-                      if (!response.ok) {
-                        throw new Error('Kunde inte skicka förfrågan');
-                      }
-
-                      const result = await response.json();
-                      console.log("Lead skapad:", result);
-                    } catch (error) {
-                      console.error("Fel vid skapande av lead:", error);
-                      throw error; // Låt ContactForm hantera felet
+                    if (!response.ok) {
+                      throw new Error('Kunde inte skicka förfrågan');
                     }
-                  }}
-                />
-              </div>
-            )}
+
+                    const result = await response.json();
+                    console.log("Lead skapad:", result);
+                  } catch (error) {
+                    console.error("Fel vid skapande av lead:", error);
+                    throw error; // Låt ContactForm hantera felet
+                  }
+                }}
+              />
+            </div>
           </div>
         )}
 
