@@ -256,7 +256,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
         {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[60vh]">
-          <div mode="wait">
+          <div>
             {currentStep === 1 && (
               <div
                 key="step1"
