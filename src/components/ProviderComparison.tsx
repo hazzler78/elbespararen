@@ -1,12 +1,10 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { motion } from "framer-motion";
 import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import SwitchProcess from "./SwitchProcess";
-import ClientOnly from "./ClientOnly";
 
 interface ProviderComparisonProps {
   billData: BillData;
@@ -88,45 +86,39 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
   if (isLoading) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <div
         className="bg-white rounded-lg border border-border p-6"
       >
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           <span className="ml-3 text-muted">Jämför leverantörer...</span>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <div
         className="bg-white rounded-lg border border-border p-6"
       >
         <div className="text-center py-8">
           <p className="text-error mb-2">Kunde inte ladda jämförelser</p>
           <p className="text-sm text-muted">{error}</p>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
   if (!comparisonData || comparisonData.comparisons.length === 0) {
     return (
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+      <div
         className="bg-white rounded-lg border border-border p-6"
       >
         <div className="text-center py-8">
           <p className="text-muted">Inga leverantörer tillgängliga för jämförelse</p>
         </div>
-      </motion.div>
+      </div>
     );
   }
 
@@ -172,12 +164,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   };
 
   return (
-    <ClientOnly>
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="space-y-6"
-      >
+    <div className="space-y-6">
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Bästa alternativen för dig</h2>
@@ -188,9 +175,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
       {/* Bästa alternativet */}
       {bestOption && bestOption.estimatedSavings > 0 && (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
+        <div
           className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg shadow-lg border-2 border-primary/20 p-6 relative overflow-hidden"
         >
           <div className="absolute top-4 right-4">
@@ -306,7 +291,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               </div>
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {/* Andra alternativ */}
@@ -318,11 +303,8 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
           }
           return true;
         }).map((comparison, index) => (
-          <motion.div
+          <div
             key={comparison.provider.id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: index * 0.1 }}
             className="bg-white rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between mb-4">
@@ -429,22 +411,19 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                 </a>
               )}
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Sammanfattning */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.5 }}
+      <div
         className="bg-primary/5 border border-primary/10 rounded-lg p-4"
       >
         <p className="text-sm text-muted text-center">
           💡 <strong>Tips:</strong> Jämförelsen baseras på din nuvarande förbrukning och aktuella marknadspriser. 
           Faktiska priser kan variera beroende på avtal och marknadsförhållanden.
         </p>
-      </motion.div>
+      </div>
 
       {/* Switch Process Modal */}
       {showSwitchProcess && selectedProvider && (
@@ -462,7 +441,6 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
           onComplete={handleSwitchComplete}
         />
       )}
-    </motion.div>
-    </ClientOnly>
+    </div>
   );
 }

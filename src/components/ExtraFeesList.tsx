@@ -3,9 +3,7 @@
 import { ExtraFeeDetailed } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import ConfidenceBadge from "./ConfidenceBadge";
-import { motion } from "framer-motion";
 import { AlertTriangle } from "lucide-react";
-import ClientOnly from "./ClientOnly";
 
 interface ExtraFeesListProps {
   fees: ExtraFeeDetailed[];
@@ -26,8 +24,7 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
   const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (
-    <ClientOnly>
-      <div className="space-y-3">
+    <div className="space-y-3">
       {/* Header */}
       <div className="flex items-center justify-between pb-3 border-b border-border">
         <h3 className="font-semibold text-lg">Extra avgifter & tillägg</h3>
@@ -40,11 +37,8 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
       {/* Lista över avgifter */}
       <div className="space-y-2">
         {fees.map((fee, index) => (
-          <motion.div
+          <div
             key={`${fee.label}-${index}`}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: index * 0.05 }}
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
           >
             <div className="flex-1">
@@ -61,25 +55,22 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
             <div className="text-right">
               <p className="font-semibold text-lg">{formatCurrency(fee.amount * 1.25)}</p>
             </div>
-          </motion.div>
+          </div>
         ))}
       </div>
 
       {/* Varning om låg confidence */}
       {fees.some(fee => fee.confidence < 0.7) && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
+        <div
           className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg"
         >
           <p className="text-xs text-warning flex items-center gap-2">
             <AlertTriangle className="w-4 h-4" />
             Vissa avgifter har lägre säkerhet och kan behöva verifieras manuellt.
           </p>
-        </motion.div>
+        </div>
       )}
     </div>
-    </ClientOnly>
   );
 }
 

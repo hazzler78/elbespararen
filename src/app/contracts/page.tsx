@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import PostalCodeInput from "@/components/PostalCodeInput";
@@ -10,7 +9,6 @@ import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
-import ClientOnly from "@/components/ClientOnly";
 
 
 export default function ContractsPage() {
@@ -69,13 +67,10 @@ export default function ContractsPage() {
   const savings = mockBillData ? calculateSavings(mockBillData) : null;
 
   return (
-    <ClientOnly>
-      <main className="min-h-screen bg-background py-12 px-4">
+    <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
+        <div
           className="mb-8"
         >
           <Link
@@ -85,12 +80,10 @@ export default function ContractsPage() {
             <ArrowLeft className="w-4 h-4" />
             Tillbaka
           </Link>
-        </motion.div>
+        </div>
 
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
+        <div
           className="text-center mb-12"
         >
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
@@ -99,14 +92,11 @@ export default function ContractsPage() {
           <p className="text-lg text-muted">
             Ange ditt postnummer för att se de bästa elavtalen i ditt område.
           </p>
-        </motion.div>
+        </div>
 
         {!showContracts ? (
           /* Postal Code Input */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          <div
             className="max-w-md mx-auto"
           >
             <div className="bg-white rounded-lg border border-border p-6 shadow-sm">
@@ -135,13 +125,10 @@ export default function ContractsPage() {
                 {!postalCode ? 'Ange postnummer först' : !priceArea ? 'Ogiltigt postnummer' : 'Visa avtal för mitt område'}
               </button>
             </div>
-          </motion.div>
+          </div>
         ) : (
           /* Contracts Display */
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
+          <div
           >
             {/* Area Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
@@ -164,10 +151,7 @@ export default function ContractsPage() {
             )}
 
             {/* CTA Section */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+            <div
               className="mt-8 text-center"
             >
               <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 border-2 border-primary/20">
@@ -190,14 +174,12 @@ export default function ContractsPage() {
                   Ladda upp min faktura
                 </Link>
               </div>
-            </motion.div>
+            </div>
 
             {/* Contact Form */}
             {showContactForm && (
-              <motion.div
+              <div
                 ref={contactFormRef}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
                 className="mt-8"
               >
                 <ContactForm
@@ -228,23 +210,19 @@ export default function ContractsPage() {
                     }
                   }}
                 />
-              </motion.div>
+              </div>
             )}
-          </motion.div>
+          </div>
         )}
 
         {/* Info */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.5 }}
+        <div
           className="mt-12 text-center text-sm text-muted"
         >
           <p>🔒 Din information behandlas enligt GDPR</p>
           <p className="mt-2">Priser baseras på aktuella marknadspriser och kan variera</p>
-        </motion.div>
+        </div>
       </div>
       </main>
-    </ClientOnly>
   );
 }

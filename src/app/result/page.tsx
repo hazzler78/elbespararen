@@ -2,7 +2,6 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
 import { ArrowLeft, Download, Share2 } from "lucide-react";
 import Link from "next/link";
 import { BillData, SavingsCalculation } from "@/lib/types";
@@ -13,7 +12,6 @@ import ContactForm from "@/components/ContactForm";
 import StickyCTA from "@/components/StickyCTA";
 import ProviderComparison from "@/components/ProviderComparison";
 import ChatWidget from "@/components/ChatWidget";
-import ClientOnly from "@/components/ClientOnly";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -60,13 +58,10 @@ export default function ResultPage() {
   }
 
   return (
-    <ClientOnly>
-      <main className="min-h-screen bg-background py-12 px-4 pb-24">
+    <main className="min-h-screen bg-background py-12 px-4 pb-24">
         <div className="max-w-4xl mx-auto">
           {/* Header */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
+          <div
             className="mb-8 flex items-center justify-between"
           >
             <Link
@@ -105,7 +100,7 @@ export default function ResultPage() {
                 <Share2 className="w-5 h-5" />
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Result Summary */}
           <div className="mb-8">
@@ -114,21 +109,15 @@ export default function ResultPage() {
 
           {/* Extra Fees */}
           {billData.extraFeesDetailed.length > 0 && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+            <div
               className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6"
             >
               <ExtraFeesList fees={billData.extraFeesDetailed} totalAmount={billData.extraFeesTotal} showConfidence={true} />
-            </motion.div>
+            </div>
           )}
 
           {/* Bill Details */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
+          <div
             className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6"
           >
             <h3 className="font-semibold text-lg mb-4">Fakturadetaljer</h3>
@@ -150,23 +139,17 @@ export default function ResultPage() {
                 <p className="font-medium">{Math.round(billData.confidence * 100)}%</p>
               </div>
             </div>
-          </motion.div>
+          </div>
 
           {/* Provider Comparison */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
+          <div
             className="mb-8"
           >
             <ProviderComparison billData={billData} savings={savings} />
-          </motion.div>
+          </div>
 
           {/* CTA Section */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
+          <div
             className="mb-8"
           >
             <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 text-center border-2 border-primary/20">
@@ -183,14 +166,12 @@ export default function ResultPage() {
                 Ja, jag vill ha personlig hjälp
               </button>
             </div>
-          </motion.div>
+          </div>
 
           {/* Contact Form */}
           {showContactForm && (
-            <motion.div
+            <div
               ref={contactFormRef}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
               className="mb-8"
             >
               <ContactForm
@@ -221,19 +202,16 @@ export default function ResultPage() {
                   }
                 }}
               />
-            </motion.div>
+            </div>
           )}
 
           {/* Info */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.5 }}
+          <div
             className="text-center text-sm text-muted"
           >
             <p>🔒 Din information behandlas enligt GDPR</p>
             <p className="mt-2">Analysen baseras på aktuella marknadspriser och kan variera</p>
-          </motion.div>
+          </div>
         </div>
       </main>
 
@@ -244,7 +222,6 @@ export default function ResultPage() {
 
       {/* Chat Widget */}
       <ChatWidget billData={billData || undefined} />
-    </ClientOnly>
   );
 }
 
