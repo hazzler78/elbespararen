@@ -12,7 +12,7 @@ import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 
 // Dynamically import motion to avoid SSR issues
-const motion = dynamic(() => import("framer-motion").then((mod) => ({ default: mod.motion })), {
+const MotionDiv = dynamic(() => import("framer-motion").then((mod) => mod.MotionDiv), {
   ssr: false,
 });
 
@@ -75,7 +75,7 @@ export default function ContractsPage() {
     <main className="min-h-screen bg-background py-12 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Back button */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
           className="mb-8"
@@ -87,10 +87,10 @@ export default function ContractsPage() {
             <ArrowLeft className="w-4 h-4" />
             Tillbaka
           </Link>
-        </motion.div>
+        </MotionDiv>
 
         {/* Header */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center mb-12"
@@ -101,11 +101,11 @@ export default function ContractsPage() {
           <p className="text-lg text-muted">
             Ange ditt postnummer för att se de bästa elavtalen i ditt område.
           </p>
-        </motion.div>
+        </MotionDiv>
 
         {!showContracts ? (
           /* Postal Code Input */
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -137,10 +137,10 @@ export default function ContractsPage() {
                 {!postalCode ? 'Ange postnummer först' : !priceArea ? 'Ogiltigt postnummer' : 'Visa avtal för mitt område'}
               </button>
             </div>
-          </motion.div>
+          </MotionDiv>
         ) : (
           /* Contracts Display */
-          <motion.div
+          <MotionDiv
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.2 }}
@@ -166,7 +166,7 @@ export default function ContractsPage() {
             )}
 
             {/* CTA Section */}
-            <motion.div
+            <MotionDiv
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
@@ -192,11 +192,11 @@ export default function ContractsPage() {
                   Ladda upp min faktura
                 </Link>
               </div>
-            </motion.div>
+            </MotionDiv>
 
             {/* Contact Form */}
             {showContactForm && (
-              <motion.div
+              <MotionDiv
                 ref={contactFormRef}
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -230,13 +230,13 @@ export default function ContractsPage() {
                     }
                   }}
                 />
-              </motion.div>
+              </MotionDiv>
             )}
-          </motion.div>
+          </MotionDiv>
         )}
 
         {/* Info */}
-        <motion.div
+        <MotionDiv
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
@@ -244,7 +244,7 @@ export default function ContractsPage() {
         >
           <p>🔒 Din information behandlas enligt GDPR</p>
           <p className="mt-2">Priser baseras på aktuella marknadspriser och kan variera</p>
-        </motion.div>
+        </MotionDiv>
       </div>
     </main>
   );
