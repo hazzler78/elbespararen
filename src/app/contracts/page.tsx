@@ -104,6 +104,9 @@ export default function ContractsPage() {
                 <p className="text-muted text-sm">
                   Vi behöver ditt postnummer för att visa rätt priser för ditt område.
                 </p>
+                <p className="text-xs text-red-600 mt-2 font-medium">
+                  * Postnummer är obligatoriskt
+                </p>
               </div>
 
               <PostalCodeInput
@@ -114,10 +117,10 @@ export default function ContractsPage() {
 
               <button
                 onClick={handleViewContracts}
-                disabled={!priceArea}
+                disabled={!priceArea || postalCode.length === 0}
                 className="w-full py-3 px-6 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                Visa avtal för mitt område
+                {!postalCode ? 'Ange postnummer först' : !priceArea ? 'Ogiltigt postnummer' : 'Visa avtal för mitt område'}
               </button>
             </div>
           </motion.div>
