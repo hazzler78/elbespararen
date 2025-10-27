@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
 import PostalCodeInput from "@/components/PostalCodeInput";
 import ProviderComparison from "@/components/ProviderComparison";
+import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 
@@ -15,6 +16,8 @@ export default function ContractsPage() {
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
   const [showContracts, setShowContracts] = useState(false);
+  const [showContactForm, setShowContactForm] = useState(false);
+  const contactFormRef = useRef<HTMLDivElement>(null);
 
   const handlePostalCodeChange = (code: string, area: string | null) => {
     setPostalCode(code);
@@ -25,6 +28,11 @@ export default function ContractsPage() {
     if (priceArea) {
       setShowContracts(true);
     }
+  };
+
+  const handleScrollToContact = () => {
+    contactFormRef.current?.scrollIntoView({ behavior: "smooth" });
+    setShowContactForm(true);
   };
 
   // Skapa mock data för att visa avtal baserat på postnummer
@@ -152,7 +160,7 @@ export default function ContractsPage() {
               <ProviderComparison billData={mockBillData} savings={savings} />
             )}
 
-            {/* CTA */}
+            {/* CTA Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -161,19 +169,64 @@ export default function ContractsPage() {
             >
               <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 border-2 border-primary/20">
                 <h2 className="text-2xl font-bold mb-3">
-                  Vill du se exakta besparingar?
+                  Behöver du personlig hjälp att välja?
                 </h2>
                 <p className="text-muted mb-6">
-                  Ladda upp din faktura för en personlig analys och exakta besparingsberäkningar.
+                  Vi hjälper dig hitta det bästa elavtalet för just din situation och sköter bytet åt dig.
                 </p>
+                <button
+                  onClick={handleScrollToContact}
+                  className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all mr-4"
+                >
+                  Ja, jag vill ha personlig hjälp
+                </button>
                 <Link
                   href="/upload"
-                  className="inline-flex items-center gap-2 px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
+                  className="inline-flex items-center gap-2 px-8 py-3 border border-primary text-primary font-semibold rounded-lg hover:bg-primary/5 transition-all"
                 >
                   Ladda upp min faktura
                 </Link>
               </div>
             </motion.div>
+
+            {/* Contact Form */}
+            {showContactForm && (
+              <motion.div
+                ref={contactFormRef}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="mt-8"
+              >
+                <ContactForm
+                  onSubmit={async (data) => {
+                    try {
+                      const response = await fetch('/api/leads', {
+                        method: 'POST',
+                        headers: {
+                          'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                          email: data.email,
+                          phone: data.phone,
+                          billData: mockBillData,
+                          savings: savings
+                        })
+                      });
+
+                      if (!response.ok) {
+                        throw new Error('Kunde inte skicka förfrågan');
+                      }
+
+                      const result = await response.json();
+                      console.log("Lead skapad:", result);
+                    } catch (error) {
+                      console.error("Fel vid skapande av lead:", error);
+                      throw error; // Låt ContactForm hantera felet
+                    }
+                  }}
+                />
+              </motion.div>
+            )}
           </motion.div>
         )}
 
