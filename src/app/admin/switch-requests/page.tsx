@@ -22,6 +22,9 @@ export default function SwitchRequestsAdminPage() {
   const [switchRequests, setSwitchRequests] = useState<SwitchRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "pending" | "processing" | "completed">("all");
+  const [sortBy, setSortBy] = useState<"date" | "provider" | "status">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     fetchSwitchRequests();
@@ -99,9 +102,112 @@ export default function SwitchRequestsAdminPage() {
     }
   };
 
-  const filteredRequests = filter === "all" 
-    ? switchRequests 
-    : switchRequests.filter(req => req.status === filter);
+  const toggleRequestSelection = (id: string) => {
+    setSelectedRequests(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(id)) {
+        newSet.delete(id);
+      } else {
+        newSet.add(id);
+      }
+      return newSet;
+    });
+  };
+
+  const selectAllVisible = () => {
+    const visibleIds = filteredRequests.map(req => req.id);
+    setSelectedRequests(new Set(visibleIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedRequests(new Set());
+  };
+
+  const exportSelectedToCSV = () => {
+    if (selectedRequests.size === 0) {
+      alert('Välj minst en förfrågan att exportera');
+      return;
+    }
+
+    const selectedData = filteredRequests.filter(req => selectedRequests.has(req.id));
+    
+    // Skapa CSV-huvud
+    const headers = [
+      'Datum',
+      'Kundnamn',
+      'E-post',
+      'Telefon',
+      'Adress',
+      'Nuvarande leverantör',
+      'Anläggnings-ID',
+      'Ny leverantör',
+      'Status',
+      'Besparing (kr/månad)',
+      'Referensnummer'
+    ];
+
+    // Skapa CSV-data
+    const csvData = selectedData.map(req => [
+      new Date(req.createdAt).toLocaleDateString('sv-SE'),
+      `${req.customerInfo.firstName} ${req.customerInfo.lastName}`,
+      req.customerInfo.email,
+      req.customerInfo.phone,
+      `${req.customerInfo.address.street} ${req.customerInfo.address.streetNumber}, ${req.customerInfo.address.postalCode} ${req.customerInfo.address.city}`,
+      req.currentProvider.name,
+      req.currentProvider.customerNumber || '',
+      req.newProvider.name,
+      req.status,
+      req.savings.potentialSavings,
+      req.id
+    ]);
+
+    // Kombinera headers och data
+    const csvContent = [headers, ...csvData]
+      .map(row => row.map(field => `"${field}"`).join(','))
+      .join('\n');
+
+    // Ladda ner CSV
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `bytforfragningar_${new Date().toISOString().split('T')[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    alert(`✅ Exporterade ${selectedRequests.size} förfrågningar till CSV`);
+  };
+
+  const filteredRequests = (() => {
+    let filtered = filter === "all" 
+      ? switchRequests 
+      : switchRequests.filter(req => req.status === filter);
+    
+    // Sortera baserat på vald kolumn och ordning
+    filtered = [...filtered].sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case "date":
+          comparison = new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+          break;
+        case "provider":
+          comparison = a.newProvider.name.localeCompare(b.newProvider.name);
+          break;
+        case "status":
+          comparison = a.status.localeCompare(b.status);
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortOrder === "asc" ? comparison : -comparison;
+    });
+    
+    return filtered;
+  })();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -180,24 +286,92 @@ export default function SwitchRequestsAdminPage() {
             </div>
           </div>
 
-          {/* Filter */}
-          <div className="mb-6">
-            <div className="flex gap-2 flex-wrap">
-              {(["all", "pending", "processing", "completed"] as const).map((f) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  className={`
-                    px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all
-                    ${filter === f 
-                      ? "bg-blue-600 text-white" 
-                      : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
-                    }
-                  `}
-                >
-                  {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
-                </button>
-              ))}
+          {/* Filter och Sortering */}
+          <div className="mb-6 space-y-4">
+            {/* Filter */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Filtrera efter status</h3>
+              <div className="flex gap-2 flex-wrap">
+                {(["all", "pending", "processing", "completed"] as const).map((f) => (
+                  <button
+                    key={f}
+                    onClick={() => setFilter(f)}
+                    className={`
+                      px-3 py-2 rounded-lg font-medium text-xs sm:text-sm transition-all
+                      ${filter === f 
+                        ? "bg-blue-600 text-white" 
+                        : "bg-white border border-gray-200 text-gray-600 hover:bg-gray-50"
+                      }
+                    `}
+                  >
+                    {f === "all" ? "Alla" : f.charAt(0).toUpperCase() + f.slice(1)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Sortering */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Sortera efter</h3>
+              <div className="flex gap-4 flex-wrap items-center">
+                <div className="flex gap-2">
+                  <select
+                    value={sortBy}
+                    onChange={(e) => setSortBy(e.target.value as "date" | "provider" | "status")}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="date">Datum</option>
+                    <option value="provider">Leverantör</option>
+                    <option value="status">Status</option>
+                  </select>
+                  
+                  <button
+                    onClick={() => setSortOrder(sortOrder === "asc" ? "desc" : "asc")}
+                    className="px-3 py-2 border border-gray-300 rounded-lg text-sm hover:bg-gray-50 transition-colors flex items-center gap-2"
+                  >
+                    {sortOrder === "asc" ? "↑" : "↓"} 
+                    {sortOrder === "asc" ? "Stigande" : "Fallande"}
+                  </button>
+                </div>
+                
+                <div className="text-sm text-gray-500">
+                  Visar {filteredRequests.length} av {switchRequests.length} förfrågningar
+                </div>
+              </div>
+            </div>
+
+            {/* Export-kontroller */}
+            <div>
+              <h3 className="text-sm font-medium text-gray-700 mb-2">Exportera valda förfrågningar</h3>
+              <div className="flex gap-3 flex-wrap items-center">
+                <div className="flex gap-2">
+                  <button
+                    onClick={selectAllVisible}
+                    className="px-3 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Välj alla synliga
+                  </button>
+                  <button
+                    onClick={clearSelection}
+                    className="px-3 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700 transition-colors"
+                  >
+                    Rensa val
+                  </button>
+                  <button
+                    onClick={exportSelectedToCSV}
+                    disabled={selectedRequests.size === 0}
+                    className="px-3 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Exportera till CSV ({selectedRequests.size})
+                  </button>
+                </div>
+                
+                {selectedRequests.size > 0 && (
+                  <div className="text-sm text-green-600 font-medium">
+                    {selectedRequests.size} förfrågningar valda
+                  </div>
+                )}
+              </div>
             </div>
           </div>
 
@@ -219,7 +393,14 @@ export default function SwitchRequestsAdminPage() {
                   return (
                     <div key={request.id} className="p-4 sm:p-6 hover:bg-gray-50 transition-colors">
                       <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
-                        <div className="flex-1">
+                        <div className="flex items-start gap-3 flex-1">
+                          <input
+                            type="checkbox"
+                            checked={selectedRequests.has(request.id)}
+                            onChange={() => toggleRequestSelection(request.id)}
+                            className="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 focus:ring-2"
+                          />
+                          <div className="flex-1">
                           <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
                             <h3 className="text-lg sm:text-xl font-bold text-gray-900">
                               {request.customerInfo.firstName} {request.customerInfo.lastName}
@@ -290,6 +471,7 @@ export default function SwitchRequestsAdminPage() {
                             <p className="text-sm text-gray-600">
                               Från {formatCurrency(request.savings.currentCost)} till {formatCurrency(request.savings.cheapestAlternative)}
                             </p>
+                          </div>
                           </div>
                         </div>
 
