@@ -137,11 +137,13 @@ export function formatCurrency(amount: number): string {
  * Formaterar pris per kWh till 2 decimaler
  */
 export function formatPricePerKwh(price: number): string {
-  const oreValue = Math.trunc(Number(price) * 100); // convert kr -> öre without rounding (truncate)
+  // price är i kr/kWh. Visa i öre/kWh med ev. en decimal (t.ex. 153,9 öre)
+  const oreExact = Number((Number(price) * 100).toFixed(1)); // avrunda till en decimal i öre
+  const hasDecimal = Math.abs(oreExact - Math.round(oreExact)) > 1e-9;
   const formatted = new Intl.NumberFormat("sv-SE", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  }).format(oreValue);
+    minimumFractionDigits: hasDecimal ? 1 : 0,
+    maximumFractionDigits: hasDecimal ? 1 : 0
+  }).format(oreExact);
   return `${formatted} öre/kWh`;
 }
 
