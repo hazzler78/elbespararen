@@ -49,6 +49,13 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     return getFallbackLogo(name);
   };
 
+  const getAreaOptions = (provider: any): ContractAlternative[] => {
+    const area = billData.priceArea;
+    const all = Array.isArray(provider.avtalsalternativ) ? provider.avtalsalternativ : [];
+    if (!area) return all;
+    return all.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area);
+  };
+
   const handleLogoError: React.ReactEventHandler<HTMLImageElement> = (e) => {
     const element = e.currentTarget;
     const providerName = element.getAttribute('data-provider-name');
@@ -129,7 +136,12 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   }
 
   const { comparisons, currentCost } = comparisonData;
-  const bestOption = comparisons[0];
+  const filteredComparisons = comparisons.filter((c) => {
+    if (c.provider.contractType !== "fastpris") return true;
+    const options = getAreaOptions(c.provider);
+    return options.length > 0;
+  });
+  const bestOption = filteredComparisons[0];
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
     setSelectedProvider(comparison);
@@ -216,17 +228,14 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               <p className="text-muted mb-4">{bestOption.provider.description}</p>
               
               {/* Avtalslängd dropdown för fastpris */}
-              {bestOption.provider.contractType === "fastpris" && bestOption.provider.avtalsalternativ && bestOption.provider.avtalsalternativ.length > 1 && (
+              {bestOption.provider.contractType === "fastpris" && bestOption.provider.avtalsalternativ && getAreaOptions(bestOption.provider).length > 1 && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Välj avtalslängd
                   </label>
                   <div className="relative">
                     {(() => {
-                      const area = billData.priceArea;
-                      const options = area
-                        ? bestOption.provider.avtalsalternativ.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area)
-                        : bestOption.provider.avtalsalternativ;
+                      const options = getAreaOptions(bestOption.provider);
                       return (
                         <select
                           value={selectedContracts[bestOption.provider.id] || 0}
@@ -319,7 +328,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
 
       {/* Andra alternativ */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {comparisons.filter((comparison, index) => {
+        {filteredComparisons.filter((comparison, index) => {
           // Om första leverantören har besparingar, visa den inte här (den visas redan i "Bästa val")
           if (index === 0 && bestOption && bestOption.estimatedSavings > 0) {
             return false;
@@ -354,17 +363,14 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
             </div>
 
             {/* Avtalslängd dropdown för fastpris */}
-            {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && comparison.provider.avtalsalternativ.length > 1 && (
+            {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && getAreaOptions(comparison.provider).length > 1 && (
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   Välj avtalslängd
                 </label>
                 <div className="relative">
                   {(() => {
-                    const area = billData.priceArea;
-                    const options = area
-                      ? comparison.provider.avtalsalternativ.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area)
-                      : comparison.provider.avtalsalternativ;
+                    const options = getAreaOptions(comparison.provider);
                     return (
                       <select
                         value={selectedContracts[comparison.provider.id] || 0}
