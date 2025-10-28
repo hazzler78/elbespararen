@@ -204,13 +204,18 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
 
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
-    if (!selectedContract || comparison.provider.contractType === "rörligt") {
-      return comparison.estimatedMonthlyCost;
+    // Rörligt: skala energidelen med kWh, behåll månadsavgift fast
+    if (comparison.provider.contractType === "rörligt") {
+      const baseKwh = Math.max(1, billData.totalKWh || 0); // skydd mot 0
+      const ratio = Math.max(0, effectiveKwh) / baseKwh;
+      const monthlyFee = comparison.provider.monthlyFee || 0;
+      const energyPortion = Math.max(0, comparison.estimatedMonthlyCost - monthlyFee);
+      return monthlyFee + energyPortion * ratio;
     }
 
     // Beräkna kostnad baserat på vald avtalslängd
     const monthlyKwh = effectiveKwh;
-    const monthlyCost = (selectedContract.fastpris || 0) * monthlyKwh + (selectedContract.månadskostnad || 0);
+    const monthlyCost = (selectedContract?.fastpris || 0) * monthlyKwh + (selectedContract?.månadskostnad || 0);
     return monthlyCost;
   };
 
