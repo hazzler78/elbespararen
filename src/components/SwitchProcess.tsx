@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   CheckCircle2, 
   User, 
@@ -60,6 +60,16 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [completedSwitchRequest, setCompletedSwitchRequest] = useState<SwitchRequest | null>(null);
+
+  // Session timeout - 30 minuter
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      alert("Din session har gått ut. Priser kan ha ändrats sedan du påbörjade bytet. Du omdirigeras tillbaka för att se de senaste priserna.");
+      window.location.href = "/result";
+    }, 30 * 60 * 1000); // 30 minuter
+
+    return () => clearTimeout(timeout);
+  }, []);
   // Beräkna 14 dagar framåt som standard datum
   const getDefaultContractEndDate = () => {
     const date = new Date();
