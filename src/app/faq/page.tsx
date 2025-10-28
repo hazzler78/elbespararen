@@ -250,7 +250,7 @@ export default function FAQPage() {
             Redo att testa Elbespararen?
           </h2>
           <p className="text-lg text-muted mb-8">
-            Ladda upp din faktura och se dina besparingsmöjligheter på bara 2 minuter.
+            Ladda upp din faktura och se dina besparingsmöjligheter på bara 30 sekunder.
           </p>
           <Link
             href="/upload"

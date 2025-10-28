@@ -231,7 +231,7 @@ export default function ContactPage() {
             Redo att börja spara?
           </h2>
           <p className="text-lg mb-8 opacity-90">
-            Ladda upp din faktura och se dina besparingsmöjligheter på 2 minuter.
+            Ladda upp din faktura och se dina besparingsmöjligheter på 30 sekunder.
           </p>
           <Link
             href="/upload"

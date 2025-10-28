@@ -174,7 +174,7 @@ export default function AboutPage() {
             Redo att spara pengar?
           </h2>
           <p className="text-lg mb-8 opacity-90">
-            Det tar mindre än 2 minuter att få din analys.
+            Det tar mindre än 30 sekunder att få din analys.
           </p>
           <Link
             href="/upload"
