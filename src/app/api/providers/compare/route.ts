@@ -101,7 +101,24 @@ export async function POST(request: NextRequest) {
           isRecommended: false // Sätt till false som default, vi hanterar detta i frontend
         };
       })
-      .sort((a, b) => b.estimatedSavings - a.estimatedSavings); // Sortera efter besparing
+      .sort((a, b) => {
+        // Primärt: sortera efter besparing
+        const savingsDiff = b.estimatedSavings - a.estimatedSavings;
+        if (Math.abs(savingsDiff) > 1) return savingsDiff; // >1 kr skillnad
+
+        // Tie-breaker 1: flest gratis månader vinner
+        const aFree = a.provider.freeMonths || 0;
+        const bFree = b.provider.freeMonths || 0;
+        if (aFree !== bFree) return bFree - aFree;
+
+        // Tie-breaker 2: lägst månadskostnad
+        if (a.provider.monthlyFee !== b.provider.monthlyFee) {
+          return (a.provider.monthlyFee || 0) - (b.provider.monthlyFee || 0);
+        }
+
+        // Tie-breaker 3: lägst energyPrice
+        return (a.provider.energyPrice || 0) - (b.provider.energyPrice || 0);
+      }); // Sortera efter besparing, sedan kampanj, avgift, energyPrice
     
     // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
     const recommendedCount = Math.min(3, comparisons.filter(c => c.estimatedSavings > 0).length);
