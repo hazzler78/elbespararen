@@ -153,9 +153,18 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     if (!provider.avtalsalternativ || provider.avtalsalternativ.length === 0) {
       return null;
     }
-    
+    // Filtrera avtalsalternativ efter kundens prisområde om tillgängligt
+    const area = billData.priceArea;
+    const options: ContractAlternative[] = Array.isArray(provider.avtalsalternativ)
+      ? (area ? provider.avtalsalternativ.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area) : provider.avtalsalternativ)
+      : [];
+
+    if (options.length === 0) {
+      return provider.avtalsalternativ[0];
+    }
+
     const selectedIndex = selectedContracts[provider.id] || 0;
-    return provider.avtalsalternativ[selectedIndex] || provider.avtalsalternativ[0];
+    return options[selectedIndex] || options[0];
   };
 
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
@@ -213,17 +222,25 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                     Välj avtalslängd
                   </label>
                   <div className="relative">
-                    <select
-                      value={selectedContracts[bestOption.provider.id] || 0}
-                      onChange={(e) => handleContractChange(bestOption.provider.id, parseInt(e.target.value))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8"
-                    >
-                      {bestOption.provider.avtalsalternativ.map((contract, index) => (
-                        <option key={index} value={index}>
-                          {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
-                        </option>
-                      ))}
-                    </select>
+                    {(() => {
+                      const area = billData.priceArea;
+                      const options = area
+                        ? bestOption.provider.avtalsalternativ.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area)
+                        : bestOption.provider.avtalsalternativ;
+                      return (
+                        <select
+                          value={selectedContracts[bestOption.provider.id] || 0}
+                          onChange={(e) => handleContractChange(bestOption.provider.id, parseInt(e.target.value))}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8"
+                        >
+                          {options.map((contract, index) => (
+                            <option key={index} value={index}>
+                              {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
+                            </option>
+                          ))}
+                        </select>
+                      );
+                    })()}
                     <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
@@ -343,17 +360,25 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   Välj avtalslängd
                 </label>
                 <div className="relative">
-                  <select
-                    value={selectedContracts[comparison.provider.id] || 0}
-                    onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
-                  >
-                    {comparison.provider.avtalsalternativ.map((contract, contractIndex) => (
-                      <option key={contractIndex} value={contractIndex}>
-                        {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
-                      </option>
-                    ))}
-                  </select>
+                  {(() => {
+                    const area = billData.priceArea;
+                    const options = area
+                      ? comparison.provider.avtalsalternativ.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area)
+                      : comparison.provider.avtalsalternativ;
+                    return (
+                      <select
+                        value={selectedContracts[comparison.provider.id] || 0}
+                        onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
+                      >
+                        {options.map((contract, contractIndex) => (
+                          <option key={contractIndex} value={contractIndex}>
+                            {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
+                          </option>
+                        ))}
+                      </select>
+                    );
+                  })()}
                   <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                 </div>
               </div>

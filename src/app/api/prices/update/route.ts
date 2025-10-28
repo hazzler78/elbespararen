@@ -125,7 +125,7 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
   const avtalsalternativ: ContractAlternative[] = [];
   
   // Lägg till fastpris-alternativ för alla prisområden (se1, se2, se3, se4)
-  Object.values(fixedPrices).forEach((regionData: any) => {
+  Object.entries(fixedPrices).forEach(([areaCode, regionData]: [string, any]) => {
     if (regionData && typeof regionData === 'object') {
       Object.entries(regionData).forEach(([period, priceData]: [string, any]) => {
         const months = period === '3_months' ? 3 : 
@@ -142,7 +142,8 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
           fastpris: Number((priceData.price / 100).toFixed(2)), // Konvertera från öre till kr och avrunda till 2 decimaler
           månadskostnad: priceData.monthly_fee || 0,
           bindningstid: months,
-          gratis_månader: 0
+          gratis_månader: 0,
+          areaCode: areaCode
         });
       });
     }

@@ -53,6 +53,7 @@ export interface ContractAlternative {
   gratis_månader?: number;
   spotpris?: number; // kr/kWh för rörligt (spotpris)
   påslag?: number; // kr/kWh påslag på spotpris
+  areaCode?: string; // Prisområde (se1, se2, se3, se4)
 }
 
 export interface ElectricityProvider {
