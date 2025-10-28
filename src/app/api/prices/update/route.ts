@@ -137,10 +137,23 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
                       period === '5_years' ? 60 : 
                       period === '10_years' ? 120 : 12;
         
+        // Priser ska visas exakt inklusive moms. Leverantörs-JSON kan exponera total_with_vat i öre/kWh.
+        const rawPerKwhOere = typeof priceData.total_with_vat === 'number' 
+          ? priceData.total_with_vat 
+          : priceData.price; // fallback
+        const fastprisKrPerKwh = typeof rawPerKwhOere === 'number' 
+          ? rawPerKwhOere / 100 
+          : 0;
+
+        // Månadskostnad inkl. moms om tillgängligt
+        const monthlyWithVat = typeof priceData.monthly_fee_with_vat === 'number' 
+          ? priceData.monthly_fee_with_vat 
+          : priceData.monthly_fee || priceData.monthlyFee || priceData.månadskostnad || 0;
+
         avtalsalternativ.push({
           namn: `${months} månader`,
-          fastpris: Number((priceData.price / 100).toFixed(2)), // Konvertera från öre till kr och avrunda till 2 decimaler
-          månadskostnad: priceData.monthly_fee || 0,
+          fastpris: Number(fastprisKrPerKwh.toFixed(3)), // behåll precision inkl. moms
+          månadskostnad: monthlyWithVat,
           bindningstid: months,
           gratis_månader: 0,
           areaCode: areaCode
@@ -153,8 +166,8 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
   const bestAlternativ = avtalsalternativ.find(a => a.bindningstid === 12) || avtalsalternativ[0];
   
   return {
-    fastpris: Number((bestAlternativ?.fastpris || 0.5).toFixed(2)), // Fallback till 50 öre/kWh, avrunda till 2 decimaler
-    månadskostnad: bestAlternativ?.månadskostnad || 0,
+    fastpris: typeof bestAlternativ?.fastpris === 'number' ? Number(bestAlternativ.fastpris.toFixed(3)) : 0.5,
+    månadskostnad: typeof bestAlternativ?.månadskostnad === 'number' ? bestAlternativ.månadskostnad : 0,
     påslag: 0, // Fastpris har inget påslag
     beskrivning: `${providerName} fastpris - flera avtalsalternativ tillgängliga`,
     bindningstid: bestAlternativ?.bindningstid || 12,
