@@ -164,12 +164,20 @@ export default function ResultPage() {
               <p className="text-muted mb-6">
                 Vi hjälper dig hitta det bästa elavtalet för just din situation och sköter bytet åt dig.
               </p>
-              <button
-                onClick={handleScrollToContact}
-                className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
-              >
-                Ja, jag vill ha personlig hjälp
-              </button>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <button
+                  onClick={handleScrollToContact}
+                  className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
+                >
+                  Ja, jag vill ha personlig hjälp
+                </button>
+                <Link
+                  href="/contracts"
+                  className="px-8 py-3 border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary/5 transition-all"
+                >
+                  Testa själv och jämför avtal
+                </Link>
+              </div>
             </div>
           </div>
 
