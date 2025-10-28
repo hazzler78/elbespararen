@@ -10,6 +10,7 @@ interface ProviderComparisonProps {
   billData: BillData;
   savings?: SavingsCalculation;
   hideSavings?: boolean; // Hide savings field for contracts page
+  enableConsumptionEntry?: boolean; // On contracts page: ask for kWh and hide prices until provided
 }
 
 interface ComparisonData {
@@ -19,13 +20,14 @@ interface ComparisonData {
   recommendedProviders: number;
 }
 
-export default function ProviderComparison({ billData, savings, hideSavings = false }: ProviderComparisonProps) {
+export default function ProviderComparison({ billData, savings, hideSavings = false, enableConsumptionEntry = false }: ProviderComparisonProps) {
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [showSwitchProcess, setShowSwitchProcess] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
+  const [enteredKwh, setEnteredKwh] = useState<number | null>(enableConsumptionEntry ? null : billData.totalKWh);
 
   const toKebab = (value: string) =>
     value
@@ -198,13 +200,16 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
     return options[selectedIndex] || options[0];
   };
 
+  const effectiveKwh = enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh;
+  const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
+
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
     if (!selectedContract || comparison.provider.contractType === "rörligt") {
       return comparison.estimatedMonthlyCost;
     }
 
     // Beräkna kostnad baserat på vald avtalslängd
-    const monthlyKwh = billData.totalKWh;
+    const monthlyKwh = effectiveKwh;
     const monthlyCost = (selectedContract.fastpris || 0) * monthlyKwh + (selectedContract.månadskostnad || 0);
     return monthlyCost;
   };
@@ -214,9 +219,28 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
       {/* Header */}
       <div className="text-center">
         <h2 className="text-2xl font-bold mb-2">Bästa alternativen för dig</h2>
-        <p className="text-muted">
-          Baserat på din förbrukning ({billData.totalKWh} kWh/månad)
-        </p>
+        {enableConsumptionEntry ? (
+          <div className="flex items-center justify-center gap-3 text-muted">
+            <span>Ange din förbrukning</span>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder="kWh/månad"
+                className="w-32 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-gray-900"
+                value={enteredKwh === null ? '' : enteredKwh}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setEnteredKwh(val === '' ? null : Math.max(0, Number(val)));
+                }}
+              />
+              <span className="text-sm">kWh/månad</span>
+            </div>
+          </div>
+        ) : (
+          <p className="text-muted">Baserat på din förbrukning ({billData.totalKWh} kWh/månad)</p>
+        )}
       </div>
 
       {/* Bästa alternativet */}
@@ -316,7 +340,11 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
               <div className="bg-white rounded-lg p-4 mb-4">
                 <p className="text-sm text-muted mb-1">Nytt pris</p>
                 <p className="text-3xl font-bold text-success">
-                  {formatCurrency(calculateProviderCost(bestOption, getSelectedContract(bestOption.provider)))}
+                  {showPrices ? (
+                    formatCurrency(calculateProviderCost(bestOption, getSelectedContract(bestOption.provider)))
+                  ) : (
+                    '—'
+                  )}
                 </p>
                 <p className="text-sm text-muted">per månad</p>
               </div>
@@ -448,12 +476,16 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
 
             {comparison.provider.contractType === "rörligt" && (
               <div className="flex items-center justify-between mb-4">
-                <div>
-                  <p className="text-sm text-muted">Beräknad kostnad</p>
-                  <p className="font-bold text-lg">
-                    {formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))}
-                  </p>
-                </div>
+              <div>
+                <p className="text-sm text-muted">Beräknad kostnad</p>
+                <p className="font-bold text-lg">
+                  {showPrices ? (
+                    formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))
+                  ) : (
+                    '—'
+                  )}
+                </p>
+              </div>
                 {!hideSavings && (
                   <div className="text-right">
                     <p className="text-sm text-muted">Besparing</p>

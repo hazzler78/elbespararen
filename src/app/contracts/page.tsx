@@ -145,7 +145,12 @@ export default function ContractsPage() {
 
             {/* Provider Comparison */}
             {mockBillData && savings && (
-              <ProviderComparison billData={mockBillData} savings={savings} hideSavings={true} />
+              <ProviderComparison 
+                billData={mockBillData} 
+                savings={savings} 
+                hideSavings={true}
+                enableConsumptionEntry={true}
+              />
             )}
 
             {/* CTA Section */}
