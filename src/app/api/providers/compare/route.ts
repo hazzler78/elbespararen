@@ -20,8 +20,10 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
   const energyPrice = availableForEnergy / totalKWh;
   const energyCost = totalKWh * energyPrice;
   
-  // Beräkna månadskostnad (0 kr under gratisperioden)
-  const monthlyFee = provider.freeMonths > 0 ? 0 : provider.monthlyFee;
+  // Beräkna effektiv månadskostnad över 12 månader baserat på gratis månader
+  // Exempel: 5 fria månader => betala 7/12 av månadsavgiften i snitt
+  const freeMonths = Math.max(0, Math.min(12, provider.freeMonths || 0));
+  const monthlyFee = ((provider.monthlyFee || 0) * (12 - freeMonths)) / 12;
   
   // Total kostnad = elnät + energi + månadskostnad
   return elnatCost + energyCost + monthlyFee;
