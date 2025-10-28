@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { formatPricePerKwh } from "@/lib/calculations";
 import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone, Zap } from "lucide-react";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 
@@ -207,7 +208,7 @@ export default function ProvidersAdminPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide mb-2">Billigaste pris</p>
               <p className="text-2xl sm:text-3xl font-bold text-purple-600">
-                {providers && providers.length > 0 ? Math.min(...providers.map(p => p.energyPrice)).toFixed(2) : '0.00'} kr/kWh
+                {providers && providers.length > 0 ? formatPricePerKwh(Math.min(...providers.map(p => p.energyPrice))) : formatPricePerKwh(0)}
               </p>
             </div>
           </div>
@@ -251,7 +252,7 @@ export default function ProvidersAdminPage() {
                           </div>
                           <div>
                             <p className="text-gray-500 text-xs">Pris</p>
-                            <p className="font-semibold text-gray-900">{Number(provider.energyPrice).toFixed(2)} kr/kWh</p>
+                            <p className="font-semibold text-gray-900">{formatPricePerKwh(Number(provider.energyPrice))}</p>
                           </div>
                           <div>
                             <p className="text-gray-500 text-xs">Gratis månader</p>

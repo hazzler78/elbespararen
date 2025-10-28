@@ -12,6 +12,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, CurrentProviderInfo, ApiResponse, ContractAlternative } from "@/lib/types";
+import { formatPricePerKwh } from "@/lib/calculations";
 import SwitchConfirmation from "./SwitchConfirmation";
 
 interface SwitchProcessProps {
@@ -511,7 +512,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
                       <h4 className="font-bold text-primary mb-1 text-sm">Ditt valda avtal med {provider.name}</h4>
                       <p className="text-xl font-bold text-primary">
-                        {selectedContract?.fastpris ? `${selectedContract.fastpris.toFixed(2)} kr/kWh` : `${provider.energyPrice} kr/kWh`}
+                        {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(provider.energyPrice)}
                       </p>
                       <p className="text-xs text-muted">
                         {selectedContract?.namn || "Fastpris under hela avtalsperioden"}
@@ -568,7 +569,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                           {provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                         </p>
                         <p className="font-semibold">
-                          {selectedContract?.fastpris ? `${selectedContract.fastpris.toFixed(2)} kr/kWh` : `${Number(provider.energyPrice).toFixed(2)} kr/kWh`}
+                          {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(Number(provider.energyPrice))}
                         </p>
                       </div>
                     </div>
