@@ -221,15 +221,22 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
 
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
-    // Rörligt: spotpris (per område) + leverantörens påslag (energyPrice) * kWh + månadsavgift
+    // Rörligt
     if (comparison.provider.contractType === "rörligt") {
-      const area = billData.priceArea?.toLowerCase();
-      const spot = area && spotPrices ? (spotPrices[area] || 0) : 0; // kr/kWh
-      const surcharge = comparison.provider.energyPrice || 0; // tolka som påslag kr/kWh
-      const monthlyFee = comparison.provider.monthlyFee || 0;
-      const kwh = Math.max(0, effectiveKwh);
-      const energyCost = (spot + surcharge) * kwh;
-      return monthlyFee + energyCost;
+      // På contracts-sidan: använd spotpris + påslag när spotpriser finns
+      if (enableConsumptionEntry && spotPrices) {
+        const area = billData.priceArea?.toLowerCase();
+        const spot = area ? (spotPrices[area] || 0) : 0; // kr/kWh
+        if (spot > 0) {
+          const surcharge = comparison.provider.energyPrice || 0; // kr/kWh
+          const monthlyFee = comparison.provider.monthlyFee || 0;
+          const kwh = Math.max(0, effectiveKwh);
+          const energyCost = (spot + surcharge) * kwh;
+          return monthlyFee + energyCost;
+        }
+      }
+      // På result-sidan eller om spot saknas: använd serverns beräknade värde
+      return comparison.estimatedMonthlyCost;
     }
 
     // Beräkna kostnad baserat på vald avtalslängd
