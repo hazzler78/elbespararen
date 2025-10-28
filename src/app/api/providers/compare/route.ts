@@ -102,7 +102,14 @@ export async function POST(request: NextRequest) {
         };
       })
       .sort((a, b) => {
-        // Primärt: sortera efter besparing
+        // Grupp 1: Rörligt alltid före Fastpris
+        const aType = a.provider.contractType;
+        const bType = b.provider.contractType;
+        if (aType !== bType) {
+          return aType === "rörligt" ? -1 : 1;
+        }
+
+        // Inom samma grupp: sortera efter besparing
         const savingsDiff = b.estimatedSavings - a.estimatedSavings;
         if (Math.abs(savingsDiff) > 1) return savingsDiff; // >1 kr skillnad
 
@@ -118,7 +125,7 @@ export async function POST(request: NextRequest) {
 
         // Tie-breaker 3: lägst energyPrice
         return (a.provider.energyPrice || 0) - (b.provider.energyPrice || 0);
-      }); // Sortera efter besparing, sedan kampanj, avgift, energyPrice
+      }); // Rörligt först, sedan sortering inom grupp
     
     // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
     const recommendedCount = Math.min(3, comparisons.filter(c => c.estimatedSavings > 0).length);
