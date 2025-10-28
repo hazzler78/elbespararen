@@ -294,7 +294,11 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
                   alt={`${bestOption.provider.name} logo`}
                   data-provider-name={bestOption.provider.name}
                   onError={handleLogoError}
-                  className="h-20 w-auto object-contain"
+                  className="h-20 w-auto object-contain max-w-[160px]"
+                  style={{
+                    imageRendering: 'crisp-edges',
+                    WebkitImageRendering: 'crisp-edges'
+                  } as React.CSSProperties}
                   loading="lazy"
                 />
                 <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
@@ -425,7 +429,11 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
                     alt={`${comparison.provider.name} logo`}
                     data-provider-name={comparison.provider.name}
                     onError={handleLogoError}
-                    className="h-12 w-auto object-contain"
+                    className="h-12 w-auto object-contain max-w-[120px]"
+                    style={{
+                      imageRendering: 'crisp-edges',
+                      WebkitImageRendering: 'crisp-edges'
+                    } as React.CSSProperties}
                     loading="lazy"
                   />
                   <h3 className="font-bold text-lg">{comparison.provider.name}</h3>

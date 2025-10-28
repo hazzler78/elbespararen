@@ -563,10 +563,21 @@ function ProviderForm({
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               className="w-full border border-border rounded-lg px-3 py-2"
             />
+            <p className="text-xs text-muted mt-1">
+              💡 Tips: Använd SVG-format för bästa kvalitet på alla skärmar. PNG/JPG kan bli suddiga på mobila enheter.
+            </p>
             {formData.logoUrl && (
               <div className="mt-2 p-2 border border-border rounded-lg bg-white">
                 <p className="text-xs text-muted mb-1">Förhandsgranskning</p>
-                <img src={resolveLogoUrl(formData.logoUrl)} alt="Logo preview" className="h-10 w-auto object-contain" />
+                <img 
+                  src={resolveLogoUrl(formData.logoUrl)} 
+                  alt="Logo preview" 
+                  className="h-10 w-auto object-contain max-w-[100px]"
+                  style={{
+                    imageRendering: 'crisp-edges',
+                    WebkitImageRendering: 'crisp-edges'
+                  } as React.CSSProperties}
+                />
                 <p className="mt-1 text-[11px] text-muted">Visar: {resolveLogoUrl(formData.logoUrl)}</p>
               </div>
             )}
