@@ -6,36 +6,66 @@ import { getPriceAreaFromPostalCode, PRICE_AREAS } from "@/lib/price-areas";
 export const runtime = 'edge';
 
 // Leverantörer med deras endpoints och URL:er
+// Normaliseringskarta för leverantörsnamn
+const PROVIDER_NAME_ALIASES: Record<string, string> = {
+  // Kanoniska namn
+  "cheap energy": "Cheap Energy",
+  "svekraft": "Svekraft",
+  "energi2": "Energi2",
+  "tibber": "Tibber",
+  "telinet": "Telinet",
+  "fortum": "Fortum",
+  "skellefteå kraft": "Skellefteå Kraft",
+  "greenely": "Greenely",
+  "bixia": "Bixia",
+  "dalakraft": "Dalakraft",
+  // Särskilda korrigeringar
+  "svealands el": "Svealands Elbolag",
+  "svealands elbolag": "Svealands Elbolag",
+  "svealands elbolaget": "Svealands Elbolag",
+  "svealands elbolag ab": "Svealands Elbolag",
+  "stockholms el": "Stockholms Elbolag",
+  "stockholms elbolag": "Stockholms Elbolag",
+  "motala": "Motala Energi",
+  "motala el": "Motala Energi",
+  "motala energi": "Motala Energi"
+};
+
+function normalizeProviderName(name: string): string {
+  const key = (name || "").trim().toLowerCase();
+  return PROVIDER_NAME_ALIASES[key] || name;
+}
+
 const PRICE_ENDPOINTS = [
   {
     endpoint: "cheapenergy_v2",
     url: "https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json",
-    providerName: "Cheap Energy"
+    providerName: normalizeProviderName("Cheap Energy")
   },
   {
     endpoint: "energi2_v2", 
     url: "https://energi2.se/Site_Priser_Energi2_de2.json",
-    providerName: "Energi2"
+    providerName: normalizeProviderName("Energi2")
   },
   {
     endpoint: "sthlmsel_v2",
     url: "https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json", 
-    providerName: "Stockholms El"
+    providerName: normalizeProviderName("Stockholms El")
   },
   {
     endpoint: "svealandsel_v2",
     url: "https://elify.se/Site_Priser_SvealandsEL_de2.json",
-    providerName: "Svealands EL"
+    providerName: normalizeProviderName("Svealands EL")
   },
   {
     endpoint: "svekraft_v2",
     url: "https://svekraft.com/Site_Priser_Svekraft_de2.json",
-    providerName: "Svekraft"
+    providerName: normalizeProviderName("Svekraft")
   },
   {
     endpoint: "motala_v2",
     url: "https://elify.se/Site_Priser_Motala_de2.json",
-    providerName: "Motala El"
+    providerName: normalizeProviderName("Motala El")
   }
 ];
 
@@ -179,27 +209,27 @@ function parseProviderPrices(data: any, providerName: string): PriceData {
 
 // Parser funktioner för varje leverantör
 function parseCheapEnergy(data: any): PriceData {
-  return parseProviderPrices(data, "Cheap Energy");
+  return parseProviderPrices(data, normalizeProviderName("Cheap Energy"));
 }
 
 function parseEnergi2(data: any): PriceData {
-  return parseProviderPrices(data, "Energi2");
+  return parseProviderPrices(data, normalizeProviderName("Energi2"));
 }
 
 function parseStockholmsEl(data: any): PriceData {
-  return parseProviderPrices(data, "Stockholms El");
+  return parseProviderPrices(data, normalizeProviderName("Stockholms El"));
 }
 
 function parseSvealandsEl(data: any): PriceData {
-  return parseProviderPrices(data, "Svealands EL");
+  return parseProviderPrices(data, normalizeProviderName("Svealands EL"));
 }
 
 function parseSvekraft(data: any): PriceData {
-  return parseProviderPrices(data, "Svekraft");
+  return parseProviderPrices(data, normalizeProviderName("Svekraft"));
 }
 
 function parseMotalaEl(data: any): PriceData {
-  return parseProviderPrices(data, "Motala El");
+  return parseProviderPrices(data, normalizeProviderName("Motala El"));
 }
 
 // Funktion för att rensa dubbletter av leverantörer
@@ -309,17 +339,18 @@ export async function POST(request: NextRequest) {
         const priceResponse = await fetchProviderPrices(endpoint.endpoint, endpoint.url);
         
         if (priceResponse.success && priceResponse.data) {
+          const canonicalName = normalizeProviderName(endpoint.providerName);
           // Hitta befintlig Fastpris-leverantör för denna endpoint
           // Prioritera att hitta en befintlig leverantör istället för att skapa nya
           let provider = existingProviders.find(p => 
-            p.name.toLowerCase() === endpoint.providerName.toLowerCase() &&
+            normalizeProviderName(p.name).toLowerCase() === canonicalName.toLowerCase() &&
             p.contractType === "fastpris"
           );
 
           // Om vi inte hittar exakt match, prova mer flexibel sökning
           if (!provider) {
             provider = existingProviders.find(p => 
-              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+              (normalizeProviderName(p.name).toLowerCase().includes(canonicalName.toLowerCase()) ||
                p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
               p.contractType === "fastpris"
             );
@@ -328,7 +359,7 @@ export async function POST(request: NextRequest) {
           // Om vi fortfarande inte hittar, kolla om det finns en dold fastpris-leverantör
           if (!provider) {
             provider = existingProviders.find(p => 
-              (p.name.toLowerCase().includes(endpoint.providerName.toLowerCase()) ||
+              (normalizeProviderName(p.name).toLowerCase().includes(canonicalName.toLowerCase()) ||
                p.name.toLowerCase().includes(endpoint.endpoint.split('_')[0])) &&
               p.contractType === "fastpris" &&
               p.userHidden === true
@@ -337,25 +368,25 @@ export async function POST(request: NextRequest) {
 
           if (!provider) {
             // Skapa ny Fastpris-leverantör om den inte finns
-            console.log(`[Price Update] Creating new Fastpris provider: ${endpoint.providerName}`);
+            console.log(`[Price Update] Creating new Fastpris provider: ${canonicalName}`);
             
             const newProvider = await db.createProvider({
-              name: endpoint.providerName,
-              description: priceResponse.data.beskrivning || `${endpoint.providerName} fastpris`,
+              name: canonicalName,
+              description: priceResponse.data.beskrivning || `${canonicalName} fastpris`,
               monthlyFee: priceResponse.data.månadskostnad || 0,
               energyPrice: priceResponse.data.fastpris || 1.0,
               freeMonths: priceResponse.data.gratis_månader || 0,
               contractLength: priceResponse.data.bindningstid || 12,
               contractType: "fastpris",
               isActive: true,
-              features: Array.isArray(priceResponse.data.features) ? priceResponse.data.features : [`${endpoint.providerName} fastpris`],
+              features: Array.isArray(priceResponse.data.features) ? priceResponse.data.features : [`${canonicalName} fastpris`],
               websiteUrl: `https://${endpoint.url.split('//')[1].split('/')[0]}`,
               phoneNumber: undefined,
               avtalsalternativ: Array.isArray(priceResponse.data.avtalsalternativ) ? priceResponse.data.avtalsalternativ : []
             });
 
             updateResults.push({
-              provider: endpoint.providerName,
+              provider: canonicalName,
               action: 'created',
               success: true,
               data: newProvider
@@ -364,7 +395,7 @@ export async function POST(request: NextRequest) {
 
             // Logga antal avtalsalternativ som lagras i den enda leverantören
             if (priceResponse.data.avtalsalternativ && priceResponse.data.avtalsalternativ.length > 1) {
-              console.log(`[Price Update] Storing ${priceResponse.data.avtalsalternativ.length} contract alternatives in single provider: ${endpoint.providerName}`);
+              console.log(`[Price Update] Storing ${priceResponse.data.avtalsalternativ.length} contract alternatives in single provider: ${canonicalName}`);
             }
           } else {
             // Uppdatera befintlig Fastpris-leverantör (bara Fastpris!)
@@ -383,7 +414,7 @@ export async function POST(request: NextRequest) {
               });
 
               updateResults.push({
-                provider: endpoint.providerName,
+                provider: canonicalName,
                 action: 'updated_hidden',
                 success: true,
                 data: updatedProvider
@@ -403,7 +434,7 @@ export async function POST(request: NextRequest) {
               });
 
               updateResults.push({
-                provider: endpoint.providerName,
+                provider: canonicalName,
                 action: provider.isActive ? 'updated' : 'reactivated',
                 success: true,
                 data: updatedProvider
@@ -413,7 +444,7 @@ export async function POST(request: NextRequest) {
           }
         } else {
           updateResults.push({
-            provider: endpoint.providerName,
+            provider: normalizeProviderName(endpoint.providerName),
             action: 'fetch_failed',
             success: false,
             error: priceResponse.error
@@ -423,7 +454,7 @@ export async function POST(request: NextRequest) {
       } catch (error) {
         console.error(`[Price Update] Error processing ${endpoint.providerName}:`, error);
         updateResults.push({
-          provider: endpoint.providerName,
+          provider: normalizeProviderName(endpoint.providerName),
           action: 'error',
           success: false,
           error: error instanceof Error ? error.message : 'Unknown error'
