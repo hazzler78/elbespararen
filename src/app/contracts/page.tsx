@@ -137,7 +137,7 @@ export default function ContractsPage() {
                     Visar avtal för {postalCode}
                   </p>
                   <p className="text-sm text-blue-600">
-                    Priser baserade på genomsnittlig förbrukning (400 kWh/månad)
+                    Ange din förbrukning på nästa steg för att se exakta priser
                   </p>
                 </div>
               </div>
