@@ -49,6 +49,20 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
     return getFallbackLogo(name);
   };
 
+  const getTags = (provider: any): string[] => {
+    const tags: string[] = [];
+    if (Array.isArray(provider.features)) {
+      tags.push(...provider.features.filter((f: unknown) => typeof f === 'string') as string[]);
+    }
+    if (provider.contractType === "rörligt" && !tags.includes("Rörligt")) {
+      tags.unshift("Rörligt");
+    }
+    if (typeof provider.freeMonths === 'number' && provider.freeMonths > 0 && !tags.includes("Kampanj")) {
+      tags.push("Kampanj");
+    }
+    return tags;
+  };
+
   const getAreaOptions = (provider: any): ContractAlternative[] => {
     const area = billData.priceArea;
     const all = Array.isArray(provider.avtalsalternativ) ? provider.avtalsalternativ : [];
@@ -285,7 +299,7 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
               </div>
 
               <div className="flex flex-wrap gap-2">
-                {bestOption.provider.features.map((feature, index) => (
+                {getTags(bestOption.provider).map((feature, index) => (
                   <span
                     key={index}
                     className="flex items-center gap-1 bg-white/50 px-3 py-1 rounded-full text-sm"
@@ -357,6 +371,18 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                   <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
                 </div>
                 <p className="text-sm text-muted">{comparison.provider.description}</p>
+                {/* Tags / Features */}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {getTags(comparison.provider).map((feature, index) => (
+                    <span
+                      key={index}
+                      className="flex items-center gap-1 bg-gray-50 px-2.5 py-0.5 rounded-full text-xs border border-border/60"
+                    >
+                      <CheckCircle2 className="w-3 h-3 text-success" />
+                      {feature}
+                    </span>
+                  ))}
+                </div>
               </div>
               {comparison.isRecommended && comparison.estimatedSavings > 0 && (
                 <div className="flex items-center gap-1 bg-success/10 text-success px-2 py-1 rounded-full text-xs">
