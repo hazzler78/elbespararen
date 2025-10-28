@@ -18,7 +18,13 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
   // Beräkna energipris baserat på billigaste alternativ
   const availableForEnergy = cheapestAlternative - elnatCost;
   const energyPrice = availableForEnergy / totalKWh;
-  const energyCost = totalKWh * energyPrice;
+  
+  // För rörliga avtal, använd provider.energyPrice som påslag
+  // För fastpris, använd provider.energyPrice direkt
+  const finalEnergyPrice = provider.contractType === "rörligt" 
+    ? energyPrice + (provider.energyPrice || 0) 
+    : (provider.energyPrice || 0);
+  const energyCost = totalKWh * finalEnergyPrice;
   
   // Beräkna effektiv månadskostnad över 12 månader baserat på gratis månader
   // Exempel: 5 fria månader => betala 7/12 av månadsavgiften i snitt
