@@ -52,8 +52,8 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const getAreaOptions = (provider: any): ContractAlternative[] => {
     const area = billData.priceArea;
     const all = Array.isArray(provider.avtalsalternativ) ? provider.avtalsalternativ : [];
-    if (!area) return all;
-    return all.filter((a: ContractAlternative) => !a.areaCode || a.areaCode === area);
+    if (!area) return [];
+    return all.filter((a: ContractAlternative) => a.areaCode === area);
   };
 
   const handleLogoError: React.ReactEventHandler<HTMLImageElement> = (e) => {

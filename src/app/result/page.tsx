@@ -7,6 +7,7 @@ import Link from "next/link";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 import ResultSummary from "@/components/ResultSummary";
+import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import StickyCTA from "@/components/StickyCTA";
@@ -30,8 +31,11 @@ export default function ResultPage() {
         console.log('[result] totalAmount:', data.totalAmount);
         console.log('[result] extraFeesTotal:', data.extraFeesTotal);
         console.log('[result] extraFeesDetailed:', data.extraFeesDetailed);
-        setBillData(data);
-        const savingsResult = calculateSavings(data);
+        // Säkerställ att priceArea finns baserat på postnummer
+        const ensuredArea = data.priceArea || (data.postalCode ? getPriceAreaFromPostalCode(data.postalCode) : undefined);
+        const withArea = ensuredArea ? { ...data, priceArea: ensuredArea } : data;
+        setBillData(withArea);
+        const savingsResult = calculateSavings(withArea);
         console.log('[result] Beräknade besparingar:', savingsResult);
         console.log('[result] currentCost:', savingsResult.currentCost);
         console.log('[result] potentialSavings:', savingsResult.potentialSavings);
