@@ -9,6 +9,7 @@ import SwitchProcess from "./SwitchProcess";
 interface ProviderComparisonProps {
   billData: BillData;
   savings?: SavingsCalculation;
+  hideSavings?: boolean; // Hide savings field for contracts page
 }
 
 interface ComparisonData {
@@ -18,7 +19,7 @@ interface ComparisonData {
   recommendedProviders: number;
 }
 
-export default function ProviderComparison({ billData, savings }: ProviderComparisonProps) {
+export default function ProviderComparison({ billData, savings, hideSavings = false }: ProviderComparisonProps) {
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -453,12 +454,14 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
                     {formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className="text-sm text-muted">Besparing</p>
-                  <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
-                    {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
-                  </p>
-                </div>
+                {!hideSavings && (
+                  <div className="text-right">
+                    <p className="text-sm text-muted">Besparing</p>
+                    <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
+                      {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
