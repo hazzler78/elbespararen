@@ -38,8 +38,14 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const getFallbackLogo = (name: string) => `/logos/${toKebab(name)}.svg`;
 
   const getLogoUrl = (name: string, logoUrl?: string) => {
-    // Use provided URL if present; otherwise fallback to kebab-case svg
-    if (logoUrl && logoUrl.trim().length > 0) return logoUrl;
+    // Normalize admin-provided value; fallback to kebab-case svg in /logos
+    const raw = (logoUrl || "").trim();
+    if (raw) {
+      if (/^https?:\/\//i.test(raw)) return raw; // absolute URL
+      if (raw.startsWith("/")) return raw; // already relative from public
+      const withFolder = `/logos/${raw}`;
+      return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
+    }
     return getFallbackLogo(name);
   };
 
