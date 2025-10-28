@@ -52,6 +52,8 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const getAreaOptions = (provider: any): ContractAlternative[] => {
     const area = billData.priceArea;
     const all = Array.isArray(provider.avtalsalternativ) ? provider.avtalsalternativ : [];
+    const hasAreaCodes = all.some((a: any) => !!a?.areaCode);
+    if (!hasAreaCodes) return all;
     if (!area) return [];
     return all.filter((a: ContractAlternative) => a.areaCode === area);
   };
@@ -138,8 +140,10 @@ export default function ProviderComparison({ billData, savings }: ProviderCompar
   const { comparisons, currentCost } = comparisonData;
   const filteredComparisons = comparisons.filter((c) => {
     if (c.provider.contractType !== "fastpris") return true;
+    const all = Array.isArray((c.provider as any).avtalsalternativ) ? (c.provider as any).avtalsalternativ : [];
+    const hasAreaCodes = all.some((a: any) => !!a?.areaCode);
     const options = getAreaOptions(c.provider);
-    return options.length > 0;
+    return hasAreaCodes ? options.length > 0 : true;
   });
   const bestOption = filteredComparisons[0];
 
