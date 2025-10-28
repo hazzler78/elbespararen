@@ -28,6 +28,7 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
   const [enteredKwh, setEnteredKwh] = useState<number | null>(enableConsumptionEntry ? null : billData.totalKWh);
+  const [spotPrices, setSpotPrices] = useState<{ [key: string]: number } | null>(null);
 
   const toKebab = (value: string) =>
     value
@@ -115,6 +116,22 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
 
     fetchComparisons();
   }, [billData]);
+
+  // Load latest spot prices once for contracts use-case
+  useEffect(() => {
+    if (!enableConsumptionEntry) return;
+    (async () => {
+      try {
+        const res = await fetch('/api/spot-prices');
+        const json = (await res.json()) as { success?: boolean; data?: Record<string, number> };
+        if (json && json.success && json.data) {
+          setSpotPrices(json.data as { [key: string]: number });
+        }
+      } catch (e) {
+        console.warn('Failed to load spot prices', e);
+      }
+    })();
+  }, [enableConsumptionEntry]);
 
   if (isLoading) {
     return (
@@ -204,13 +221,15 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
 
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
-    // Rörligt: skala energidelen med kWh, behåll månadsavgift fast
+    // Rörligt: spotpris (per område) + leverantörens påslag (energyPrice) * kWh + månadsavgift
     if (comparison.provider.contractType === "rörligt") {
-      const baseKwh = Math.max(1, billData.totalKWh || 0); // skydd mot 0
-      const ratio = Math.max(0, effectiveKwh) / baseKwh;
+      const area = billData.priceArea?.toLowerCase();
+      const spot = area && spotPrices ? (spotPrices[area] || 0) : 0; // kr/kWh
+      const surcharge = comparison.provider.energyPrice || 0; // tolka som påslag kr/kWh
       const monthlyFee = comparison.provider.monthlyFee || 0;
-      const energyPortion = Math.max(0, comparison.estimatedMonthlyCost - monthlyFee);
-      return monthlyFee + energyPortion * ratio;
+      const kwh = Math.max(0, effectiveKwh);
+      const energyCost = (spot + surcharge) * kwh;
+      return monthlyFee + energyCost;
     }
 
     // Beräkna kostnad baserat på vald avtalslängd
