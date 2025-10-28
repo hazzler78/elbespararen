@@ -15,8 +15,8 @@ const CANDIDATE_URLS: string[] = [
 async function fetchSpotPricesFrom(url: string) {
   const res = await fetch(url, { headers: { 'User-Agent': 'Elbespararen/1.0', 'Accept': 'application/json' } });
   if (!res.ok) throw new Error(`HTTP ${res.status}`);
-  const data = await res.json();
-  const prices = data?.spot_prices || data?.spotPrices || null;
+  const data: any = await res.json();
+  const prices = (data && (data.spot_prices || data.spotPrices)) || null;
   if (!prices || typeof prices !== 'object') throw new Error('No spot_prices in response');
   // Normalize to kr/kWh
   const norm = (v: any) => typeof v === 'number' ? v / 100 : undefined;
