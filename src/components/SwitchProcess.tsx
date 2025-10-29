@@ -31,7 +31,7 @@ interface FormData {
   email: string;
   phone: string;
   personalNumber: string;
-  preferredContactMethod: "email" | "phone" | "sms";
+  paymentMethod: "autogiro" | "faktura" | "bankgiro";
   consentToMarketing: boolean;
   consentToDataProcessing: boolean;
   
@@ -83,7 +83,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     email: "",
     phone: "",
     personalNumber: "",
-    preferredContactMethod: "email",
+    paymentMethod: "autogiro",
     consentToMarketing: false,
     consentToDataProcessing: false,
     street: "",
@@ -131,7 +131,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
           city: formData.city,
           country: "Sverige"
         },
-        preferredContactMethod: formData.preferredContactMethod,
+        paymentMethod: formData.paymentMethod,
         consentToMarketing: formData.consentToMarketing,
         consentToDataProcessing: formData.consentToDataProcessing
       };
@@ -350,15 +350,15 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Föredragen kontaktmetod</label>
+                      <label className="block text-sm font-medium mb-1">Betalningssätt</label>
                       <select
-                        value={formData.preferredContactMethod}
-                        onChange={(e) => updateFormData('preferredContactMethod', e.target.value)}
+                        value={formData.paymentMethod}
+                        onChange={(e) => updateFormData('paymentMethod', e.target.value)}
                         className="w-full border border-border rounded-lg px-3 py-2"
                       >
-                        <option value="email">E-post</option>
-                        <option value="phone">Telefon</option>
-                        <option value="sms">SMS</option>
+                        <option value="autogiro">Autogiro</option>
+                        <option value="faktura">Faktura</option>
+                        <option value="bankgiro">Bankgiro</option>
                       </select>
                     </div>
                   </div>
@@ -593,7 +593,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         <h4 className="font-semibold text-warning mb-1 text-sm">Viktig information</h4>
                         <ul className="text-xs text-muted space-y-0.5">
                           <li>• Vi sköter hela bytet åt dig</li>
-                          <li>• Du får bekräftelse via {formData.preferredContactMethod === 'email' ? 'e-post' : formData.preferredContactMethod === 'phone' ? 'telefon' : 'SMS'}</li>
+                          <li>• Du får bekräftelse via e-post</li>
                           <li>• Bytet genomförs enligt uppsägningstiden från din nuvarande leverantör</li>
                           <li>• Du kan avbryta bytet fram till bekräftelse från {provider.name}</li>
                         </ul>

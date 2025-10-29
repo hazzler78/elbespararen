@@ -104,7 +104,7 @@ export interface CustomerInfo {
   phone: string;
   address: Address;
   personalNumber?: string; // För identitetsverifiering
-  preferredContactMethod: "email" | "phone" | "sms";
+  paymentMethod: "autogiro" | "faktura" | "bankgiro";
   consentToMarketing: boolean;
   consentToDataProcessing: boolean;
 }

@@ -133,57 +133,153 @@ export default function SwitchRequestsAdminPage() {
     
     // Skapa CSV-huvud
     const headers = [
-      'Datum',
-      'Kundnamn',
-      'E-post',
-      'Telefon',
-      'Adress',
-      'Nuvarande leverantör',
-      'Anläggnings-ID',
-      'Ny leverantör',
-      'Status',
-      'Besparing (kr/månad)',
-      'Referensnummer',
+      'Avtalspris',
       'Avtalsform',
-      'Bindning (mån)',
-      'Månadsavgift (kr/mån)',
-      'Påslag (kr/kWh)',
+      'Bindning',
+      'Månadsavgift',
+      'Påslag',
       'Elcertifikat',
       'Rabatt',
-      'Debiteringsgrupp'
+      'Total',
+      'Elursprung',
+      'Förbrukning',
+      'Betalsätt',
+      'Namn 1',
+      'Namn 2',
+      'KundTyp',
+      'Person-/orgnummer',
+      'Personnrtyp',
+      'Anl. adress',
+      'Anl. postnr.',
+      'Anl. ort',
+      'Kundadress',
+      'Kundpostnr.',
+      'Kundort',
+      'Kundland',
+      'Telefon 1',
+      'Telefon 2',
+      'E-post',
+      'Anläggningsnr',
+      'Områdes-id',
+      'Leveransdatum',
+      'Importtyp',
+      'Avtals-id',
+      'Fullmakt-förnamn',
+      'Fullmakt-efternamn',
+      'Fullmakt personnr',
+      'Orderdatum',
+      'Order-id',
+      'Agentnamn',
+      'Ljudfilsnamn',
+      'Ljudkontrollant',
+      'Säljar-id',
+      'Kontors-id',
+      'Debiteringsgrupp',
+      'Andel reducerad energiskatt'
     ];
 
     // Skapa CSV-data
     const csvData = selectedData.map(req => {
       const provider = req.newProvider;
+      const customer = req.customerInfo;
+      const address = customer.address;
+      
+      // Beräkna avtalspris (totalpris per kWh)
+      const avtalspris = provider.contractType === 'fastpris' 
+        ? provider.energyPrice 
+        : (provider.energyPrice || 0); // För rörligt: påslag som del av totalpris
+      
       const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
-      const bindningManader = provider.contractLength ?? '';
+      const bindning = provider.contractLength ?? '';
       const manadsavgift = provider.monthlyFee ?? '';
       const paslag = provider.contractType === 'rörligt' ? (provider.energyPrice ?? '') : '';
-      // Elcertifikat och Rabatt finns inte i datamodellen; lämna tomt resp. använd freeMonths som enklaste rabattindikator
-      const elcertifikat = '';
+      const elcertifikat = ''; // Saknas i datamodellen
       const rabatt = (typeof provider.freeMonths === 'number' && provider.freeMonths > 0) ? `${provider.freeMonths} fria mån` : '';
+      
+      // Beräkna total kostnad (månadsavgift + (avtalspris * förbrukning))
+      const forbrukning = req.billData.totalKWh;
+      const total = manadsavgift + (avtalspris * forbrukning);
+      
+      const elursprung = 'NordenMix';
+      const forbrukningKwh = forbrukning;
+      const betalsatt = customer.paymentMethod || '';
+      const namn1 = `${customer.firstName} ${customer.lastName}`;
+      const namn2 = ''; // Lämnas tomt
+      const kundtyp = 'K'; // K = privatavtal (standard)
+      const personOrgNummer = customer.personalNumber || '';
+      const personnrtyp = customer.personalNumber ? 'S' : ''; // S = privatavtal
+      const anlAdress = `${address.street} ${address.streetNumber}${address.apartment ? `, ${address.apartment}` : ''}`;
+      const anlPostnr = address.postalCode;
+      const anlOrt = address.city;
+      const kundadress = anlAdress;
+      const kundpostnr = address.postalCode;
+      const kundort = address.city;
+      const kundland = 'SE';
+      const telefon1 = customer.phone;
+      const telefon2 = ''; // Saknas i datamodellen
+      const epost = customer.email;
+      const anlaggningsnr = req.currentProvider.customerNumber || '';
+      const omradesId = ''; // Saknas i datamodellen
+      const leveransdatum = ''; // Saknas i datamodellen
+      const importtyp = '0'; // 0 = Leverantörsbyte
+      const avtalsId = req.id;
+      const fullmaktFornamn = customer.firstName;
+      const fullmaktEfternamn = customer.lastName;
+      const fullmaktPersonnr = customer.personalNumber || '';
+      const orderdatum = new Date(req.createdAt).toLocaleDateString('sv-SE');
+      const orderId = req.id;
+      const agentnamn = provider.name;
+      const ljudfilsnamn = ''; // Internt QA-fält
+      const ljudkontrollant = ''; // Internt QA-fält
+      const saljarId = ''; // Internt fält
+      const kontorsId = ''; // Internt fält
       const debiteringsgrupp = 'Elchef.se';
+      const andelReduceradEnergiskatt = ''; // Saknas i datamodellen
 
       return [
-        new Date(req.createdAt).toLocaleDateString('sv-SE'),
-        `${req.customerInfo.firstName} ${req.customerInfo.lastName}`,
-        req.customerInfo.email,
-        req.customerInfo.phone,
-        `${req.customerInfo.address.street} ${req.customerInfo.address.streetNumber}, ${req.customerInfo.address.postalCode} ${req.customerInfo.address.city}`,
-        req.currentProvider.name,
-        req.currentProvider.customerNumber || '',
-        provider.name,
-        req.status,
-        req.savings.potentialSavings,
-        req.id,
+        avtalspris,
         avtalsform,
-        bindningManader,
+        bindning,
         manadsavgift,
         paslag,
         elcertifikat,
         rabatt,
-        debiteringsgrupp
+        total,
+        elursprung,
+        forbrukningKwh,
+        betalsatt,
+        namn1,
+        namn2,
+        kundtyp,
+        personOrgNummer,
+        personnrtyp,
+        anlAdress,
+        anlPostnr,
+        anlOrt,
+        kundadress,
+        kundpostnr,
+        kundort,
+        kundland,
+        telefon1,
+        telefon2,
+        epost,
+        anlaggningsnr,
+        omradesId,
+        leveransdatum,
+        importtyp,
+        avtalsId,
+        fullmaktFornamn,
+        fullmaktEfternamn,
+        fullmaktPersonnr,
+        orderdatum,
+        orderId,
+        agentnamn,
+        ljudfilsnamn,
+        ljudkontrollant,
+        saljarId,
+        kontorsId,
+        debiteringsgrupp,
+        andelReduceradEnergiskatt
       ];
     });
 
