@@ -143,23 +143,49 @@ export default function SwitchRequestsAdminPage() {
       'Ny leverantör',
       'Status',
       'Besparing (kr/månad)',
-      'Referensnummer'
+      'Referensnummer',
+      'Avtalsform',
+      'Bindning (mån)',
+      'Månadsavgift (kr/mån)',
+      'Påslag (kr/kWh)',
+      'Elcertifikat',
+      'Rabatt',
+      'Debiteringsgrupp'
     ];
 
     // Skapa CSV-data
-    const csvData = selectedData.map(req => [
-      new Date(req.createdAt).toLocaleDateString('sv-SE'),
-      `${req.customerInfo.firstName} ${req.customerInfo.lastName}`,
-      req.customerInfo.email,
-      req.customerInfo.phone,
-      `${req.customerInfo.address.street} ${req.customerInfo.address.streetNumber}, ${req.customerInfo.address.postalCode} ${req.customerInfo.address.city}`,
-      req.currentProvider.name,
-      req.currentProvider.customerNumber || '',
-      req.newProvider.name,
-      req.status,
-      req.savings.potentialSavings,
-      req.id
-    ]);
+    const csvData = selectedData.map(req => {
+      const provider = req.newProvider;
+      const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
+      const bindningManader = provider.contractLength ?? '';
+      const manadsavgift = provider.monthlyFee ?? '';
+      const paslag = provider.contractType === 'rörligt' ? (provider.energyPrice ?? '') : '';
+      // Elcertifikat och Rabatt finns inte i datamodellen; lämna tomt resp. använd freeMonths som enklaste rabattindikator
+      const elcertifikat = '';
+      const rabatt = (typeof provider.freeMonths === 'number' && provider.freeMonths > 0) ? `${provider.freeMonths} fria mån` : '';
+      const debiteringsgrupp = 'Elchef.se';
+
+      return [
+        new Date(req.createdAt).toLocaleDateString('sv-SE'),
+        `${req.customerInfo.firstName} ${req.customerInfo.lastName}`,
+        req.customerInfo.email,
+        req.customerInfo.phone,
+        `${req.customerInfo.address.street} ${req.customerInfo.address.streetNumber}, ${req.customerInfo.address.postalCode} ${req.customerInfo.address.city}`,
+        req.currentProvider.name,
+        req.currentProvider.customerNumber || '',
+        provider.name,
+        req.status,
+        req.savings.potentialSavings,
+        req.id,
+        avtalsform,
+        bindningManader,
+        manadsavgift,
+        paslag,
+        elcertifikat,
+        rabatt,
+        debiteringsgrupp
+      ];
+    });
 
     // Kombinera headers och data
     const csvContent = [headers, ...csvData]
