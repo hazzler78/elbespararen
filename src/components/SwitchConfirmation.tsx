@@ -65,7 +65,7 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
                 <div>
                   <h4 className="font-semibold">Bekräftelse skickad</h4>
                   <p className="text-sm text-muted">
-                    Du får en bekräftelse via {customerInfo.preferredContactMethod === 'email' ? 'e-post' : customerInfo.preferredContactMethod === 'phone' ? 'telefon' : 'SMS'} inom några minuter
+                    Du får en bekräftelse via e-post inom några minuter
                   </p>
                 </div>
               </div>
