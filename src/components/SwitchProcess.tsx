@@ -337,7 +337,8 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       case 1:
         {
           const termsUrl = getTermsUrl(provider?.name);
-          const baseOk = !!(formData.firstName && formData.lastName && formData.email && formData.phone && formData.consentToDataProcessing);
+          const hasPersonalNumber = !!(formData.personalNumber && formData.personalNumber.trim().length > 0);
+          const baseOk = !!(formData.firstName && formData.lastName && formData.email && formData.phone && hasPersonalNumber && formData.consentToDataProcessing);
           return termsUrl ? baseOk && formData.consentToTerms : baseOk;
         }
       case 2:
@@ -496,13 +497,14 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Personnummer</label>
+                      <label className="block text-sm font-medium mb-1">Personnummer *</label>
                       <input
                         type="text"
                         value={formData.personalNumber}
                         onChange={(e) => updateFormData('personalNumber', e.target.value)}
                         placeholder="YYYYMMDD-XXXX"
                         className="w-full border border-border rounded-lg px-3 py-2"
+                        required
                       />
                     </div>
                     <div>
