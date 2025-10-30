@@ -89,11 +89,8 @@ export async function addToNewsletter(recipient: EmailRecipient, groupId?: strin
 
   try {
     const { MAILERLITE_API_KEY } = getEmailConfig();
-    const baseUrl = groupId
-      ? `https://connect.mailerlite.com/api/groups/${groupId}/subscribers`
-      : "https://connect.mailerlite.com/api/subscribers";
-
-    const response = await fetch(baseUrl, {
+    // Use Subscribers endpoint with groups array (avoids 405 on groups/{id}/subscribers in some environments)
+    const response = await fetch("https://connect.mailerlite.com/api/subscribers", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -102,7 +99,8 @@ export async function addToNewsletter(recipient: EmailRecipient, groupId?: strin
       },
       body: JSON.stringify({
         email: recipient.email,
-        fields: recipient.name ? { name: recipient.name } : undefined
+        fields: recipient.name ? { name: recipient.name } : undefined,
+        groups: groupId ? [groupId] : undefined
       })
     });
 
