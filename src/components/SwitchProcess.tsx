@@ -183,38 +183,27 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     const lines: string[] = [];
     lines.push(`Område: ${area} (förbrukning ${range.min}-${range.max} kWh/mån)`);
 
-    if (provider.contractType === 'rörligt') {
-      const priceOre = typeof p?.price === 'number' ? p!.price : (spotPriceKrPerKwh != null ? spotPriceKrPerKwh * 100 : undefined);
-      const surchargeOre = (typeof p?.surcharge === 'number'
-        ? p!.surcharge
-        : (provider.contractType === 'rörligt' && typeof provider.energyPrice === 'number')
-          ? Number(provider.energyPrice) * 100
-          : undefined);
-      const elcertOre = (typeof p?.el_certificate_fee === 'number' ? p!.el_certificate_fee : 0);
-      const discountOre = (typeof p?._12_month_discount === 'number' ? p!._12_month_discount : 0);
-      const sumOre = [priceOre, surchargeOre, elcertOre, discountOre]
-        .map(v => (typeof v === 'number' ? v : 0))
-        .reduce((acc: number, v: number) => acc + v, 0);
+    if (hasNormalized) {
+      // Visa exakta värden som de står i JSON (utan formel)
+      // OBS: JSON är i öre/kWh för price/surcharge/elcert/discount/total och kr/mån för monthly_fee
+      const priceOre = p?.price;
+      const surchargeOre = p?.surcharge;
+      const elcertOre = p?.el_certificate_fee;
+      const discountOre = p?._12_month_discount;
+      const totalOre = p?.total;
+      const totalVatOre = p?.total_with_vat;
+      const feeKr = p?.monthly_fee;
 
-      lines.push('Rörligt månadspris = Spot (senaste månad) + Påslag + Elcertifikat + Rabatt');
       lines.push(`Spot (senaste månad): ${fmtNum(priceOre, 2)} öre/kWh`);
       lines.push(`Påslag: ${fmtNum(surchargeOre, 2)} öre/kWh`);
       lines.push(`Elcertifikat: ${fmtNum(elcertOre, 2)} öre/kWh`);
       lines.push(`Rabatt (12 mån): ${fmtNum(discountOre, 2)} öre/kWh`);
-      lines.push(`Summa: ${fmtNum(sumOre, 2)} öre/kWh`);
-      const ym = new Date();
-      lines.push(`Giltighet: ${ym.getFullYear()}-${String(ym.getMonth()+1).padStart(2,'0')}`);
-      // Månadskostnad visas endast om tillgänglig
-      if (typeof p?.monthly_fee === 'number') {
-        lines.push(`Månadsavgift: ${fmtNum(p?.monthly_fee, 0)} kr/mån`);
-      } else if (!isNaN(monthlyFeeKr)) {
-        lines.push(`Månadsavgift: ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
-      }
+      lines.push(`Månadsavgift: ${fmtNum(feeKr, 0)} kr/mån`);
+      lines.push(`Total (exkl. moms): ${fmtNum(totalOre, 2)} öre/kWh`);
+      lines.push(`Total (inkl. moms): ${fmtNum(totalVatOre, 2)} öre/kWh`);
     } else {
-      // Fastpris
-      lines.push('Fast pris = Elpris + Månadsavgift');
-      lines.push(`Elpris: ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
-      lines.push(`Månadsavgift: ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
+      // Minimal fallback om JSON saknas helt
+      lines.push('Prisdata saknas för denna kombination.');
     }
 
     return lines.join('\n');
