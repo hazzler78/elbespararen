@@ -35,6 +35,7 @@ interface FormData {
   paymentMethod: "autogiro" | "faktura" | "bankgiro";
   consentToMarketing: boolean;
   consentToDataProcessing: boolean;
+  consentToTerms: boolean;
   
   // Adress
   street: string;
@@ -224,6 +225,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     paymentMethod: "autogiro",
     consentToMarketing: false,
     consentToDataProcessing: false,
+    consentToTerms: false,
     street: "",
     streetNumber: "",
     apartment: "",
@@ -233,6 +235,18 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     currentCustomerNumber: "",
     currentContractEndDate: getDefaultContractEndDate()
   });
+  // Provider terms URLs
+  const getTermsUrl = (providerName: string | undefined): string | null => {
+    const name = (providerName || "").toLowerCase();
+    const includes = (s: string) => name.includes(s);
+    if (includes("cheap") && includes("energy")) return "https://www.cheapenergy.se/vara-villkor_2023_04_01";
+    if (includes("stockholm") || includes("sthlm")) return "https://www.stockholmselbolag.se/b2b_b2c_sthlm_villkor_20230401";
+    if (includes("svekraft")) return "https://www.svekraft.com/vara-villkor_2023_04_01/";
+    if (includes("svealands")) return "https://www.svealandselbolag.se/villkor_b2b_b2_svea_20230401";
+    if (includes("motala")) return "https://motalaenergi.se/villkor-b2c/";
+    return null;
+  };
+
 
   const updateFormData = (field: keyof FormData, value: string | boolean) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -321,7 +335,11 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   const isStepValid = (step: number): boolean => {
     switch (step) {
       case 1:
-        return !!(formData.firstName && formData.lastName && formData.email && formData.phone && formData.consentToDataProcessing);
+        {
+          const termsUrl = getTermsUrl(provider?.name);
+          const baseOk = !!(formData.firstName && formData.lastName && formData.email && formData.phone && formData.consentToDataProcessing);
+          return termsUrl ? baseOk && formData.consentToTerms : baseOk;
+        }
       case 2:
         return !!(formData.street && formData.streetNumber && formData.postalCode && formData.city);
       case 3:
@@ -515,6 +533,25 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         Jag samtycker till att mina personuppgifter behandlas för att genomföra elavtalet *
                       </label>
                     </div>
+                  {(() => {
+                    const termsUrl = getTermsUrl(provider?.name);
+                    if (!termsUrl) return null;
+                    return (
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          id="consentTerms"
+                          checked={formData.consentToTerms}
+                          onChange={(e) => updateFormData('consentToTerms', e.target.checked)}
+                          className="mt-1"
+                          required
+                        />
+                        <label htmlFor="consentTerms" className="text-sm">
+                          Jag godkänner <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">avtalsvillkoren</a> för {provider?.name} *
+                        </label>
+                      </div>
+                    );
+                  })()}
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
