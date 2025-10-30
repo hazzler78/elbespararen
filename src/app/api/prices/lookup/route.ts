@@ -77,6 +77,31 @@ async function writeCache(db: D1Database, providerKey: string, area: string, pay
   return now;
 }
 
+function findAreaArray(obj: any, area: string): any[] | null {
+  if (!obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) return null;
+  // Direct match
+  const direct = obj[area];
+  if (Array.isArray(direct)) return direct as any[];
+  // Search known containers first
+  const preferredKeys = ['variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices'];
+  for (const key of preferredKeys) {
+    if (obj[key]) {
+      const found = findAreaArray(obj[key], area);
+      if (found) return found;
+    }
+  }
+  // Generic deep search
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val && typeof val === 'object') {
+      const found = findAreaArray(val, area);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
 export async function POST(request: NextRequest) {
   try {
     const { db } = await getBinding();
@@ -95,9 +120,8 @@ export async function POST(request: NextRequest) {
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as Record<string, unknown>;
-      const bucketsUnknown = (json as Record<string, unknown>)[area] as unknown;
-      if (!Array.isArray(bucketsUnknown as unknown[])) throw new Error('Bad JSON structure');
-      const buckets = bucketsUnknown as any[];
+      const buckets = findAreaArray(json, area);
+      if (!Array.isArray(buckets)) throw new Error('Bad JSON structure');
       let bucket = buckets.find(b => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption) || null;
       if (!bucket) {
         // Fallback: choose closest by minConsumption <= kwh
