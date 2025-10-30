@@ -14,6 +14,7 @@ import {
 import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, CustomerInfo, CurrentProviderInfo, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatPricePerKwh } from "@/lib/calculations";
 import SwitchConfirmation from "./SwitchConfirmation";
+import { Info } from "lucide-react";
 
 interface SwitchProcessProps {
   provider: ElectricityProvider;
@@ -60,6 +61,18 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [completedSwitchRequest, setCompletedSwitchRequest] = useState<SwitchRequest | null>(null);
+  const [providerPriceInfo, setProviderPriceInfo] = useState<null | {
+    area: string;
+    range: { min: number; max: number };
+    surcharge?: number;
+    el_certificate_fee?: number;
+    _12_month_discount?: number;
+    price?: number;
+    monthly_fee?: number;
+    total?: number;
+    total_with_vat?: number;
+    vat?: number;
+  }>(null);
 
   // Session timeout - 30 minuter
   useEffect(() => {
@@ -70,6 +83,73 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
     return () => clearTimeout(timeout);
   }, []);
+  
+  // Load provider price JSON and select matching bucket (area + consumption)
+  useEffect(() => {
+    const name = (provider?.name || '').toLowerCase();
+    const area = (billData.priceArea || 'se3').toLowerCase();
+    const kwh = billData.totalKWh;
+
+    const urlMap: Record<string, string> = {
+      'cheap energy': 'https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json',
+      'energi2': 'https://energi2.se/Site_Priser_Energi2_de2.json',
+      'stockholms el': 'https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json',
+      'svealands el': 'https://elify.se/Site_Priser_SvealandsEL_de2.json',
+      'svekraft': 'https://svekraft.com/Site_Priser_Svekraft_de2.json',
+      'motala el': 'https://elify.se/Site_Priser_Motala_de2.json'
+    };
+
+    const matchKey = Object.keys(urlMap).find(key => name.includes(key));
+    const url = matchKey ? urlMap[matchKey] : '';
+    if (!url) {
+      setProviderPriceInfo(null);
+      return;
+    }
+
+    (async () => {
+      try {
+        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
+        const data = await res.json();
+        const areaBuckets = data?.[area];
+        if (!Array.isArray(areaBuckets)) return;
+        const bucket = areaBuckets.find((b: any) => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption);
+        const pack = bucket?.no_commitment || bucket?.standard || bucket || {};
+        if (!bucket) return;
+
+        setProviderPriceInfo({
+          area,
+          range: { min: bucket.minConsumption, max: bucket.maxConsumption },
+          surcharge: pack.surcharge,
+          el_certificate_fee: pack.el_certificate_fee,
+          _12_month_discount: pack['12_month_discount'],
+          price: pack.price,
+          monthly_fee: pack.monthly_fee,
+          total: pack.total,
+          total_with_vat: pack.total_with_vat,
+          vat: pack.vat
+        });
+      } catch (e) {
+        console.warn('Failed to load provider price JSON', e);
+      }
+    })();
+  }, [provider?.name, billData.priceArea, billData.totalKWh]);
+
+  const buildTooltip = (): string => {
+    if (!providerPriceInfo) return '';
+    const p = providerPriceInfo;
+    const fmt = (v?: number) => (typeof v === 'number' ? String(v) : '-');
+    return [
+      `Område: ${p.area.toUpperCase()} (förbrukning ${p.range.min}-${p.range.max} kWh/mån)`,
+      `Påslag: ${fmt(p.surcharge)} öre/kWh`,
+      `Elcertifikat: ${fmt(p.el_certificate_fee)} öre/kWh`,
+      `12 mån rabatt: ${fmt(p._12_month_discount)} öre/kWh`,
+      `Pris: ${fmt(p.price)} öre/kWh`,
+      `Månadsavgift: ${fmt(p.monthly_fee)} kr/mån`,
+      `Total (exkl. moms): ${fmt(p.total)}`,
+      `Total (inkl. moms): ${fmt(p.total_with_vat)}`,
+      `Moms: ${fmt(p.vat)}`
+    ].join('\n');
+  };
   // Beräkna 14 dagar framåt som standard datum
   const getDefaultContractEndDate = () => {
     const date = new Date();
@@ -525,7 +605,14 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   {/* Pris/Besparing */}
                   {provider.contractType === "fastpris" ? (
                     <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
-                      <h4 className="font-bold text-primary mb-1 text-sm">Ditt valda avtal med {provider.name}</h4>
+                      <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2">
+                        Ditt valda avtal med {provider.name}
+                        {providerPriceInfo && (
+                          <span title={buildTooltip()} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary cursor-help">
+                            <Info className="w-3 h-3" />
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-xl font-bold text-primary">
                         {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(provider.energyPrice)}
                       </p>
@@ -535,7 +622,14 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     </div>
                   ) : (
                     <div className="bg-success/10 border border-success/20 rounded-lg p-3 mb-4">
-                      <h4 className="font-bold text-success mb-1 text-sm">Din besparing med {provider.name}</h4>
+                      <h4 className="font-bold text-success mb-1 text-sm flex items-center gap-2">
+                        Din besparing med {provider.name}
+                        {providerPriceInfo && (
+                          <span title={buildTooltip()} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/20 text-success cursor-help">
+                            <Info className="w-3 h-3" />
+                          </span>
+                        )}
+                      </h4>
                       <p className="text-xl font-bold text-success">
                         {savings.potentialSavings} kr per månad
                       </p>
