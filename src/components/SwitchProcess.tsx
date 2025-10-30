@@ -84,52 +84,41 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     return () => clearTimeout(timeout);
   }, []);
   
-  // Load provider price JSON and select matching bucket (area + consumption)
+  // Load normalized price via server-side lookup (cached)
   useEffect(() => {
-    const name = (provider?.name || '').toLowerCase();
     const area = (billData.priceArea || 'se3').toLowerCase();
-    const kwh = billData.totalKWh;
-
-    const urlMap: Record<string, string> = {
-      'cheap energy': 'https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json',
-      'energi2': 'https://energi2.se/Site_Priser_Energi2_de2.json',
-      'stockholms el': 'https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json',
-      'svealands el': 'https://elify.se/Site_Priser_SvealandsEL_de2.json',
-      'svekraft': 'https://svekraft.com/Site_Priser_Svekraft_de2.json',
-      'motala el': 'https://elify.se/Site_Priser_Motala_de2.json'
-    };
-
-    const matchKey = Object.keys(urlMap).find(key => name.includes(key));
-    const url = matchKey ? urlMap[matchKey] : '';
-    if (!url) {
-      setProviderPriceInfo(null);
-      return;
-    }
-
     (async () => {
       try {
-        const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        const data = (await res.json()) as Record<string, unknown>;
-        const areaBuckets = (data as Record<string, unknown>)[area] as unknown;
-        if (!Array.isArray(areaBuckets as unknown[])) return;
-        const bucket = (areaBuckets as any[]).find((b: any) => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption);
-        const pack = (bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {}) as Record<string, unknown>;
-        if (!bucket) return;
-
-        setProviderPriceInfo({
-          area,
-          range: { min: bucket.minConsumption, max: bucket.maxConsumption },
-          surcharge: pack.surcharge as number | undefined,
-          el_certificate_fee: (pack as any).el_certificate_fee as number | undefined,
-          _12_month_discount: (pack as any)['12_month_discount'] as number | undefined,
-          price: pack.price as number | undefined,
-          monthly_fee: (pack as any).monthly_fee as number | undefined,
-          total: pack.total as number | undefined,
-          total_with_vat: (pack as any).total_with_vat as number | undefined,
-          vat: pack.vat as number | undefined
+        const res = await fetch('/api/prices/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ providerName: provider?.name || '', area, kwh: billData.totalKWh })
         });
+        const json = await res.json();
+        if (json?.success && json?.data) {
+          const d = json.data as {
+            area: string;
+            range: { min: number; max: number } | null;
+            surcharge?: number; el_certificate_fee?: number; _12_month_discount?: number;
+            price?: number; monthly_fee?: number; total?: number; total_with_vat?: number; vat?: number;
+          };
+          setProviderPriceInfo({
+            area: d.area,
+            range: d.range || { min: 0, max: billData.totalKWh },
+            surcharge: d.surcharge,
+            el_certificate_fee: d.el_certificate_fee,
+            _12_month_discount: d._12_month_discount,
+            price: d.price,
+            monthly_fee: d.monthly_fee,
+            total: d.total,
+            total_with_vat: d.total_with_vat,
+            vat: d.vat
+          });
+        } else {
+          setProviderPriceInfo(null);
+        }
       } catch (e) {
-        console.warn('Failed to load provider price JSON', e);
+        console.warn('Price lookup failed', e);
       }
     })();
   }, [provider?.name, billData.priceArea, billData.totalKWh]);
