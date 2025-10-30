@@ -115,7 +115,19 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
             vat: d.vat
           });
         } else {
-          setProviderPriceInfo(null);
+          // Keep a minimal tooltip with area and entered kWh to avoid empty state
+          setProviderPriceInfo({
+            area: area.toUpperCase(),
+            range: { min: 0, max: billData.totalKWh },
+            surcharge: undefined,
+            el_certificate_fee: undefined,
+            _12_month_discount: undefined,
+            price: undefined,
+            monthly_fee: undefined,
+            total: undefined,
+            total_with_vat: undefined,
+            vat: undefined
+          });
         }
       } catch (e) {
         console.warn('Price lookup failed', e);

@@ -87,11 +87,23 @@ export async function POST(request: NextRequest) {
       const bucketsUnknown = (json as Record<string, unknown>)[area] as unknown;
       if (!Array.isArray(bucketsUnknown as unknown[])) throw new Error('Bad JSON structure');
       const buckets = bucketsUnknown as any[];
-      const bucket = buckets.find(b => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption) || null;
+      let bucket = buckets.find(b => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption) || null;
+      if (!bucket) {
+        // Fallback: choose closest by minConsumption <= kwh
+        const candidates = buckets.filter(b => typeof b?.minConsumption === 'number');
+        if (candidates.length > 0) {
+          bucket = candidates.reduce((best: any, b: any) => {
+            if (!best) return b;
+            const bd = Math.abs(kwh - (b.minConsumption ?? 0));
+            const ad = Math.abs(kwh - (best.minConsumption ?? 0));
+            return bd < ad ? b : best;
+          }, null as any);
+        }
+      }
       const pack = bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {};
       const normalized: Normalized = {
         area,
-        range: bucket ? { min: bucket.minConsumption, max: bucket.maxConsumption } : null,
+        range: bucket ? { min: bucket.minConsumption ?? 0, max: bucket.maxConsumption ?? (bucket.minConsumption ?? 0) } : null,
         surcharge: pack.surcharge,
         el_certificate_fee: pack.el_certificate_fee,
         _12_month_discount: pack['12_month_discount'],
