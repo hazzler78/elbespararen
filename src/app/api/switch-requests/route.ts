@@ -152,8 +152,9 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     console.error("[switch-requests] PUT error:", error);
+    const message = error instanceof Error ? error.message : "Kunde inte uppdatera bytförfrågan";
     return NextResponse.json(
-      { success: false, error: "Kunde inte uppdatera bytförfrågan" },
+      { success: false, error: message },
       { status: 500 }
     );
   }

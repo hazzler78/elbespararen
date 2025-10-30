@@ -581,6 +581,7 @@ class CloudflareDatabase implements Database {
         billData: JSON.parse(String(row.bill_data)),
         savings: JSON.parse(String(row.savings)),
         status: String(row.status) as SwitchRequest['status'],
+        notes: row.notes ? String(row.notes) : undefined,
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };
@@ -606,6 +607,7 @@ class CloudflareDatabase implements Database {
       billData: JSON.parse(String(row.bill_data)),
       savings: JSON.parse(String(row.savings)),
       status: String(row.status) as SwitchRequest['status'],
+      notes: row.notes ? String(row.notes) : undefined,
       createdAt: new Date(String(row.created_at)),
       updatedAt: new Date(String(row.updated_at))
     };
