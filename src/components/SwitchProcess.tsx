@@ -136,20 +136,40 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   }, [provider?.name, billData.priceArea, billData.totalKWh]);
 
   const buildTooltip = (): string => {
-    if (!providerPriceInfo) return '';
+    const area = (providerPriceInfo?.area || (billData.priceArea || 'se3')).toUpperCase();
+    const range = providerPriceInfo?.range || { min: 0, max: billData.totalKWh };
+
+    // Prefer normalized values from API
     const p = providerPriceInfo;
-    const fmt = (v?: number) => (typeof v === 'number' ? String(v) : '-');
-    return [
-      `Område: ${p.area.toUpperCase()} (förbrukning ${p.range.min}-${p.range.max} kWh/mån)`,
-      `Påslag: ${fmt(p.surcharge)} öre/kWh`,
-      `Elcertifikat: ${fmt(p.el_certificate_fee)} öre/kWh`,
-      `12 mån rabatt: ${fmt(p._12_month_discount)} öre/kWh`,
-      `Pris: ${fmt(p.price)} öre/kWh`,
-      `Månadsavgift: ${fmt(p.monthly_fee)} kr/mån`,
-      `Total (exkl. moms): ${fmt(p.total)}`,
-      `Total (inkl. moms): ${fmt(p.total_with_vat)}`,
-      `Moms: ${fmt(p.vat)}`
-    ].join('\n');
+    const hasNormalized = !!(p && (p.price !== undefined || p.surcharge !== undefined || p.monthly_fee !== undefined));
+
+    // Fallbacks from current provider data if normalized is missing
+    const providerPriceKrPerKwh = provider.contractType === 'fastpris'
+      ? Number(selectedContract?.fastpris ?? provider.energyPrice)
+      : Number(provider.energyPrice); // tolka som kr/kWh påslag
+    const monthlyFeeKr = Number(provider.monthlyFee || 0);
+    const estimatedTotalKr = monthlyFeeKr + providerPriceKrPerKwh * billData.totalKWh;
+
+    const fmtNum = (v?: number, digits = 2) => (typeof v === 'number' && !isNaN(v) ? v.toFixed(digits) : '-');
+
+    const lines: string[] = [];
+    lines.push(`Område: ${area} (förbrukning ${range.min}-${range.max} kWh/mån)`);
+
+    if (hasNormalized) {
+      lines.push(`Påslag: ${fmtNum(p?.surcharge)} öre/kWh`);
+      lines.push(`Elcertifikat: ${fmtNum(p?.el_certificate_fee)} öre/kWh`);
+      lines.push(`12 mån rabatt: ${fmtNum(p?._12_month_discount)} öre/kWh`);
+      lines.push(`Pris: ${fmtNum(p?.price)} öre/kWh`);
+      lines.push(`Månadsavgift: ${fmtNum(p?.monthly_fee, 0)} kr/mån`);
+      lines.push(`Total (inkl. moms): ${fmtNum(p?.total_with_vat, 0)} kr`);
+    } else {
+      // Deterministisk fallback från provider
+      lines.push(`Pris (från avtal): ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
+      lines.push(`Månadsavgift (från avtal): ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
+      lines.push(`Beräknad total: ${fmtNum(estimatedTotalKr, 0)} kr/mån`);
+    }
+
+    return lines.join('\n');
   };
   // Beräkna 14 dagar framåt som standard datum
   const getDefaultContractEndDate = () => {
