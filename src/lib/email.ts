@@ -1,10 +1,28 @@
 // Lightweight email and newsletter integration using MailerLite HTTP API
 
-const MAILERLITE_API_KEY = process.env.MAILERLITE_API_KEY;
-const MAIL_FROM = process.env.MAIL_FROM || "no-reply@elchef.se";
-const MAIL_FROM_NAME = process.env.MAIL_FROM_NAME || "Elchef.se";
-const MAILERLITE_GROUP_NEWSLETTER = process.env.MAILERLITE_GROUP_NEWSLETTER; // string id
-const MAILERLITE_GROUP_RECEIPTS = process.env.MAILERLITE_GROUP_RECEIPTS; // string id
+function getEnvVar(name: string): string | undefined {
+  try {
+    // next-on-pages provides getRequestContext on Edge
+    const ctxEnv = (globalThis as any).getRequestContext?.()?.env;
+    if (ctxEnv && typeof ctxEnv[name] === "string" && ctxEnv[name]) return ctxEnv[name] as string;
+  } catch {}
+  try {
+    // Cloudflare Workers style
+    const workerEnv = (globalThis as any).env;
+    if (workerEnv && typeof workerEnv[name] === "string" && workerEnv[name]) return workerEnv[name] as string;
+  } catch {}
+  // Fallback to Node-style
+  return (process.env as any)?.[name] as string | undefined;
+}
+
+function getEmailConfig() {
+  const MAILERLITE_API_KEY = getEnvVar("MAILERLITE_API_KEY");
+  const MAIL_FROM = getEnvVar("MAIL_FROM") || "no-reply@elchef.se";
+  const MAIL_FROM_NAME = getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
+  const MAILERLITE_GROUP_NEWSLETTER = getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
+  const MAILERLITE_GROUP_RECEIPTS = getEnvVar("MAILERLITE_GROUP_RECEIPTS");
+  return { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME, MAILERLITE_GROUP_NEWSLETTER, MAILERLITE_GROUP_RECEIPTS };
+}
 
 interface EmailRecipient {
   email: string;
@@ -12,6 +30,7 @@ interface EmailRecipient {
 }
 
 function isEmailConfigured(): boolean {
+  const { MAILERLITE_API_KEY } = getEmailConfig();
   return !!MAILERLITE_API_KEY;
 }
 
@@ -22,6 +41,7 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
   }
 
   try {
+    const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
     const response = await fetch("https://connect.mailerlite.com/api/send", {
       method: "POST",
       headers: {
@@ -68,6 +88,7 @@ export async function addToNewsletter(recipient: EmailRecipient, groupId?: strin
   }
 
   try {
+    const { MAILERLITE_API_KEY } = getEmailConfig();
     const baseUrl = groupId
       ? `https://connect.mailerlite.com/api/groups/${groupId}/subscribers`
       : "https://connect.mailerlite.com/api/subscribers";
@@ -97,10 +118,12 @@ export async function addToNewsletter(recipient: EmailRecipient, groupId?: strin
 }
 
 export function getDefaultNewsletterGroupId(): string | undefined {
+  const { MAILERLITE_GROUP_NEWSLETTER } = getEmailConfig();
   return MAILERLITE_GROUP_NEWSLETTER;
 }
 
 export function getDefaultReceiptsGroupId(): string | undefined {
+  const { MAILERLITE_GROUP_RECEIPTS } = getEmailConfig();
   return MAILERLITE_GROUP_RECEIPTS;
 }
 
@@ -122,6 +145,7 @@ export async function sendOrderConfirmationEmail(params: {
   validityText?: string; // giltighet (t.ex. "12 månader")
   brand?: "Elchef.se" | string;
 }): Promise<void> {
+  const { MAIL_FROM_NAME } = getEmailConfig();
   const subject = `Bekräftelse på din beställning – ${params.brand ?? MAIL_FROM_NAME}`;
 
   const isMovable = (params.contractType ?? "").toLowerCase().startsWith("rör");
@@ -159,13 +183,13 @@ export async function sendOrderConfirmationEmail(params: {
 
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;line-height:1.6">
-      <h2 style="margin:0 0 12px">Tack för din beställning!</h2>
+      <h2 style=\"margin:0 0 12px\">Tack för din beställning!</h2>
       <p>Vi har tagit emot din beställning via <strong>${brandName}</strong> och vidarebefordrar den nu till <strong>${params.providerName}</strong> för aktivering.</p>
       <p>Du kommer att få en separat bekräftelse direkt från elbolaget när avtalet är lagt upp i deras system.</p>
       <p><strong>Referensnummer:</strong> ${params.switchId}</p>
       ${params.estimatedSavings != null ? `<p>Beräknad besparing: <strong>${Math.round(params.estimatedSavings)} kr/mån</strong></p>` : ""}
       ${detailedBlock}
-      <p style="margin-top:16px">Vänliga hälsningar,<br/>${MAIL_FROM_NAME}</p>
+      <p style=\"margin-top:16px\">Vänliga hälsningar,<br/>${MAIL_FROM_NAME}</p>
     </div>
   `;
   await sendEmail(subject, html, { email: params.toEmail, name: params.toName });
@@ -175,6 +199,7 @@ export async function sendWelcomeEmail(params: {
   toEmail: string;
   toName?: string;
 }): Promise<void> {
+  const { MAIL_FROM_NAME } = getEmailConfig();
   const subject = "Välkommen! Du får nu våra erbjudanden och energitips";
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;line-height:1.6">
