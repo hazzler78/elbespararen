@@ -188,7 +188,9 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       const surchargeOre = p?.surcharge;
       const elcertOre = p?.el_certificate_fee;
       const discountOre = p?._12_month_discount;
-      const sumOre = [priceOre, surchargeOre, elcertOre, discountOre].reduce((acc, v) => (typeof v === 'number' ? acc + v : acc), 0);
+      const sumOre = [priceOre, surchargeOre, elcertOre, discountOre]
+        .map(v => (typeof v === 'number' ? v : 0))
+        .reduce((acc: number, v: number) => acc + v, 0);
 
       lines.push('Rörligt månadspris = Spot (senaste månad) + Påslag + Elcertifikat + Rabatt');
       lines.push(`Spot (senaste månad): ${fmtNum(priceOre, 2)} öre/kWh`);
