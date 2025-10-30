@@ -24,18 +24,29 @@ type Normalized = {
   updatedAt?: string;
 };
 
+// Use slug keys for robust matching
 const URL_MAP: Record<string, string> = {
-  'cheap energy': 'https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json',
+  'cheap-energy': 'https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json',
   'energi2': 'https://energi2.se/Site_Priser_Energi2_de2.json',
-  'stockholms el': 'https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json',
-  'svealands el': 'https://elify.se/Site_Priser_SvealandsEL_de2.json',
+  'stockholms-el': 'https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json',
+  'svealands-el': 'https://elify.se/Site_Priser_SvealandsEL_de2.json',
   'svekraft': 'https://svekraft.com/Site_Priser_Svekraft_de2.json',
-  'motala el': 'https://elify.se/Site_Priser_Motala_de2.json'
+  'motala-el': 'https://elify.se/Site_Priser_Motala_de2.json'
 };
 
+function slugify(value: string): string {
+  return value
+    .toLowerCase()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
 function canonicalizeProvider(name: string): string | null {
-  const n = name.trim().toLowerCase();
-  const key = Object.keys(URL_MAP).find(k => n.includes(k));
+  const slug = slugify(name || '');
+  if (URL_MAP[slug]) return slug;
+  // Try contains match among slugs
+  const key = Object.keys(URL_MAP).find(k => slug.includes(k) || k.includes(slug));
   return key ?? null;
 }
 
