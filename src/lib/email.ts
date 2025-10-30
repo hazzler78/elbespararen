@@ -104,12 +104,13 @@ export async function addToNewsletter(recipient: EmailRecipient, groupId?: strin
       })
     });
 
+    const raw = await response.text();
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`MailerLite subscribe failed: ${response.status} ${text}`);
+      throw new Error(`MailerLite subscribe failed: ${response.status} ${raw}`);
     }
-
-    console.log("[email] Subscribed to newsletter:", recipient.email);
+    let parsed: unknown = undefined;
+    try { parsed = raw ? JSON.parse(raw) : undefined; } catch {}
+    console.log("[email] Subscribed to newsletter:", recipient.email, "response:", parsed ?? raw ?? null);
   } catch (error) {
     console.error("[email] addToNewsletter error:", error);
   }
