@@ -123,7 +123,7 @@ export default function SwitchRequestsAdminPage() {
     setSelectedRequests(new Set());
   };
 
-  const exportSelectedToCSV = () => {
+  const exportSelectedToCSV = async () => {
     if (selectedRequests.size === 0) {
       alert('Välj minst en förfrågan att exportera');
       return;
@@ -179,15 +179,29 @@ export default function SwitchRequestsAdminPage() {
     ];
 
     // Skapa CSV-data
-    const csvData = selectedData.map(req => {
+    const lookups = await Promise.all(selectedData.map(async (req) => {
+      try {
+        const area = (req.billData.priceArea || 'se3').toLowerCase();
+        const res = await fetch('/api/prices/lookup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ providerName: req.newProvider.name, area, kwh: req.billData.totalKWh })
+        });
+        const json = await res.json() as { success?: boolean; data?: { price?: number; total?: number } };
+        return json?.success ? (json.data || {}) : {};
+      } catch {
+        return {} as { price?: number; total?: number };
+      }
+    }));
+
+    const csvData = selectedData.map((req, idx) => {
       const provider = req.newProvider;
       const customer = req.customerInfo;
       const address = customer.address;
-      
-      // Beräkna avtalspris (totalpris per kWh)
-      const avtalspris = provider.contractType === 'fastpris' 
-        ? provider.energyPrice 
-        : (provider.energyPrice || 0); // För rörligt: påslag som del av totalpris
+      const lookup = lookups[idx] as { price?: number; total?: number };
+
+      // Avtalspris = spotpris (öre/kWh) från lookup.price
+      const avtalspris = typeof lookup?.price === 'number' ? lookup.price : '';
       
       const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
       const bindning = provider.contractLength ?? '';
@@ -196,9 +210,9 @@ export default function SwitchRequestsAdminPage() {
       const elcertifikat = ''; // Saknas i datamodellen
       const rabatt = (typeof provider.freeMonths === 'number' && provider.freeMonths > 0) ? `${provider.freeMonths} fria mån` : '';
       
-      // Beräkna total kostnad (månadsavgift + (avtalspris * förbrukning))
       const forbrukning = req.billData.totalKWh;
-      const total = manadsavgift + (avtalspris * forbrukning);
+      // Total = total (exkl moms) från lookup.total (öre/kWh)
+      const total = typeof lookup?.total === 'number' ? lookup.total : '';
       
       const elursprung = 'NordenMix';
       const forbrukningKwh = forbrukning;
