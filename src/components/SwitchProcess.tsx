@@ -185,9 +185,13 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
     if (provider.contractType === 'rörligt') {
       const priceOre = typeof p?.price === 'number' ? p!.price : (spotPriceKrPerKwh != null ? spotPriceKrPerKwh * 100 : undefined);
-      const surchargeOre = p?.surcharge;
-      const elcertOre = p?.el_certificate_fee;
-      const discountOre = p?._12_month_discount;
+      const surchargeOre = (typeof p?.surcharge === 'number'
+        ? p!.surcharge
+        : (provider.contractType === 'rörligt' && typeof provider.energyPrice === 'number')
+          ? Number(provider.energyPrice) * 100
+          : undefined);
+      const elcertOre = (typeof p?.el_certificate_fee === 'number' ? p!.el_certificate_fee : 0);
+      const discountOre = (typeof p?._12_month_discount === 'number' ? p!._12_month_discount : 0);
       const sumOre = [priceOre, surchargeOre, elcertOre, discountOre]
         .map(v => (typeof v === 'number' ? v : 0))
         .reduce((acc: number, v: number) => acc + v, 0);
