@@ -144,11 +144,22 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     const hasNormalized = !!(p && (p.price !== undefined || p.surcharge !== undefined || p.monthly_fee !== undefined));
 
     // Fallbacks from current provider data if normalized is missing
-    const providerPriceKrPerKwh = provider.contractType === 'fastpris'
+    let providerPriceKrPerKwh = provider.contractType === 'fastpris'
       ? Number(selectedContract?.fastpris ?? provider.energyPrice)
       : Number(provider.energyPrice); // tolka som kr/kWh påslag
-    const monthlyFeeKr = Number(provider.monthlyFee || 0);
-    const estimatedTotalKr = monthlyFeeKr + providerPriceKrPerKwh * billData.totalKWh;
+    let monthlyFeeKr = Number(provider.monthlyFee ?? 0);
+    // If provider values are missing, try to use normalized values (öre/kWh => kr/kWh)
+    if ((isNaN(providerPriceKrPerKwh) || providerPriceKrPerKwh === 0) && (p?.price !== undefined)) {
+      providerPriceKrPerKwh = Number(p?.price) / 100;
+    }
+    if ((isNaN(monthlyFeeKr) || monthlyFeeKr === 0) && (p?.monthly_fee !== undefined)) {
+      monthlyFeeKr = Number(p?.monthly_fee);
+    }
+    let estimatedTotalKr = monthlyFeeKr + (isNaN(providerPriceKrPerKwh) ? 0 : providerPriceKrPerKwh) * billData.totalKWh;
+    // As a final fallback, use totals from normalized payload or savings
+    if (!isFinite(estimatedTotalKr) || estimatedTotalKr === 0) {
+      estimatedTotalKr = Number(p?.total_with_vat ?? p?.total ?? savings?.cheapestAlternative ?? 0);
+    }
 
     const fmtNum = (v?: number, digits = 2) => (typeof v === 'number' && !isNaN(v) ? v.toFixed(digits) : '-');
 
@@ -164,8 +175,8 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       lines.push(`Total (inkl. moms): ${fmtNum(p?.total_with_vat, 0)} kr`);
     } else {
       // Deterministisk fallback från provider
-      lines.push(`Pris (från avtal): ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
-      lines.push(`Månadsavgift (från avtal): ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
+      lines.push(`Pris (från avtal/beräknat): ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
+      lines.push(`Månadsavgift (från avtal/beräknat): ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
       lines.push(`Beräknad total: ${fmtNum(estimatedTotalKr, 0)} kr/mån`);
     }
 
