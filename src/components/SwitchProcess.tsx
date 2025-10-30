@@ -269,11 +269,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   };
 
   const normalizePersonalNumber = (raw: string): { base10: string | null; error?: string } => {
-    const cleaned = raw.replace(/[^0-9]/g, '');
-    // Endast 12 siffror (ÅÅÅÅMMDDXXXX) tillåts nu
-    if (cleaned.length !== 12) {
+    const trimmed = String(raw || '').trim();
+    const formatOk = /^\d{12}$/.test(trimmed) || /^\d{8}-\d{4}$/.test(trimmed);
+    if (!formatOk) {
       return { base10: null, error: 'Ogiltigt format (använd ÅÅÅÅMMDD-XXXX)' };
     }
+    const cleaned = trimmed.replace(/[^0-9]/g, ''); // 12 siffror
     // Använd de 10 sista siffrorna för Luhn (YYMMDDXXXX)
     const base10 = cleaned.slice(2);
     return { base10 };
