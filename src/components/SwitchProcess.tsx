@@ -73,6 +73,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     total_with_vat?: number;
     vat?: number;
   }>(null);
+  const [spotPriceKrPerKwh, setSpotPriceKrPerKwh] = useState<number | null>(null);
 
   // Session timeout - 30 minuter
   useEffect(() => {
@@ -135,6 +136,22 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     })();
   }, [provider?.name, billData.priceArea, billData.totalKWh]);
 
+  // Load latest spot price once for the customer's area (used for rörligt tooltip fallbacks)
+  useEffect(() => {
+    const area = (billData.priceArea || 'se3').toLowerCase();
+    (async () => {
+      try {
+        const res = await fetch('/api/spot-prices');
+        const json = (await res.json()) as { success?: boolean; data?: Record<string, number> };
+        if (json?.success && json?.data && typeof json.data[area] === 'number') {
+          setSpotPriceKrPerKwh(Number(json.data[area]));
+        }
+      } catch (_e) {
+        // ignore
+      }
+    })();
+  }, [billData.priceArea]);
+
   const buildTooltip = (): string => {
     const area = (providerPriceInfo?.area || (billData.priceArea || 'se3')).toUpperCase();
     const range = providerPriceInfo?.range || { min: 0, max: billData.totalKWh };
@@ -166,18 +183,32 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     const lines: string[] = [];
     lines.push(`Område: ${area} (förbrukning ${range.min}-${range.max} kWh/mån)`);
 
-    if (hasNormalized) {
-      lines.push(`Påslag: ${fmtNum(p?.surcharge)} öre/kWh`);
-      lines.push(`Elcertifikat: ${fmtNum(p?.el_certificate_fee)} öre/kWh`);
-      lines.push(`12 mån rabatt: ${fmtNum(p?._12_month_discount)} öre/kWh`);
-      lines.push(`Pris: ${fmtNum(p?.price)} öre/kWh`);
-      lines.push(`Månadsavgift: ${fmtNum(p?.monthly_fee, 0)} kr/mån`);
-      lines.push(`Total (inkl. moms): ${fmtNum(p?.total_with_vat, 0)} kr`);
+    if (provider.contractType === 'rörligt') {
+      const priceOre = typeof p?.price === 'number' ? p!.price : (spotPriceKrPerKwh != null ? spotPriceKrPerKwh * 100 : undefined);
+      const surchargeOre = p?.surcharge;
+      const elcertOre = p?.el_certificate_fee;
+      const discountOre = p?._12_month_discount;
+      const sumOre = [priceOre, surchargeOre, elcertOre, discountOre].reduce((acc, v) => (typeof v === 'number' ? acc + v : acc), 0);
+
+      lines.push('Rörligt månadspris = Spot (senaste månad) + Påslag + Elcertifikat + Rabatt');
+      lines.push(`Spot (senaste månad): ${fmtNum(priceOre, 2)} öre/kWh`);
+      lines.push(`Påslag: ${fmtNum(surchargeOre, 2)} öre/kWh`);
+      lines.push(`Elcertifikat: ${fmtNum(elcertOre, 2)} öre/kWh`);
+      lines.push(`Rabatt (12 mån): ${fmtNum(discountOre, 2)} öre/kWh`);
+      lines.push(`Summa: ${fmtNum(sumOre, 2)} öre/kWh`);
+      const ym = new Date();
+      lines.push(`Giltighet: ${ym.getFullYear()}-${String(ym.getMonth()+1).padStart(2,'0')}`);
+      // Månadskostnad visas endast om tillgänglig
+      if (typeof p?.monthly_fee === 'number') {
+        lines.push(`Månadsavgift: ${fmtNum(p?.monthly_fee, 0)} kr/mån`);
+      } else if (!isNaN(monthlyFeeKr)) {
+        lines.push(`Månadsavgift: ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
+      }
     } else {
-      // Deterministisk fallback från provider
-      lines.push(`Pris (från avtal/beräknat): ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
-      lines.push(`Månadsavgift (från avtal/beräknat): ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
-      lines.push(`Beräknad total: ${fmtNum(estimatedTotalKr, 0)} kr/mån`);
+      // Fastpris
+      lines.push('Fast pris = Elpris + Månadsavgift');
+      lines.push(`Elpris: ${fmtNum(providerPriceKrPerKwh)} kr/kWh`);
+      lines.push(`Månadsavgift: ${fmtNum(monthlyFeeKr, 0)} kr/mån`);
     }
 
     return lines.join('\n');
