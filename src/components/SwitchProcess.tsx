@@ -187,7 +187,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       case 2:
         return !!(formData.street && formData.streetNumber && formData.postalCode && formData.city);
       case 3:
-        return !!formData.currentProviderName;
+        return /^\d{18}$/.test(formData.currentCustomerNumber);
       case 4:
         return true;
       default:
@@ -465,26 +465,31 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   <h3 className="text-xl font-bold mb-4">Din nuvarande leverantör</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium mb-1">Leverantörsnamn *</label>
+                      <label className="block text-sm font-medium mb-1">Leverantörsnamn</label>
                       <input
                         type="text"
                         value={formData.currentProviderName}
                         onChange={(e) => updateFormData('currentProviderName', e.target.value)}
                         placeholder="t.ex. E.ON, Fortum, Vattenfall"
                         className="w-full border border-border rounded-lg px-3 py-2"
-                        required
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium mb-1">Anläggnings-id 18 siffror</label>
+                      <label className="block text-sm font-medium mb-1">Anläggnings-id 18 siffror *</label>
                       <input
                         type="text"
+                        inputMode="numeric"
+                        pattern="[0-9]*"
                         value={formData.currentCustomerNumber}
-                        onChange={(e) => updateFormData('currentCustomerNumber', e.target.value)}
+                        onChange={(e) => updateFormData('currentCustomerNumber', e.target.value.replace(/\D/g, ''))}
                         placeholder="Ex: 735999123456789012"
                         maxLength={18}
                         className="w-full border border-border rounded-lg px-3 py-2"
+                        required
                       />
+                      {formData.currentCustomerNumber && formData.currentCustomerNumber.length !== 18 && (
+                        <p className="text-xs text-error mt-1">Anläggnings-id måste vara exakt 18 siffror</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">När vill du byta leverantör?</label>
