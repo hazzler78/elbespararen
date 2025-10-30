@@ -94,9 +94,9 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ providerName: provider?.name || '', area, kwh: billData.totalKWh })
         });
-        const json = await res.json();
-        if (json?.success && json?.data) {
-          const d = json.data as {
+        const json = (await res.json()) as { success?: boolean; data?: unknown };
+        if (json && (json as any).success && (json as any).data) {
+          const d = (json as any).data as {
             area: string;
             range: { min: number; max: number } | null;
             surcharge?: number; el_certificate_fee?: number; _12_month_discount?: number;
