@@ -182,6 +182,11 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const bestOption = filteredComparisons[0];
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
+    const affiliate = (comparison.provider as any).affiliateUrl as string | undefined;
+    if (affiliate && /^https?:\/\//i.test(affiliate)) {
+      window.location.href = affiliate;
+      return;
+    }
     setSelectedProvider(comparison);
     setShowSwitchProcess(true);
   };

@@ -70,6 +70,7 @@ export interface ElectricityProvider {
   features: string[];
   logoUrl?: string;
   websiteUrl?: string;
+  affiliateUrl?: string; // Om satt: redirecta användaren direkt till denna länk
   phoneNumber?: string;
   createdAt: Date;
   updatedAt: Date;

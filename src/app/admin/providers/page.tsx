@@ -419,6 +419,7 @@ function ProviderForm({
     features: provider?.features || [],
     logoUrl: provider?.logoUrl || "",
     websiteUrl: provider?.websiteUrl || "",
+    affiliateUrl: provider?.affiliateUrl || "",
     phoneNumber: provider?.phoneNumber || "",
   });
 
@@ -602,6 +603,18 @@ function ProviderForm({
               onChange={(e) => setFormData({ ...formData, websiteUrl: e.target.value })}
               className="w-full border border-border rounded-lg px-3 py-2"
             />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Affiliate URL</label>
+            <input
+              type="url"
+              placeholder="https://partner.example.com/track?id=..."
+              value={formData.affiliateUrl}
+              onChange={(e) => setFormData({ ...formData, affiliateUrl: e.target.value })}
+              className="w-full border border-border rounded-lg px-3 py-2"
+            />
+            <p className="text-xs text-muted mt-1">Om satt, skickas användaren direkt till denna länk istället för att fylla formuläret.</p>
           </div>
 
           <div>

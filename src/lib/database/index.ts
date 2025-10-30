@@ -25,6 +25,7 @@ const mockProviders: ElectricityProvider[] = [
     ],
     logoUrl: "/logos/cheap-energy.png",
     websiteUrl: "https://cheapenergy.se",
+    affiliateUrl: undefined,
     phoneNumber: "08-123 45 67",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01")
@@ -48,6 +49,7 @@ const mockProviders: ElectricityProvider[] = [
     ],
     logoUrl: "/logos/green-power.png",
     websiteUrl: "https://greenpower.se",
+    affiliateUrl: undefined,
     phoneNumber: "08-234 56 78",
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01")
@@ -256,6 +258,7 @@ class CloudflareDatabase implements Database {
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
       phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
       avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
       createdAt: new Date(String(row.created_at)),
@@ -283,6 +286,7 @@ class CloudflareDatabase implements Database {
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
       phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
       avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
       createdAt: new Date(String(row.created_at)),
@@ -312,6 +316,7 @@ class CloudflareDatabase implements Database {
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
+      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
       phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
       avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
       createdAt: new Date(String(row.created_at)),
@@ -327,8 +332,8 @@ class CloudflareDatabase implements Database {
             INSERT INTO electricity_providers (
               id, name, description, monthly_fee, energy_price, free_months, 
               contract_length, contract_type, is_active, user_hidden, features, logo_url, website_url, 
-              phone_number, avtalsalternativ, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+              affiliate_url, phone_number, avtalsalternativ, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             id,
             providerData.name,
@@ -343,6 +348,7 @@ class CloudflareDatabase implements Database {
             JSON.stringify(providerData.features),
             providerData.logoUrl || null,
             providerData.websiteUrl || null,
+            providerData.affiliateUrl || null,
             providerData.phoneNumber || null,
             JSON.stringify(providerData.avtalsalternativ || []),
             now,
@@ -419,6 +425,10 @@ class CloudflareDatabase implements Database {
       if (providerData.websiteUrl !== undefined) {
         fieldsToUpdate.push('website_url = ?');
         values.push(providerData.websiteUrl || null);
+      }
+      if (providerData.affiliateUrl !== undefined) {
+        fieldsToUpdate.push('affiliate_url = ?');
+        values.push(providerData.affiliateUrl || null);
       }
       if (providerData.phoneNumber !== undefined) {
         fieldsToUpdate.push('phone_number = ?');

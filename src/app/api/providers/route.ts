@@ -96,6 +96,7 @@ export async function POST(request: NextRequest) {
       features: (body.features as string[]) || [],
       logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
+      affiliateUrl: body.affiliateUrl ? String(body.affiliateUrl) : undefined,
       phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
     });
 
@@ -159,6 +160,7 @@ export async function PUT(request: NextRequest) {
       features: body.features ? (body.features as string[]) : undefined,
       logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
+      affiliateUrl: body.affiliateUrl ? String(body.affiliateUrl) : undefined,
       phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
     });
 
