@@ -233,7 +233,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     postalCode: "",
     city: "",
     currentProviderName: "",
-    currentCustomerNumber: "",
+    currentCustomerNumber: "735999",
     currentContractEndDate: getDefaultContractEndDate()
   });
   // Provider terms URLs
@@ -283,6 +283,32 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     if (!base10) return { valid: false, error };
     if (!luhnCheck(base10)) return { valid: false, error: 'Kontrollsiffra ogiltig' };
     return { valid: true };
+  };
+
+  // ---- Maskering ----
+  const maskPersonalNumber = (raw?: string): string => {
+    if (!raw) return '';
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    if (cleaned.length === 12) {
+      // YYYYMMDDXXXX -> YYYYMMDD-****
+      return `${cleaned.slice(0,8)}-****`;
+    }
+    if (cleaned.length === 10) {
+      // YYMMDDXXXX -> YYMMDD-****
+      return `${cleaned.slice(0,6)}-****`;
+    }
+    // Fallback: mask last 4 visible
+    return raw.replace(/(.)(?=.{4})/g, '*');
+  };
+
+  const maskAnlaggningsId = (raw?: string): string => {
+    if (!raw) return '';
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    if (cleaned.length >= 4) {
+      const stars = '*'.repeat(Math.max(0, cleaned.length - 4));
+      return `${stars}${cleaned.slice(-4)}`;
+    }
+    return '*'.repeat(cleaned.length);
   };
 
   const nextStep = () => {
@@ -704,7 +730,20 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         inputMode="numeric"
                         pattern="[0-9]*"
                         value={formData.currentCustomerNumber}
-                        onChange={(e) => updateFormData('currentCustomerNumber', e.target.value.replace(/\D/g, ''))}
+                        onChange={(e) => {
+                          const prefix = "735999";
+                          let digits = e.target.value.replace(/\D/g, '');
+                          if (!digits.startsWith(prefix)) {
+                            // Säkerställ prefix i början
+                            // Ta bort eventuella ledande prefix-rester och förpreppa korrekt prefix
+                            digits = digits.replace(new RegExp('^'+prefix+'), '');
+                            digits = prefix + digits;
+                          }
+                          if (digits.length < prefix.length) {
+                            digits = prefix.slice(0, digits.length);
+                          }
+                          updateFormData('currentCustomerNumber', digits.slice(0, 18));
+                        }}
                         placeholder="Ex: 735999123456789012"
                         maxLength={18}
                         className="w-full border border-border rounded-lg px-3 py-2"
@@ -792,6 +831,9 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     <p className="text-sm">{formData.firstName} {formData.lastName}</p>
                     <p className="text-sm">{formData.email}</p>
                     <p className="text-sm">{formData.phone}</p>
+                    {formData.personalNumber && (
+                      <p className="text-sm">Personnummer: {maskPersonalNumber(formData.personalNumber)}</p>
+                    )}
                   </div>
 
                   {/* Adress */}
@@ -805,7 +847,9 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   <div className="bg-gray-50 rounded-lg p-3 mb-3">
                     <h4 className="font-semibold mb-1 text-sm">Nuvarande leverantör</h4>
                     <p className="text-sm">{formData.currentProviderName}</p>
-                    {formData.currentCustomerNumber && <p className="text-sm">Anläggnings-id: {formData.currentCustomerNumber}</p>}
+                    {formData.currentCustomerNumber && (
+                      <p className="text-sm">Anläggnings-id: {maskAnlaggningsId(formData.currentCustomerNumber)}</p>
+                    )}
                     {formData.currentContractEndDate && <p className="text-sm">Avtalslut: {formData.currentContractEndDate}</p>}
                   </div>
 
