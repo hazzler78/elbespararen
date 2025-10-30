@@ -607,11 +607,13 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
                       <h4 className="font-bold text-primary mb-1 text-sm flex items-center gap-2">
                         Ditt valda avtal med {provider.name}
-                        {providerPriceInfo && (
-                          <span title={buildTooltip()} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary cursor-help">
-                            <Info className="w-3 h-3" />
-                          </span>
-                        )}
+                        <span
+                          title={buildTooltip() || 'Ingen prisinformation tillgänglig'}
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary cursor-help"
+                          aria-label="Mer information om priset"
+                        >
+                          <Info className="w-3 h-3" />
+                        </span>
                       </h4>
                       <p className="text-xl font-bold text-primary">
                         {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(provider.energyPrice)}
@@ -624,11 +626,13 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     <div className="bg-success/10 border border-success/20 rounded-lg p-3 mb-4">
                       <h4 className="font-bold text-success mb-1 text-sm flex items-center gap-2">
                         Din besparing med {provider.name}
-                        {providerPriceInfo && (
-                          <span title={buildTooltip()} className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/20 text-success cursor-help">
-                            <Info className="w-3 h-3" />
-                          </span>
-                        )}
+                        <span
+                          title={buildTooltip() || 'Ingen prisinformation tillgänglig'}
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/20 text-success cursor-help"
+                          aria-label="Mer information om priset"
+                        >
+                          <Info className="w-3 h-3" />
+                        </span>
                       </h4>
                       <p className="text-xl font-bold text-success">
                         {savings.potentialSavings} kr per månad
