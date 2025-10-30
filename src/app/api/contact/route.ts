@@ -57,8 +57,10 @@ export async function POST(req: NextRequest) {
 
     // Lägg till i nyhetsbrev om valt
     if (subscribeNewsletter && email) {
+      console.log("[contact] subscribeNewsletter requested:", { email, name, subscribeNewsletter, group: getDefaultNewsletterGroupId() });
       try {
         await addToNewsletter({ email, name }, getDefaultNewsletterGroupId());
+        console.log("[contact] Subscribed to newsletter:", email);
       } catch (e) {
         console.error("[contact] addToNewsletter failed:", e);
         // Fortsätt ändå

@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
 
     // Lägg till i nyhetsbrev om begärt och e-post finns
     if (subscribeNewsletter && email) {
+      console.log("[leads] subscribeNewsletter requested:", { email, name, subscribeNewsletter, group: getDefaultNewsletterGroupId() });
       try {
         await addToNewsletter({ email, name }, getDefaultNewsletterGroupId());
         console.log("[leads] Subscribed to newsletter:", email);
