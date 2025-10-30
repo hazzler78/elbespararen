@@ -99,6 +99,10 @@ export async function POST(request: NextRequest) {
             return bd < ad ? b : best;
           }, null as any);
         }
+        // If still no bucket, pick the first band
+        if (!bucket && buckets.length > 0) {
+          bucket = buckets[0];
+        }
       }
       const pack = bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {};
       const normalized: Normalized = {
