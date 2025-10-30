@@ -17,7 +17,7 @@ function getEnvVar(name: string): string | undefined {
 
 function getEmailConfig() {
   const MAILERLITE_API_KEY = getEnvVar("MAILERLITE_API_KEY");
-  const MAIL_FROM = getEnvVar("MAIL_FROM") || "no-reply@elchef.se";
+  const MAIL_FROM = getEnvVar("MAIL_FROM") || "info@elchef.se";
   const MAIL_FROM_NAME = getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
   const MAILERLITE_GROUP_NEWSLETTER = getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
   const MAILERLITE_GROUP_RECEIPTS = getEnvVar("MAILERLITE_GROUP_RECEIPTS");

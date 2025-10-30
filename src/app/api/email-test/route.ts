@@ -3,8 +3,33 @@ import { addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId
 
 export const runtime = 'edge';
 
+function getEnvVar(name: string): string | undefined {
+  try {
+    const ctxEnv = (globalThis as any).getRequestContext?.()?.env;
+    if (ctxEnv && typeof ctxEnv[name] === "string" && ctxEnv[name]) return ctxEnv[name] as string;
+  } catch {}
+  try {
+    const workerEnv = (globalThis as any).env;
+    if (workerEnv && typeof workerEnv[name] === "string" && workerEnv[name]) return workerEnv[name] as string;
+  } catch {}
+  return (process.env as any)?.[name] as string | undefined;
+}
+
+function isEmailTestAllowed(req: NextRequest): boolean {
+  const enabled = (getEnvVar("EMAIL_TEST_ENABLED") || "").toLowerCase() === "true";
+  if (enabled) return true;
+  const token = getEnvVar("EMAIL_TEST_TOKEN");
+  const url = new URL(req.url);
+  const qp = url.searchParams.get("token");
+  const headerToken = req.headers.get("x-email-test-token");
+  return !!token && (qp === token || headerToken === token);
+}
+
 export async function POST(req: NextRequest) {
   try {
+    if (!isEmailTestAllowed(req)) {
+      return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+    }
     const body = await req.json() as {
       email?: string;
       name?: string;
@@ -61,6 +86,9 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    if (!isEmailTestAllowed(req)) {
+      return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+    }
     const url = new URL(req.url);
     const email = url.searchParams.get("email") || undefined;
     const name = url.searchParams.get("name") || undefined;
