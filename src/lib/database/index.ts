@@ -654,6 +654,7 @@ class CloudflareDatabase implements Database {
 
     const updated = { ...existing, ...switchRequestData, updatedAt: new Date() };
     const now = updated.updatedAt.toISOString();
+    const safeStatus = updated.status ?? 'pending';
     
     const { address, ...customerInfoWithoutAddress } = updated.customerInfo;
 
@@ -669,7 +670,7 @@ class CloudflareDatabase implements Database {
       JSON.stringify(updated.newProvider),
       JSON.stringify(updated.billData),
       JSON.stringify(updated.savings),
-      updated.status,
+      safeStatus,
       updated.notes || null,
       now,
       id
