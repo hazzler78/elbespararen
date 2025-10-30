@@ -62,6 +62,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showConfirmation, setShowConfirmation] = useState(false);
   const [completedSwitchRequest, setCompletedSwitchRequest] = useState<SwitchRequest | null>(null);
+  const [personalNumberError, setPersonalNumberError] = useState<string | null>(null);
   const [providerPriceInfo, setProviderPriceInfo] = useState<null | {
     area: string;
     range: { min: number; max: number };
@@ -252,6 +253,38 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  // ---- Personnummer validering (Luhn) ----
+  const luhnCheck = (digits: string): boolean => {
+    let sum = 0;
+    const reversed = digits.split('').reverse().map(Number);
+    for (let i = 0; i < reversed.length; i++) {
+      let n = reversed[i];
+      if (i % 2 === 1) { // vartannat tal (från höger, index 0)
+        n = n * 2;
+        if (n > 9) n -= 9;
+      }
+      sum += n;
+    }
+    return sum % 10 === 0;
+  };
+
+  const normalizePersonalNumber = (raw: string): { base10: string | null; error?: string } => {
+    const cleaned = raw.replace(/[^0-9]/g, '');
+    if (cleaned.length !== 10 && cleaned.length !== 12) {
+      return { base10: null, error: 'Ogiltigt format (använd ÅÅÅÅMMDD-XXXX eller ÅÅMMDD-XXXX)' };
+    }
+    // Använd de 10 sista siffrorna för Luhn (YYMMDDXXXX)
+    const base10 = cleaned.length === 12 ? cleaned.slice(2) : cleaned;
+    return { base10 };
+  };
+
+  const isValidPersonalNumber = (value: string): { valid: boolean; error?: string } => {
+    const { base10, error } = normalizePersonalNumber(value);
+    if (!base10) return { valid: false, error };
+    if (!luhnCheck(base10)) return { valid: false, error: 'Kontrollsiffra ogiltig' };
+    return { valid: true };
+  };
+
   const nextStep = () => {
     if (currentStep < steps.length) {
       setCurrentStep(currentStep + 1);
@@ -337,8 +370,8 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       case 1:
         {
           const termsUrl = getTermsUrl(provider?.name);
-          const hasPersonalNumber = !!(formData.personalNumber && formData.personalNumber.trim().length > 0);
-          const baseOk = !!(formData.firstName && formData.lastName && formData.email && formData.phone && hasPersonalNumber && formData.consentToDataProcessing);
+          const pn = isValidPersonalNumber(formData.personalNumber);
+          const baseOk = !!(formData.firstName && formData.lastName && formData.email && formData.phone && pn.valid && formData.consentToDataProcessing);
           return termsUrl ? baseOk && formData.consentToTerms : baseOk;
         }
       case 2:
@@ -500,12 +533,25 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                       <label className="block text-sm font-medium mb-1">Personnummer *</label>
                       <input
                         type="text"
+                        inputMode="numeric"
                         value={formData.personalNumber}
-                        onChange={(e) => updateFormData('personalNumber', e.target.value)}
+                        onChange={(e) => {
+                          const v = e.target.value;
+                          updateFormData('personalNumber', v);
+                          const res = isValidPersonalNumber(v);
+                          setPersonalNumberError(res.valid ? null : (res.error || 'Ogiltigt personnummer'));
+                        }}
+                        onBlur={(e) => {
+                          const res = isValidPersonalNumber(e.target.value);
+                          setPersonalNumberError(res.valid ? null : (res.error || 'Ogiltigt personnummer'));
+                        }}
                         placeholder="YYYYMMDD-XXXX"
-                        className="w-full border border-border rounded-lg px-3 py-2"
+                        className={`w-full border rounded-lg px-3 py-2 ${personalNumberError ? 'border-red-500' : 'border-border'}`}
                         required
                       />
+                      {personalNumberError && (
+                        <p className="text-xs text-red-600 mt-1">{personalNumberError}</p>
+                      )}
                     </div>
                     <div>
                       <label className="block text-sm font-medium mb-1">Betalningssätt</label>
