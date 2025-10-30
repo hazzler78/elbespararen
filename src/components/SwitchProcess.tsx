@@ -109,24 +109,24 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     (async () => {
       try {
         const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
-        const data = await res.json();
-        const areaBuckets = data?.[area];
-        if (!Array.isArray(areaBuckets)) return;
-        const bucket = areaBuckets.find((b: any) => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption);
-        const pack = bucket?.no_commitment || bucket?.standard || bucket || {};
+        const data = (await res.json()) as Record<string, unknown>;
+        const areaBuckets = (data as Record<string, unknown>)[area] as unknown;
+        if (!Array.isArray(areaBuckets as unknown[])) return;
+        const bucket = (areaBuckets as any[]).find((b: any) => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption);
+        const pack = (bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {}) as Record<string, unknown>;
         if (!bucket) return;
 
         setProviderPriceInfo({
           area,
           range: { min: bucket.minConsumption, max: bucket.maxConsumption },
-          surcharge: pack.surcharge,
-          el_certificate_fee: pack.el_certificate_fee,
-          _12_month_discount: pack['12_month_discount'],
-          price: pack.price,
-          monthly_fee: pack.monthly_fee,
-          total: pack.total,
-          total_with_vat: pack.total_with_vat,
-          vat: pack.vat
+          surcharge: pack.surcharge as number | undefined,
+          el_certificate_fee: (pack as any).el_certificate_fee as number | undefined,
+          _12_month_discount: (pack as any)['12_month_discount'] as number | undefined,
+          price: pack.price as number | undefined,
+          monthly_fee: (pack as any).monthly_fee as number | undefined,
+          total: pack.total as number | undefined,
+          total_with_vat: (pack as any).total_with_vat as number | undefined,
+          vat: pack.vat as number | undefined
         });
       } catch (e) {
         console.warn('Failed to load provider price JSON', e);
