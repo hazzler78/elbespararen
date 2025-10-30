@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -44,8 +45,8 @@ export async function GET() {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation };
-    const { email, phone, billData, savings } = body;
+    const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation; subscribeNewsletter?: boolean; name?: string };
+    const { email, phone, billData, savings, subscribeNewsletter, name } = body;
     
     console.log("[leads] POST request received:", { email, phone, hasBillData: !!billData, hasSavings: !!savings });
 
@@ -97,6 +98,16 @@ export async function POST(req: NextRequest) {
     console.log("[leads] Creating lead with data:", leadData);
     const lead = await db.createLead(leadData);
     console.log("[leads] Ny lead skapad:", lead.id);
+
+    // Lägg till i nyhetsbrev om begärt och e-post finns
+    if (subscribeNewsletter && email) {
+      try {
+        await addToNewsletter({ email, name }, getDefaultNewsletterGroupId());
+        console.log("[leads] Subscribed to newsletter:", email);
+      } catch (e) {
+        console.error("[leads] addToNewsletter failed:", e);
+      }
+    }
 
     // Skicka Telegram-notis
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {

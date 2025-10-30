@@ -195,6 +195,8 @@ export default function ContractsPage() {
                       body: JSON.stringify({
                         email: data.email,
                         phone: data.phone,
+                        name: data.name,
+                        subscribeNewsletter: !!data.subscribeNewsletter,
                         billData: mockBillData,
                         savings: savings
                       })

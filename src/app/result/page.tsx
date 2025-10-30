@@ -198,6 +198,8 @@ export default function ResultPage() {
                       body: JSON.stringify({
                         email: data.email,
                         phone: data.phone,
+                        name: data.name,
+                        subscribeNewsletter: !!data.subscribeNewsletter,
                         billData: billData,
                         savings: savings
                       })
