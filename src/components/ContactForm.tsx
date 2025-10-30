@@ -13,7 +13,8 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
     name: "",
     email: "",
     phone: "",
-    message: ""
+    message: "",
+    subscribeNewsletter: false
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -23,6 +24,13 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
     setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
+    }));
+    setError(null);
+  };
+  const handleCheckbox = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData(prev => ({
+      ...prev,
+      [e.target.name]: e.target.checked
     }));
     setError(null);
   };
@@ -43,7 +51,7 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
         await onSubmit(formData);
       }
       setIsSuccess(true);
-      setFormData({ name: "", email: "", phone: "", message: "" });
+      setFormData({ name: "", email: "", phone: "", message: "", subscribeNewsletter: false });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Något gick fel");
     } finally {
@@ -69,6 +77,21 @@ export default function ContactForm({ onSubmit }: ContactFormProps) {
       <div>
         <h3 className="text-xl font-semibold mb-2">Kontakta oss</h3>
         <p className="text-sm text-muted">Fyll i dina uppgifter så hör vi av oss inom 24 timmar.</p>
+      </div>
+
+      {/* Newsletter opt-in */}
+      <div className="flex items-start gap-3">
+        <input
+          type="checkbox"
+          id="subscribeNewsletter"
+          name="subscribeNewsletter"
+          checked={!!formData.subscribeNewsletter}
+          onChange={handleCheckbox}
+          className="mt-1"
+        />
+        <label htmlFor="subscribeNewsletter" className="text-sm">
+          Jag vill prenumerera på nyhetsbrev med erbjudanden och energitips
+        </label>
       </div>
 
       {/* Namn */}

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -10,9 +11,10 @@ export async function POST(req: NextRequest) {
       email?: string; 
       phone?: string; 
       message?: string; 
+      subscribeNewsletter?: boolean;
     };
     
-    const { name, email, phone, message } = body;
+    const { name, email, phone, message, subscribeNewsletter } = body;
     
     console.log("[contact] POST request received:", { name, email, phone, hasMessage: !!message });
 
@@ -52,6 +54,16 @@ export async function POST(req: NextRequest) {
       phone: phone || "Ej angiven",
       message: message || "Inget meddelande"
     });
+
+    // Lägg till i nyhetsbrev om valt
+    if (subscribeNewsletter && email) {
+      try {
+        await addToNewsletter({ email, name }, getDefaultNewsletterGroupId());
+      } catch (e) {
+        console.error("[contact] addToNewsletter failed:", e);
+        // Fortsätt ändå
+      }
+    }
 
     // Skicka e-post notis (om konfigurerat)
     if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {

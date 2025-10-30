@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { sendOrderConfirmationEmail, sendWelcomeEmail, addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId } from "@/lib/email";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -51,7 +52,49 @@ export async function POST(request: NextRequest) {
       notes: body.notes as string | undefined
     });
 
-    // TODO: Skicka e-post/SMS bekräftelse till kund
+    // Skicka orderbekräftelse via e-post
+    try {
+      await sendOrderConfirmationEmail({
+        toEmail: switchRequest.customerInfo.email,
+        toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim(),
+        switchId: switchRequest.id,
+        providerName: switchRequest.newProvider.name,
+        estimatedSavings: switchRequest.savings?.potentialSavings
+      });
+      // Lägg även mottagaren i kvitteringsgrupp om satt
+      try {
+        const receiptsGroup = getDefaultReceiptsGroupId();
+        if (receiptsGroup) {
+          await addToNewsletter({
+            email: switchRequest.customerInfo.email,
+            name: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
+          }, receiptsGroup);
+        }
+      } catch (e) {
+        console.error("[switch-requests] Failed to add to receipts group:", e);
+      }
+    } catch (e) {
+      console.error("[switch-requests] Failed to send order confirmation:", e);
+    }
+
+    // Om kunden samtyckt till marknadsföring: skicka välkomstbrev och lägg till i nyhetsbrev
+    if (switchRequest.customerInfo.consentToMarketing && switchRequest.customerInfo.email) {
+      try {
+        await Promise.all([
+          sendWelcomeEmail({
+            toEmail: switchRequest.customerInfo.email,
+            toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
+          }),
+          addToNewsletter({
+            email: switchRequest.customerInfo.email,
+            name: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
+          }, getDefaultNewsletterGroupId())
+        ]);
+      } catch (e) {
+        console.error("[switch-requests] Failed to process marketing welcome/subscription:", e);
+      }
+    }
+
     // TODO: Skicka notis till admin
     // TODO: Integrera med leverantörens API
 

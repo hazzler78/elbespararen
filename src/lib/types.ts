@@ -43,6 +43,7 @@ export interface ContactFormData {
   email: string;
   phone?: string;
   message?: string;
+  subscribeNewsletter?: boolean;
 }
 
 export interface ContractAlternative {
