@@ -736,7 +736,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                           if (!digits.startsWith(prefix)) {
                             // Säkerställ prefix i början
                             // Ta bort eventuella ledande prefix-rester och förpreppa korrekt prefix
-                            digits = digits.replace(new RegExp('^'+prefix+'), '');
+                            digits = digits.replace(new RegExp('^' + prefix), '');
                             digits = prefix + digits;
                           }
                           if (digits.length < prefix.length) {
