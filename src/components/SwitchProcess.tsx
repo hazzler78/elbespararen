@@ -270,11 +270,12 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
   const normalizePersonalNumber = (raw: string): { base10: string | null; error?: string } => {
     const cleaned = raw.replace(/[^0-9]/g, '');
-    if (cleaned.length !== 10 && cleaned.length !== 12) {
-      return { base10: null, error: 'Ogiltigt format (använd ÅÅÅÅMMDD-XXXX eller ÅÅMMDD-XXXX)' };
+    // Endast 12 siffror (ÅÅÅÅMMDDXXXX) tillåts nu
+    if (cleaned.length !== 12) {
+      return { base10: null, error: 'Ogiltigt format (använd ÅÅÅÅMMDD-XXXX)' };
     }
     // Använd de 10 sista siffrorna för Luhn (YYMMDDXXXX)
-    const base10 = cleaned.length === 12 ? cleaned.slice(2) : cleaned;
+    const base10 = cleaned.slice(2);
     return { base10 };
   };
 
