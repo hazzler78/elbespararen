@@ -47,7 +47,11 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
 
     const mcResponse = await fetch("https://api.mailchannels.net/tx/v1/send", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { 
+        "Content-Type": "application/json",
+        // Auth header required by MailChannels to authenticate sender domain
+        "X-AuthUser": MAIL_FROM
+      },
       body: JSON.stringify({
         personalizations: [
           {
