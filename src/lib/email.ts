@@ -84,8 +84,18 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
 
     if (!mcResponse.ok) {
       const txt = await mcResponse.text();
-      const errorMsg = `MailChannels send failed: ${mcResponse.status} ${txt}`;
-      console.error("[email] MailChannels error response:", { status: mcResponse.status, body: txt });
+      let errorDetails = txt;
+      try {
+        const parsed = JSON.parse(txt);
+        errorDetails = JSON.stringify(parsed, null, 2);
+      } catch {}
+      const errorMsg = `MailChannels send failed: ${mcResponse.status} - ${errorDetails}`;
+      console.error("[email] MailChannels error response:", { 
+        status: mcResponse.status, 
+        statusText: mcResponse.statusText,
+        body: errorDetails,
+        headers: Object.fromEntries(mcResponse.headers.entries())
+      });
       throw new Error(errorMsg);
     }
 
