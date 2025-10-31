@@ -50,9 +50,12 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
       headers: { 
         "Content-Type": "application/json",
         // Auth header required by MailChannels to authenticate sender domain
-        "X-AuthUser": MAIL_FROM
+        "X-AuthUser": MAIL_FROM,
+        // X-AuthPass is ignored but some edges require it to be present
+        "X-AuthPass": ""
       },
       body: JSON.stringify({
+        mail_from: MAIL_FROM,
         personalizations: [
           {
             to: [{ email: to.email, name: to.name || to.email }]
