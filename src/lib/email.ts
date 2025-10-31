@@ -59,15 +59,22 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         console.log("[email] Subscriber may already exist, continuing...");
       }
       
-      const campaignPayload = {
+      // MailerLite Campaign API kräver antingen emails eller groups
+      // Vi använder emails för att skicka till specifik mottagare
+      const campaignPayload: Record<string, unknown> = {
         name: `Orderbekräftelse - ${Date.now()}`,
         type: "regular",
         subject: subject,
         from_name: MAIL_FROM_NAME,
         from: MAIL_FROM,
         content: html,
-        groups: receiptsGroup ? [receiptsGroup] : []
+        emails: [to.email]  // Skicka direkt till denna mottagare
       };
+      
+      // Lägg till groups om receiptsGroup finns (för tracking)
+      if (receiptsGroup) {
+        campaignPayload.groups = [receiptsGroup];
+      }
       
       // Skapa kampanjen
       const createResponse = await fetch("https://connect.mailerlite.com/api/campaigns", {
@@ -99,7 +106,7 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
             Authorization: `Bearer ${MAILERLITE_API_KEY}`
           },
           body: JSON.stringify({
-            groups: receiptsGroup ? [receiptsGroup] : []
+            emails: [to.email]  // Skicka till specifik mottagare
           })
         });
         
