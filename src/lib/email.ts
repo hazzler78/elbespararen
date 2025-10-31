@@ -103,11 +103,95 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
     return;
   } catch (mcErr) {
     console.error("[email] MailChannels error:", mcErr);
-    // Fortsätt till fallback om MailChannels misslyckas
+    const mcErrorMessage = mcErr instanceof Error ? mcErr.message : String(mcErr);
+    
+    // Fallback: Försök skicka via MailerLite Campaign API
+    // Detta är en workaround - MailerLite Campaigns kan användas för transactional emails
+    try {
+      const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+      if (MAILERLITE_API_KEY) {
+        console.log("[email] Attempting MailerLite Campaign API fallback for:", to.email);
+        
+        // Skapa en temporär grupp för denna mottagare, eller använd receipts group
+        const receiptsGroup = getDefaultReceiptsGroupId();
+        
+        // Först, se till att mottagaren finns i MailerLite
+        try {
+          await addToNewsletter(to, receiptsGroup);
+        } catch (addErr) {
+          // Ignorera om användaren redan finns
+          console.log("[email] Subscriber may already exist, continuing...");
+        }
+        
+        // Skapa och skicka campaign direkt till denna mottagare
+        // Note: MailerLite Campaigns API kräver att mottagaren finns i en grupp först
+        const campaignPayload = {
+          name: `Orderbekräftelse - ${Date.now()}`,
+          type: "regular",
+          subject: subject,
+          from_name: MAIL_FROM_NAME,
+          from: MAIL_FROM,
+          content: html,
+          groups: receiptsGroup ? [receiptsGroup] : [],
+          filter: {
+            segments: [],
+            groups: receiptsGroup ? [receiptsGroup] : []
+          }
+        };
+        
+        // Skapa kampanjen
+        const createResponse = await fetch("https://connect.mailerlite.com/api/campaigns", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${MAILERLITE_API_KEY}`
+          },
+          body: JSON.stringify(campaignPayload)
+        });
+        
+        if (!createResponse.ok) {
+          const txt = await createResponse.text();
+          throw new Error(`MailerLite campaign creation failed: ${createResponse.status} ${txt}`);
+        }
+        
+        const campaign = await createResponse.json() as { data?: { id?: string } };
+        if (campaign.data?.id) {
+          // Skicka kampanjen direkt
+          const sendResponse = await fetch(`https://connect.mailerlite.com/api/campaigns/${campaign.data.id}/send`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Accept: "application/json",
+              Authorization: `Bearer ${MAILERLITE_API_KEY}`
+            },
+            body: JSON.stringify({
+              groups: receiptsGroup ? [receiptsGroup] : [],
+              filter: {
+                segments: [],
+                groups: receiptsGroup ? [receiptsGroup] : []
+              }
+            })
+          });
+          
+          if (!sendResponse.ok) {
+            const txt = await sendResponse.text();
+            throw new Error(`MailerLite campaign send failed: ${sendResponse.status} ${txt}`);
+          }
+          
+          console.log("[email] ✅ Sent successfully via MailerLite Campaign API:", subject, "to", to.email);
+          return;
+        }
+      }
+    } catch (mlErr) {
+      console.error("[email] MailerLite fallback also failed:", mlErr);
+    }
+    
+    // Både MailChannels och MailerLite misslyckades
+    throw new Error(`Email send failed. MailChannels error: ${mcErrorMessage}. Please check configuration.`);
   }
 
-  // Ingen fallback - MailChannels är vår enda transactional email-leverantör
-  // MailerLite används endast för nyhetsbrev/automation, inte transactional emails
+  // Detta borde inte nås
   throw new Error(`Email send failed via MailChannels. No fallback available. Please check MailChannels configuration and SPF/DMARC records for ${MAIL_FROM}`);
 }
 
