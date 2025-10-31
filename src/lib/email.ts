@@ -59,15 +59,21 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         console.log("[email] Subscriber may already exist, continuing...");
       }
       
-      // MailerLite Campaign API: emails är array av strängar, subject/from på campaign-nivå
+      // MailerLite Campaign API: emails är array av arrayer, där varje inre array har objekt med email, subject, from_name, from
       const campaignPayload: Record<string, unknown> = {
         name: `Orderbekräftelse - ${Date.now()}`,
         type: "regular",
-        subject: subject,
-        from_name: MAIL_FROM_NAME,
-        from: MAIL_FROM,
         content: html,
-        emails: [to.email]  // Array av email-adresser (strängar)
+        emails: [
+          [  // Array av arrayer
+            {
+              email: to.email,
+              subject: subject,
+              from_name: MAIL_FROM_NAME,
+              from: MAIL_FROM
+            }
+          ]
+        ]
       };
       
       // Lägg till groups om receiptsGroup finns (för tracking)
@@ -105,7 +111,16 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
             Authorization: `Bearer ${MAILERLITE_API_KEY}`
           },
           body: JSON.stringify({
-            emails: [to.email]  // Array av email-adresser
+            emails: [
+              [  // Array av arrayer med email-objekt
+                {
+                  email: to.email,
+                  subject: subject,
+                  from_name: MAIL_FROM_NAME,
+                  from: MAIL_FROM
+                }
+              ]
+            ]
           })
         });
         
