@@ -42,6 +42,12 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
 
   try {
     const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+    const plain = html
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
     const response = await fetch("https://connect.mailerlite.com/api/send", {
       method: "POST",
       headers: {
@@ -65,17 +71,23 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
           {
             type: "text/html",
             value: html
+          },
+          {
+            type: "text/plain",
+            value: plain || subject
           }
         ]
       })
     });
 
+    const raw = await response.text();
     if (!response.ok) {
-      const text = await response.text();
-      throw new Error(`MailerLite send failed: ${response.status} ${text}`);
+      throw new Error(`MailerLite send failed: ${response.status} ${raw}`);
     }
 
-    console.log("[email] Sent:", subject, "to", to.email);
+    let parsed: unknown = undefined;
+    try { parsed = raw ? JSON.parse(raw) : undefined; } catch {}
+    console.log("[email] Sent:", subject, "to", to.email, "response:", parsed ?? raw ?? null);
   } catch (error) {
     console.error("[email] sendEmail error:", error);
   }
