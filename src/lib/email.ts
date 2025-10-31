@@ -82,13 +82,16 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
       
       if (!createResponse.ok) {
         const txt = await createResponse.text();
+        console.error("[email] MailerLite campaign creation error:", { status: createResponse.status, body: txt });
         throw new Error(`MailerLite campaign creation failed: ${createResponse.status} ${txt}`);
       }
       
-      const campaign = await createResponse.json() as { data?: { id?: string } };
-      if (campaign.data?.id) {
+      const campaignData = await createResponse.json() as { data?: { id?: string }; id?: string };
+      console.log("[email] MailerLite campaign created:", campaignData);
+      const campaignId = campaignData.data?.id || campaignData.id;
+      if (campaignId) {
         // Skicka kampanjen direkt till gruppen
-        const sendResponse = await fetch(`https://connect.mailerlite.com/api/campaigns/${campaign.data.id}/send`, {
+        const sendResponse = await fetch(`https://connect.mailerlite.com/api/campaigns/${campaignId}/send`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -111,10 +114,14 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
     } catch (mlErr) {
       const mlErrorMsg = mlErr instanceof Error ? mlErr.message : String(mlErr);
       console.error("[email] MailerLite Campaign API failed:", mlErrorMsg);
-      // Fortsätt till MailChannels som fallback om MailerLite misslyckas
+      // Kasta felet med mer info så att vi ser vad som gick fel
+      throw new Error(`MailerLite failed: ${mlErrorMsg}`);
     }
   } else {
-    console.warn("[email] MAILERLITE_API_KEY not set, skipping MailerLite and trying MailChannels");
+    const errorMsg = "MAILERLITE_API_KEY not set, skipping MailerLite and trying MailChannels";
+    console.warn("[email]", errorMsg);
+    // Om MAILERLITE_API_KEY saknas, hoppa inte över - försök inte MailChannels heller
+    throw new Error(errorMsg);
   }
   
   // Fallback: MailChannels (kräver verifierad domän och DNS-poster)
