@@ -35,7 +35,7 @@ function isEmailConfigured(): boolean {
 }
 
 export async function sendEmail(subject: string, html: string, to: EmailRecipient): Promise<void> {
-  const { MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+  const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
   
   // Validera att vi har nödvändig konfiguration
   if (!MAIL_FROM || !to.email) {
@@ -44,7 +44,77 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
   
   console.log("[email] Attempting to send email:", { subject, to: to.email, from: MAIL_FROM });
   
-  // Primary transport: MailChannels (Cloudflare-native transactional email)
+  // Primary transport: MailerLite Campaign API (MailChannels kräver verifierad domän)
+  // Försök MailerLite först eftersom MailChannels kräver specifik DNS-konfiguration
+  if (MAILERLITE_API_KEY) {
+    try {
+      console.log("[email] Attempting MailerLite Campaign API for:", to.email);
+      
+      const receiptsGroup = getDefaultReceiptsGroupId();
+      
+      // Se till att mottagaren finns i MailerLite
+      try {
+        await addToNewsletter(to, receiptsGroup);
+      } catch (addErr) {
+        console.log("[email] Subscriber may already exist, continuing...");
+      }
+      
+      const campaignPayload = {
+        name: `Orderbekräftelse - ${Date.now()}`,
+        type: "regular",
+        subject: subject,
+        from_name: MAIL_FROM_NAME,
+        from: MAIL_FROM,
+        content: html,
+        groups: receiptsGroup ? [receiptsGroup] : []
+      };
+      
+      // Skapa kampanjen
+      const createResponse = await fetch("https://connect.mailerlite.com/api/campaigns", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${MAILERLITE_API_KEY}`
+        },
+        body: JSON.stringify(campaignPayload)
+      });
+      
+      if (!createResponse.ok) {
+        const txt = await createResponse.text();
+        throw new Error(`MailerLite campaign creation failed: ${createResponse.status} ${txt}`);
+      }
+      
+      const campaign = await createResponse.json() as { data?: { id?: string } };
+      if (campaign.data?.id) {
+        // Skicka kampanjen direkt till gruppen
+        const sendResponse = await fetch(`https://connect.mailerlite.com/api/campaigns/${campaign.data.id}/send`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+            Authorization: `Bearer ${MAILERLITE_API_KEY}`
+          },
+          body: JSON.stringify({
+            groups: receiptsGroup ? [receiptsGroup] : []
+          })
+        });
+        
+        if (!sendResponse.ok) {
+          const txt = await sendResponse.text();
+          throw new Error(`MailerLite campaign send failed: ${sendResponse.status} ${txt}`);
+        }
+        
+        console.log("[email] ✅ Sent successfully via MailerLite Campaign API:", subject, "to", to.email);
+        return;
+      }
+    } catch (mlErr) {
+      console.error("[email] MailerLite Campaign API failed:", mlErr);
+      // Fortsätt till MailChannels som fallback
+    }
+  }
+  
+  // Fallback: MailChannels (kräver verifierad domän och DNS-poster)
   try {
     const plain = html
       .replace(/<style[\s\S]*?<\/style>/gi, "")
