@@ -96,54 +96,9 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
     // Fortsätt till fallback om MailChannels misslyckas
   }
 
-  // Fallback transport: MailerLite (only if account supports transactional send)
-  try {
-    const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
-    if (!MAILERLITE_API_KEY) {
-      console.warn("[email] ⚠️ No MailerLite API key; skipping ML fallback. Email may not have been sent.");
-      throw new Error("Neither MailChannels nor MailerLite was successful. No email sent.");
-    }
-    
-    console.log("[email] Attempting MailerLite fallback for:", to.email);
-    
-    const plain = html
-      .replace(/<style[\s\S]*?<\/style>/gi, "")
-      .replace(/<script[\s\S]*?<\/script>/gi, "")
-      .replace(/<[^>]+>/g, " ")
-      .replace(/\s+/g, " ")
-      .trim();
-    
-    const mlPayload = {
-      from: { email: MAIL_FROM, name: MAIL_FROM_NAME },
-      to: [{ email: to.email, name: to.name || to.email }],
-      subject,
-      content: [
-        { type: "text/html", value: html },
-        { type: "text/plain", value: plain || subject }
-      ]
-    };
-    
-    const response = await fetch("https://connect.mailerlite.com/api/send", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-        Authorization: `Bearer ${MAILERLITE_API_KEY}`
-      },
-      body: JSON.stringify(mlPayload)
-    });
-    
-    const raw = await response.text();
-    if (!response.ok) {
-      console.error("[email] MailerLite error response:", { status: response.status, body: raw });
-      throw new Error(`MailerLite send failed: ${response.status} ${raw}`);
-    }
-    console.log("[email] ✅ Sent successfully via MailerLite:", subject, "to", to.email);
-  } catch (mlErr) {
-    console.error("[email] ❌ Both MailChannels and MailerLite failed:", mlErr);
-    // Kasta felet så att anropande kod vet att mail inte skickades
-    throw mlErr;
-  }
+  // Ingen fallback - MailChannels är vår enda transactional email-leverantör
+  // MailerLite används endast för nyhetsbrev/automation, inte transactional emails
+  throw new Error(`Email send failed via MailChannels. No fallback available. Please check MailChannels configuration and SPF/DMARC records for ${MAIL_FROM}`);
 }
 
 export async function addToNewsletter(recipient: EmailRecipient, groupId?: string): Promise<void> {
