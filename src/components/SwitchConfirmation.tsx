@@ -54,6 +54,32 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
             </p>
           </div>
 
+          {/* E-postbekräftelse varning */}
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20 rounded-xl p-6">
+            <div className="flex items-start gap-4">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
+                <Mail className="w-6 h-6 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-bold text-lg mb-2 text-primary">
+                  Kolla din e-post för orderbekräftelse
+                </h3>
+                <p className="text-sm text-muted mb-3">
+                  Vi har skickat en bekräftelse på din beställning till:
+                </p>
+                <div className="bg-white/60 border border-primary/30 rounded-lg px-4 py-3 mb-3">
+                  <p className="font-semibold text-primary text-base">{customerInfo.email}</p>
+                </div>
+                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
+                  <p className="text-xs text-muted leading-relaxed">
+                    <strong className="text-primary">Viktigt:</strong> Kontrollera även din skräppost om du inte ser mailet inom några minuter. 
+                    Mailet innehåller ditt referensnummer och all viktig information om din beställning.
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
           {/* Nästa steg */}
           <div>
             <h3 className="font-bold text-lg mb-4">Vad händer nu?</h3>
@@ -63,9 +89,9 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
                   <Mail className="w-4 h-4 text-primary" />
                 </div>
                 <div>
-                  <h4 className="font-semibold">Bekräftelse skickad</h4>
+                  <h4 className="font-semibold">Orderbekräftelse skickad</h4>
                   <p className="text-sm text-muted">
-                    Du får en bekräftelse via e-post inom några minuter
+                    En detaljerad bekräftelse har skickats till din e-postadress med all information om din beställning
                   </p>
                 </div>
               </div>
@@ -137,24 +163,12 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
             <div className="text-sm text-muted">
               Referensnummer: {switchRequest.id}
             </div>
-            <div className="flex gap-3">
-              <button
-                onClick={onClose}
-                className="px-6 py-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
-              >
-                Stäng
-              </button>
-              <button
-                onClick={() => {
-                  // TODO: Skicka e-post med sammanfattning
-                  console.log("Send email with summary");
-                }}
-                className="flex items-center gap-2 bg-primary text-white px-6 py-2 rounded-lg hover:bg-primary/90 transition-colors"
-              >
-                <Mail className="w-4 h-4" />
-                Skicka sammanfattning
-              </button>
-            </div>
+            <button
+              onClick={onClose}
+              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+            >
+              Stäng
+            </button>
           </div>
         </div>
       </motion.div>

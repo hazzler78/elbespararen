@@ -54,13 +54,27 @@ export async function POST(request: NextRequest) {
 
     // Skicka orderbekräftelse via e-post
     try {
+      console.log("[switch-requests] Preparing to send order confirmation email to:", switchRequest.customerInfo.email);
+      
+      // Extrahera prisområde från billData om det finns
+      const priceArea = switchRequest.billData?.priceArea || undefined;
+      
+      // Extrahera kontraktstyp från provider
+      const contractType = switchRequest.newProvider?.contractType as "rörligt" | "fast" | "fastpris" | undefined;
+      
       await sendOrderConfirmationEmail({
         toEmail: switchRequest.customerInfo.email,
         toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim(),
         switchId: switchRequest.id,
         providerName: switchRequest.newProvider.name,
-        estimatedSavings: switchRequest.savings?.potentialSavings
+        estimatedSavings: switchRequest.savings?.potentialSavings,
+        contractType: contractType,
+        priceArea: priceArea,
+        brand: "Elchef.se"
       });
+      
+      console.log("[switch-requests] Order confirmation email sent successfully to:", switchRequest.customerInfo.email);
+      
       // Lägg även mottagaren i kvitteringsgrupp om satt
       try {
         const receiptsGroup = getDefaultReceiptsGroupId();
@@ -69,12 +83,22 @@ export async function POST(request: NextRequest) {
             email: switchRequest.customerInfo.email,
             name: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
           }, receiptsGroup);
+          console.log("[switch-requests] Added customer to receipts group:", receiptsGroup);
         }
       } catch (e) {
         console.error("[switch-requests] Failed to add to receipts group:", e);
       }
     } catch (e) {
       console.error("[switch-requests] Failed to send order confirmation:", e);
+      // Logga mer detaljer om felet
+      if (e instanceof Error) {
+        console.error("[switch-requests] Error details:", {
+          message: e.message,
+          stack: e.stack,
+          customerEmail: switchRequest.customerInfo.email
+        });
+      }
+      // Inte kasta felet - låt orderbekräftelsen i UI visa ändå
     }
 
     // Om kunden samtyckt till marknadsföring: skicka välkomstbrev och lägg till i nyhetsbrev
