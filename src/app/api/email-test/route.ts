@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId, sendEmail } from "@/lib/email";
+import { addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId, sendEmail, sendOrderConfirmationEmail } from "@/lib/email";
 
 export const runtime = 'edge';
 
@@ -36,9 +36,14 @@ export async function POST(req: NextRequest) {
       sendTestEmail?: boolean;
       subscribeNewsletter?: boolean;
       subscribeReceipts?: boolean;
+      sendOrderConfirmation?: boolean;
+      providerName?: string;
+      switchId?: string;
+      contractType?: "rörligt" | "fast" | "fastpris";
+      priceArea?: string;
     };
 
-    const { email, name, sendTestEmail = true, subscribeNewsletter = true, subscribeReceipts = false } = body || {};
+    const { email, name, sendTestEmail = true, subscribeNewsletter = true, subscribeReceipts = false, sendOrderConfirmation = false } = body || {};
 
     if (!email) {
       return NextResponse.json({ success: false, error: "email required" }, { status: 400 });
@@ -53,6 +58,25 @@ export async function POST(req: NextRequest) {
       } catch (e) {
         console.error("[email-test] sendEmail failed", e);
         results.sendEmail = String(e instanceof Error ? e.message : e);
+      }
+    }
+
+    if (sendOrderConfirmation && email) {
+      try {
+        await sendOrderConfirmationEmail({
+          toEmail: email,
+          toName: name,
+          switchId: body.switchId || `switch-${Date.now()}`,
+          providerName: body.providerName || "Elbolaget",
+          contractType: body.contractType || "rörligt",
+          priceArea: body.priceArea || "3",
+          estimatedSavings: 150,
+          brand: "Elchef.se"
+        });
+        results.sendOrderConfirmation = "ok";
+      } catch (e) {
+        console.error("[email-test] sendOrderConfirmation failed", e);
+        results.sendOrderConfirmation = String(e instanceof Error ? e.message : e);
       }
     }
 
@@ -95,6 +119,11 @@ export async function GET(req: NextRequest) {
     const sendTestEmail = url.searchParams.get("sendTestEmail") !== "false"; // default true
     const subscribeNewsletter = url.searchParams.get("subscribeNewsletter") !== "false"; // default true
     const subscribeReceipts = url.searchParams.get("subscribeReceipts") === "true"; // default false
+    const sendOrderConfirmation = url.searchParams.get("sendOrderConfirmation") === "true"; // default false
+    const providerName = url.searchParams.get("providerName") || undefined;
+    const switchId = url.searchParams.get("switchId") || undefined;
+    const contractType = (url.searchParams.get("contractType") as any) || undefined;
+    const priceArea = url.searchParams.get("priceArea") || undefined;
 
     const results: Record<string, unknown> = {
       diagnostics: {
@@ -131,6 +160,25 @@ export async function GET(req: NextRequest) {
         } catch (e) {
           console.error("[email-test][GET] subscribeReceipts failed", e);
           results.subscribeReceipts = String(e instanceof Error ? e.message : e);
+        }
+      }
+
+      if (sendOrderConfirmation) {
+        try {
+          await sendOrderConfirmationEmail({
+            toEmail: email,
+            toName: name,
+            switchId: switchId || `switch-${Date.now()}`,
+            providerName: providerName || "Elbolaget",
+            contractType: (contractType as any) || "rörligt",
+            priceArea: priceArea || "3",
+            estimatedSavings: 150,
+            brand: "Elchef.se"
+          });
+          results.sendOrderConfirmation = "ok";
+        } catch (e) {
+          console.error("[email-test][GET] sendOrderConfirmation failed", e);
+          results.sendOrderConfirmation = String(e instanceof Error ? e.message : e);
         }
       }
     } else {
