@@ -36,6 +36,7 @@ function isEmailConfigured(): boolean {
 
 export async function sendEmail(subject: string, html: string, to: EmailRecipient): Promise<void> {
   const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+  const RESEND_API_KEY = getEnvVar("RESEND_API_KEY");
   
   // Validera att vi har nödvändig konfiguration
   if (!MAIL_FROM || !to.email) {
@@ -44,94 +45,49 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
   
   console.log("[email] Attempting to send email:", { subject, to: to.email, from: MAIL_FROM });
   
-  // Primary transport: MailerLite Campaign API (MailChannels kräver verifierad domän)
-  // Försök MailerLite först eftersom MailChannels kräver specifik DNS-konfiguration
-  if (MAILERLITE_API_KEY) {
+  // Lösning 1: Resend (enklast för transactional emails)
+  if (RESEND_API_KEY) {
     try {
-      console.log("[email] Attempting MailerLite Campaign API for:", to.email);
+      console.log("[email] Attempting Resend API for:", to.email);
       
-      const receiptsGroup = getDefaultReceiptsGroupId();
+      const plain = html
+        .replace(/<style[\s\S]*?<\/style>/gi, "")
+        .replace(/<script[\s\S]*?<\/script>/gi, "")
+        .replace(/<[^>]+>/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
       
-      // Se till att mottagaren finns i MailerLite
-      try {
-        await addToNewsletter(to, receiptsGroup);
-      } catch (addErr) {
-        console.log("[email] Subscriber may already exist, continuing...");
-      }
-      
-      // MailerLite Campaign API: Använd groups istället för emails för transactional emails
-      // Först se till att mottagaren är i gruppen (redan gjort ovan)
-      // Skapa kampanj som skickas till gruppen
-      if (!receiptsGroup) {
-        throw new Error("MAILERLITE_GROUP_RECEIPTS must be configured for transactional emails");
-      }
-      
-      const campaignPayload: Record<string, unknown> = {
-        name: `Orderbekräftelse - ${Date.now()}`,
-        type: "regular",
-        subject: subject,
-        from_name: MAIL_FROM_NAME,
-        from: MAIL_FROM,
-        content: html,
-        groups: [receiptsGroup]  // Skicka till gruppen där mottagaren finns
-      };
-      
-      // Skapa kampanjen
-      const createResponse = await fetch("https://connect.mailerlite.com/api/campaigns", {
+      const resendResponse = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Accept: "application/json",
-          Authorization: `Bearer ${MAILERLITE_API_KEY}`
+          Authorization: `Bearer ${RESEND_API_KEY}`
         },
-        body: JSON.stringify(campaignPayload)
+        body: JSON.stringify({
+          from: `${MAIL_FROM_NAME} <${MAIL_FROM}>`,
+          to: [to.email],
+          subject: subject,
+          html: html,
+          text: plain || subject
+        })
       });
       
-      if (!createResponse.ok) {
-        const txt = await createResponse.text();
-        console.error("[email] MailerLite campaign creation error:", { status: createResponse.status, body: txt });
-        throw new Error(`MailerLite campaign creation failed: ${createResponse.status} ${txt}`);
+      if (!resendResponse.ok) {
+        const txt = await resendResponse.text();
+        console.error("[email] Resend error:", { status: resendResponse.status, body: txt });
+        throw new Error(`Resend send failed: ${resendResponse.status} ${txt}`);
       }
       
-      const campaignData = await createResponse.json() as { data?: { id?: string }; id?: string };
-      console.log("[email] MailerLite campaign created:", campaignData);
-      const campaignId = campaignData.data?.id || campaignData.id;
-      if (campaignId) {
-        // Skicka kampanjen direkt till gruppen
-        const sendResponse = await fetch(`https://connect.mailerlite.com/api/campaigns/${campaignId}/send`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Accept: "application/json",
-            Authorization: `Bearer ${MAILERLITE_API_KEY}`
-          },
-          body: JSON.stringify({
-            groups: [receiptsGroup]  // Skicka till gruppen
-          })
-        });
-        
-        if (!sendResponse.ok) {
-          const txt = await sendResponse.text();
-          throw new Error(`MailerLite campaign send failed: ${sendResponse.status} ${txt}`);
-        }
-        
-        console.log("[email] ✅ Sent successfully via MailerLite Campaign API:", subject, "to", to.email);
-        return;
-      }
-    } catch (mlErr) {
-      const mlErrorMsg = mlErr instanceof Error ? mlErr.message : String(mlErr);
-      console.error("[email] MailerLite Campaign API failed:", mlErrorMsg);
-      // Kasta felet med mer info så att vi ser vad som gick fel
-      throw new Error(`MailerLite failed: ${mlErrorMsg}`);
+      const result = await resendResponse.json() as { id?: string };
+      console.log("[email] ✅ Sent successfully via Resend:", subject, "to", to.email, "id:", result.id);
+      return;
+    } catch (resendErr) {
+      console.error("[email] Resend failed:", resendErr);
+      // Fortsätt till MailChannels fallback
     }
-  } else {
-    const errorMsg = "MAILERLITE_API_KEY not set, skipping MailerLite and trying MailChannels";
-    console.warn("[email]", errorMsg);
-    // Om MAILERLITE_API_KEY saknas, hoppa inte över - försök inte MailChannels heller
-    throw new Error(errorMsg);
   }
   
-  // Fallback: MailChannels (kräver verifierad domän och DNS-poster)
+  // Lösning 2: MailChannels (kräver verifierad domän med _mailchannels TXT-post)
   try {
     const plain = html
       .replace(/<style[\s\S]*?<\/style>/gi, "")
