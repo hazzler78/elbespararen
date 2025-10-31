@@ -35,13 +35,52 @@ function isEmailConfigured(): boolean {
 }
 
 export async function sendEmail(subject: string, html: string, to: EmailRecipient): Promise<void> {
-  if (!isEmailConfigured()) {
-    console.warn("[email] MailerLite not configured; skipping sendEmail");
+  // Primary transport: MailChannels (Cloudflare-native transactional email)
+  try {
+    const { MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+    const plain = html
+      .replace(/<style[\s\S]*?<\/style>/gi, "")
+      .replace(/<script[\s\S]*?<\/script>/gi, "")
+      .replace(/<[^>]+>/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const mcResponse = await fetch("https://api.mailchannels.net/tx/v1/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        personalizations: [
+          {
+            to: [{ email: to.email, name: to.name || to.email }]
+          }
+        ],
+        from: { email: MAIL_FROM, name: MAIL_FROM_NAME },
+        subject,
+        content: [
+          { type: "text/plain", value: plain || subject },
+          { type: "text/html", value: html }
+        ]
+      })
+    });
+
+    if (!mcResponse.ok) {
+      const txt = await mcResponse.text();
+      throw new Error(`MailChannels send failed: ${mcResponse.status} ${txt}`);
+    }
+
+    console.log("[email] Sent via MailChannels:", subject, "to", to.email);
     return;
+  } catch (mcErr) {
+    console.error("[email] MailChannels error:", mcErr);
   }
 
+  // Fallback transport: MailerLite (only if account supports transactional send)
   try {
     const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+    if (!MAILERLITE_API_KEY) {
+      console.warn("[email] No MailerLite API key; skipping ML fallback");
+      return;
+    }
     const plain = html
       .replace(/<style[\s\S]*?<\/style>/gi, "")
       .replace(/<script[\s\S]*?<\/script>/gi, "")
@@ -56,40 +95,22 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         Authorization: `Bearer ${MAILERLITE_API_KEY}`
       },
       body: JSON.stringify({
-        from: {
-          email: MAIL_FROM,
-          name: MAIL_FROM_NAME
-        },
-        to: [
-          {
-            email: to.email,
-            name: to.name || to.email
-          }
-        ],
+        from: { email: MAIL_FROM, name: MAIL_FROM_NAME },
+        to: [{ email: to.email, name: to.name || to.email }],
         subject,
         content: [
-          {
-            type: "text/html",
-            value: html
-          },
-          {
-            type: "text/plain",
-            value: plain || subject
-          }
+          { type: "text/html", value: html },
+          { type: "text/plain", value: plain || subject }
         ]
       })
     });
-
     const raw = await response.text();
     if (!response.ok) {
       throw new Error(`MailerLite send failed: ${response.status} ${raw}`);
     }
-
-    let parsed: unknown = undefined;
-    try { parsed = raw ? JSON.parse(raw) : undefined; } catch {}
-    console.log("[email] Sent:", subject, "to", to.email, "response:", parsed ?? raw ?? null);
-  } catch (error) {
-    console.error("[email] sendEmail error:", error);
+    console.log("[email] Sent via MailerLite:", subject, "to", to.email);
+  } catch (mlErr) {
+    console.error("[email] sendEmail error:", mlErr);
   }
 }
 
