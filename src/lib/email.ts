@@ -59,27 +59,22 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         console.log("[email] Subscriber may already exist, continuing...");
       }
       
-      // MailerLite Campaign API: emails är array av arrayer, där varje inre array har objekt med email, subject, from_name, from
+      // MailerLite Campaign API: Använd groups istället för emails för transactional emails
+      // Först se till att mottagaren är i gruppen (redan gjort ovan)
+      // Skapa kampanj som skickas till gruppen
+      if (!receiptsGroup) {
+        throw new Error("MAILERLITE_GROUP_RECEIPTS must be configured for transactional emails");
+      }
+      
       const campaignPayload: Record<string, unknown> = {
         name: `Orderbekräftelse - ${Date.now()}`,
         type: "regular",
+        subject: subject,
+        from_name: MAIL_FROM_NAME,
+        from: MAIL_FROM,
         content: html,
-        emails: [
-          [  // Array av arrayer
-            {
-              email: to.email,
-              subject: subject,
-              from_name: MAIL_FROM_NAME,
-              from: MAIL_FROM
-            }
-          ]
-        ]
+        groups: [receiptsGroup]  // Skicka till gruppen där mottagaren finns
       };
-      
-      // Lägg till groups om receiptsGroup finns (för tracking)
-      if (receiptsGroup) {
-        campaignPayload.groups = [receiptsGroup];
-      }
       
       // Skapa kampanjen
       const createResponse = await fetch("https://connect.mailerlite.com/api/campaigns", {
@@ -111,16 +106,7 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
             Authorization: `Bearer ${MAILERLITE_API_KEY}`
           },
           body: JSON.stringify({
-            emails: [
-              [  // Array av arrayer med email-objekt
-                {
-                  email: to.email,
-                  subject: subject,
-                  from_name: MAIL_FROM_NAME,
-                  from: MAIL_FROM
-                }
-              ]
-            ]
+            groups: [receiptsGroup]  // Skicka till gruppen
           })
         });
         
