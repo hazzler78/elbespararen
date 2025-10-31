@@ -109,9 +109,12 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         return;
       }
     } catch (mlErr) {
-      console.error("[email] MailerLite Campaign API failed:", mlErr);
-      // Fortsätt till MailChannels som fallback
+      const mlErrorMsg = mlErr instanceof Error ? mlErr.message : String(mlErr);
+      console.error("[email] MailerLite Campaign API failed:", mlErrorMsg);
+      // Fortsätt till MailChannels som fallback om MailerLite misslyckas
     }
+  } else {
+    console.warn("[email] MAILERLITE_API_KEY not set, skipping MailerLite and trying MailChannels");
   }
   
   // Fallback: MailChannels (kräver verifierad domän och DNS-poster)
@@ -175,8 +178,8 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
     console.error("[email] MailChannels error:", mcErr);
     const mcErrorMessage = mcErr instanceof Error ? mcErr.message : String(mcErr);
     
-    // Fallback: Försök skicka via MailerLite Campaign API
-    // Detta är en workaround - MailerLite Campaigns kan användas för transactional emails
+    // Detta borde inte hända eftersom MailerLite redan kördes först
+    // Men för säkerhets skull - om MailerLite misslyckade och vi har nått hit:
     try {
       const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
       if (MAILERLITE_API_KEY) {
@@ -257,12 +260,12 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
       console.error("[email] MailerLite fallback also failed:", mlErr);
     }
     
-    // Både MailChannels och MailerLite misslyckades
+    // Både MailerLite och MailChannels misslyckades
     throw new Error(`Email send failed. MailChannels error: ${mcErrorMessage}. Please check configuration.`);
   }
 
-  // Detta borde inte nås
-  throw new Error(`Email send failed via MailChannels. No fallback available. Please check MailChannels configuration and SPF/DMARC records for ${MAIL_FROM}`);
+  // Detta borde inte nås - betyder att varken MailerLite eller MailChannels kördes
+  throw new Error(`Email send failed. No email service available. Please check MAILERLITE_API_KEY configuration.`);
 }
 
 export async function addToNewsletter(recipient: EmailRecipient, groupId?: string): Promise<void> {
