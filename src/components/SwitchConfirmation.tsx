@@ -35,9 +35,12 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
           >
             <CheckCircle2 className="w-8 h-8" />
           </motion.div>
-          <h2 className="text-2xl font-bold mb-2">Bytförfrågan skickad!</h2>
+          <h2 className="text-2xl font-bold mb-2">Bytförfrågan skickad! ✉️</h2>
           <p className="text-success-foreground/80">
             Vi har tagit emot din förfrågan om att byta till {newProvider.name}
+          </p>
+          <p className="text-success-foreground/90 mt-2 font-semibold">
+            📧 Kontrollera din e-post för orderbekräftelse!
           </p>
         </div>
 
@@ -54,25 +57,26 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
             </p>
           </div>
 
-          {/* E-postbekräftelse varning */}
-          <div className="bg-gradient-to-br from-primary/10 to-primary/5 border-2 border-primary/20 rounded-xl p-6">
+          {/* E-postbekräftelse varning - EXTRA FRAMTRÄDANDE */}
+          <div className="bg-gradient-to-br from-primary/15 to-primary/8 border-[3px] border-primary/40 rounded-xl p-6 shadow-lg animate-pulse">
             <div className="flex items-start gap-4">
-              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center flex-shrink-0">
-                <Mail className="w-6 h-6 text-primary" />
+              <div className="w-14 h-14 bg-primary/30 rounded-full flex items-center justify-center flex-shrink-0 animate-bounce">
+                <Mail className="w-7 h-7 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-bold text-lg mb-2 text-primary">
-                  Kolla din e-post för orderbekräftelse
+                <h3 className="font-bold text-xl mb-3 text-primary">
+                  📧 Kolla din e-post för orderbekräftelse!
                 </h3>
-                <p className="text-sm text-muted mb-3">
+                <p className="text-base text-gray-700 mb-4 font-medium">
                   Vi har skickat en bekräftelse på din beställning till:
                 </p>
-                <div className="bg-white/60 border border-primary/30 rounded-lg px-4 py-3 mb-3">
-                  <p className="font-semibold text-primary text-base">{customerInfo.email}</p>
+                <div className="bg-white border-2 border-primary/40 rounded-lg px-5 py-4 mb-4 shadow-md">
+                  <p className="font-bold text-primary text-lg">{customerInfo.email}</p>
                 </div>
-                <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-                  <p className="text-xs text-muted leading-relaxed">
-                    <strong className="text-primary">Viktigt:</strong> Kontrollera även din skräppost om du inte ser mailet inom några minuter. 
+                <div className="bg-primary/10 border-2 border-primary/30 rounded-lg p-4">
+                  <p className="text-sm text-gray-700 leading-relaxed">
+                    <strong className="text-primary text-base">⚠️ Viktigt:</strong><br/>
+                    Kontrollera även din <strong>skräppost</strong> om du inte ser mailet inom några minuter. 
                     Mailet innehåller ditt referensnummer och all viktig information om din beställning.
                   </p>
                 </div>
