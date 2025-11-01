@@ -46,24 +46,28 @@ LÄS EXAKTA BELOPP:
 
 EXEMPEL PÅ KORREKT ANALYS:
 
-Exempel 1 - Faktura med flera avgifter:
+Exempel 1 - Faktura med flera avgifter (VIKTIGT: Observera att "Fast påslag" INKLUDERAS):
 Om fakturan visar i en kostnadstabell:
 - Fast månadsavg.: 31.20 kr
 - Medelspotpris, 106 kWh: 5.29 kr
-- Fast påslag, 106 kWh: 21.20 kr
+- Fast påslag, 106 kWh: 21.20 kr  ← OBS: Detta är en EXTRA AVGIFT, inte grundläggande kostnad!
 - Rörliga kostnader, 106 kWh: 4.60 kr
 - Moms 25%: 15.58 kr
 
-Då ska du returnera (INTE medelspotpris eller moms):
+Då ska du returnera (INTE medelspotpris eller moms, MEN INKLUDERA Fast påslag):
 {
   "elhandelCost": 5.29,
   "extraFeesDetailed": [
     {"label": "Fast månadsavg.", "amount": 31.20, "confidence": 0.9},
-    {"label": "Fast påslag", "amount": 21.20, "confidence": 0.9},
+    {"label": "Fast påslag", "amount": 21.20, "confidence": 0.9},  ← KRITISKT: Inkludera detta!
     {"label": "Rörliga kostnader", "amount": 4.60, "confidence": 0.9}
   ],
   "extraFeesTotal": 57.00
 }
+
+VIKTIGT: "Fast påslag" är INTE samma sak som "Medelspotpris". 
+- Medelspotpris = grundläggande energikostnad (elhandelCost) - INKLUDERA INTE i extraFeesDetailed
+- Fast påslag = extra avgift UTÖVER spotpriset - INKLUDERA ALLTID i extraFeesDetailed om det finns!
 
 Exempel 2 - Faktura med månadsavgift och påslag:
 Om fakturan visar:
@@ -85,9 +89,16 @@ KRITISKA REGLER FÖR EXTRA AVGIFTER:
 Extra avgifter är ENDAST avgifter som leverantören lägger på UTÖVER grundläggande energikostnad.
 Extra avgifter är ALLTID mindre än totalAmount och utgör vanligtvis 10-50% av totalAmount.
 
-1. Om du ser "Fast månadsavg.", "Fast månadsavgift", eller "Månadsavgift" i ELHANDELS-sektionen - det är en extra avgift
-2. Om du ser "Fast påslag" i ELHANDELS-sektionen - det är en extra avgift (INTE medelspotpris!)
-3. Om du ser "Rörliga kostnader" i ELHANDELS-sektionen - det är en extra avgift
+PRIORITERADE EXTRA AVGIFTER (MÅSTE INKLUDERAS OM DE FINNS):
+1. "Fast påslag" - Detta är en EXTREM viktig extra avgift som MÅSTE inkluderas om den finns på fakturan!
+   - Sök efter: "Fast påslag", "Fastpåslag", "Påslag" (men INTE "Medelspotpris" eller "Spotpris")
+   - Detta är en avgift som läggs på UTÖVER spotpriset - kunden kan undvika den genom att byta leverantör
+   - Om du ser "Fast påslag" i kostnadstabellen - inkludera den ALLTID i extraFeesDetailed
+   
+2. "Fast månadsavg." / "Månadsavgift" - Om den finns i ELHANDELS-sektionen, inkludera den ALLTID
+3. "Rörliga kostnader" / "Rörligt påslag" - Om den finns i ELHANDELS-sektionen, inkludera den ALLTID
+
+ALDRIG INKLUDERA SOM EXTRA AVGIFTER:
 4. Medelspotpris/Spotpris är ALDRIG en extra avgift - det är grundläggande energikostnad (elhandelCost)
 5. Moms är ALDRIG en extra avgift - ignorera den helt
 6. Elnät är ALDRIG en extra avgift - det är elnatCost
@@ -100,14 +111,17 @@ MATEMATISK VALIDERING (KRITISKT):
 - Om extraFeesTotal > totalAmount, har du misskategoriserat något - börja om!
 - Summera extraFeesDetailed: alla belopp ska adderas till extraFeesTotal
 
-FÖRE SLUTFÄLGEN - Dubbelkolla:
+FÖRE SLUTFÄLGEN - Dubbelkolla (KRITISK CHECKLISTA):
 1. Har jag identifierat totalAmount korrekt från fakturan?
 2. Har jag identifierat elnatCost (oftast större belopp, ~500-600 kr)?
 3. Har jag identifierat elhandelCost (medelspotpris/spotpris)?
-4. Har jag INKLUDERAT Fast månadsavg./Månadsavgift om den finns i ELHANDELS-sektionen?
-5. Har jag INKLUDERAT Fast påslag om det finns i ELHANDELS-sektionen?
+4. ⚠️ KRITISK: Har jag sökt efter "Fast påslag" i kostnadstabellen och INKLUDERAT den om den finns?
+   - "Fast påslag" är en onödig kostnad som kunden kan undvika
+   - Kontrollera VARJE rad i kostnadstabellen efter "Fast påslag" eller "Påslag"
+   - Om den finns men inte är inkluderad, börja om analysen!
+5. Har jag INKLUDERAT Fast månadsavg./Månadsavgift om den finns i ELHANDELS-sektionen?
 6. Har jag INKLUDERAT Rörliga kostnader om de finns i ELHANDELS-sektionen?
-7. Har jag EXKLUDERAT Medelspotpris/Spotpris (det är elhandelCost)?
+7. Har jag EXKLUDERAT Medelspotpris/Spotpris (det är elhandelCost, INTE extra avgift)?
 8. Har jag EXKLUDERAT Moms (det är skatt)?
 9. Har jag EXKLUDERAT Elnät (det är elnatCost)?
 10. Har jag EXKLUDERAT avgifter från andra leverantörer?

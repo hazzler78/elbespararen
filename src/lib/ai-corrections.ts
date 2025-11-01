@@ -554,6 +554,33 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     }
   },
   {
+    name: 'ensure-fast-paaslag-included',
+    description: 'Säkerställer att Fast påslag inkluderas i extra avgifter om det finns på fakturan',
+    condition: (data) => {
+      // Kontrollera om "Fast påslag" saknas i extraFeesDetailed men troligen finns på fakturan
+      // Detta är en säkerhetsregel för att säkerställa att AI:n inte missat det
+      const hasFastPaaslag = data.extraFeesDetailed.some(fee => {
+        const label = fee.label.toLowerCase();
+        return label.includes('fast påslag') || label.includes('fastpåslag') || label === 'påslag';
+      });
+      
+      // Om Fast påslag saknas och fakturan verkar vara från en leverantör som kan ha det,
+      // och extraFeesTotal är relativt låg jämfört med totalAmount, kan det saknas
+      const extraFeesRatio = data.extraFeesTotal / (data.totalAmount || 1);
+      const mightBeMissing = !hasFastPaaslag && extraFeesRatio < 0.3 && data.totalAmount > 50;
+      
+      return mightBeMissing;
+    },
+    correction: (data) => {
+      // Denna regel varnar bara - vi kan inte lägga till avgifter vi inte vet beloppet på
+      // Istället loggar vi en varning så att vi kan se om Fast påslag verkligen saknas
+      console.warn('[AI Corrections] Varning: Fast påslag verkar saknas i extra avgifter. Kontrollera fakturan.');
+      
+      // Returnera data oförändrad - detta är bara en varning
+      return data;
+    }
+  },
+  {
     name: 'cap-extra-fees-to-total',
     description: 'Varnar om extra avgifter överstiger totalAmount (indikerar misskategorisering)',
     condition: (data) => {
