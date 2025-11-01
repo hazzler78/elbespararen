@@ -555,28 +555,72 @@ export const CORRECTION_RULES: CorrectionRule[] = [
   },
   {
     name: 'ensure-fast-paaslag-included',
-    description: 'Säkerställer att Fast påslag inkluderas i extra avgifter om det finns på fakturan',
+    description: 'Lägger till Fast påslag om det saknas men fakturan har mönster som indikerar att det borde finnas',
     condition: (data) => {
-      // Kontrollera om "Fast påslag" saknas i extraFeesDetailed men troligen finns på fakturan
-      // Detta är en säkerhetsregel för att säkerställa att AI:n inte missat det
+      // Kontrollera om "Fast påslag" saknas
       const hasFastPaaslag = data.extraFeesDetailed.some(fee => {
         const label = fee.label.toLowerCase();
-        return label.includes('fast påslag') || label.includes('fastpåslag') || label === 'påslag';
+        return label.includes('fast påslag') || label.includes('fastpåslag') || 
+               (label === 'påslag' && !label.includes('medelspot') && !label.includes('spotpris'));
       });
       
-      // Om Fast påslag saknas och fakturan verkar vara från en leverantör som kan ha det,
-      // och extraFeesTotal är relativt låg jämfört med totalAmount, kan det saknas
-      const extraFeesRatio = data.extraFeesTotal / (data.totalAmount || 1);
-      const mightBeMissing = !hasFastPaaslag && extraFeesRatio < 0.3 && data.totalAmount > 50;
+      // Indikatorer att "Fast påslag" troligen finns på fakturan:
+      // 1. Fakturan har "Fast månadsavg." och/eller "Rörliga kostnader" (vanliga tillsammans med Fast påslag)
+      const hasFastMaanadsavg = data.extraFeesDetailed.some(fee => {
+        const label = fee.label.toLowerCase();
+        return label.includes('fast månadsavg') || label.includes('månadsavgift');
+      });
       
-      return mightBeMissing;
+      const hasRoerligaKostnader = data.extraFeesDetailed.some(fee => {
+        const label = fee.label.toLowerCase();
+        return label.includes('rörliga kostnader') || label.includes('rörligt påslag');
+      });
+      
+      // 2. Matematisk validering: om summan inte stämmer och det finns ett "saknat" belopp
+      const calculatedTotal = data.elnatCost + data.elhandelCost + data.extraFeesTotal;
+      const difference = Math.abs(data.totalAmount - calculatedTotal);
+      const hasMissingAmount = difference > 10 && difference < data.totalAmount * 0.5; // Mellan 10 kr och 50% av total
+      
+      // 3. Om fakturan har mönster som indikerar Fast påslag borde finnas
+      const likelyHasFastPaaslag = (hasFastMaanadsavg || hasRoerligaKostnader) && !hasFastPaaslag;
+      
+      return likelyHasFastPaaslag && hasMissingAmount && data.totalAmount > 50;
     },
     correction: (data) => {
-      // Denna regel varnar bara - vi kan inte lägga till avgifter vi inte vet beloppet på
-      // Istället loggar vi en varning så att vi kan se om Fast påslag verkligen saknas
-      console.warn('[AI Corrections] Varning: Fast påslag verkar saknas i extra avgifter. Kontrollera fakturan.');
+      console.warn('[AI Corrections] Fast påslag saknas men fakturan har mönster som indikerar att det borde finnas. Försöker beräkna saknat belopp.');
       
-      // Returnera data oförändrad - detta är bara en varning
+      // Försök beräkna saknat belopp (möjligt Fast påslag)
+      const calculatedTotal = data.elnatCost + data.elhandelCost + data.extraFeesTotal;
+      const missingAmount = Math.abs(data.totalAmount - calculatedTotal);
+      
+      // Om det saknade beloppet är rimligt (mellan 5-200 kr) och totalAmount inkluderar moms
+      // Försök uppskatta Fast påslag (exkl. moms) genom att dividera med 1.25
+      const estimatedFastPaaslagExclVAT = missingAmount > 5 && missingAmount < 200 
+        ? missingAmount / 1.25  // Dela med moms-faktorn
+        : null;
+      
+      if (estimatedFastPaaslagExclVAT && estimatedFastPaaslagExclVAT > 0) {
+        const fastPaaslagFee = {
+          label: 'Fast påslag',
+          amount: Math.round(estimatedFastPaaslagExclVAT * 100) / 100, // Avrunda till 2 decimaler
+          confidence: 0.7 // Lägre confidence eftersom vi beräknar det
+        };
+        
+        console.warn(`[AI Corrections] Lade till Fast påslag (${fastPaaslagFee.amount} kr) baserat på matematisk beräkning.`);
+        
+        const updatedFees = [...data.extraFeesDetailed, fastPaaslagFee];
+        const updatedTotal = updatedFees.reduce((sum, fee) => sum + fee.amount, 0);
+        
+        return {
+          ...data,
+          extraFeesDetailed: updatedFees,
+          extraFeesTotal: updatedTotal,
+          warnings: [...(data.warnings || []), `Fast påslag (${fastPaaslagFee.amount} kr) lades till baserat på matematisk beräkning - verifiera mot fakturan`]
+        };
+      }
+      
+      // Om vi inte kan beräkna det, logga en varning
+      console.warn('[AI Corrections] Kunde inte beräkna Fast påslag automatiskt. Saknade belopp:', missingAmount);
       return data;
     }
   },
