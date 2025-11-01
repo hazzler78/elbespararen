@@ -4,17 +4,27 @@ import { BillData } from './types';
 export const GENERAL_PROMPT = `
 Du är en expert på att analysera svenska elfakturor från okända leverantörer. Du måste identifiera ALLA extra avgifter som kunden kan undvika genom att byta leverantör.
 
-GRUNDLÄGGANDE REGLER:
+GRUNDLÄGGANDE REGLER (Följ i ordning):
 1. Hitta total belopp att betala (totalAmount) - ofta "Summa Elhandel", "Att betala", "Belopp att betala"
 2. Identifiera elnätskostnad (elnatCost) - oftast större belopp (~500-600 kr), kan vara separerat avsnitt
 3. Identifiera grundläggande energikostnad (elhandelCost) - spotpris/medelspotpris/grundpris
-4. Identifiera ALLA extra avgifter som kunden kan undvika - detta är KRITISKT!
+4. ⚠️ KRITISK STEG: Sök SPECIFIKT efter "Fast påslag" i kostnadstabellen - detta är en extra avgift som ofta missas!
+5. Identifiera ALLA andra extra avgifter som kunden kan undvika - detta är KRITISKT!
 
 EXTRA AVGIFTER (Kundens extra kostnader) - Inkludera ALLA:
-VARIANTER OCH SYNONYmer att känna igen:
-- Månadsavgift / Fast månadsavg. / Månadsavgift elhandel / Fast månadsavgift
-- Påslag / Fast påslag / Fastpåslag / Priskoll påslag
-- Rörliga kostnader / Rörligt påslag / Rörliga avgifter
+
+⚠️ MEST VIKTIGA ATT INTE MISSA (sök efter dessa FÖRST):
+1. "Fast påslag" - HÖGSTA PRIORITET! Sök VARJE gång efter dessa varianter:
+   - "Fast påslag" (mest vanligt)
+   - "Fastpåslag" (utan mellanslag)
+   - "Påslag" (kort variant, men INTE "Medelspotpris" eller "Spotpris")
+   - Kan ofta visas som "Fast påslag, XXX kWh" eller liknande
+   - Detta är EN EXTRA AVGIFT som kunden kan undvika - INKLUDERA ALLTID om det finns!
+
+2. "Fast månadsavg." / "Månadsavgift" - Inkludera alltid om det finns
+3. "Rörliga kostnader" - Inkludera alltid om det finns
+
+ANDRA VANLIGA EXTRA AVGIFTER:
 - Elcertifikat / Elcertifikatavgift
 - Elavtal årsavgift / Årsavgift / Årsavgift elavtal
 - Miljöpaket / Miljöavgift / Miljöpaketavgift
@@ -27,6 +37,7 @@ VARIANTER OCH SYNONYmer att känna igen:
 - Uppdragsavgift / Hanteringsavgift
 
 VIKTIGT: Om du ser en kostnadstabell eller lista med olika kostnadsposter, läs VARJE rad noggrant. 
+BÖRJA med att leta efter "Fast påslag" - det är en av de vanligaste extra avgifterna!
 Extra avgifter kan ha många olika namn - var noga med att identifiera ALLA!
 
 ALDRIG INKLUDERA SOM EXTRA AVGIFTER:
@@ -111,23 +122,39 @@ MATEMATISK VALIDERING (KRITISKT):
 - Om extraFeesTotal > totalAmount, har du misskategoriserat något - börja om!
 - Summera extraFeesDetailed: alla belopp ska adderas till extraFeesTotal
 
-FÖRE SLUTFÄLGEN - Dubbelkolla (KRITISK CHECKLISTA):
+FÖRE SLUTFÄLGEN - Dubbelkolla (KRITISK CHECKLISTA - FÖLJ I ORDNING):
+
+STEG 1-3: Grundläggande identifiering
 1. Har jag identifierat totalAmount korrekt från fakturan?
 2. Har jag identifierat elnatCost (oftast större belopp, ~500-600 kr)?
 3. Har jag identifierat elhandelCost (medelspotpris/spotpris)?
-4. ⚠️ KRITISK: Har jag sökt efter "Fast påslag" i kostnadstabellen och INKLUDERAT den om den finns?
-   - "Fast påslag" är en onödig kostnad som kunden kan undvika
-   - Kontrollera VARJE rad i kostnadstabellen efter "Fast påslag" eller "Påslag"
-   - Om den finns men inte är inkluderad, börja om analysen!
+
+STEG 4: ⚠️ KRITISK KONTROLL - "Fast påslag" (MÅSTE göras varje gång!)
+4. Har jag sökt SPECIFIKT efter "Fast påslag" i kostnadstabellen?
+   - Gå igenom VARJE rad i kostnadstabellen/listan
+   - Leta efter ordet "Fast" följt av "påslag" eller "Påslag" (med eller utan mellanslag)
+   - Om fakturan innehåller en kostnadstabell, läs VARJE rad och kontrollera om någon rad innehåller "Fast påslag"
+   - "Fast påslag" kan stå ensamt eller tillsammans med kWh-belopp, t.ex. "Fast påslag, 106 kWh: 21.20 kr"
+   - Om jag hittar "Fast påslag" - är det INKLUDERAT i extraFeesDetailed?
+   - Om "Fast påslag" finns på fakturan men INTE i min lista över extra avgifter - JAG HAR GJORT ETT FEL!
+   - Om "Fast påslag" saknas, gå tillbaka och sök igen i kostnadstabellen!
+
+STEG 5-6: Andra extra avgifter
 5. Har jag INKLUDERAT Fast månadsavg./Månadsavgift om den finns i ELHANDELS-sektionen?
 6. Har jag INKLUDERAT Rörliga kostnader om de finns i ELHANDELS-sektionen?
+
+STEG 7-10: Exkluderingskontroller
 7. Har jag EXKLUDERAT Medelspotpris/Spotpris (det är elhandelCost, INTE extra avgift)?
 8. Har jag EXKLUDERAT Moms (det är skatt)?
 9. Har jag EXKLUDERAT Elnät (det är elnatCost)?
 10. Har jag EXKLUDERAT avgifter från andra leverantörer?
+
+STEG 11-13: Validering
 11. Matchar extraFeesTotal summan av alla extraFeesDetailed belopp?
 12. Är extraFeesTotal < totalAmount? (om inte, har jag misskategoriserat något!)
 13. Är (elnatCost + elhandelCost + extraFeesTotal) ≈ totalAmount? (med tolerans för moms)
+
+SLUTKONTROLL: Om jag INTE är 100% säker på att jag har sökt efter "Fast påslag" i VARJE kostnadstabell på fakturan, börja om analysen från början!
 
 SVARA MED JSON:
 {
@@ -169,7 +196,17 @@ export class GeneralAI {
               content: [
                 {
                   type: 'text',
-                  text: 'Analysera denna svenska elfaktura noggrant. Identifiera ALLA kostnader och hitta ALLA extra avgifter som kunden kan undvika genom att byta leverantör. Läs VARJE rad i kostnadstabellen/listan.'
+                  text: `Analysera denna svenska elfaktura noggrant. Identifiera ALLA kostnader och hitta ALLA extra avgifter som kunden kan undvika genom att byta leverantör. 
+
+KRITISK INSTRUKTION: Sök SPECIFIKT efter "Fast påslag" i kostnadstabellen. Detta är en vanlig extra avgift som MÅSTE inkluderas om den finns. Läs VARJE rad i kostnadstabellen/listan och kontrollera att "Fast påslag" inte missas.
+
+Steg för steg:
+1. Identifiera totalAmount (belopp att betala)
+2. Identifiera elnatCost (elnätskostnad)
+3. Identifiera elhandelCost (medelspotpris/spotpris)
+4. SÖK SPECIFIKT efter "Fast påslag" i kostnadstabellen - detta är en extra avgift!
+5. Identifiera alla andra extra avgifter
+6. Dubbelkolla att "Fast påslag" är inkluderad om den finns på fakturan`
                 },
                 {
                   type: 'image_url',
