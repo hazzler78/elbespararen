@@ -369,12 +369,16 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       };
 
       // Spara till databas via API
+      // Inkludera selectedContract för fastpris så att rätt pris och avtalstid skickas i e-post
       const response = await fetch("/api/switch-requests", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(switchRequest),
+        body: JSON.stringify({
+          ...switchRequest,
+          selectedContract: selectedContract || undefined // Skicka med valt fastpris-avtal
+        }),
       });
 
       const result = await response.json() as ApiResponse<SwitchRequest>;

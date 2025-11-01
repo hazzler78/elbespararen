@@ -41,6 +41,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Hämta selectedContract om det finns (för fastpris)
+    const selectedContract = body.selectedContract as import("@/lib/types").ContractAlternative | undefined;
+
     // Skapa ny switch request via databas
     const switchRequest = await db.createSwitchRequest({
       customerInfo: body.customerInfo as import("@/lib/types").CustomerInfo,
@@ -112,11 +115,38 @@ export async function POST(request: NextRequest) {
           console.warn("[switch-requests] Could not fetch price details for email:", priceErr);
         }
       } else if (contractType === "fastpris") {
-        // För fastpris: använd provider.energyPrice och monthlyFee
-        priceInfo = {
-          fixedPriceOrePerKwh: switchRequest.newProvider.energyPrice ? Math.round(switchRequest.newProvider.energyPrice * 100) : undefined, // Konvertera kr/kWh till öre/kWh
-          monthlyFeeKr: switchRequest.newProvider.monthlyFee
-        };
+        // För fastpris: använd selectedContract om det finns, annars fallback till provider-data
+        const contract = selectedContract;
+        if (contract) {
+          console.log("[switch-requests] Using selectedContract for fastpris:", {
+            namn: contract.namn,
+            fastpris: contract.fastpris,
+            månadskostnad: contract.månadskostnad,
+            bindningstid: contract.bindningstid
+          });
+          // Använd pris och månadskostnad från valt avtalsalternativ
+          priceInfo = {
+            fixedPriceOrePerKwh: contract.fastpris ? Math.round(contract.fastpris * 100) : undefined, // Konvertera kr/kWh till öre/kWh
+            monthlyFeeKr: contract.månadskostnad !== undefined ? contract.månadskostnad : switchRequest.newProvider.monthlyFee
+          };
+          // Använd bindningstid från valt avtalsalternativ för validityText
+          if (contract.bindningstid) {
+            priceInfo.validityText = `${contract.bindningstid} månader`;
+          } else if (switchRequest.newProvider.contractLength) {
+            priceInfo.validityText = `${switchRequest.newProvider.contractLength} månader`;
+          }
+        } else {
+          console.log("[switch-requests] No selectedContract, using provider defaults for fastpris");
+          // Fallback till provider-data om selectedContract saknas
+          priceInfo = {
+            fixedPriceOrePerKwh: switchRequest.newProvider.energyPrice ? Math.round(switchRequest.newProvider.energyPrice * 100) : undefined,
+            monthlyFeeKr: switchRequest.newProvider.monthlyFee,
+            validityText: switchRequest.newProvider.contractLength 
+              ? `${switchRequest.newProvider.contractLength} månader` 
+              : undefined
+          };
+        }
+        console.log("[switch-requests] Fastpris priceInfo for email:", priceInfo);
       }
       
       await sendOrderConfirmationEmail({
@@ -128,9 +158,6 @@ export async function POST(request: NextRequest) {
         contractType: contractType,
         priceArea: priceArea,
         ...priceInfo,
-        validityText: contractType === "fastpris" && switchRequest.newProvider.contractLength 
-          ? `${switchRequest.newProvider.contractLength} månader` 
-          : undefined,
         brand: "Elchef.se"
       });
       
