@@ -53,7 +53,7 @@ export const APP_CONFIG = {
   maxFileSize: 10 * 1024 * 1024, // 10MB
   acceptedFileTypes: ["image/jpeg", "image/png", "image/webp"] as string[],
   minConfidenceThreshold: 0.7,
-  contactEmail: "kontakt@elbespararen.se",
+  contactEmail: "info@elchef.se",
   contactPhone: "+46 70 123 45 67"
 } as const;
 

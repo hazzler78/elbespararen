@@ -112,7 +112,7 @@ export default function ContactPage() {
                 <Mail className="w-6 h-6 text-primary" />
               </div>
               <h3 className="font-semibold text-lg mb-2">E-post</h3>
-              <p className="text-muted mb-2">support@elbespararen.se</p>
+              <p className="text-muted mb-2">info@elchef.se</p>
               <p className="text-sm text-muted">Svar inom 24 timmar</p>
             </motion.div>
 

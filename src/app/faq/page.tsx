@@ -79,7 +79,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "Kan jag begära att min faktura raderas från AI-träningsdata?",
-    answer: "Ja, absolut! Du har alltid rätt att begära radering av din faktura från våra träningsdata. Skicka ett e-post till privacy@elbespararen.se så hjälper vi dig omedelbart. Vi respekterar ditt val och raderar all data som kan kopplas till dig.",
+    answer: "Ja, absolut! Du har alltid rätt att begära radering av din faktura från våra träningsdata. Skicka ett e-post till info@elchef.se så hjälper vi dig omedelbart. Vi respekterar ditt val och raderar all data som kan kopplas till dig.",
     category: "Säkerhet & Integritet"
   }
 ];
@@ -228,7 +228,7 @@ export default function FAQPage() {
                 Kontakta support
               </Link>
               <a
-                href="mailto:support@elbespararen.se"
+                href="mailto:info@elchef.se"
                 className="px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors font-semibold"
               >
                 Skicka e-post

@@ -124,7 +124,7 @@ export default function PrivacyPage() {
                   Du har alltid rätt att begära radering av din faktura från våra träningsdata. 
                   Kontakta oss så hjälper vi dig omedelbart.
                 </p>
-                <a href="mailto:privacy@elbespararen.se" className="text-sm text-primary hover:underline">
+                <a href="mailto:info@elchef.se" className="text-sm text-primary hover:underline">
                   Begär radering av min faktura →
                 </a>
               </div>
@@ -219,7 +219,7 @@ export default function PrivacyPage() {
 
               <p className="text-muted mb-6 leading-relaxed">
                 <strong>Kontakta oss:</strong> För att utöva dina rättigheter, skicka ett e-postmeddelande till 
-                <a href="mailto:privacy@elbespararen.se" className="text-primary hover:underline"> privacy@elbespararen.se</a>
+                <a href="mailto:info@elchef.se" className="text-primary hover:underline"> info@elchef.se</a>
               </p>
             </div>
 
@@ -232,7 +232,7 @@ export default function PrivacyPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href="mailto:privacy@elbespararen.se"
+                  href="mailto:info@elchef.se"
                   className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold text-center"
                 >
                   Skicka e-post
