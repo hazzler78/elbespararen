@@ -102,6 +102,69 @@ export default function SwitchRequestsAdminPage() {
     }
   };
 
+  const deleteSwitchRequest = async (id: string) => {
+    if (!confirm(`Är du säker på att du vill ta bort denna bytförfrågan? (ID: ${id})\n\nDetta kan inte ångras!`)) {
+      return;
+    }
+
+    try {
+      console.log('[Admin] Deleting switch request:', id);
+      const response = await fetch(`/api/switch-requests?id=${encodeURIComponent(id)}`, {
+        method: "DELETE",
+      });
+
+      const result = await response.json() as ApiResponse<{ message?: string }>;
+      
+      if (result.success) {
+        setSwitchRequests(switchRequests.filter(req => req.id !== id));
+        alert('✅ Bytförfrågan borttagen!');
+      } else {
+        alert('❌ Kunde inte ta bort bytförfrågan: ' + (result.error || 'Okänt fel'));
+      }
+    } catch (error) {
+      console.error("Error deleting switch request:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
+  };
+
+  const deleteSelectedSwitchRequests = async () => {
+    if (selectedRequests.size === 0) {
+      alert('Välj minst en förfrågan att ta bort');
+      return;
+    }
+
+    if (!confirm(`Är du säker på att du vill ta bort ${selectedRequests.size} bytförfrågningar?\n\nDetta kan inte ångras!`)) {
+      return;
+    }
+
+    try {
+      const deletePromises = Array.from(selectedRequests).map(id => 
+        fetch(`/api/switch-requests?id=${encodeURIComponent(id)}`, {
+          method: "DELETE",
+        })
+      );
+
+      const results = await Promise.all(deletePromises);
+      const jsonResults = await Promise.all(results.map(r => r.json())) as ApiResponse<{ message?: string }>[];
+      
+      const successCount = jsonResults.filter(r => r.success).length;
+      const failedCount = jsonResults.length - successCount;
+
+      // Uppdatera listan
+      setSwitchRequests(switchRequests.filter(req => !selectedRequests.has(req.id)));
+      setSelectedRequests(new Set());
+
+      if (failedCount === 0) {
+        alert(`✅ ${successCount} bytförfrågningar borttagna!`);
+      } else {
+        alert(`⚠️ ${successCount} borttagna, ${failedCount} misslyckades`);
+      }
+    } catch (error) {
+      console.error("Error deleting switch requests:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
+  };
+
   const toggleRequestSelection = (id: string) => {
     setSelectedRequests(prev => {
       const newSet = new Set(prev);
@@ -500,6 +563,13 @@ export default function SwitchRequestsAdminPage() {
                   >
                     Exportera till CSV ({selectedRequests.size})
                   </button>
+                  <button
+                    onClick={deleteSelectedSwitchRequests}
+                    disabled={selectedRequests.size === 0}
+                    className="px-3 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700 transition-colors disabled:bg-gray-400 disabled:cursor-not-allowed"
+                  >
+                    Ta bort valda ({selectedRequests.size})
+                  </button>
                 </div>
                 
                 {selectedRequests.size > 0 && (
@@ -664,6 +734,12 @@ export default function SwitchRequestsAdminPage() {
                                 Avbryt
                               </button>
                             )}
+                            <button
+                              onClick={() => deleteSwitchRequest(request.id)}
+                              className="px-3 py-1 bg-red-800 text-white text-sm rounded-lg hover:bg-red-900 transition-colors"
+                            >
+                              Ta bort
+                            </button>
                           </div>
                         </div>
 
