@@ -10,7 +10,6 @@ import ResultSummary from "@/components/ResultSummary";
 import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
-import StickyCTA from "@/components/StickyCTA";
 import ProviderComparison from "@/components/ProviderComparison";
 import ChatWidget from "@/components/ChatWidget";
 
@@ -230,10 +229,6 @@ export default function ResultPage() {
         </div>
       </main>
 
-      {/* Sticky CTA */}
-      {!showContactForm && (
-        <StickyCTA onClick={handleScrollToContact} text="Byt och spara" />
-      )}
 
       {/* Chat Widget */}
       <ChatWidget billData={billData || undefined} />

@@ -598,38 +598,34 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   </div>
                   
                   <div className="mt-6 space-y-3">
-                    <div className="flex items-start gap-3">
-                      <input
-                        type="checkbox"
-                        id="consentData"
-                        checked={formData.consentToDataProcessing}
-                        onChange={(e) => updateFormData('consentToDataProcessing', e.target.checked)}
-                        className="mt-1"
-                        required
-                      />
-                      <label htmlFor="consentData" className="text-sm">
-                        Jag samtycker till att mina personuppgifter behandlas för att genomföra elavtalet *
-                      </label>
-                    </div>
-                  {(() => {
-                    const termsUrl = getTermsUrl(provider?.name);
-                    if (!termsUrl) return null;
-                    return (
-                      <div className="flex items-start gap-3">
-                        <input
-                          type="checkbox"
-                          id="consentTerms"
-                          checked={formData.consentToTerms}
-                          onChange={(e) => updateFormData('consentToTerms', e.target.checked)}
-                          className="mt-1"
-                          required
-                        />
-                        <label htmlFor="consentTerms" className="text-sm">
-                          Jag godkänner <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">avtalsvillkoren</a> för {provider?.name} *
-                        </label>
-                      </div>
-                    );
-                  })()}
+                    {(() => {
+                      const termsUrl = getTermsUrl(provider?.name);
+                      const isConsentChecked = formData.consentToDataProcessing && (termsUrl ? formData.consentToTerms : true);
+                      
+                      return (
+                        <div className="flex items-start gap-3">
+                          <input
+                            type="checkbox"
+                            id="consentCombined"
+                            checked={isConsentChecked}
+                            onChange={(e) => {
+                              const checked = e.target.checked;
+                              updateFormData('consentToDataProcessing', checked);
+                              if (termsUrl) {
+                                updateFormData('consentToTerms', checked);
+                              }
+                            }}
+                            className="mt-1"
+                            required
+                          />
+                          <label htmlFor="consentCombined" className="text-sm">
+                            Jag samtycker till att mina personuppgifter behandlas för att genomföra elavtalet{termsUrl ? (
+                              <> och godkänner <a href={termsUrl} target="_blank" rel="noopener noreferrer" className="underline text-primary hover:text-primary/80">avtalsvillkoren</a> för {provider?.name}</>
+                            ) : null} *
+                          </label>
+                        </div>
+                      );
+                    })()}
                     <div className="flex items-start gap-3">
                       <input
                         type="checkbox"
