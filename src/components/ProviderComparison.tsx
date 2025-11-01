@@ -264,7 +264,11 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
                 inputMode="numeric"
                 min={0}
                 placeholder="kWh/månad"
-                className="w-32 px-3 py-1 border border-gray-300 rounded-md focus:ring-2 focus:ring-primary focus:border-transparent text-sm text-gray-900"
+                className="w-32 px-3 py-1 border-2 rounded-md focus:ring-2 focus:ring-primary focus:border-primary text-sm text-gray-900"
+                style={{
+                  borderColor: 'rgb(0, 135, 90)',
+                  animation: 'pulse-border 2s ease-in-out infinite'
+                }}
                 value={enteredKwh === null ? '' : enteredKwh}
                 onChange={(e) => {
                   const val = e.target.value;
