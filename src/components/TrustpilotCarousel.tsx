@@ -114,15 +114,6 @@ const placeholderReviews: TrustpilotReview[] = [
   },
   {
     id: "11",
-    name: "Carl H Soderstrom",
-    rating: 5,
-    reviewText: "Tack elchef.se då har Pappa och min bror bytat från Vattenfall som tar månadsavgift dyra påslag extra avgifter på elräkningen. Sparar 1000 tals kr.",
-    fullReviewText: "Tack elchef.se då har Pappa och min bror bytat från Vattenfall som tar månadsavgift dyra påslag extra avgifter på elräkningen. Sparar 1000 tals kr. Aldrig mer Vattenfall inte undra på att Anna Borg Vattenfall lämnade.",
-    image: "",
-    date: "2024-04-20"
-  },
-  {
-    id: "12",
     name: "Dennis",
     rating: 5,
     reviewText: "Fick snabb och effektiv hjälp. 10/10 service och behandling. Kommer rekommendera honom till alla mina vänner",
@@ -131,7 +122,7 @@ const placeholderReviews: TrustpilotReview[] = [
     date: "2024-07-11"
   },
   {
-    id: "13",
+    id: "12",
     name: "Joakim Bergendahl",
     rating: 5,
     reviewText: "Bästa nånsin. Jobbar i Norge och sparar mellan 3000-5000NOK med chefens elavtal! 👍",
@@ -140,7 +131,7 @@ const placeholderReviews: TrustpilotReview[] = [
     date: "2024-07-09"
   },
   {
-    id: "14",
+    id: "13",
     name: "Alex",
     rating: 5,
     reviewText: "Jag blev min egen elchef och min första månad, maj 2025, så fick jag en faktura på 290kr. Innan betalade jag närmare 1000kr för samma mäng el av Vattenfall.",
@@ -149,7 +140,7 @@ const placeholderReviews: TrustpilotReview[] = [
     date: "2024-06-15"
   },
   {
-    id: "15",
+    id: "14",
     name: "Mathias Nilsson",
     rating: 5,
     reviewText: "Min Pappa hade Eon betala månadsavgift påslag påslag sparar nu ca 5000 kr på 1 år.",
