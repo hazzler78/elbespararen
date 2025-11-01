@@ -385,7 +385,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
       
       setCompletedSwitchRequest(result.data);
       setShowConfirmation(true);
-      onComplete(result.data);
+      // Inte anropa onComplete här - vänta tills användaren stänger bekräftelsedialogen
     } catch (error) {
       console.error("Error submitting switch request:", error);
     } finally {
@@ -419,6 +419,8 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
         switchRequest={completedSwitchRequest}
         onClose={() => {
           setShowConfirmation(false);
+          // Anropa onComplete när användaren stänger bekräftelsedialogen
+          onComplete(completedSwitchRequest);
           onClose();
         }}
       />

@@ -193,8 +193,8 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
 
   const handleSwitchComplete = (switchRequest: SwitchRequest) => {
     console.log("Switch request completed:", switchRequest);
+    // Stäng SwitchProcess när användaren stängt bekräftelsedialogen
     setShowSwitchProcess(false);
-    // TODO: Visa bekräftelse eller redirect
   };
 
   const handleContractChange = (providerId: string, contractIndex: number) => {
