@@ -87,7 +87,7 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
     }
   }
   
-  // Lösning 2: MailChannels (kräver verifierad domän med _mailchannels TXT-post)
+  // Lösning 2: MailChannels (kräver MailChannels-konto och verifierad domän - kan aktiveras senare)
   try {
     const plain = html
       .replace(/<style[\s\S]*?<\/style>/gi, "")
