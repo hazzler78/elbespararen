@@ -59,13 +59,13 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
 
           {/* E-postbekräftelse varning - EXTRA FRAMTRÄDANDE */}
           <div className="bg-gradient-to-br from-primary/15 to-primary/8 border-[3px] border-primary/40 rounded-xl p-6 shadow-lg animate-pulse">
-            <div className="flex items-start gap-4">
-              <div className="w-14 h-14 bg-primary/30 rounded-full flex items-center justify-center flex-shrink-0 animate-bounce">
+            <div className="flex flex-col items-center text-center">
+              <div className="w-14 h-14 bg-primary/30 rounded-full flex items-center justify-center flex-shrink-0 animate-bounce mb-3">
                 <Mail className="w-7 h-7 text-primary" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 w-full">
                 <h3 className="font-bold text-xl mb-3 text-primary">
-                  📧 Kolla din e-post för orderbekräftelse!
+                  Kolla din e-post för orderbekräftelse!
                 </h3>
                 <p className="text-base text-gray-700 mb-4 font-medium">
                   Vi har skickat en bekräftelse på din beställning till:

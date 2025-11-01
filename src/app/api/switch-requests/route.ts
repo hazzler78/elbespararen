@@ -126,8 +126,9 @@ export async function POST(request: NextRequest) {
             bindningstid: contract.bindningstid
           });
           // Använd pris och månadskostnad från valt avtalsalternativ
+          // Behåll exakt precision (samma som formatPricePerKwh), ingen avrundning
           priceInfo = {
-            fixedPriceOrePerKwh: contract.fastpris ? Math.round(contract.fastpris * 100) : undefined, // Konvertera kr/kWh till öre/kWh
+            fixedPriceOrePerKwh: contract.fastpris ? Number((contract.fastpris * 100).toFixed(2)) : undefined, // Konvertera kr/kWh till öre/kWh med exakt 2 decimaler
             monthlyFeeKr: contract.månadskostnad !== undefined ? contract.månadskostnad : switchRequest.newProvider.monthlyFee
           };
           // Använd bindningstid från valt avtalsalternativ för validityText
@@ -139,8 +140,9 @@ export async function POST(request: NextRequest) {
         } else {
           console.log("[switch-requests] No selectedContract, using provider defaults for fastpris");
           // Fallback till provider-data om selectedContract saknas
+          // Behåll exakt precision (samma som formatPricePerKwh), ingen avrundning
           priceInfo = {
-            fixedPriceOrePerKwh: switchRequest.newProvider.energyPrice ? Math.round(switchRequest.newProvider.energyPrice * 100) : undefined,
+            fixedPriceOrePerKwh: switchRequest.newProvider.energyPrice ? Number((switchRequest.newProvider.energyPrice * 100).toFixed(2)) : undefined,
             monthlyFeeKr: switchRequest.newProvider.monthlyFee,
             validityText: switchRequest.newProvider.contractLength 
               ? `${switchRequest.newProvider.contractLength} månader` 
