@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
         discountOrePerKwh?: number;
         fixedPriceOrePerKwh?: number;
         monthlyFeeKr?: number;
+        validityText?: string;
       } = {};
       
       // För rörligt avtal: hämta prisinformation från API
