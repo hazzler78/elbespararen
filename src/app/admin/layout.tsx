@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { 
@@ -12,8 +12,11 @@ import {
   Menu, 
   X,
   Settings,
-  BarChart3
+  BarChart3,
+  Lock
 } from "lucide-react";
+
+const ADMIN_PASSWORD = "grodan2025";
 
 const navigation = [
   {
@@ -48,7 +51,90 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const pathname = usePathname();
+
+  useEffect(() => {
+    // Check if user is already authenticated from sessionStorage
+    const authStatus = sessionStorage.getItem("admin_authenticated");
+    if (authStatus === "true") {
+      setIsAuthenticated(true);
+    } else {
+      setIsAuthenticated(false);
+    }
+  }, []);
+
+  const handlePasswordSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    
+    if (password === ADMIN_PASSWORD) {
+      setIsAuthenticated(true);
+      sessionStorage.setItem("admin_authenticated", "true");
+      setPassword("");
+    } else {
+      setError("Fel lösenord. Försök igen.");
+      setPassword("");
+    }
+  };
+
+  // Show password prompt if not authenticated
+  if (isAuthenticated === false) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center px-4">
+        <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-8">
+          <div className="flex flex-col items-center mb-6">
+            <div className="bg-blue-100 rounded-full p-3 mb-4">
+              <Lock className="w-8 h-8 text-blue-600" />
+            </div>
+            <h1 className="text-2xl font-bold text-gray-900 mb-2">Admin Åtkomst</h1>
+            <p className="text-gray-600 text-center">Ange lösenord för att komma åt admin-panelen</p>
+          </div>
+          
+          <form onSubmit={handlePasswordSubmit} className="space-y-4">
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
+                Lösenord
+              </label>
+              <input
+                type="password"
+                id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ange lösenord"
+                autoFocus
+              />
+            </div>
+            
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                {error}
+              </div>
+            )}
+            
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+            >
+              Logga in
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-gray-600">Laddar...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
