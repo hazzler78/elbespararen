@@ -15,6 +15,7 @@ import { ElectricityProvider, BillData, SavingsCalculation, SwitchRequest, Custo
 import { formatPricePerKwh } from "@/lib/calculations";
 import SwitchConfirmation from "./SwitchConfirmation";
 import { Info } from "lucide-react";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 interface SwitchProcessProps {
   provider: ElectricityProvider;
@@ -76,6 +77,11 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     vat?: number;
   }>(null);
   const [spotPriceKrPerKwh, setSpotPriceKrPerKwh] = useState<number | null>(null);
+
+  // Track switch request started when component mounts
+  useEffect(() => {
+    AnalyticsEvents.switchRequestStarted();
+  }, []);
 
   // Session timeout - 30 minuter
   useEffect(() => {
@@ -387,11 +393,15 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
         throw new Error(result.error || "Kunde inte skapa bytförfrågan");
       }
       
+      // Track successful switch request completion
+      AnalyticsEvents.switchRequestCompleted(provider?.name);
+      
       setCompletedSwitchRequest(result.data);
       setShowConfirmation(true);
       // Inte anropa onComplete här - vänta tills användaren stänger bekräftelsedialogen
     } catch (error) {
       console.error("Error submitting switch request:", error);
+      AnalyticsEvents.errorOccurred('switch_request_failed');
     } finally {
       setIsSubmitting(false);
     }

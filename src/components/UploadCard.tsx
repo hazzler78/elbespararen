@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
 import PostalCodeInput from "./PostalCodeInput";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -86,10 +87,18 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         priceArea: priceArea || undefined
       };
 
+      // Track successful bill upload
+      AnalyticsEvents.billUploaded(true);
+      
       onUploadSuccess(enhancedData);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Något gick fel";
       setError(errorMessage);
+      
+      // Track failed bill upload
+      AnalyticsEvents.billUploaded(false);
+      AnalyticsEvents.errorOccurred('bill_upload_failed');
+      
       onUploadError?.(errorMessage);
     } finally {
       setIsUploading(false);

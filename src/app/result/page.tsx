@@ -12,6 +12,7 @@ import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import ProviderComparison from "@/components/ProviderComparison";
 import ChatWidget from "@/components/ChatWidget";
+import { AnalyticsEvents, trackPageView } from "@/lib/analytics";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -21,6 +22,12 @@ export default function ResultPage() {
   const contactFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Track page view
+    trackPageView('/result');
+    
+    // Track provider comparison viewed
+    AnalyticsEvents.providerComparisonViewed();
+    
     // Hämta från sessionStorage
     if (typeof window !== "undefined") {
       const stored = sessionStorage.getItem("billData");
@@ -50,6 +57,7 @@ export default function ResultPage() {
   const handleScrollToContact = () => {
     contactFormRef.current?.scrollIntoView({ behavior: "smooth" });
     setShowContactForm(true);
+    AnalyticsEvents.contactFormOpened();
   };
 
   if (!billData || !savings) {
@@ -210,8 +218,17 @@ export default function ResultPage() {
 
                     const result = await response.json();
                     console.log("Lead skapad:", result);
+                    
+                    // Track lead creation
+                    AnalyticsEvents.leadCreated();
+                    
+                    // Track newsletter subscription if applicable
+                    if (data.subscribeNewsletter) {
+                      AnalyticsEvents.newsletterSubscribed();
+                    }
                   } catch (error) {
                     console.error("Fel vid skapande av lead:", error);
+                    AnalyticsEvents.errorOccurred('lead_creation_failed');
                     throw error; // Låt ContactForm hantera felet
                   }
                 }}

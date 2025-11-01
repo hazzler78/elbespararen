@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import GoogleAnalytics from "@/components/GoogleAnalytics";
 
 export const metadata: Metadata = {
   title: "Elbespararen – Se din faktura med nya ögon",
@@ -14,6 +15,7 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body className="antialiased">
+        <GoogleAnalytics />
         {children}
       </body>
     </html>
