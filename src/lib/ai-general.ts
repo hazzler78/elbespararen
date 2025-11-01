@@ -2,33 +2,118 @@
 import { BillData } from './types';
 
 export const GENERAL_PROMPT = `
-Du är en expert på att analysera svenska elfakturor från okända leverantörer.
+Du är en expert på att analysera svenska elfakturor från okända leverantörer. Du måste identifiera ALLA extra avgifter som kunden kan undvika genom att byta leverantör.
 
 GRUNDLÄGGANDE REGLER:
-1. Hitta total belopp att betala (totalAmount)
-2. Identifiera elnätskostnad (elnatCost) - oftast större belopp
-3. Identifiera grundläggande energikostnad (elhandelCost) - spotpris/medelspotpris
-4. Identifiera extra avgifter som kunden kan undvika
+1. Hitta total belopp att betala (totalAmount) - ofta "Summa Elhandel", "Att betala", "Belopp att betala"
+2. Identifiera elnätskostnad (elnatCost) - oftast större belopp (~500-600 kr), kan vara separerat avsnitt
+3. Identifiera grundläggande energikostnad (elhandelCost) - spotpris/medelspotpris/grundpris
+4. Identifiera ALLA extra avgifter som kunden kan undvika - detta är KRITISKT!
 
-EXTRA AVGIFTER (Kundens extra kostnader):
-- Elcertifikat, Månadsavgift, Priskollen, Påslag
-- Rörliga kostnader, Fast påslag, Elavtal årsavgift
-- Miljöpaket, Fossilfri, Rabatt, Kampanjrabatt
-- Tillägg, Övriga avgifter, Serviceavgifter
-- Inkludera även 0 kr-avgifter om de är tydligt märkta
+EXTRA AVGIFTER (Kundens extra kostnader) - Inkludera ALLA:
+VARIANTER OCH SYNONYmer att känna igen:
+- Månadsavgift / Fast månadsavg. / Månadsavgift elhandel / Fast månadsavgift
+- Påslag / Fast påslag / Fastpåslag / Priskoll påslag
+- Rörliga kostnader / Rörligt påslag / Rörliga avgifter
+- Elcertifikat / Elcertifikatavgift
+- Elavtal årsavgift / Årsavgift / Årsavgift elavtal
+- Miljöpaket / Miljöavgift / Miljöpaketavgift
+- Fossilfri / Fossilfriavgift
+- Priskollen / Priskollavgift
+- Serviceavgift / Serviceavgifter
+- Tillägg / Övriga avgifter / Ytterligare avgifter
+- Rabatt / Kampanjrabatt (kan vara negativt)
+- Adminavgift / Administrativ avgift
+- Uppdragsavgift / Hanteringsavgift
+
+VIKTIGT: Om du ser en kostnadstabell eller lista med olika kostnadsposter, läs VARJE rad noggrant. 
+Extra avgifter kan ha många olika namn - var noga med att identifiera ALLA!
 
 ALDRIG INKLUDERA SOM EXTRA AVGIFTER:
-- Moms (Moms är skatt, inte avgift)
+- Moms / Moms 25% (Moms är skatt, inte avgift)
 - Energiskatt (grundläggande skatt)
-- Elnät (grundläggande nätkostnad)
-- Grundläggande energikostnad (spotpris/medelspotpris)
+- Elnät / Elnätskostnad / Elnätsavgift (grundläggande nätkostnad)
+- Grundläggande energikostnad (Medelspotpris / Spotpris / Grundpris / El timmätt)
 - Öresutjämning (tekniskt justering)
+- Elöverföring (del av elnät)
+- Elnätsabonnemang (del av elnät)
 
-VIKTIGA INSTRUKTIONER:
-- Läs EXAKTA belopp från fakturan
-- Summera alla extra avgifter korrekt
-- Inkludera negativa belopp (rabatter)
-- Var försiktig med att inte inkludera grundläggande kostnader
+LÄS EXAKTA BELOPP:
+- Läs belopp direkt från fakturan - använd EXAKT det belopp som står
+- Kolla kostnadstabeller, listor med priser, eller sammanfattningar
+- Om det finns en tabell med kolumner (typ "Beskrivning", "Antal", "Pris", "Summa"), läs från "Summa"-kolumnen
+- Multiplicera ALDRIG själv - använd bara det som redan står beräknat
+
+EXEMPEL PÅ KORREKT ANALYS:
+
+Exempel 1 - Faktura med flera avgifter:
+Om fakturan visar i en kostnadstabell:
+- Fast månadsavg.: 31.20 kr
+- Medelspotpris, 106 kWh: 5.29 kr
+- Fast påslag, 106 kWh: 21.20 kr
+- Rörliga kostnader, 106 kWh: 4.60 kr
+- Moms 25%: 15.58 kr
+
+Då ska du returnera (INTE medelspotpris eller moms):
+{
+  "elhandelCost": 5.29,
+  "extraFeesDetailed": [
+    {"label": "Fast månadsavg.", "amount": 31.20, "confidence": 0.9},
+    {"label": "Fast påslag", "amount": 21.20, "confidence": 0.9},
+    {"label": "Rörliga kostnader", "amount": 4.60, "confidence": 0.9}
+  ],
+  "extraFeesTotal": 57.00
+}
+
+Exempel 2 - Faktura med månadsavgift och påslag:
+Om fakturan visar:
+- Månadsavgift: 39.20 kr
+- Påslag: 11.62 kr
+- Medelspotpris: 191.08 kr
+
+Då ska du returnera:
+{
+  "elhandelCost": 191.08,
+  "extraFeesDetailed": [
+    {"label": "Månadsavgift", "amount": 39.20, "confidence": 0.9},
+    {"label": "Påslag", "amount": 11.62, "confidence": 0.9}
+  ],
+  "extraFeesTotal": 50.82
+}
+
+KRITISKA REGLER FÖR EXTRA AVGIFTER:
+Extra avgifter är ENDAST avgifter som leverantören lägger på UTÖVER grundläggande energikostnad.
+Extra avgifter är ALLTID mindre än totalAmount och utgör vanligtvis 10-50% av totalAmount.
+
+1. Om du ser "Fast månadsavg.", "Fast månadsavgift", eller "Månadsavgift" i ELHANDELS-sektionen - det är en extra avgift
+2. Om du ser "Fast påslag" i ELHANDELS-sektionen - det är en extra avgift (INTE medelspotpris!)
+3. Om du ser "Rörliga kostnader" i ELHANDELS-sektionen - det är en extra avgift
+4. Medelspotpris/Spotpris är ALDRIG en extra avgift - det är grundläggande energikostnad (elhandelCost)
+5. Moms är ALDRIG en extra avgift - ignorera den helt
+6. Elnät är ALDRIG en extra avgift - det är elnatCost
+7. Inkludera ALDRIG avgifter från andra leverantörer (t.ex. "E.ON Elna™" om fakturan INTE är från E.ON)
+8. Varje avgift MÅSTE ha en tydlig label - inkludera INTE okända poster utan label
+
+MATEMATISK VALIDERING (KRITISKT):
+- extraFeesTotal + elhandelCost + elnatCost ≈ totalAmount (med tolerans för moms)
+- extraFeesTotal är VANLIGTVIS mindre än totalAmount (oftast 10-50% av totalAmount)
+- Om extraFeesTotal > totalAmount, har du misskategoriserat något - börja om!
+- Summera extraFeesDetailed: alla belopp ska adderas till extraFeesTotal
+
+FÖRE SLUTFÄLGEN - Dubbelkolla:
+1. Har jag identifierat totalAmount korrekt från fakturan?
+2. Har jag identifierat elnatCost (oftast större belopp, ~500-600 kr)?
+3. Har jag identifierat elhandelCost (medelspotpris/spotpris)?
+4. Har jag INKLUDERAT Fast månadsavg./Månadsavgift om den finns i ELHANDELS-sektionen?
+5. Har jag INKLUDERAT Fast påslag om det finns i ELHANDELS-sektionen?
+6. Har jag INKLUDERAT Rörliga kostnader om de finns i ELHANDELS-sektionen?
+7. Har jag EXKLUDERAT Medelspotpris/Spotpris (det är elhandelCost)?
+8. Har jag EXKLUDERAT Moms (det är skatt)?
+9. Har jag EXKLUDERAT Elnät (det är elnatCost)?
+10. Har jag EXKLUDERAT avgifter från andra leverantörer?
+11. Matchar extraFeesTotal summan av alla extraFeesDetailed belopp?
+12. Är extraFeesTotal < totalAmount? (om inte, har jag misskategoriserat något!)
+13. Är (elnatCost + elhandelCost + extraFeesTotal) ≈ totalAmount? (med tolerans för moms)
 
 SVARA MED JSON:
 {
@@ -69,15 +154,20 @@ export class GeneralAI {
               role: 'user',
               content: [
                 {
+                  type: 'text',
+                  text: 'Analysera denna svenska elfaktura noggrant. Identifiera ALLA kostnader och hitta ALLA extra avgifter som kunden kan undvika genom att byta leverantör. Läs VARJE rad i kostnadstabellen/listan.'
+                },
+                {
                   type: 'image_url',
                   image_url: {
-                    url: billImage
+                    url: billImage,
+                    detail: 'high'
                   }
                 }
               ]
             }
           ],
-          max_tokens: 1000,
+          max_tokens: 1500,
           temperature: 0.1
         })
       });

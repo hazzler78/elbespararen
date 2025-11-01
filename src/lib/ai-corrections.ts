@@ -490,6 +490,106 @@ export const CORRECTION_RULES: CorrectionRule[] = [
         extraFeesTotal: correctedTotal
       };
     }
+  },
+  {
+    name: 'remove-other-provider-fees',
+    description: 'Tar bort avgifter från andra leverantörer (t.ex. E.ON Elna™ om fakturan inte är från E.ON)',
+    condition: (data) => data.extraFeesDetailed.some(fee => {
+      const label = fee.label.toLowerCase();
+      // Om fakturan inte innehåller leverantörens namn i totalAmount eller någonstans
+      // men avgiften innehåller ett specifikt leverantörsnamn, ta bort den
+      const providerNames = ['eon elna', 'eon', 'fortum', 'vattenfall'];
+      return providerNames.some(provider => 
+        label.includes(provider) && 
+        !data.totalAmount.toString().toLowerCase().includes(provider) &&
+        !data.period?.toLowerCase().includes(provider)
+      );
+    }),
+    correction: (data) => {
+      const filtered = data.extraFeesDetailed.filter(fee => {
+        const label = fee.label.toLowerCase();
+        const providerNames = ['eon elna', 'eon', 'fortum', 'vattenfall'];
+        // Behåll endast om fakturan tydligt är från den leverantören
+        if (providerNames.some(provider => label.includes(provider))) {
+          // Om totalAmount eller period innehåller leverantörsnamnet, behåll den
+          const contextIncludesProvider = 
+            data.totalAmount.toString().toLowerCase().includes(provider) ||
+            data.period?.toLowerCase().includes(provider);
+          return contextIncludesProvider;
+        }
+        return true; // Behåll alla andra avgifter
+      });
+      
+      return {
+        ...data,
+        extraFeesDetailed: filtered,
+        extraFeesTotal: filtered.reduce((sum, fee) => sum + fee.amount, 0)
+      };
+    }
+  },
+  {
+    name: 'remove-unknown-fees',
+    description: 'Tar bort avgifter utan label eller med okänd label',
+    condition: (data) => data.extraFeesDetailed.some(fee => 
+      !fee.label || 
+      fee.label.trim() === '' || 
+      fee.label.toLowerCase().includes('okänd') ||
+      fee.label.toLowerCase().includes('unknown')
+    ),
+    correction: (data) => {
+      const filtered = data.extraFeesDetailed.filter(fee => 
+        fee.label && 
+        fee.label.trim() !== '' && 
+        !fee.label.toLowerCase().includes('okänd') &&
+        !fee.label.toLowerCase().includes('unknown')
+      );
+      
+      return {
+        ...data,
+        extraFeesDetailed: filtered,
+        extraFeesTotal: filtered.reduce((sum, fee) => sum + fee.amount, 0)
+      };
+    }
+  },
+  {
+    name: 'cap-extra-fees-to-total',
+    description: 'Varnar om extra avgifter överstiger totalAmount (indikerar misskategorisering)',
+    condition: (data) => {
+      const calculatedTotal = data.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+      return calculatedTotal > data.totalAmount * 0.8; // Om extra avgifter är mer än 80% av totalAmount
+    },
+    correction: (data) => {
+      const calculatedTotal = data.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+      const ratio = calculatedTotal / data.totalAmount;
+      
+      if (ratio > 1.0) {
+        // Om extra avgifter är större än totalAmount, är det definitivt fel
+        console.warn(`[AI Corrections] Extra avgifter (${calculatedTotal} kr) överstiger totalAmount (${data.totalAmount} kr). Detta indikerar misskategorisering.`);
+        // Vi tar bort de största avgifterna tills det är rimligt (max 50% av totalAmount)
+        const maxExtraFees = data.totalAmount * 0.5;
+        const sortedFees = [...data.extraFeesDetailed].sort((a, b) => b.amount - a.amount);
+        const keptFees: typeof data.extraFeesDetailed = [];
+        let runningTotal = 0;
+        
+        for (const fee of sortedFees) {
+          if (runningTotal + fee.amount <= maxExtraFees) {
+            keptFees.push(fee);
+            runningTotal += fee.amount;
+          }
+        }
+        
+        console.warn(`[AI Corrections] Reducerade extra avgifter från ${calculatedTotal} kr till ${runningTotal} kr för att fixa misskategorisering.`);
+        
+        return {
+          ...data,
+          extraFeesDetailed: keptFees,
+          extraFeesTotal: runningTotal,
+          warnings: [...(data.warnings || []), `Extra avgifter reducerades från ${calculatedTotal} kr till ${runningTotal} kr p.g.a. misskategorisering`]
+        };
+      }
+      
+      return data; // Ingen korrigering behövs om ratio <= 1.0
+    }
   }
 ];
 
