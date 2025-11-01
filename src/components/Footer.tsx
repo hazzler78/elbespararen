@@ -14,6 +14,12 @@ interface FooterSection {
 
 const footerSections: FooterSection[] = [
   {
+    title: "Nyheter & Media",
+    links: [
+      { label: "Nyheter & Media", href: "/news" }
+    ]
+  },
+  {
     title: "Om oss",
     links: [
       { label: "Om oss", href: "/about" },
