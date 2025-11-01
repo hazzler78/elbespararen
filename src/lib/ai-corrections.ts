@@ -509,15 +509,17 @@ export const CORRECTION_RULES: CorrectionRule[] = [
       const filtered = data.extraFeesDetailed.filter(fee => {
         const label = fee.label.toLowerCase();
         const providerNames = ['eon elna', 'eon', 'fortum', 'vattenfall'];
-        // Behåll endast om fakturan tydligt är från den leverantören
-        if (providerNames.some(provider => label.includes(provider))) {
-          // Om totalAmount eller period innehåller leverantörsnamnet, behåll den
+        // Hitta vilken provider som matchar (om någon)
+        const matchedProvider = providerNames.find(provider => label.includes(provider));
+        
+        if (matchedProvider) {
+          // Om fakturan tydligt är från den leverantören, behåll avgiften
           const contextIncludesProvider = 
-            data.totalAmount.toString().toLowerCase().includes(provider) ||
-            data.period?.toLowerCase().includes(provider);
+            data.totalAmount.toString().toLowerCase().includes(matchedProvider) ||
+            data.period?.toLowerCase().includes(matchedProvider);
           return contextIncludesProvider;
         }
-        return true; // Behåll alla andra avgifter
+        return true; // Behåll alla andra avgifter (som inte matchar någon specifik leverantör)
       });
       
       return {
