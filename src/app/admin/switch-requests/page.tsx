@@ -649,7 +649,7 @@ export default function SwitchRequestsAdminPage() {
                               </p>
                               {request.currentProvider.contractEndDate && (
                                 <p className="text-sm text-gray-600">
-                                  Avtalslut: {new Date(request.currentProvider.contractEndDate).toLocaleDateString("sv-SE")}
+                                  Uppstart: {new Date(request.currentProvider.contractEndDate).toLocaleDateString("sv-SE")}
                                 </p>
                               )}
                             </div>

@@ -210,10 +210,10 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
 
     return lines.join('\n');
   };
-  // Beräkna 14 dagar framåt som standard datum
+  // Beräkna 17 dagar framåt som standard datum
   const getDefaultContractEndDate = () => {
     const date = new Date();
-    date.setDate(date.getDate() + 14);
+    date.setDate(date.getDate() + 17);
     return date.toISOString().split('T')[0];
   };
 
@@ -772,7 +772,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         className="w-full border border-border rounded-lg px-3 py-2"
                       />
                       <p className="text-xs text-muted mt-1">
-                        Du kan välja datum från idag upp till 3 månader framåt
+                        Du kan välja datum från 17 dagar framåt upp till 3 månader framåt
                       </p>
                     </div>
                   </div>
@@ -854,7 +854,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                     {formData.currentCustomerNumber && (
                       <p className="text-sm">Anläggnings-id: {maskAnlaggningsId(formData.currentCustomerNumber)}</p>
                     )}
-                    {formData.currentContractEndDate && <p className="text-sm">Avtalslut: {formData.currentContractEndDate}</p>}
+                    {formData.currentContractEndDate && <p className="text-sm">Uppstart: {formData.currentContractEndDate}</p>}
                   </div>
 
                   {/* Ny leverantör */}
