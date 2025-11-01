@@ -62,6 +62,63 @@ export async function POST(request: NextRequest) {
       // Extrahera kontraktstyp från provider
       const contractType = switchRequest.newProvider?.contractType as "rörligt" | "fast" | "fastpris" | undefined;
       
+      // Hämta detaljerad prisinformation för e-postmeddelandet
+      let priceInfo: {
+        spotPriceOrePerKwh?: number;
+        markupOrePerKwh?: number;
+        certificateOrePerKwh?: number;
+        discountOrePerKwh?: number;
+        fixedPriceOrePerKwh?: number;
+        monthlyFeeKr?: number;
+      } = {};
+      
+      // För rörligt avtal: hämta prisinformation från API
+      if (contractType === "rörligt" && priceArea) {
+        try {
+          // Hämta normaliserade priser
+          const priceLookupResponse = await fetch(
+            new URL("/api/prices/lookup", request.url).toString(),
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({
+                providerName: switchRequest.newProvider.name,
+                area: priceArea.toLowerCase(),
+                kwh: switchRequest.billData?.totalKWh || 0
+              })
+            }
+          );
+          
+          if (priceLookupResponse.ok) {
+            const priceData = await priceLookupResponse.json() as { success?: boolean; data?: {
+              price?: number; // spotpris i öre/kWh
+              surcharge?: number; // påslag i öre/kWh
+              el_certificate_fee?: number; // elcertifikat i öre/kWh
+              _12_month_discount?: number; // rabatt i öre/kWh
+              monthly_fee?: number; // månadsavgift i kr
+            } };
+            
+            if (priceData.success && priceData.data) {
+              priceInfo = {
+                spotPriceOrePerKwh: priceData.data.price,
+                markupOrePerKwh: priceData.data.surcharge,
+                certificateOrePerKwh: priceData.data.el_certificate_fee,
+                discountOrePerKwh: priceData.data._12_month_discount,
+                monthlyFeeKr: priceData.data.monthly_fee
+              };
+            }
+          }
+        } catch (priceErr) {
+          console.warn("[switch-requests] Could not fetch price details for email:", priceErr);
+        }
+      } else if (contractType === "fastpris") {
+        // För fastpris: använd provider.energyPrice och monthlyFee
+        priceInfo = {
+          fixedPriceOrePerKwh: switchRequest.newProvider.energyPrice ? Math.round(switchRequest.newProvider.energyPrice * 100) : undefined, // Konvertera kr/kWh till öre/kWh
+          monthlyFeeKr: switchRequest.newProvider.monthlyFee
+        };
+      }
+      
       await sendOrderConfirmationEmail({
         toEmail: switchRequest.customerInfo.email,
         toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim(),
@@ -70,6 +127,10 @@ export async function POST(request: NextRequest) {
         estimatedSavings: switchRequest.savings?.potentialSavings,
         contractType: contractType,
         priceArea: priceArea,
+        ...priceInfo,
+        validityText: contractType === "fastpris" && switchRequest.newProvider.contractLength 
+          ? `${switchRequest.newProvider.contractLength} månader` 
+          : undefined,
         brand: "Elchef.se"
       });
       

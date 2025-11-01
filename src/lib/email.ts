@@ -309,27 +309,32 @@ export async function sendOrderConfirmationEmail(params: {
 
   const detailedBlock = (() => {
     if (isMovable) {
+      const hasPriceDetails = params.spotPriceOrePerKwh != null || params.markupOrePerKwh != null || 
+                              params.certificateOrePerKwh != null || params.discountOrePerKwh != null;
+      
       return `
         <h3 style=\"margin:16px 0 8px\">🔌 Sammanfattning av din beställning</h3>
         <p><strong>Avtalstyp:</strong> Rörligt</p>
         <p style=\"margin:12px 0 4px\">Rörligt månadspris: baseras på föregående månads spotpris + påslag + elcertifikat – rabatt</p>
-        <div style=\"padding:12px;border:1px solid #eee;border-radius:8px\">
-          ${params.spotPriceOrePerKwh != null && params.priceArea ? `<p>Spotpris (SE${params.priceArea}): <strong>${params.spotPriceOrePerKwh} öre/kWh</strong></p>` : ""}
-          ${params.markupOrePerKwh != null ? `<p>Påslag: <strong>${params.markupOrePerKwh} öre/kWh</strong></p>` : ""}
-          ${params.certificateOrePerKwh != null ? `<p>Elcertifikat: <strong>${params.certificateOrePerKwh} öre/kWh</strong></p>` : ""}
-          ${params.discountOrePerKwh != null ? `<p>Rabatt: <strong>${params.discountOrePerKwh} öre/kWh</strong></p>` : ""}
-          ${params.validityText ? `<p>Giltighetstid: <strong>${params.validityText}</strong></p>` : ""}
+        ${hasPriceDetails ? `
+        <div style=\"padding:16px;background-color:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;margin:12px 0\">
+          ${params.spotPriceOrePerKwh != null && params.priceArea ? `<p style=\"margin:8px 0\"><strong>Spotpris (SE${params.priceArea}):</strong> ${params.spotPriceOrePerKwh.toFixed(2)} öre/kWh</p>` : ""}
+          ${params.markupOrePerKwh != null ? `<p style=\"margin:8px 0\"><strong>Påslag:</strong> ${params.markupOrePerKwh.toFixed(2)} öre/kWh</p>` : ""}
+          ${params.certificateOrePerKwh != null ? `<p style=\"margin:8px 0\"><strong>Elcertifikat:</strong> ${params.certificateOrePerKwh.toFixed(2)} öre/kWh</p>` : ""}
+          ${params.discountOrePerKwh != null ? `<p style=\"margin:8px 0\"><strong>Rabatt:</strong> ${params.discountOrePerKwh.toFixed(2)} öre/kWh</p>` : ""}
+          ${params.monthlyFeeKr != null ? `<p style=\"margin:8px 0\"><strong>Månadsavgift:</strong> ${params.monthlyFeeKr} kr/mån</p>` : ""}
         </div>
+        ` : ""}
       `;
     }
     if (isFixed) {
       return `
         <h3 style=\"margin:16px 0 8px\">🔌 Sammanfattning av din beställning</h3>
         <p><strong>Avtalstyp:</strong> Fast pris</p>
-        <div style=\"padding:12px;border:1px solid #eee;border-radius:8px\">
-          ${params.fixedPriceOrePerKwh != null ? `<p>Fast pris: <strong>${params.fixedPriceOrePerKwh} öre/kWh</strong></p>` : ""}
-          ${params.monthlyFeeKr != null ? `<p>Månadsavgift: <strong>${params.monthlyFeeKr} kr/mån</strong></p>` : ""}
-          ${params.validityText ? `<p>Avtalstid: <strong>${params.validityText}</strong></p>` : ""}
+        <div style=\"padding:16px;background-color:#f8f9fa;border:1px solid #dee2e6;border-radius:8px;margin:12px 0\">
+          ${params.fixedPriceOrePerKwh != null ? `<p style=\"margin:8px 0\"><strong>Fast pris:</strong> ${params.fixedPriceOrePerKwh.toFixed(2)} öre/kWh</p>` : ""}
+          ${params.monthlyFeeKr != null ? `<p style=\"margin:8px 0\"><strong>Månadsavgift:</strong> ${params.monthlyFeeKr} kr/mån</p>` : ""}
+          ${params.validityText ? `<p style=\"margin:8px 0\"><strong>Avtalstid:</strong> ${params.validityText}</p>` : ""}
         </div>
       `;
     }

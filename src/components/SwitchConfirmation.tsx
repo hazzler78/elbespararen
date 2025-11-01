@@ -23,10 +23,10 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         exit={{ scale: 0.95, opacity: 0 }}
-        className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] overflow-hidden"
+        className="bg-white rounded-lg w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden"
       >
         {/* Header */}
-        <div className="bg-success text-white p-6 text-center">
+        <div className="bg-success text-white p-6 text-center flex-shrink-0">
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
@@ -44,8 +44,8 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
           </p>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-6">
+        {/* Content - Scrollbar */}
+        <div className="p-6 space-y-6 overflow-y-auto flex-1 min-h-0">
           {/* Besparing */}
           <div className="bg-success/10 border border-success/20 rounded-lg p-4">
             <h3 className="font-bold text-success mb-2">Din besparing</h3>
@@ -161,15 +161,15 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="border-t border-border p-6">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-muted">
-              Referensnummer: {switchRequest.id}
+        {/* Footer - Fast i botten */}
+        <div className="border-t border-border p-4 sm:p-6 bg-white flex-shrink-0">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="text-xs sm:text-sm text-muted text-center sm:text-left">
+              Referensnummer: <span className="font-mono">{switchRequest.id}</span>
             </div>
             <button
               onClick={onClose}
-              className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+              className="w-full sm:w-auto px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
             >
               Stäng
             </button>
