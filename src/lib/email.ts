@@ -113,14 +113,13 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
 
     console.log("[email] Sending via MailChannels:", { from: MAIL_FROM, to: to.email, subject });
 
+    // För Cloudflare Pages/Workers: MailChannels verifierar automatiskt via Cloudflare
+    // Inga auth headers behövs - Cloudflare Workers/Pages autentiseras automatiskt
     const mcResponse = await fetch("https://api.mailchannels.net/tx/v1/send", {
       method: "POST",
       headers: { 
-        "Content-Type": "application/json",
-        // Auth header required by MailChannels to authenticate sender domain
-        "X-AuthUser": MAIL_FROM,
-        // X-AuthPass is ignored but some edges require it to be present
-        "X-AuthPass": ""
+        "Content-Type": "application/json"
+        // Inga auth headers för Cloudflare Pages - verifiering sker automatiskt
       },
       body: JSON.stringify(emailPayload)
     });
