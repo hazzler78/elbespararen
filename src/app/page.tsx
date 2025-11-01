@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import { Zap, Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
+import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 
 export default function Home() {
   return (
@@ -184,6 +185,9 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      {/* Trustpilot Reviews */}
+      <TrustpilotCarousel />
 
       {/* Final CTA */}
       <section className="py-20 px-4 bg-primary text-white">
