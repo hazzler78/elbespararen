@@ -29,7 +29,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Kan ju säga såhär, jag har aldrig haft så låg elräkning som nu. Ja visst jag jobbar borta två till tre veckor på en månad men helt ärligt jag har inte haft en elräkning på över två hundra kronor sen jag bytte.",
     fullReviewText: "Kan ju säga såhär, jag har aldrig haft så låg elräkning som nu. Ja visst jag jobbar borta två till tre veckor på en månad men helt ärligt jag har inte haft en elräkning på över två hundra kronor sen jag bytte. Och bara en av mina räkningar har varit på över 100kr så ja du ska ha tack för hjälpen",
     image: "",
-    date: "2024-10-01"
+    date: "2025-10-01"
   },
   {
     id: "2",
@@ -38,7 +38,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Va din egna elchef, grymt säger jag bara. Spara en massa pengar med elchef, de gör jag 👍😊",
     fullReviewText: "Va din egna elchef, grymt säger jag bara. Spara en massa pengar med elchef, de gör jag 👍😊",
     image: "",
-    date: "2024-10-14"
+    date: "2025-10-14"
   },
   {
     id: "3",
@@ -47,7 +47,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "I have changed and become my own 'elchef'.. Of course the cost to the grid owner hasn't changed but the electricity cost, the variable cost, has changed dramatically.",
     fullReviewText: "I have changed and become my own 'elchef'.. Of course the cost to the grid owner hasn't changed but the electricity cost, the variable cost, has changed dramatically. Very happy to have found Elchef and l can warmly recommend <3",
     image: "",
-    date: "2024-06-15"
+    date: "2025-06-15"
   },
   {
     id: "4",
@@ -56,7 +56,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Direkt, transparent och ärlig!",
     fullReviewText: "Direkt, transparent och ärlig!",
     image: "",
-    date: "2024-09-25"
+    date: "2025-09-25"
   },
   {
     id: "5",
@@ -65,7 +65,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Great work to help people don't throw money! Strictly suggested! 👌🏻",
     fullReviewText: "Great work to help people don't throw money! Strictly suggested! 👌🏻",
     image: "",
-    date: "2024-08-09"
+    date: "2025-08-09"
   },
   {
     id: "6",
@@ -74,7 +74,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "jag skulle berätta att elchef är det bästa bolaget man kan ha eftersom man slipper betala månadsavgift och påslag.",
     fullReviewText: "jag skulle berätta att elchef är det bästa bolaget man kan ha eftersom man slipper betala månadsavgift och påslag.",
     image: "",
-    date: "2024-09-16"
+    date: "2025-09-16"
   },
   {
     id: "7",
@@ -83,7 +83,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Tack Elchef betalar inte månadsavgift 👏eller extra kostnader alla borde bli sin egen elchef 😍",
     fullReviewText: "Tack Elchef betalar inte månadsavgift 👏eller extra kostnader alla borde bli sin egen elchef 😍",
     image: "",
-    date: "2024-08-17"
+    date: "2025-08-17"
   },
   {
     id: "8",
@@ -92,7 +92,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Tack vare elchef.se kunde jag teckna ett tre årigt fast pris avtal på 82.38 öre och en månadsavgift på 49kr med Svealand elbolag.se",
     fullReviewText: "Tack vare elchef.se kunde jag teckna ett tre årigt fast pris avtal på 82.38 öre och en månadsavgift på 49kr med Svealand elbolag.se Nu har jag även fått ett erbjudande från Eon på 800kr i rabatt. Detta gäller om man tecknar ett fast pris på 4 eller 6månader. 4mån kostade 131 öre per kilowattimme. 6månader kostade 141 öre per kilowattimme och avdraget som var på 800kr gällde bara på den första fakturan så det gäller att vara mycket observant på alla erbjudanden. Håll koll på elchef.se",
     image: "",
-    date: "2024-10-02"
+    date: "2025-10-02"
   },
   {
     id: "9",
@@ -101,7 +101,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Nu har min granne blivit kund hos er! Nu är hon sin egen chef över sin el! Hon är så tacksam!",
     fullReviewText: "Nu har min granne blivit kund hos er! Nu är hon sin egen chef över sin el! Hon är så tacksam!",
     image: "",
-    date: "2024-10-04"
+    date: "2025-10-04"
   },
   {
     id: "10",
@@ -110,7 +110,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Tack för att jag hittade er 🙏🙏🙏 nu kommer det bli mycket roligare framöver när man slipper påslag från alla håll o kanter och månadsavgift...",
     fullReviewText: "Tack för att jag hittade er 🙏🙏🙏 nu kommer det bli mycket roligare framöver när man slipper påslag från alla håll o kanter och månadsavgift... Hoppas verkligen fler hittar er och byter elavtal bums. Jag delar er till alla mina vänner ialf.. Tack Mattias 👍🏻👍🏻👍🏻",
     image: "",
-    date: "2024-07-11"
+    date: "2025-07-11"
   },
   {
     id: "11",
@@ -119,7 +119,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Fick snabb och effektiv hjälp. 10/10 service och behandling. Kommer rekommendera honom till alla mina vänner",
     fullReviewText: "Fick snabb och effektiv hjälp. 10/10 service och behandling. Kommer rekommendera honom till alla mina vänner",
     image: "",
-    date: "2024-07-11"
+    date: "2025-07-11"
   },
   {
     id: "12",
@@ -128,7 +128,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Bästa nånsin. Jobbar i Norge och sparar mellan 3000-5000NOK med chefens elavtal! 👍",
     fullReviewText: "Bästa nånsin. Jobbar i Norge och sparar mellan 3000-5000NOK med chefens elavtal! 👍",
     image: "",
-    date: "2024-07-09"
+    date: "2025-07-09"
   },
   {
     id: "13",
@@ -137,7 +137,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Jag blev min egen elchef och min första månad, maj 2025, så fick jag en faktura på 290kr. Innan betalade jag närmare 1000kr för samma mäng el av Vattenfall.",
     fullReviewText: "Jag blev min egen elchef och min första månad, maj 2025, så fick jag en faktura på 290kr. Innan betalade jag närmare 1000kr för samma mäng el av Vattenfall. Rekommenderar starkt",
     image: "",
-    date: "2024-06-15"
+    date: "2025-06-15"
   },
   {
     id: "14",
@@ -146,7 +146,7 @@ const placeholderReviews: TrustpilotReview[] = [
     reviewText: "Min Pappa hade Eon betala månadsavgift påslag påslag sparar nu ca 5000 kr på 1 år.",
     fullReviewText: "Min Pappa hade Eon betala månadsavgift påslag påslag sparar nu ca 5000 kr på 1 år.",
     image: "",
-    date: "2024-06-07"
+    date: "2025-06-07"
   }
 ];
 
