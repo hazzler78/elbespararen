@@ -23,31 +23,59 @@ export default function GoogleAnalytics() {
 
   useEffect(() => {
     // Check consent on client side only
-    if (typeof window !== 'undefined') {
-      const hasConsent = hasAnalyticsConsent();
-      setShouldLoad(hasConsent);
-      
-      if (hasConsent) {
-        // Initialize dataLayer if it doesn't exist
-        window.dataLayer = window.dataLayer || [];
+    const checkConsent = () => {
+      if (typeof window !== 'undefined') {
+        const hasConsent = hasAnalyticsConsent();
         
-        // Define gtag function
-        function gtag(...args: any[]) {
-          window.dataLayer!.push(args);
+        if (hasConsent && !shouldLoad) {
+          // Only load if we haven't loaded yet
+          setShouldLoad(true);
+          
+          // Initialize dataLayer if it doesn't exist
+          window.dataLayer = window.dataLayer || [];
+          
+          // Define gtag function
+          function gtag(...args: any[]) {
+            window.dataLayer!.push(args);
+          }
+          
+          // Make gtag available globally
+          window.gtag = gtag;
+          
+          // Configure GA
+          gtag('js', new Date());
+          gtag('config', gaId, {
+            anonymize_ip: true, // GDPR compliance - anonymize IP
+            allow_google_signals: false, // Disable advertising features for GDPR
+            allow_ad_personalization_signals: false,
+          });
+
+          // Dynamically load GA script if not already loaded
+          if (!document.querySelector(`script[src*="googletagmanager.com/gtag/js"]`)) {
+            const script1 = document.createElement('script');
+            script1.async = true;
+            script1.src = `https://www.googletagmanager.com/gtag/js?id=${gaId}`;
+            document.head.appendChild(script1);
+          }
+        } else if (!hasConsent) {
+          setShouldLoad(false);
         }
-        
-        // Make gtag available globally
-        window.gtag = gtag;
-        
-        // Configure GA
-        gtag('js', new Date());
-        gtag('config', gaId, {
-          anonymize_ip: true, // GDPR compliance - anonymize IP
-          allow_google_signals: false, // Disable advertising features for GDPR
-          allow_ad_personalization_signals: false,
-        });
       }
-    }
+    };
+
+    // Check initial consent
+    checkConsent();
+
+    // Listen for consent changes
+    const handleConsentChange = () => {
+      checkConsent();
+    };
+
+    window.addEventListener('cookieConsentChanged', handleConsentChange);
+
+    return () => {
+      window.removeEventListener('cookieConsentChanged', handleConsentChange);
+    };
   }, [gaId]);
 
   // Only render script if consent is given

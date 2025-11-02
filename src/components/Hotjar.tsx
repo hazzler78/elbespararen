@@ -24,20 +24,55 @@ export default function Hotjar() {
 
   useEffect(() => {
     // Check consent on client side only
-    if (typeof window !== 'undefined') {
-      // Allow loading if consent is given OR if skipConsent is enabled (for testing/verification)
-      const hasConsent = skipConsent || hasAnalyticsConsent();
-      setShouldLoad(hasConsent);
-      
-      // Debug logging in development
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Hotjar] Analytics enabled:', analyticsEnabled);
-        console.log('[Hotjar] Hotjar ID:', hotjarId);
-        console.log('[Hotjar] Skip consent:', skipConsent);
-        console.log('[Hotjar] Has consent:', hasAnalyticsConsent());
-        console.log('[Hotjar] Will load:', hasConsent);
+    const checkConsent = () => {
+      if (typeof window !== 'undefined') {
+        // Allow loading if consent is given OR if skipConsent is enabled (for testing/verification)
+        const hasConsent = skipConsent || hasAnalyticsConsent();
+        
+        if (hasConsent && !shouldLoad) {
+          // Only load if we haven't loaded yet
+          setShouldLoad(true);
+          
+          // Debug logging in development
+          if (process.env.NODE_ENV === 'development') {
+            console.log('[Hotjar] Analytics enabled:', analyticsEnabled);
+            console.log('[Hotjar] Hotjar ID:', hotjarId);
+            console.log('[Hotjar] Skip consent:', skipConsent);
+            console.log('[Hotjar] Has consent:', hasAnalyticsConsent());
+            console.log('[Hotjar] Will load:', hasConsent);
+          }
+
+          // Dynamically inject Hotjar script if not already loaded
+          if (!window.hj) {
+            (function(h: any, o: Document, t: string, j: string, a: HTMLElement | null, r: HTMLScriptElement) {
+              h.hj = h.hj || function(){(h.hj.q = h.hj.q || []).push(arguments)};
+              h._hjSettings = {hjid: parseInt(hotjarId!), hjsv: 6};
+              a = o.getElementsByTagName('head')[0];
+              r = o.createElement('script');
+              r.async = true;
+              r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
+              if (a) a.appendChild(r);
+            })(window, document, 'https://static.hotjar.com/c/hotjar-', '.js?sv=');
+          }
+        } else if (!hasConsent && !skipConsent) {
+          setShouldLoad(false);
+        }
       }
-    }
+    };
+
+    // Check initial consent
+    checkConsent();
+
+    // Listen for consent changes
+    const handleConsentChange = () => {
+      checkConsent();
+    };
+
+    window.addEventListener('cookieConsentChanged', handleConsentChange);
+
+    return () => {
+      window.removeEventListener('cookieConsentChanged', handleConsentChange);
+    };
   }, [skipConsent, analyticsEnabled, hotjarId]);
 
   // Only render script if should load
