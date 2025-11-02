@@ -43,7 +43,7 @@ export default function Hotjar() {
           }
 
           // Dynamically inject Hotjar script if not already loaded
-          if (!window.hj) {
+          if (!(window as any).hj) {
             (function(h: any, o: Document, t: string, j: string, a: HTMLElement | null, r: HTMLScriptElement) {
               h.hj = h.hj || function(){(h.hj.q = h.hj.q || []).push(arguments)};
               h._hjSettings = {hjid: parseInt(hotjarId!), hjsv: 6};
