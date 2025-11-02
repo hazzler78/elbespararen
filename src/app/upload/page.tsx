@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, FileText, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import { BillData } from "@/lib/types";
@@ -140,11 +140,22 @@ export default function UploadPage() {
           <div className="mt-6">
             <Link
               href="/contracts"
-              className="inline-flex items-center gap-2 px-6 py-3 border border-border text-foreground font-medium rounded-lg hover:bg-gray-50 transition-all duration-200"
+              className="
+                inline-flex items-center gap-3 px-8 py-4 
+                bg-white border-2 border-primary text-primary 
+                font-semibold rounded-lg 
+                hover:bg-primary hover:text-white 
+                active:scale-[0.98]
+                shadow-sm hover:shadow-md
+                transition-all duration-200
+                group
+              "
             >
-              Se avtal utan faktura
+              <FileText className="w-5 h-5 transition-transform group-hover:scale-110" />
+              <span>Se avtal utan faktura</span>
+              <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
             </Link>
-            <p className="text-sm text-muted mt-2">
+            <p className="text-sm text-muted mt-3">
               Vill du bara se tillgängliga avtal? Ange ditt postnummer.
             </p>
           </div>
