@@ -210,7 +210,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // TODO: Skicka notis till admin
+    // Skicka Telegram-notis till admin
+    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+      try {
+        await sendTelegramNotification(switchRequest);
+      } catch (error) {
+        console.error("[switch-requests] Telegram notification failed:", error);
+        // Fortsätt även om Telegram misslyckas
+      }
+    }
+
     // TODO: Integrera med leverantörens API
 
     console.log("New switch request created:", switchRequest);
@@ -371,5 +380,76 @@ export async function DELETE(request: NextRequest) {
       { success: false, error: "Kunde inte ta bort bytförfrågan" },
       { status: 500 }
     );
+  }
+}
+
+/**
+ * Skickar Telegram-notis om ny bytförfrågan
+ */
+async function sendTelegramNotification(switchRequest: import("@/lib/types").SwitchRequest) {
+  const isVariablePrice = switchRequest.newProvider.contractType === "rörligt";
+  const contractType = isVariablePrice ? "Rörligt avtal" : "Fastprisavtal";
+  
+  // Formatera prisinformation baserat på avtalstyp
+  let priceDisplay = "";
+  if (isVariablePrice) {
+    const markup = switchRequest.newProvider.energyPrice || 0;
+    priceDisplay = `Spotpris + ${markup.toFixed(2)} kr/kWh påslag`;
+  } else {
+    const fixedPrice = switchRequest.newProvider.energyPrice || 0;
+    priceDisplay = `${fixedPrice.toFixed(2)} kr/kWh`;
+  }
+
+  const message = `
+⚡ *NY BYTFÖRFRÅGAN FRÅN ELBESPARAREN!*
+
+🆔 ID: \`${switchRequest.id}\`
+
+👤 *Kund:*
+• ${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}
+• 📧 ${switchRequest.customerInfo.email}
+• 📱 ${switchRequest.customerInfo.phone}
+• 📮 ${switchRequest.customerInfo.address.postalCode} ${switchRequest.customerInfo.address.city}
+
+🔄 *Byt:*
+• **Från:** ${switchRequest.currentProvider.name} (${switchRequest.currentProvider.currentMonthlyCost} kr/mån)
+• **Till:** ${switchRequest.newProvider.name}
+• **Typ:** ${contractType}
+• **Pris:** ${priceDisplay}
+${switchRequest.newProvider.contractLength ? `• **Längd:** ${switchRequest.newProvider.contractLength} mån` : ''}
+
+💰 *Besparing:*
+• *${switchRequest.savings.potentialSavings} kr/mån*
+• ${switchRequest.savings.savingsPercentage.toFixed(1)}% besparing
+
+⚡️ *Användning:*
+• ${switchRequest.billData.totalKWh} kWh/mån
+• Förtroende: ${Math.round(switchRequest.billData.confidence * 100)}%
+
+📋 *Status:* ${switchRequest.status === "pending" ? "⏳ Väntar" : switchRequest.status}
+🕒 ${new Date(switchRequest.createdAt).toLocaleString("sv-SE")}
+  `.trim();
+
+  try {
+    const response = await fetch(
+      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: process.env.TELEGRAM_CHAT_ID,
+          text: message,
+          parse_mode: "Markdown"
+        })
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Telegram API error: ${response.status}`);
+    }
+
+    console.log("[switch-requests] Telegram notification sent for switch:", switchRequest.id);
+  } catch (error) {
+    console.error("[switch-requests] Failed to send Telegram notification:", error);
   }
 }
