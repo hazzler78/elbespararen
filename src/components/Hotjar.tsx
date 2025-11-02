@@ -44,11 +44,11 @@ export default function Hotjar() {
 
           // Dynamically inject Hotjar script if not already loaded
           if (!(window as any).hj) {
-            (function(h: any, o: Document, t: string, j: string, a: HTMLElement | null, r: HTMLScriptElement) {
+            (function(h: any, o: Document, t: string, j: string) {
               h.hj = h.hj || function(){(h.hj.q = h.hj.q || []).push(arguments)};
               h._hjSettings = {hjid: parseInt(hotjarId!), hjsv: 6};
-              a = o.getElementsByTagName('head')[0];
-              r = o.createElement('script');
+              const a = o.getElementsByTagName('head')[0];
+              const r = o.createElement('script');
               r.async = true;
               r.src = t + h._hjSettings.hjid + j + h._hjSettings.hjsv;
               if (a) a.appendChild(r);
