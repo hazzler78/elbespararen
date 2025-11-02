@@ -9,11 +9,12 @@ import { hasAnalyticsConsent } from '@/lib/cookie-consent';
  * Only loads Hotjar script if:
  * 1. NEXT_PUBLIC_ENABLE_ANALYTICS is true
  * 2. NEXT_PUBLIC_HOTJAR_ID is set
- * 3. User has given analytics consent
+ * 3. User has given analytics consent (or NEXT_PUBLIC_HOTJAR_SKIP_CONSENT is true for testing)
  */
 export default function Hotjar() {
   const hotjarId = process.env.NEXT_PUBLIC_HOTJAR_ID;
   const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
+  const skipConsent = process.env.NEXT_PUBLIC_HOTJAR_SKIP_CONSENT === 'true';
   const [shouldLoad, setShouldLoad] = useState(false);
   
   // Don't load if disabled or no ID
@@ -24,12 +25,22 @@ export default function Hotjar() {
   useEffect(() => {
     // Check consent on client side only
     if (typeof window !== 'undefined') {
-      const hasConsent = hasAnalyticsConsent();
+      // Allow loading if consent is given OR if skipConsent is enabled (for testing/verification)
+      const hasConsent = skipConsent || hasAnalyticsConsent();
       setShouldLoad(hasConsent);
+      
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Hotjar] Analytics enabled:', analyticsEnabled);
+        console.log('[Hotjar] Hotjar ID:', hotjarId);
+        console.log('[Hotjar] Skip consent:', skipConsent);
+        console.log('[Hotjar] Has consent:', hasAnalyticsConsent());
+        console.log('[Hotjar] Will load:', hasConsent);
+      }
     }
-  }, []);
+  }, [skipConsent, analyticsEnabled, hotjarId]);
 
-  // Only render script if consent is given
+  // Only render script if should load
   if (!shouldLoad) {
     return null;
   }
