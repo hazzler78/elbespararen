@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
+import Hotjar from "@/components/Hotjar";
 
 export const metadata: Metadata = {
   title: "Elbespararen – Se din faktura med nya ögon",
@@ -16,6 +17,7 @@ export default function RootLayout({
     <html lang="sv">
       <body className="antialiased">
         <GoogleAnalytics />
+        <Hotjar />
         {children}
       </body>
     </html>
