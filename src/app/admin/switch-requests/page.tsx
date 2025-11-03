@@ -246,7 +246,11 @@ export default function SwitchRequestsAdminPage() {
     try {
       const res = await fetch('/data/natomraden.csv');
       if (res.ok) {
-        const text = await res.text();
+        let text = await res.text();
+        // Ta bort eventuell BOM
+        if (text.charCodeAt(0) === 0xFEFF) {
+          text = text.slice(1);
+        }
         // Minimal CSV-parser med stöd för citattecken
         const parseCsv = (input: string): string[][] => {
           const rows: string[][] = [];
@@ -295,7 +299,8 @@ export default function SwitchRequestsAdminPage() {
         const rows = parseCsv(text);
         if (rows.length > 1) {
           const header = rows[0];
-          const normalize = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+          const stripBOM = (s: string) => s && s.charCodeAt(0) === 0xFEFF ? s.slice(1) : s;
+          const normalize = (s: string) => (stripBOM(s || '')).trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
           const norm = header.map(h => normalize(h || ''));
           const nameIdx = norm.indexOf(normalize('Nätområde'));
           const idIdx = norm.indexOf(normalize('NätId')); // exakt kolumnen "NätId" (3 bokstäver)
@@ -303,11 +308,13 @@ export default function SwitchRequestsAdminPage() {
             for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
               const key = normalize(r[nameIdx] || '');
-              const val = (r[idIdx] || '').trim();
+              const val = (stripBOM(r[idIdx] || '')).trim();
               if (key && val) {
                 netAreaMap.set(key, val);
               }
             }
+            // Diagnostik: logga storlek (syns i devtools, påverkar inte CSV)
+            try { console.debug('[CSV] Loaded net areas:', netAreaMap.size); } catch {}
           }
         }
       }
