@@ -360,7 +360,7 @@ export default function SwitchRequestsAdminPage() {
         if (digits.length === 12) {
           const ymd = digits.slice(0, 8);
           const suffix = digits.slice(8);
-          return `=\"${ymd}-${suffix}\"`;
+          return `'${ymd}-${suffix}`;
         }
         if (digits.length === 10) {
           const yy = parseInt(digits.slice(0, 2), 10);
@@ -368,7 +368,7 @@ export default function SwitchRequestsAdminPage() {
           const century = yy <= currentYY ? '20' : '19';
           const ymd = `${century}${digits.slice(0, 6)}`; // YYYYMMDD
           const suffix = digits.slice(6);
-          return `=\"${ymd}-${suffix}\"`;
+          return `'${ymd}-${suffix}`;
         }
         return (pnr || '');
       };
@@ -381,11 +381,11 @@ export default function SwitchRequestsAdminPage() {
       const kundpostnr = address.postalCode;
       const kundort = address.city;
       const kundland = 'SE';
-      // Formatera telefon för Excel så ledande nolla bevaras
+      // Formatera telefon som text (prefix apostrof) så ledande nolla bevaras i Excel
       const formatPhoneForExcel = (phone: string | undefined | null): string => {
         const p = (phone || '').trim();
         if (!p) return '';
-        return `="${p}"`;
+        return `'${p}`;
       };
       const telefon1 = '';
       const telefon2 = formatPhoneForExcel(customer.phone);
