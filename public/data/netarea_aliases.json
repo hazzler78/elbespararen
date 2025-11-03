@@ -37,7 +37,22 @@
     { "name": "Norrmalm", "netId": "STH" },
     { "name": "Vasastan", "netId": "STH" },
     { "name": "Gamla stan", "netId": "STH" },
-    { "name": "Kungsholmen", "netId": "STH" }
+    { "name": "Kungsholmen", "netId": "STH" },
+
+    { "name": "Göteborg", "netId": "GBG" },
+    { "name": "Malmö", "netId": "MMO" },
+    { "name": "Uppsala", "netId": "UPP" },
+    { "name": "Lund", "netId": "LUN" },
+    { "name": "Helsingborg", "netId": "HBG" },
+    { "name": "Gävle", "netId": "GVL" },
+    { "name": "Eskilstuna", "netId": "ESK" },
+    { "name": "Linköping", "netId": "LNK" },
+    { "name": "Växjö", "netId": "VXO" },
+    { "name": "Kalmar", "netId": "KMR" },
+    { "name": "Jönköping", "netId": "JNK" },
+    { "name": "Umeå", "netId": "UMA" },
+    { "name": "Luleå", "netId": "LUL" },
+    { "name": "Karlstad", "netId": "KST" }
   ]
 }
 
