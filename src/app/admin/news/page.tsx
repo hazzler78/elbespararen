@@ -21,7 +21,14 @@ export default function NewsAdminPage() {
       const result = await response.json() as ApiResponse<NewsPost[]>;
       
       if (result.success && result.data) {
-        setPosts(result.data);
+        // Konvertera datum från strängar till Date-objekt
+        const postsWithDates = result.data.map(post => ({
+          ...post,
+          publishedAt: post.publishedAt instanceof Date ? post.publishedAt : new Date(post.publishedAt),
+          createdAt: post.createdAt instanceof Date ? post.createdAt : new Date(post.createdAt),
+          updatedAt: post.updatedAt instanceof Date ? post.updatedAt : new Date(post.updatedAt),
+        }));
+        setPosts(postsWithDates);
       }
     } catch (error) {
       console.error("Error fetching news posts:", error);
@@ -43,10 +50,16 @@ export default function NewsAdminPage() {
       const result = await response.json() as ApiResponse<NewsPost>;
       
       if (result.success && result.data) {
-        setPosts([result.data, ...posts]);
+        // Konvertera datum till Date-objekt
+        const newPost = {
+          ...result.data,
+          publishedAt: result.data.publishedAt instanceof Date ? result.data.publishedAt : new Date(result.data.publishedAt),
+          createdAt: result.data.createdAt instanceof Date ? result.data.createdAt : new Date(result.data.createdAt),
+          updatedAt: result.data.updatedAt instanceof Date ? result.data.updatedAt : new Date(result.data.updatedAt),
+        };
+        setPosts([newPost, ...posts]);
         setShowAddForm(false);
         alert('✅ Nyhetsinlägg tillagt!');
-        fetchPosts();
       } else {
         alert('❌ Kunde inte lägga till inlägg: ' + (result.error || 'Okänt fel'));
       }
@@ -78,8 +91,15 @@ export default function NewsAdminPage() {
       const result = await response.json() as ApiResponse<NewsPost>;
       
       if (result.success && result.data) {
+        // Konvertera datum till Date-objekt
+        const updatedPost = {
+          ...result.data,
+          publishedAt: result.data.publishedAt instanceof Date ? result.data.publishedAt : new Date(result.data.publishedAt),
+          createdAt: result.data.createdAt instanceof Date ? result.data.createdAt : new Date(result.data.createdAt),
+          updatedAt: result.data.updatedAt instanceof Date ? result.data.updatedAt : new Date(result.data.updatedAt),
+        };
         setPosts(prevPosts => 
-          prevPosts.map(p => p.id === post.id ? result.data! : p)
+          prevPosts.map(p => p.id === post.id ? updatedPost : p)
         );
         alert('✅ Inlägg uppdaterat!');
       } else {
@@ -261,9 +281,13 @@ export default function NewsAdminPage() {
 
                     <div className="text-sm text-gray-500">
                       <span>Skapad: {new Date(post.createdAt).toLocaleDateString("sv-SE")}</span>
-                      {post.updatedAt.getTime() !== post.createdAt.getTime() && (
-                        <span className="ml-4">Uppdaterad: {new Date(post.updatedAt).toLocaleDateString("sv-SE")}</span>
-                      )}
+                      {(() => {
+                        const updatedAt = post.updatedAt instanceof Date ? post.updatedAt : new Date(post.updatedAt);
+                        const createdAt = post.createdAt instanceof Date ? post.createdAt : new Date(post.createdAt);
+                        return updatedAt.getTime() !== createdAt.getTime() && (
+                          <span className="ml-4">Uppdaterad: {updatedAt.toLocaleDateString("sv-SE")}</span>
+                        );
+                      })()}
                     </div>
                   </div>
                 ))}
@@ -299,8 +323,15 @@ export default function NewsAdminPage() {
                   const result = await response.json() as ApiResponse<NewsPost>;
                   
                   if (result.success && result.data) {
+                    // Konvertera datum till Date-objekt
+                    const updatedPost = {
+                      ...result.data,
+                      publishedAt: result.data.publishedAt instanceof Date ? result.data.publishedAt : new Date(result.data.publishedAt),
+                      createdAt: result.data.createdAt instanceof Date ? result.data.createdAt : new Date(result.data.createdAt),
+                      updatedAt: result.data.updatedAt instanceof Date ? result.data.updatedAt : new Date(result.data.updatedAt),
+                    };
                     setPosts(prevPosts => 
-                      prevPosts.map(p => p.id === editingPost.id ? result.data! : p)
+                      prevPosts.map(p => p.id === editingPost.id ? updatedPost : p)
                     );
                     setEditingPost(null);
                     alert('✅ Inlägg uppdaterat!');
