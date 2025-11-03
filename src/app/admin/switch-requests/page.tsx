@@ -241,6 +241,78 @@ export default function SwitchRequestsAdminPage() {
       'Andel reducerad energiskatt'
     ];
 
+    // Ladda nätområdesdata (Nätområde -> NätId)
+    let netAreaMap: Map<string, string> = new Map();
+    try {
+      const res = await fetch('/data/natomraden.csv');
+      if (res.ok) {
+        const text = await res.text();
+        // Minimal CSV-parser med stöd för citattecken
+        const parseCsv = (input: string): string[][] => {
+          const rows: string[][] = [];
+          let row: string[] = [];
+          let cell = '';
+          let inQuotes = false;
+          for (let i = 0; i < input.length; i++) {
+            const ch = input[i];
+            if (inQuotes) {
+              if (ch === '"') {
+                if (input[i + 1] === '"') { // escape dubbla citat
+                  cell += '"';
+                  i++;
+                } else {
+                  inQuotes = false;
+                }
+              } else {
+                cell += ch;
+              }
+            } else {
+              if (ch === '"') {
+                inQuotes = true;
+              } else if (ch === ',') {
+                row.push(cell);
+                cell = '';
+              } else if (ch === '\n') {
+                row.push(cell);
+                rows.push(row);
+                row = [];
+                cell = '';
+              } else if (ch === '\r') {
+                // hoppa över
+              } else {
+                cell += ch;
+              }
+            }
+          }
+          // sista cell/rad
+          if (cell.length > 0 || row.length > 0) {
+            row.push(cell);
+            rows.push(row);
+          }
+          return rows;
+        };
+
+        const rows = parseCsv(text);
+        if (rows.length > 1) {
+          const header = rows[0];
+          const nameIdx = header.findIndex(h => h.toLowerCase() === 'nätområde' || h.toLowerCase() === 'natområde' || h.toLowerCase().includes('nätområde'));
+          const idIdx = header.findIndex(h => h.toLowerCase() === 'nätid' || h.toLowerCase() === 'nätid' || h.toLowerCase().includes('nätid'));
+          if (nameIdx >= 0 && idIdx >= 0) {
+            for (let i = 1; i < rows.length; i++) {
+              const r = rows[i];
+              const key = (r[nameIdx] || '').trim().toLowerCase();
+              const val = (r[idIdx] || '').trim();
+              if (key && val) {
+                netAreaMap.set(key, val);
+              }
+            }
+          }
+        }
+      }
+    } catch {
+      // lämna tom karta vid fel
+    }
+
     // Skapa CSV-data
     const lookups = await Promise.all(selectedData.map(async (req) => {
       try {
@@ -283,7 +355,24 @@ export default function SwitchRequestsAdminPage() {
       const namn1 = `${customer.firstName} ${customer.lastName}`;
       const namn2 = ''; // Lämnas tomt
       const kundtyp = 'K'; // K = privatavtal (standard)
-      const personOrgNummer = customer.personalNumber || '';
+      const formatPersonalNumber = (pnr: string | undefined | null): string => {
+        const digits = String(pnr || '').replace(/[^0-9]/g, '');
+        if (digits.length === 12) {
+          const ymd = digits.slice(0, 8);
+          const suffix = digits.slice(8);
+          return `=\"${ymd}-${suffix}\"`;
+        }
+        if (digits.length === 10) {
+          const yy = parseInt(digits.slice(0, 2), 10);
+          const currentYY = parseInt(new Date().getFullYear().toString().slice(-2), 10);
+          const century = yy <= currentYY ? '20' : '19';
+          const ymd = `${century}${digits.slice(0, 6)}`; // YYYYMMDD
+          const suffix = digits.slice(6);
+          return `=\"${ymd}-${suffix}\"`;
+        }
+        return (pnr || '');
+      };
+      const personOrgNummer = formatPersonalNumber(customer.personalNumber);
       const personnrtyp = customer.personalNumber ? 'S' : ''; // S = privatavtal
       const anlAdress = `${address.street} ${address.streetNumber}${address.apartment ? `, ${address.apartment}` : ''}`;
       const anlPostnr = address.postalCode;
@@ -292,20 +381,31 @@ export default function SwitchRequestsAdminPage() {
       const kundpostnr = address.postalCode;
       const kundort = address.city;
       const kundland = 'SE';
-      const telefon1 = customer.phone;
-      const telefon2 = ''; // Saknas i datamodellen
+      // Formatera telefon för Excel så ledande nolla bevaras
+      const formatPhoneForExcel = (phone: string | undefined | null): string => {
+        const p = (phone || '').trim();
+        if (!p) return '';
+        return `="${p}"`;
+      };
+      const telefon1 = '';
+      const telefon2 = formatPhoneForExcel(customer.phone);
       const epost = customer.email;
       const anlaggningsnr = req.currentProvider.customerNumber || '';
-      const omradesId = ''; // Saknas i datamodellen
+      // Försök hitta NätId via stad/område
+      const cityKey = (address.city || '').trim().toLowerCase();
+      const omradesId = (cityKey && netAreaMap.get(cityKey)) || '';
       const leveransdatum = ''; // Saknas i datamodellen
       const importtyp = '0'; // 0 = Leverantörsbyte
-      const avtalsId = req.id;
-      const fullmaktFornamn = customer.firstName;
-      const fullmaktEfternamn = customer.lastName;
-      const fullmaktPersonnr = customer.personalNumber || '';
+      // Kolumner AE, AF, AG, AH, AJ, AK ska vara tomma:
+      // AE (31): Avtals-id, AF (32): Fullmakt-förnamn, AG (33): Fullmakt-efternamn,
+      // AH (34): Fullmakt personnr, AJ (36): Order-id, AK (37): Agentnamn
+      const avtalsId = '';
+      const fullmaktFornamn = '';
+      const fullmaktEfternamn = '';
+      const fullmaktPersonnr = '';
       const orderdatum = new Date(req.createdAt).toLocaleDateString('sv-SE');
-      const orderId = req.id;
-      const agentnamn = provider.name;
+      const orderId = '';
+      const agentnamn = '';
       const ljudfilsnamn = ''; // Internt QA-fält
       const ljudkontrollant = ''; // Internt QA-fält
       const saljarId = ''; // Internt fält

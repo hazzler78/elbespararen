@@ -1,0 +1,369 @@
+Nätområde,NätId,Nättyp,Elområde,Nätägare,EDIELID
+Ajaure-Grundfors,AJG,Stamnät,2,Svenska kraftnät,10000
+Alingsås,ALS,Lokalnät,3,Alingsås Energi Elnät AB,16700
+Almnäs,AMS,Lokalnät,3,Almnäs Elnät AB,16800
+Alvesta Köping,ALV,Lokalnät,4,Alvesta Elnät AB,16900
+Ardala,ARD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Aros,AOS,Regionnät,3,Mälarenergi AB,40100
+Arvidsjaurbygden,AJB,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Arvika,ARV,Lokalnät,3,Arvika Elnät AB,17000
+Avesta,AVE,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Avesta region,AVR,Regionnät,3,Vattenfall Eldistribution AB,16400
+Bengtsfors,BEF,Lokalnät,3,Bengtsfors Energi Nät AB,17300
+Berg,BRG,Lokalnät,2,Bergs Tingslags Elektriska AB,17400
+Bergslagen region,BGS,Regionnät,3,Vattenfall Eldistribution AB,16400
+Bergslagen Östra,BGO,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Bergvik region,BEV,Regionnät,2,Ellevio AB,14900
+Bjäre,BJR,Lokalnät,4,Bjäre Kraft Elnät AB,17600
+Bjärke,BKE,Lokalnät,3,Bjärke Energi ek för,17700
+Björklinge,BJL,Lokalnät,3,Upplands Energi ek för,17800
+Björnekulla,BJK,Lokalnät,4,Kraftringen Nät AB,24700
+Björnlandet,BLT,Regionnät,2,Vattenfall Eldistribution AB,16400
+Blekinge,BLE,Lokalnät,4,E.ON Energidistribution AB,16000
+Bliekevare,BLI,Regionnät,2,Bliekevare Nät AB,51700
+Boden,BDN,Lokalnät,1,Bodens Energi Nät AB,17900
+Bohuslän Norra,NBL,Lokalnät,3,Ellevio AB,14900
+Boo,BOO,Lokalnät,3,Boo Energi ek för,18100
+Borgholm,BHM,Lokalnät,4,Borgholm Energi Elnät AB,18200
+Borlänge,BRL,Lokalnät,3,"Borlänge Energi Elnät, AB",18400
+Borås,BRS,Lokalnät,3,Nätkraft Borås Infra AB,11100
+Brittedal,BDL,Lokalnät,4,Brittedals Elnät ek för,18700
+Brobacken,BBN,Regionnät,1,Brobacken Nät AB,65930
+Bromölla,BMA,Lokalnät,4,Bromölla Energi och Vatten AB,18800
+Brännliden,BLN,Lokalnät,1,Brännliden Nät AB,15700
+Bygdeå-Robertsfors,BYG,Lokalnät,2,Skellefteå Kraft Elnät AB,10600
+Carlfors Bruk,CBR,Lokalnät,3,Carlfors Bruk KB,45800
+Dalarna region,DAL,Regionnät,3,Ellevio AB,14900
+Dalsland med omnejd,DAD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Dalstorp,DAP,Lokalnät,3,Östra Kinds Elnät AB,45500
+Danderyd,DAN,Lokalnät,3,E.ON Energidistribution AB,16000
+Degerfors,DFS,Lokalnät,3,Degerfors Elnät AB,18900
+Domsjö Fabriksområde,DOF,Lokalnät,2,Övik Energi Nät AB,45700
+Dragaliden,DLN,Lokalnät,1,Dragaliden Net AB,52100
+Drefviken,DRV,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Dubblabergen,DBB,Regionnät,1,Markbygden Net Väst AB,52900
+Edsbyn,EBN,Lokalnät,2,Ellevio AB,14900
+Ekeröarna,EKO,Lokalnät,3,Ellevio AB,14900
+Eksjö,ESJ,Lokalnät,3,Eksjö Elnät AB,19400
+Emmaboda,EBA,Lokalnät,4,Emmaboda Elnät AB,19500
+Enköping,EKG,Lokalnät,3,E.ON Energidistribution AB,16000
+Eskilstuna,ESK,Lokalnät,3,Eskilstuna Energi & Miljö Elnät ,19800
+Fagersta,FGA,Lokalnät,3,Västerbergslagens Elnät AB,38700
+Falbygden,FBN,Lokalnät,3,Falbygdens Energi Nät AB,39600
+Falkenberg,FBG,Lokalnät,4,Falkenberg Energi Elnät AB,39700
+Falun,FLN,Lokalnät,3,Falu Elnät AB,19200
+Falun nordost,FLO,Lokalnät,3,Falu Elnät AB,19200
+Filipstad,FPD,Lokalnät,3,Filipstad Energinät AB,39900
+Finspångsbygden,FSB,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Flakaberget,FLB,Regionnät,2,E.ON Energidistribution AB,16000
+Flen,FLE,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Forsbacka,FOB,Lokalnät,3,Gävle Energi Elnät AB,20400
+Forsbacka Övre,FBA,Regionnät,3,Ellevio AB,14900
+Frostviken region,FRV,Regionnät,2,Blåsjön Nät AB,14500
+Främmestad,FMD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Fågelsjö Region,FLS,Regionnät,2,Ellevio AB,14900
+Gabrielsberget,GBT,Lokalnät,2,Gabrielsberget Net AB,52200
+Gagnef,GNF,Lokalnät,3,Dala Energi Elnät AB,25800
+Gammelstilla,GAM,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Garpenberg,GAB,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Gideobygden,GDB,Lokalnät,2,Vattenfall Eldistribution AB,16400
+Gislaved,GIV,Lokalnät,3,Gislaved Energi Elnät AB,19900
+Gotland,GTL,Lokalnät,3,Gotlands Elnät AB,11220
+Grästorp,GTP,Lokalnät,3,Grästorp Energi ek för,20300
+Grönviken region,GRV,Regionnät,2,Ellevio AB,14900
+Gullspångsbygden,GBN,Lokalnät,3,Ellevio AB,14900
+Gässlingegrund,GLG,Lokalnät,3,Vindpark Vänern Drift AB,65800
+Gävle,GVL,Lokalnät,3,Gävle Energi Elnät AB,20400
+Göta,GTA,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Göteborg,GBG,Lokalnät,3,Göteborg Energi Nät AB,20500
+Habo,HBO,Lokalnät,3,Habo Energi Kraft AB,46300
+Hallabro,HLB,Lokalnät,4,Kraftringen Nät AB,24700
+Halland,HLD,Lokalnät,4,E.ON Energidistribution AB,16000
+Halland Norra,NHA,Lokalnät,3,Ellevio AB,14900
+Hallstavik,HVI,Lokalnät,3,Hallstaviks Elverk ek för,21100
+Halmstad,HMD,Lokalnät,4,Halmstads Energi och Miljö Nät A,21200
+Hammarstrand,HAM,Lokalnät,2,E.ON Energidistribution AB,16000
+Hammarö,HMM,Lokalnät,3,Ellevio AB,14900
+Hamra,HMR,Lokalnät,2,Ellevio AB,14900
+Harrsele region,HRS,Regionnät,2,E.ON Energidistribution AB,16000
+Havsnäs,HVN,Regionnät,2,Havsnäs Vindkraft Elnät AB,52000
+Heby,HBY,Lokalnät,3,Sala-Heby Energi Elnät AB,31600
+Hedemorahyttorna,HMH,Lokalnät,3,Hedemora Energi AB,21400
+Hedesunda,HDS,Lokalnät,3,Gävle Energi Elnät AB,20400
+Helsingborg,HBG,Lokalnät,4,Öresundskraft Elnät AB,40400
+Herrljunga,HLJ,Lokalnät,3,Herrljunga Elektriska AB,21600
+Hjo,HJO,Lokalnät,3,Hjo Elnät AB,21700
+Hjälmaren Region,HJR,Regionnät,3,E.ON Energidistribution AB,16000
+Hjärtum,HJM,Lokalnät,3,Hjärtums Elförening ek för,21800
+Hofors,HOF,Lokalnät,3,Hofors Elverk AB,21900
+Hofors Bruk,HFB,Lokalnät,3,Ovako Sweden AB,44600
+Horndal,HDL,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Huddinge,HDG,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Hudiksvall,HDV,Lokalnät,2,Ellevio AB,14900
+Huvudsta,HUV,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Hälsingland,HAL,Lokalnät,2,Ellevio AB,14900
+Hälsingland Region,HAR,Regionnät,2,Ellevio AB,14900
+Härjedalen region,HJD,Regionnät,2,Ellevio AB,14900
+Härjeån,HJN,Lokalnät,2,Härjeåns Nät AB,43600
+Härnösand,HSD,Lokalnät,2,Härnösand Elnät AB,22600
+Härryda,HRA,Lokalnät,3,Härryda Energi AB,22700
+Hästberget,HBT,Lokalnät,3,E.ON Energidistribution AB,16000
+Höganäs,HOG,Lokalnät,4,Höganäs Energi Elnät AB,22900
+Höör,HOR,Lokalnät,4,Kraftringen Nät AB,24700
+Ingarö,ING,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Jukkasjärvi,JUJ,Lokalnät,1,Jukkasjärvi Sockens Belysningsfö,23300
+Juveln,JUV,Regionnät,2,Fortum Sverige AB,40900
+Jämtland region,JMT,Regionnät,2,Jämtkraft Elnät AB,42900
+Jämtlandsbygden,JML,Lokalnät,2,Jämtkraft Elnät AB,42900
+Järkvissle,JKE,Regionnät,2,Vattenfall Kraftgården AB,16405
+Järla,JRA,Lokalnät,3,Nacka Energi AB,28500
+Järpströmmen region,JPS,Regionnät,2,Fortum Sverige AB,40900
+Järva-Danderyd,JDA,Regionnät,3,Ellevio AB,14900
+Jönköping,JNK,Lokalnät,3,Jönköping Energi Nät AB,23600
+Kalixbygden,KAB,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Kalmar,KMR,Lokalnät,4,Kalmar Energi Elnät AB,23800
+Karlsborg,KBG,Lokalnät,3,Karlsborgs Elnät AB,23900
+Karlshamn,KHN,Lokalnät,4,Karlshamn Elnät AB,24000
+Karlskoga,KSA,Lokalnät,3,Karlskoga Elnät AB,24100
+Karlskrona,KKA,Lokalnät,4,Affärsverken Elnät i Karlskrona ,24200
+Karlstad,KST,Lokalnät,3,Karlstads El- och Stadsnät AB,24300
+Karskruv,KAR,Regionnät,4,Karskruv Nät AB,47400
+Katrineholmsbygden,KHB,Lokalnät,3,Tekniska verken Katrineholm Nät ,51900
+Kema Nord region,KEM,Regionnät,2,Ellevio AB,14900
+Kind,KND,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Kinnekullebygden,KKB,Lokalnät,3,Götene Elförening ek för,20600
+Kiruna LKAB,KLK,Lokalnät,1,LKAB Nät AB,13800
+Klippan,KPN,Lokalnät,4,Kraftringen Nät AB,24700
+Knäpplan,KNP,Lokalnät,3,Boda Nät ek för,18300
+Konti-Skan st,KON,Stamnät,3,Svenska kraftnät,10000
+Kopparbergsbyggden,KOB,Lokalnät,3,Ellevio AB,14900
+Korsnäs,KNS,Lokalnät,3,Billerud Skog & Industri AB,44300
+Korsselbränna region,KBR,Regionnät,2,E.ON Energidistribution AB,16000
+Kramfors,KRF,Lokalnät,2,E.ON Energidistribution AB,16000
+Kristianstad-Åhus,KRS,Lokalnät,4,C4 Elnät AB,24800
+Kristinehamn,KRH,Lokalnät,3,Kristinehamns Elnät AB,24900
+Krångede region,KRG,Regionnät,2,Fortum Sverige AB,40900
+Kungsbacka,KBA,Lokalnät,3,E.ON Energidistribution AB,16000
+Kungsbacka region,KUB,Regionnät,3,Ellevio AB,14900
+Kungälv,KUV,Lokalnät,3,Kungälv Energi AB,25200
+Kvarnforsen,KFN,Regionnät,2,Kvarnforsen Nät AB,65900
+Kviinge,KVI,Lokalnät,4,Brittedals Elnät ek för,18700
+Kvänum,KVM,Lokalnät,3,Kvänumbygdens Energi ek för,25500
+Laholm,LHM,Lokalnät,4,Södra Hallands Kraft ek för,34600
+Landskrona,LKA,Lokalnät,4,Landskrona Energi AB,25600
+Lehtirova,LEH,Lokalnät,1,Lehtirova Nät AB,71730
+Leksand-Rättvik,LER,Lokalnät,3,Dala Energi Elnät AB,25800
+Lerum,LRM,Lokalnät,3,Lerum Nät AB,25900
+Lidingö,LDG,Lokalnät,3,Ellevio AB,14900
+Lidköping,LDK,Lokalnät,3,Lidköping Elnät AB,26200
+Lilla Edet-Ale,LED,Lokalnät,3,Ale El Ekonomisk förening,16600
+Lillgrund,LGR,Lokalnät,4,Vattenfall Eldistribution AB,16400
+Lillhärdal Region,LHD,Regionnät,2,Ellevio AB,14900
+Lindesberg,LDB,Lokalnät,3,Linde Energi Elnät AB,26300
+Linköping,LNK,Lokalnät,3,Tekniska verken Linköping Nät AB,11900
+Linnvasselv,LEV,Regionnät,2,Fortum Sverige AB,40900
+Ljungan Övre region,LJV,Regionnät,2,E.ON Energidistribution AB,16000
+Ljungby,LBY,Lokalnät,4,Ljungby Energinät AB,26400
+Ljusdal,LJD,Lokalnät,2,Ljusdal Elnät AB,26500
+Lomma,LMA,Lokalnät,4,Kraftringen Nät AB,24700
+Luleå,LUL,Lokalnät,1,Luleå Energi Elnät AB,11600
+Luleälven Övre,LAO,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Lund,LUN,Lokalnät,4,Kraftringen Nät AB,24700
+Lycksele region,LYC,Regionnät,2,E.ON Energidistribution AB,16000
+Lyckselebygden,LYX,Lokalnät,2,Skellefteå Kraft Elnät AB,10600
+Lysekil,LYS,Lokalnät,3,LEVA Nät AB,27200
+Långå,LAA,Regionnät,2,Fortum Sverige AB,40900
+Länsterhöjden,LAN,Regionnät,2,Jämtkraft Elnät AB,42900
+Malmberget LKAB,MBT,Lokalnät,1,LKAB Nät AB,13800
+Malmfälten,MAF,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Malmö-Burlöv,MMO,Lokalnät,4,E.ON Energidistribution AB,16000
+Malung,MLG,Lokalnät,3,Malung-Sälens Elnät AB,27300
+Marhult,MAR,Regionnät,4,Marhult Nät AB,13500
+Mariestad,MAI,Lokalnät,3,VänerEnergi AB,27400
+Markbygden,MBN,Regionnät,1,Markbygden Net AB,15200
+Marstrand,MSD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Medelpad Lokal,MEL,Lokalnät,2,E.ON Energidistribution AB,16000
+Mellansverige region,VFM,Regionnät,3,Vattenfall Eldistribution AB,16400
+Midskog-Åskälen,MAS,Regionnät,2,Jämtkraft Elnät AB,42900
+Mjölby,MBY,Lokalnät,3,Mjölby Kraftnät AB,27700
+Mora-Orsa,MOR,Lokalnät,3,Ellevio AB,14900
+Myråsen,MYN,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Mölndal,MDL,Lokalnät,3,Mölndal Energi Nät AB,28300
+Mörarp,MRP,Lokalnät,4,Öresundskraft Elnät AB,40400
+Mörsil region,MRR,Regionnät,2,Fortum Sverige AB,40900
+Nerike Lokal,NRL,Lokalnät,3,E.ON Energidistribution AB,16000
+Nissafors,NSF,Lokalnät,3,E.ON Energidistribution AB,16000
+Nora Region,NRR,Regionnät,3,E.ON Energidistribution AB,16000
+Norberg,NOB,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Nordvästra Skåne,NVS,Lokalnät,4,Öresundskraft Elnät AB,40400
+Norrbotten region,VFN,Regionnät,1,Vattenfall Eldistribution AB,16400
+Norrköping Region,NKR,Regionnät,3,E.ON Energidistribution AB,16000
+Norrtälje,NTE,Lokalnät,3,Norrtälje Energi AB,29000
+Nossebro,NSB,Lokalnät,3,Nossebroortens Energi ek för,29300
+Nybro,NBR,Lokalnät,4,Nybro Elnät AB,29500
+Nyköping,NYK,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Nyköping Landsbygd,NYD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Nynäshamn,NHN,Lokalnät,3,Ellevio AB,14900
+Nämforsen region,NFO,Regionnät,2,Vattenfall Kraftgården AB,16405
+Närkes Kil,NKL,Lokalnät,3,Linde Energi Elnät AB,26300
+Nässjö,NSO,Lokalnät,3,Nässjö Affärsverk Elnät AB,10300
+Ockelbo,OBO,Lokalnät,2,Ellevio AB,14900
+Olofström,OLS,Lokalnät,4,Olofströms Kraft Nät AB,30200
+Olseröd,OSD,Lokalnät,4,Olseröds Elektriska Distribution,30300
+Orust Västra,ORV,Lokalnät,3,Västra Orusts Energitjänst ek fö,39100
+Orust-Tjörn,ORT,Lokalnät,3,Ellevio AB,14900
+Oskarshamn tätort,OHN,Lokalnät,4,Oskarshamn Energi Nät AB,30500
+Oxelösund,OXD,Lokalnät,3,Oxelö Energi AB,30600
+Partille,PTE,Lokalnät,3,Partille Energi Nät AB,51500
+Pitebygden,PIB,Lokalnät,1,Pite Energi Elnät AB,30800
+Ringsjö,RSJ,Lokalnät,4,Kraftringen Nät AB,24700
+Ronneby,RBY,Lokalnät,4,Ronneby Miljö o Teknik AB,31100
+Roslagskusten,RSK,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Röbergsfjället,RBF,Regionnät,3,Bliekevare Nät AB,51700
+Rödeby,ROY,Lokalnät,4,Rödeby Elverk ek för,31500
+Sala-Hyttan,SAH,Lokalnät,3,Sala-Heby Energi Elnät AB,31600
+Sandhult-Sandared,SHT,Lokalnät,3,Sandhult-Sandareds Elnät AB,31800
+Sandviken,SDV,Lokalnät,3,Sandviken Energi Elnät AB,31900
+Sidensjö,SID,Regionnät,2,Sidensjö Vindkraft Elnät AB,52800
+Sigtuna,SIG,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Simrishamn,SIH,Lokalnät,4,Österlens Kraft Elnät AB,32200
+Sjisjka,SJN,Lokalnät,1,Sjisjka Nät AB,52300
+Sjogerstad,SJO,Lokalnät,3,Sjogerstads Elektriska Distribut,32300
+Sjuhärad,SHD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Sjöbo,SJB,Lokalnät,4,Sjöbo Elnät AB,32400
+Skara,SKA,Lokalnät,3,Skara Elnät AB,32500
+Skellefteå,SKT,Lokalnät,1,Skellefteå Kraft Elnät AB,10600
+Skellefteå region,SKF,Regionnät,1,Skellefteå Kraft Elnät AB,10600
+Skillingaryd,SKR,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Skurup,SKP,Lokalnät,4,Skurups Elverk AB,32800
+Skyllbergs Bruk,SBR,Lokalnät,3,Skyllberg Elnät AB,32900
+Skåne Landsbygd,SKL,Lokalnät,4,E.ON Energidistribution AB,16000
+Skåne Mellersta,SNM,Lokalnät,4,Mellersta Skånes Kraft ek för,27600
+Skåne Västra Lokalnät,SKV,Lokalnät,4,E.ON Energidistribution AB,16000
+Skåne-Halland region,SKH,Regionnät,4,Öresundskraft Elnät AB,40400
+Skånska,SKN,Lokalnät,4,Skånska Energi Nät AB,33000
+Skövde,SKD,Lokalnät,3,Skövde Energi Elnät AB,42300
+Skövde Landsbygd,SLD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Smedjebacken,SMB,Lokalnät,3,Smedjebacken Energi Nät AB,33400
+Småland Norra lokalnät,SMN,Lokalnät,3,E.ON Energidistribution AB,16000
+Småland region,SML,Regionnät,3,E.ON Energidistribution AB,16000
+Småland Södra,SMS,Lokalnät,4,E.ON Energidistribution AB,16000
+Solberg region,SOL,Regionnät,2,Skellefteå Kraft Elnät AB,10600
+Sollentuna,SOT,Lokalnät,3,Sollentuna Energi och Miljö AB,33500
+Staffanstorp,SFP,Lokalnät,4,Staffanstorps Energi AB,33800
+Stamnät Snittområde 1,ST1,Stamnät,1,Svenska kraftnät,10000
+Stamnät Snittområde 2,ST2,Stamnät,2,Svenska kraftnät,10000
+Stamnät Snittområde 3,ST3,Stamnät,3,Svenska kraftnät,10000
+Stamnät Snittområde 4,ST4,Stamnät,4,Svenska kraftnät,10000
+Stensjöfallet region,STF,Regionnät,2,Stensjön Kraft AB,15800
+Stenungsund,SGD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Stockholm,STH,Lokalnät,3,Ellevio AB,14900
+Stockholm Region,STO,Regionnät,3,Ellevio AB,14900
+Stockholm-Arlanda,ARN,Lokalnät,3,Swedavia AB,66340
+Strängnäs Tätort,SGS,Lokalnät,3,SEVAB Nät AB,41700
+Stugun region,STU,Regionnät,2,Vattenfall Kraftgården AB,16405
+Sturefors,SRF,Lokalnät,3,Sturefors Eldistribution AB,47000
+Sundsvall region,SUR,Regionnät,2,E.ON Energidistribution AB,16000
+Sundsvall tätort,SUV,Lokalnät,2,Sundsvall Elnät AB,11800
+Svalboviken,SBV,Lokalnät,3,Eskilstuna Energi & Miljö Elnät ,19800
+SwePollink,SWP,Stamnät,4,Svenska kraftnät,10000
+Sydmälaren,SYM,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Sydsvenska region,SYD,Regionnät,4,E.ON Energidistribution AB,16000
+Sysslebäck,SBK,Lokalnät,3,Näckåns Elnät AB,29800
+Säffle,SFE,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Säter,STR,Lokalnät,3,Dala Energi Elnät AB,25800
+Sävsjö,SSJ,Lokalnät,3,Njudung Sävsjö Elnät AB,34400
+Söderhamn,SHN,Lokalnät,2,Söderhamn Elnät AB,34500
+Södertälje,SDT,Lokalnät,3,Telge Elnät AB,34800
+Sölvesborg,SBG,Lokalnät,4,Sölvesborgs Energi och Vatten AB,34700
+Sörbylund,SBL,Lokalnät,3,Sörbylunds Elnät HB,51400
+Tibro,TIB,Lokalnät,3,Tibro Elnät AB,51600
+Tidaholm,THM,Lokalnät,3,Tidaholm Elnät AB,66200
+Tillberga,TLB,Lokalnät,3,Mälarenergi Elnät AB,39300
+Tornedalen,TDN,Lokalnät,1,Övertorneå Energi AB,52700
+Tornedalen Nedre,TNN,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Tornedalen Övre,TDO,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Torsåker,TOR,Lokalnät,3,Hofors Elverk AB,21900
+Torsås,TOS,Lokalnät,4,Kraftringen Nät AB,24700
+Tranås,TNS,Lokalnät,3,Tranås Energi Elnät AB,35320
+Treje,TRJ,Regionnät,3,Ellevio AB,14900
+Trelleborg,TBG,Lokalnät,4,Trelleborg Elnät AB,35400
+Trollhättan,TRH,Lokalnät,3,Trollhättan Energi Elnät AB,50800
+Trängslet,TRS,Lokalnät,3,Ellevio AB,14900
+Tumba,TUM,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Tyngsjö-Finnmarken,TYS,Lokalnät,3,Malung-Sälens Elnät AB,27300
+Tyresö,TYR,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Täby,TBY,Lokalnät,3,Ellevio AB,14900
+Töre,TRE,Lokalnät,1,Töre Energi ek för,35800
+Töreboda,TBA,Lokalnät,3,VänerEnergi AB,27400
+Uddevalla,UVA,Lokalnät,3,Uddevalla Energi Elnät AB,36010
+Ulricehamn,UHN,Lokalnät,3,Ulricehamns Energi Elnät AB,36100
+Umeå,UMA,Lokalnät,2,Umeå Energi Elnät AB,14300
+Umeå region,UME,Regionnät,2,Umeå Energi Elnät AB,14300
+Umeälven Nedre,UMD,Lokalnät,2,Vattenfall Eldistribution AB,16400
+Umeälven region,UMN,Regionnät,2,Vattenfall Eldistribution AB,16400
+Umeälven Övre,UMO,Lokalnät,2,Vattenfall Eldistribution AB,16400
+Uppland Norra,UPN,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Uppland Södra,UPS,Lokalnät,3,E.ON Energidistribution AB,16000
+Uppland Västra,UPV,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Uppland Östra,UPO,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Upprämmen,URM,Lokalnät,3,Malung-Sälens Elnät AB,27300
+Uppsala,UPP,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Vaggeryd,VGD,Lokalnät,3,Vaggeryds Elverk,36400
+Vagnhärad,VAG,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Vallebygden,VAB,Lokalnät,3,Vallebygdens Energi ek för,36500
+Vallentuna,VAT,Lokalnät,3,Ellevio AB,14900
+Vansbro,VNB,Lokalnät,3,Ellevio AB,14900
+Vara,VAR,Lokalnät,3,Vara Energi ek för,41800
+Varberg,VBG,Lokalnät,3,Varberg Energi Elnät AB,36800
+Varbergsorten Norra,VBN,Lokalnät,3,Varbergsortens Elnät AB,36900
+Varbergsorten Södra,VBS,Lokalnät,3,Varbergsortens Elnät AB,36900
+Varsvik,VIK,Regionnät,3,Holmen Energi Elnät AB,64920
+Vedum,VDM,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Vetlanda,VTL,Lokalnät,3,Njudung Vetlanda Elnät AB,37700
+Viggafors,VGF,Lokalnät,3,Näckåns Elnät AB,29800
+Vilhelmina,VMA,Lokalnät,2,Vattenfall Eldistribution AB,16400
+Vimmerby,VBY,Lokalnät,3,Vimmerby Energi Nät AB,37920
+Vindeln,VDN,Lokalnät,2,Skellefteå Kraft Elnät AB,10600
+Vingåkersbygden,VIG,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Vålberg-Segerstad,VLB,Lokalnät,3,Ellevio AB,14900
+Värmdö,VMD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Värmland,VAL,Lokalnät,3,Ellevio AB,14900
+Värmland region,VML,Regionnät,3,Ellevio AB,14900
+Värnamo,VMO,Lokalnät,4,Värnamo Elnät AB,38600
+Värö region,VRO,Regionnät,3,Vattenfall Eldistribution AB,16400
+Västanfors,VAS,Regionnät,3,Västerbergslagens Elnät AB,38700
+Västanhede,VAD,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Västerbergslagen,VBL,Lokalnät,3,Västerbergslagens Elnät AB,38700
+Västerbergslagen Regionalnät,VBR,Regionnät,3,Västerbergslagens Elnät AB,38700
+Västerbykil,VBK,Lokalnät,3,Sala-Heby Energi Elnät AB,31600
+Västervik,VVI,Lokalnät,3,Västerviks Kraft Elnät AB,38800
+Västmanland Södra,VLS,Lokalnät,3,Mälarenergi Elnät AB,39300
+Västsverige region,VFV,Regionnät,3,Vattenfall Eldistribution AB,16400
+Vätterbygden,VAN,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Växjö,VXO,Lokalnät,4,Växjö Energi Elnät AB,39200
+Ystad,YST,Lokalnät,4,Ystad Energi Elnät AB,40800
+Ådalen Lokal,ALL,Lokalnät,2,E.ON Energidistribution AB,16000
+Ådalen region,ADL,Regionnät,2,E.ON Energidistribution AB,16000
+Åkersberga,AKB,Lokalnät,3,E.ON Energidistribution AB,16000
+Ålem,ALM,Lokalnät,4,Ålem Energi Elnät AB,44900
+Åmål,AML,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Ånge,ANE,Lokalnät,2,Härjeåns Nät AB,43600
+Ånge region,ANN,Regionnät,2,Vattenfall Eldistribution AB,16400
+Ångermanälven region,AMN,Regionnät,2,Vattenfall Eldistribution AB,16400
+Årjäng,ANG,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Årsunda,ARS,Lokalnät,3,Årsunda Kraft o Belysningsf,46600
+Åsele,ASL,Lokalnät,2,Åsele Elnät AB,71500
+Åskälen,ASK,Lokalnät,2,Åskälen Vindkraft Elnät AB,12800
+Älvdalen,AVD,Lokalnät,3,Ellevio AB,14900
+Älvsbybygden,ABB,Lokalnät,1,Vattenfall Eldistribution AB,16400
+Ängelholmsbygden,AHB,Lokalnät,4,Öresundskraft Elnät AB,40400
+Öckerö,OCK,Lokalnät,3,Ellevio AB,14900
+Öland,OLD,Lokalnät,4,E.ON Energidistribution AB,16000
+Örnsköldsvik,OVK,Lokalnät,2,Övik Energi Nät AB,45700
+Österfärnebo,OFB,Lokalnät,3,Sandviken Energi Elnät AB,31900
+Österlen,OLN,Lokalnät,4,Österlens Kraft Elnät AB,32200
+Östhammar,OHM,Lokalnät,3,Vattenfall Eldistribution AB,16400
+Östra Götaland,OGO,Lokalnät,3,E.ON Energidistribution AB,16000
+Östsverige region,VFO,Regionnät,3,Vattenfall Eldistribution AB,16400
+
