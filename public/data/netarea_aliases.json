@@ -1,10 +1,43 @@
 {
   "aliases": [
-    {
-      "name": "Bromma",
-      "netId": "STH",
-      "postalPrefix": ["167", "168"]
-    }
+    { "name": "Bromma", "netId": "STH", "postalPrefix": ["167", "168"] },
+    { "name": "Spånga", "netId": "STH" },
+    { "name": "Tensta", "netId": "STH" },
+    { "name": "Rinkeby", "netId": "STH" },
+    { "name": "Kista", "netId": "STH" },
+    { "name": "Hässelby", "netId": "STH" },
+    { "name": "Vällingby", "netId": "STH" },
+    { "name": "Blackeberg", "netId": "STH" },
+    { "name": "Alvik", "netId": "STH" },
+    { "name": "Traneberg", "netId": "STH" },
+    { "name": "Älvsjö", "netId": "STH" },
+    { "name": "Hägersten", "netId": "STH" },
+    { "name": "Liljeholmen", "netId": "STH" },
+    { "name": "Midsommarkransen", "netId": "STH" },
+    { "name": "Gröndal", "netId": "STH" },
+    { "name": "Aspudden", "netId": "STH" },
+    { "name": "Enskede", "netId": "STH" },
+    { "name": "Årsta", "netId": "STH" },
+    { "name": "Vantör", "netId": "STH" },
+    { "name": "Bandhagen", "netId": "STH" },
+    { "name": "Högdalen", "netId": "STH" },
+    { "name": "Rågsved", "netId": "STH" },
+    { "name": "Skärholmen", "netId": "STH" },
+    { "name": "Vårberg", "netId": "STH" },
+    { "name": "Bredäng", "netId": "STH" },
+    { "name": "Farsta", "netId": "STH" },
+    { "name": "Hökarängen", "netId": "STH" },
+    { "name": "Gubbängen", "netId": "STH" },
+    { "name": "Tallkrogen", "netId": "STH" },
+    { "name": "Bagarmossen", "netId": "STH" },
+    { "name": "Skarpnäck", "netId": "STH" },
+    { "name": "Johanneshov", "netId": "STH" },
+    { "name": "Södermalm", "netId": "STH" },
+    { "name": "Östermalm", "netId": "STH" },
+    { "name": "Norrmalm", "netId": "STH" },
+    { "name": "Vasastan", "netId": "STH" },
+    { "name": "Gamla stan", "netId": "STH" },
+    { "name": "Kungsholmen", "netId": "STH" }
   ]
 }
 
