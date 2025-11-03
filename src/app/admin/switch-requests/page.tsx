@@ -295,8 +295,9 @@ export default function SwitchRequestsAdminPage() {
         const rows = parseCsv(text);
         if (rows.length > 1) {
           const header = rows[0];
-          const nameIdx = header.findIndex(h => h.toLowerCase() === 'nätområde' || h.toLowerCase() === 'natområde' || h.toLowerCase().includes('nätområde'));
-          const idIdx = header.findIndex(h => h.toLowerCase() === 'nätid' || h.toLowerCase() === 'nätid' || h.toLowerCase().includes('nätid'));
+          const norm = header.map(h => (h || '').trim().toLowerCase());
+          const nameIdx = norm.indexOf('nätområde');
+          const idIdx = norm.indexOf('nätid'); // exakt kolumnen "NätId" (3 bokstäver)
           if (nameIdx >= 0 && idIdx >= 0) {
             for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
