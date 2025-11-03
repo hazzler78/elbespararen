@@ -241,6 +241,17 @@ export default function SwitchRequestsAdminPage() {
       'Andel reducerad energiskatt'
     ];
 
+    // Ladda alias/prefix-data (stad/alias/postprefix -> NätId)
+    type AliasEntry = { name: string; netId: string; postalPrefix?: string[] };
+    let aliasEntries: AliasEntry[] = [];
+    try {
+      const resAliases = await fetch('/data/netarea_aliases.json');
+      if (resAliases.ok) {
+        const json = await resAliases.json() as { aliases?: AliasEntry[] };
+        aliasEntries = json.aliases || [];
+      }
+    } catch {}
+
     // Ladda nätområdesdata (Nätområde -> NätId)
     let netAreaMap: Map<string, string> = new Map();
     try {
@@ -400,10 +411,23 @@ export default function SwitchRequestsAdminPage() {
       const telefon2 = formatPhoneForExcel(customer.phone);
       const epost = customer.email;
       const anlaggningsnr = req.currentProvider.customerNumber || '';
-      // Försök hitta NätId via stad/område (normaliserad + fuzzy)
+      // Försök hitta NätId via alias/prefix först
       const normalize = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
       const cityKey = normalize(address.city || '');
-      let omradesId = (cityKey && netAreaMap.get(cityKey)) || '';
+      const postal = (address.postalCode || '').replace(/\s/g, '');
+      let omradesId = '';
+      if (cityKey) {
+        const exactAlias = aliasEntries.find(a => normalize(a.name) === cityKey);
+        if (exactAlias) omradesId = exactAlias.netId;
+      }
+      if (!omradesId && postal && aliasEntries.length) {
+        const aliasByPrefix = aliasEntries.find(a => (a.postalPrefix || []).some(p => postal.startsWith(p)));
+        if (aliasByPrefix) omradesId = aliasByPrefix.netId;
+      }
+      // Fallback: CSV mapp
+      if (!omradesId) {
+        omradesId = (cityKey && netAreaMap.get(cityKey)) || '';
+      }
       if (!omradesId && cityKey) {
         for (const [name, id] of netAreaMap.entries()) {
           if (name.includes(cityKey) || cityKey.includes(name)) {
