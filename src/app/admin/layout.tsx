@@ -13,7 +13,8 @@ import {
   X,
   Settings,
   BarChart3,
-  Lock
+  Lock,
+  Newspaper
 } from "lucide-react";
 
 const ADMIN_PASSWORD = "grodan2025";
@@ -42,6 +43,12 @@ const navigation = [
     href: "/admin/switch-requests",
     icon: ArrowRight,
     description: "Hantera bytförfrågningar"
+  },
+  {
+    name: "Nyheter",
+    href: "/admin/news",
+    icon: Newspaper,
+    description: "Hantera nyheter och pressmeddelanden"
   }
 ];
 

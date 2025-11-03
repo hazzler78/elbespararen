@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest } from "@/lib/types";
+import { ElectricityProvider, Lead, SwitchRequest, NewsPost } from "@/lib/types";
 import type { D1Database } from "@cloudflare/workers-types";
 
 // Mock data för utveckling
@@ -79,6 +79,13 @@ export interface Database {
   createSwitchRequest(switchRequest: Omit<SwitchRequest, 'id' | 'createdAt' | 'updatedAt'>): Promise<SwitchRequest>;
   updateSwitchRequest(id: string, switchRequest: Partial<SwitchRequest>): Promise<SwitchRequest>;
   deleteSwitchRequest(id: string): Promise<boolean>;
+
+  // News Posts
+  getNewsPosts(includeUnpublished?: boolean): Promise<NewsPost[]>;
+  getNewsPost(id: string): Promise<NewsPost | null>;
+  createNewsPost(newsPost: Omit<NewsPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<NewsPost>;
+  updateNewsPost(id: string, newsPost: Partial<NewsPost>): Promise<NewsPost>;
+  deleteNewsPost(id: string): Promise<boolean>;
 }
 
 // Mock Database Implementation (för utveckling)
@@ -87,6 +94,7 @@ class MockDatabase implements Database {
   private providers: ElectricityProvider[] = [...mockProviders];
   private leads: Lead[] = [];
   private switchRequests: SwitchRequest[] = [];
+  private newsPosts: NewsPost[] = [];
 
   // Singleton pattern för att behålla state mellan requests i utveckling
   static getInstance(): MockDatabase {
@@ -225,6 +233,54 @@ class MockDatabase implements Database {
       return false;
     }
     this.switchRequests.splice(index, 1);
+    return true;
+  }
+
+  // News Post methods
+  async getNewsPosts(includeUnpublished: boolean = false): Promise<NewsPost[]> {
+    let posts = [...this.newsPosts];
+    if (!includeUnpublished) {
+      posts = posts.filter(p => p.isPublished);
+    }
+    return posts.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
+  }
+
+  async getNewsPost(id: string): Promise<NewsPost | null> {
+    return this.newsPosts.find(p => p.id === id) || null;
+  }
+
+  async createNewsPost(newsPostData: Omit<NewsPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<NewsPost> {
+    const newsPost: NewsPost = {
+      ...newsPostData,
+      id: `news-${Date.now()}`,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    this.newsPosts.push(newsPost);
+    return newsPost;
+  }
+
+  async updateNewsPost(id: string, newsPostData: Partial<NewsPost>): Promise<NewsPost> {
+    const index = this.newsPosts.findIndex(p => p.id === id);
+    if (index === -1) {
+      throw new Error(`News post with id ${id} not found`);
+    }
+    
+    this.newsPosts[index] = {
+      ...this.newsPosts[index],
+      ...newsPostData,
+      updatedAt: new Date()
+    };
+    
+    return this.newsPosts[index];
+  }
+
+  async deleteNewsPost(id: string): Promise<boolean> {
+    const index = this.newsPosts.findIndex(p => p.id === id);
+    if (index === -1) {
+      return false;
+    }
+    this.newsPosts.splice(index, 1);
     return true;
   }
 }
@@ -692,6 +748,147 @@ class CloudflareDatabase implements Database {
   async deleteSwitchRequest(id: string): Promise<boolean> {
     const result = await this.db.prepare(`
       DELETE FROM switch_requests WHERE id = ?
+    `).bind(id).run();
+
+    return (result.meta?.changes || 0) > 0;
+  }
+
+  // News Post methods
+  async getNewsPosts(includeUnpublished: boolean = false): Promise<NewsPost[]> {
+    try {
+      const query = includeUnpublished
+        ? `SELECT * FROM news_posts ORDER BY published_at DESC, created_at DESC`
+        : `SELECT * FROM news_posts WHERE is_published = 1 ORDER BY published_at DESC, created_at DESC`;
+      
+      const result = await this.db.prepare(query).all();
+
+      return result.results.map((row: Record<string, unknown>) => ({
+        id: String(row.id),
+        title: String(row.title),
+        excerpt: row.excerpt ? String(row.excerpt) : undefined,
+        content: String(row.content),
+        imageUrl: row.image_url ? String(row.image_url) : undefined,
+        externalLink: row.external_link ? String(row.external_link) : undefined,
+        publishedAt: new Date(String(row.published_at || row.created_at)),
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at)),
+        isPublished: Boolean(row.is_published)
+      }));
+    } catch (error) {
+      // Om tabellen inte finns ännu (t.ex. på remote), returnera tom array
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('news_posts')) {
+        console.warn('[Database] news_posts table does not exist yet, returning empty array');
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async getNewsPost(id: string): Promise<NewsPost | null> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM news_posts WHERE id = ?
+      `).bind(id).first();
+
+      if (!result) return null;
+
+      const row = result as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        title: String(row.title),
+        excerpt: row.excerpt ? String(row.excerpt) : undefined,
+        content: String(row.content),
+        imageUrl: row.image_url ? String(row.image_url) : undefined,
+        externalLink: row.external_link ? String(row.external_link) : undefined,
+        publishedAt: new Date(String(row.published_at || row.created_at)),
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at)),
+        isPublished: Boolean(row.is_published)
+      };
+    } catch (error) {
+      // Om tabellen inte finns ännu, returnera null
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('news_posts')) {
+        console.warn('[Database] news_posts table does not exist yet');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async createNewsPost(newsPostData: Omit<NewsPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<NewsPost> {
+    const id = `news-${Date.now()}`;
+    const now = new Date().toISOString();
+    const publishedAt = newsPostData.publishedAt ? newsPostData.publishedAt.toISOString() : now;
+
+    try {
+      await this.db.prepare(`
+        INSERT INTO news_posts (
+          id, title, excerpt, content, image_url, external_link, 
+          published_at, is_published, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        newsPostData.title,
+        newsPostData.excerpt || null,
+        newsPostData.content,
+        newsPostData.imageUrl || null,
+        newsPostData.externalLink || null,
+        publishedAt,
+        newsPostData.isPublished ? 1 : 0,
+        now,
+        now
+      ).run();
+
+      return {
+        ...newsPostData,
+        id,
+        createdAt: new Date(now),
+        updatedAt: new Date(now)
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('news_posts')) {
+        throw new Error('news_posts table does not exist. Please run the migration first.');
+      }
+      throw error;
+    }
+  }
+
+  async updateNewsPost(id: string, newsPostData: Partial<NewsPost>): Promise<NewsPost> {
+    const existing = await this.getNewsPost(id);
+    if (!existing) {
+      throw new Error(`News post with id ${id} not found`);
+    }
+
+    const updated = { ...existing, ...newsPostData, updatedAt: new Date() };
+    const now = updated.updatedAt.toISOString();
+    const publishedAt = updated.publishedAt ? updated.publishedAt.toISOString() : existing.publishedAt.toISOString();
+
+    await this.db.prepare(`
+      UPDATE news_posts SET
+        title = ?, excerpt = ?, content = ?, image_url = ?, external_link = ?,
+        published_at = ?, is_published = ?, updated_at = ?
+      WHERE id = ?
+    `).bind(
+      updated.title,
+      updated.excerpt || null,
+      updated.content,
+      updated.imageUrl || null,
+      updated.externalLink || null,
+      publishedAt,
+      updated.isPublished ? 1 : 0,
+      now,
+      id
+    ).run();
+
+    return updated;
+  }
+
+  async deleteNewsPost(id: string): Promise<boolean> {
+    const result = await this.db.prepare(`
+      DELETE FROM news_posts WHERE id = ?
     `).bind(id).run();
 
     return (result.meta?.changes || 0) > 0;

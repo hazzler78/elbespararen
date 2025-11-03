@@ -155,6 +155,20 @@ export interface SwitchProgress {
   nextAction?: string;
 }
 
+// News Post types
+export interface NewsPost {
+  id: string;
+  title: string;
+  excerpt?: string;
+  content: string;
+  imageUrl?: string; // URL till bild från inlägget
+  externalLink?: string; // Extern länk om nyheten kommer från extern källa
+  publishedAt: Date;
+  createdAt: Date;
+  updatedAt: Date;
+  isPublished: boolean; // Om false, visas inte på /news sidan
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;

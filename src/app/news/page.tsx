@@ -1,11 +1,35 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, Image as ImageIcon } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
+import type { NewsPost, ApiResponse } from "@/lib/types";
 
 export default function NewsPage() {
+  const [posts, setPosts] = useState<NewsPost[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetchNews();
+  }, []);
+
+  const fetchNews = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch("/api/news");
+      const result = await response.json() as ApiResponse<NewsPost[]>;
+      
+      if (result.success && result.data) {
+        setPosts(result.data);
+      }
+    } catch (error) {
+      console.error("Error fetching news:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -51,20 +75,96 @@ export default function NewsPage() {
                 händelser som påverkar elmarknaden i Sverige.
               </p>
 
-              {/* Placeholder for news items */}
-              <div className="space-y-6 mt-8">
-                <div className="border-l-4 border-primary pl-6 py-4">
-                  <div className="flex items-center gap-2 text-sm text-muted mb-2">
-                    <Calendar className="w-4 h-4" />
-                    <span>Kommer snart</span>
+              {/* News items */}
+              {isLoading ? (
+                <div className="space-y-6 mt-8">
+                  <div className="border-l-4 border-primary pl-6 py-4">
+                    <p className="text-muted">Laddar nyheter...</p>
                   </div>
-                  <h3 className="text-xl font-semibold mb-2">Nyheter kommer snart</h3>
-                  <p className="text-muted">
-                    Vi arbetar på att fylla denna sida med relevanta nyheter och media-omtalanden. 
-                    Kom tillbaka snart för att se våra senaste uppdateringar!
-                  </p>
                 </div>
-              </div>
+              ) : posts.length === 0 ? (
+                <div className="space-y-6 mt-8">
+                  <div className="border-l-4 border-primary pl-6 py-4">
+                    <div className="flex items-center gap-2 text-sm text-muted mb-2">
+                      <Calendar className="w-4 h-4" />
+                      <span>Inga nyheter ännu</span>
+                    </div>
+                    <h3 className="text-xl font-semibold mb-2">Nyheter kommer snart</h3>
+                    <p className="text-muted">
+                      Vi arbetar på att fylla denna sida med relevanta nyheter och media-omtalanden. 
+                      Kom tillbaka snart för att se våra senaste uppdateringar!
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-8 mt-8">
+                  {posts.map((post, index) => (
+                    <motion.article
+                      key={post.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      viewport={{ once: true }}
+                      transition={{ duration: 0.5, delay: index * 0.1 }}
+                      className="border-l-4 border-primary pl-6 py-6 hover:bg-gray-50 rounded-r-lg transition-colors"
+                    >
+                      <div className="flex items-center gap-2 text-sm text-muted mb-3">
+                        <Calendar className="w-4 h-4" />
+                        <span>{new Date(post.publishedAt).toLocaleDateString("sv-SE", {
+                          year: "numeric",
+                          month: "long",
+                          day: "numeric"
+                        })}</span>
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold mb-3 text-foreground">
+                        {post.externalLink ? (
+                          <a 
+                            href={post.externalLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="hover:text-primary transition-colors inline-flex items-center gap-2"
+                          >
+                            {post.title}
+                            <ExternalLink className="w-4 h-4" />
+                          </a>
+                        ) : (
+                          post.title
+                        )}
+                      </h3>
+                      
+                      {post.imageUrl && (
+                        <div className="mb-4">
+                          <img 
+                            src={post.imageUrl} 
+                            alt={post.title}
+                            className="w-full max-w-2xl h-auto rounded-lg object-cover border border-border"
+                          />
+                        </div>
+                      )}
+                      
+                      {post.excerpt && (
+                        <p className="text-lg text-muted mb-4 font-medium">{post.excerpt}</p>
+                      )}
+                      
+                      <div className="prose prose-lg max-w-none">
+                        <p className="text-muted whitespace-pre-line leading-relaxed">{post.content}</p>
+                      </div>
+                      
+                      {post.externalLink && (
+                        <a 
+                          href={post.externalLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-2 mt-4 text-primary hover:text-primary/80 transition-colors font-medium"
+                        >
+                          Läs mer
+                          <ExternalLink className="w-4 h-4" />
+                        </a>
+                      )}
+                    </motion.article>
+                  ))}
+                </div>
+              )}
             </div>
           </motion.div>
 
