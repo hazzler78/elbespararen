@@ -42,7 +42,7 @@ export async function sendTelegramMessage(message: string, parseMode: "Markdown"
     chatIds.map(async (chatId) => {
       const res = await fetch(url, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json; charset=utf-8" },
         body: JSON.stringify({ chat_id: chatId, text: message, parse_mode: parseMode })
       });
       return { chatId, ok: res.ok, status: res.status };
@@ -66,9 +66,7 @@ export function escapeMarkdown(input: string): string {
   return input
     .replace(/_/g, "\\_")
     .replace(/\*/g, "\\*")
-    .replace(/`/g, "\\`")
-    .replace(/\[/g, "\\[")
-    .replace(/\]/g, "\\]");
+    .replace(/`/g, "\\`");
 }
 
 
