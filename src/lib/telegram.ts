@@ -56,4 +56,19 @@ export async function sendTelegramMessage(message: string, parseMode: "Markdown"
   }
 }
 
+/**
+ * Escapes special characters for Telegram Markdown (v1) to avoid formatting issues.
+ * Note: We keep using Markdown (not MarkdownV2) for compatibility with existing messages.
+ */
+export function escapeMarkdown(input: string): string {
+  if (!input) return "";
+  // Escape characters that have special meaning in Telegram Markdown
+  return input
+    .replace(/_/g, "\\_")
+    .replace(/\*/g, "\\*")
+    .replace(/`/g, "\\`")
+    .replace(/\[/g, "\\[")
+    .replace(/\]/g, "\\]");
+}
+
 

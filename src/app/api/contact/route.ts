@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
-import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
+import { isTelegramConfigured, sendTelegramMessage, escapeMarkdown } from "@/lib/telegram";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -103,14 +103,14 @@ async function sendTelegramNotification(contactData: any) {
   const message = `
 📧 *Nytt kontaktmeddelande från Elbespararen!*
 
-👤 Namn: ${contactData.name}
-📧 E-post: ${contactData.email}
-📱 Telefon: ${contactData.phone || "Ej angiven"}
+👤 Namn: ${escapeMarkdown(contactData.name)}
+📧 E-post: ${escapeMarkdown(contactData.email)}
+📱 Telefon: ${escapeMarkdown(contactData.phone || "Ej angiven")}
 
 💬 Meddelande:
-${contactData.message || "Inget meddelande"}
+${escapeMarkdown(contactData.message || "Inget meddelande")}
 
-🕒 ${new Date(contactData.timestamp).toLocaleString("sv-SE")}
+🕒 ${escapeMarkdown(new Date(contactData.timestamp).toLocaleString("sv-SE"))}
 `;
 
   try {
