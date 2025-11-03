@@ -295,13 +295,14 @@ export default function SwitchRequestsAdminPage() {
         const rows = parseCsv(text);
         if (rows.length > 1) {
           const header = rows[0];
-          const norm = header.map(h => (h || '').trim().toLowerCase());
+          const normalize = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/\p{Diacritic}/gu, '');
+          const norm = header.map(h => normalize(h || ''));
           const nameIdx = norm.indexOf('nätområde');
           const idIdx = norm.indexOf('nätid'); // exakt kolumnen "NätId" (3 bokstäver)
           if (nameIdx >= 0 && idIdx >= 0) {
             for (let i = 1; i < rows.length; i++) {
               const r = rows[i];
-              const key = (r[nameIdx] || '').trim().toLowerCase();
+              const key = normalize(r[nameIdx] || '');
               const val = (r[idIdx] || '').trim();
               if (key && val) {
                 netAreaMap.set(key, val);
@@ -392,9 +393,18 @@ export default function SwitchRequestsAdminPage() {
       const telefon2 = formatPhoneForExcel(customer.phone);
       const epost = customer.email;
       const anlaggningsnr = req.currentProvider.customerNumber || '';
-      // Försök hitta NätId via stad/område
-      const cityKey = (address.city || '').trim().toLowerCase();
-      const omradesId = (cityKey && netAreaMap.get(cityKey)) || '';
+      // Försök hitta NätId via stad/område (normaliserad + fuzzy)
+      const normalize = (s: string) => (s || '').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const cityKey = normalize(address.city || '');
+      let omradesId = (cityKey && netAreaMap.get(cityKey)) || '';
+      if (!omradesId && cityKey) {
+        for (const [name, id] of netAreaMap.entries()) {
+          if (name.includes(cityKey) || cityKey.includes(name)) {
+            omradesId = id;
+            break;
+          }
+        }
+      }
       const leveransdatum = ''; // Saknas i datamodellen
       const importtyp = '0'; // 0 = Leverantörsbyte
       // Kolumner AE, AF, AG, AH, AJ, AK ska vara tomma:
