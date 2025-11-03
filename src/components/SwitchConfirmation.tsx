@@ -118,9 +118,6 @@ export default function SwitchConfirmation({ switchRequest, onClose }: SwitchCon
                 </div>
                 <div>
                   <h4 className="font-semibold">Bytet genomförs</h4>
-                  <p className="text-sm text-muted">
-                    Bytet genomförs enligt uppsägningstiden från din nuvarande leverantör
-                  </p>
                 </div>
               </div>
             </div>

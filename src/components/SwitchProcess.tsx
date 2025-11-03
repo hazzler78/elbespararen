@@ -898,7 +898,6 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         <ul className="text-xs text-muted space-y-0.5">
                           <li>• Vi sköter hela bytet åt dig</li>
                           <li>• Du får bekräftelse via e-post</li>
-                          <li>• Bytet genomförs enligt uppsägningstiden från din nuvarande leverantör</li>
                           <li>• Du kan avbryta bytet fram till bekräftelse från {provider.name}</li>
                         </ul>
                       </div>
