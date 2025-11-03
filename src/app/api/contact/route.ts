@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
+import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -67,8 +68,8 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Skicka e-post notis (om konfigurerat)
-    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+    // Skicka Telegram-notis (om konfigurerat)
+    if (isTelegramConfigured()) {
       try {
         await sendTelegramNotification(contactData);
       } catch (error) {
@@ -113,23 +114,7 @@ ${contactData.message || "Inget meddelande"}
 `;
 
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: process.env.TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: "Markdown"
-        })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Telegram API error: ${response.status}`);
-    }
-
+    await sendTelegramMessage(message, "Markdown");
     console.log("[contact] Telegram notification sent");
   } catch (error) {
     console.error("[contact] Failed to send Telegram notification:", error);

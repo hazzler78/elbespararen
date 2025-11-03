@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { sendOrderConfirmationEmail, sendWelcomeEmail, addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId } from "@/lib/email";
+import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Skicka Telegram-notis till admin
-    if (process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID) {
+    if (isTelegramConfigured()) {
       try {
         await sendTelegramNotification(switchRequest);
       } catch (error) {
@@ -431,23 +432,7 @@ ${switchRequest.newProvider.contractLength ? `• **Längd:** ${switchRequest.ne
   `.trim();
 
   try {
-    const response = await fetch(
-      `https://api.telegram.org/bot${process.env.TELEGRAM_BOT_TOKEN}/sendMessage`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          chat_id: process.env.TELEGRAM_CHAT_ID,
-          text: message,
-          parse_mode: "Markdown"
-        })
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Telegram API error: ${response.status}`);
-    }
-
+    await sendTelegramMessage(message, "Markdown");
     console.log("[switch-requests] Telegram notification sent for switch:", switchRequest.id);
   } catch (error) {
     console.error("[switch-requests] Failed to send Telegram notification:", error);
