@@ -97,6 +97,16 @@ export interface SwitchRequest {
   createdAt: Date;
   updatedAt: Date;
   notes?: string;
+  priceSnapshot?: {
+    area: string;
+    price?: number; // spotpris i öre/kWh
+    surcharge?: number; // påslag i öre/kWh
+    el_certificate_fee?: number; // elcertifikat i öre/kWh
+    _12_month_discount?: number; // rabatt i öre/kWh
+    monthly_fee?: number; // månadsavgift i kr
+    total?: number; // total exkl moms i öre/kWh
+    total_with_vat?: number; // total inkl moms i öre/kWh
+  };
 }
 
 export interface CustomerInfo {

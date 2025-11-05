@@ -56,6 +56,56 @@ export async function POST(request: NextRequest) {
       } as any;
     }
 
+    // Hämta och spara prissnapshot för rörligt (för framtida konsistens)
+    const priceArea = (body.billData as any)?.priceArea || undefined;
+    const contractType = newProviderToStore?.contractType as "rörligt" | "fastpris" | undefined;
+    let priceSnapshot: import("@/lib/types").SwitchRequest['priceSnapshot'] | undefined = undefined;
+    
+    if (contractType === "rörligt" && priceArea) {
+      try {
+        const priceLookupResponse = await fetch(
+          new URL("/api/prices/lookup", request.url).toString(),
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              providerName: newProviderToStore.name,
+              area: String(priceArea).toLowerCase(),
+              kwh: (body.billData as any)?.totalKWh || 0
+            })
+          }
+        );
+        
+        if (priceLookupResponse.ok) {
+          const priceData = await priceLookupResponse.json() as { success?: boolean; data?: {
+            area?: string;
+            price?: number;
+            surcharge?: number;
+            el_certificate_fee?: number;
+            _12_month_discount?: number;
+            monthly_fee?: number;
+            total?: number;
+            total_with_vat?: number;
+          } };
+          
+          if (priceData.success && priceData.data) {
+            priceSnapshot = {
+              area: priceData.data.area || String(priceArea).toLowerCase(),
+              price: priceData.data.price,
+              surcharge: priceData.data.surcharge,
+              el_certificate_fee: priceData.data.el_certificate_fee,
+              _12_month_discount: priceData.data._12_month_discount,
+              monthly_fee: priceData.data.monthly_fee,
+              total: priceData.data.total,
+              total_with_vat: priceData.data.total_with_vat
+            };
+          }
+        }
+      } catch (snapshotErr) {
+        console.warn("[switch-requests] Could not fetch price snapshot (non-critical):", snapshotErr);
+      }
+    }
+
     // Skapa ny switch request via databas
     const switchRequest = await db.createSwitchRequest({
       customerInfo: body.customerInfo as import("@/lib/types").CustomerInfo,
@@ -64,7 +114,8 @@ export async function POST(request: NextRequest) {
       billData: body.billData as import("@/lib/types").BillData,
       savings: body.savings as import("@/lib/types").SavingsCalculation,
       status: "pending",
-      notes: body.notes as string | undefined
+      notes: body.notes as string | undefined,
+      priceSnapshot: priceSnapshot
     });
 
     // Skicka orderbekräftelse via e-post

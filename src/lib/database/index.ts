@@ -638,16 +638,21 @@ class CloudflareDatabase implements Database {
     return result.results.map((row: Record<string, unknown>) => {
       const customerInfo = JSON.parse(String(row.customer_info));
       const address = JSON.parse(String(row.address));
+      const newProviderRaw = JSON.parse(String(row.new_provider));
+      const priceSnapshot = (newProviderRaw as any)?._priceSnapshot;
+      const newProvider = { ...newProviderRaw };
+      delete (newProvider as any)._priceSnapshot;
       
       return {
         id: String(row.id),
         customerInfo: { ...customerInfo, address },
         currentProvider: JSON.parse(String(row.current_provider)),
-        newProvider: JSON.parse(String(row.new_provider)),
+        newProvider: newProvider,
         billData: JSON.parse(String(row.bill_data)),
         savings: JSON.parse(String(row.savings)),
         status: String(row.status) as SwitchRequest['status'],
         notes: row.notes ? String(row.notes) : undefined,
+        priceSnapshot: priceSnapshot,
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };
@@ -664,16 +669,21 @@ class CloudflareDatabase implements Database {
     const row = result as Record<string, unknown>;
     const customerInfo = JSON.parse(String(row.customer_info));
     const address = JSON.parse(String(row.address));
+    const newProviderRaw = JSON.parse(String(row.new_provider));
+    const priceSnapshot = (newProviderRaw as any)?._priceSnapshot;
+    const newProvider = { ...newProviderRaw };
+    delete (newProvider as any)._priceSnapshot;
     
     return {
       id: String(row.id),
       customerInfo: { ...customerInfo, address },
       currentProvider: JSON.parse(String(row.current_provider)),
-      newProvider: JSON.parse(String(row.new_provider)),
+      newProvider: newProvider,
       billData: JSON.parse(String(row.bill_data)),
       savings: JSON.parse(String(row.savings)),
       status: String(row.status) as SwitchRequest['status'],
       notes: row.notes ? String(row.notes) : undefined,
+      priceSnapshot: priceSnapshot,
       createdAt: new Date(String(row.created_at)),
       updatedAt: new Date(String(row.updated_at))
     };
@@ -684,6 +694,11 @@ class CloudflareDatabase implements Database {
     const now = new Date().toISOString();
 
     const { address, ...customerInfoWithoutAddress } = switchRequestData.customerInfo;
+    // Inkludera priceSnapshot i new_provider JSON för enkel lagring
+    const newProviderWithSnapshot = {
+      ...switchRequestData.newProvider,
+      ...(switchRequestData.priceSnapshot ? { _priceSnapshot: switchRequestData.priceSnapshot } : {})
+    };
     
     await this.db.prepare(`
       INSERT INTO switch_requests (
@@ -695,7 +710,7 @@ class CloudflareDatabase implements Database {
       JSON.stringify(customerInfoWithoutAddress),
       JSON.stringify(address),
       JSON.stringify(switchRequestData.currentProvider),
-      JSON.stringify(switchRequestData.newProvider),
+      JSON.stringify(newProviderWithSnapshot),
       JSON.stringify(switchRequestData.billData),
       JSON.stringify(switchRequestData.savings),
       switchRequestData.status,
@@ -723,6 +738,11 @@ class CloudflareDatabase implements Database {
     const safeStatus = updated.status ?? 'pending';
     
     const { address, ...customerInfoWithoutAddress } = updated.customerInfo;
+    // Inkludera priceSnapshot i new_provider JSON vid uppdatering också
+    const newProviderWithSnapshot = {
+      ...updated.newProvider,
+      ...(updated.priceSnapshot ? { _priceSnapshot: updated.priceSnapshot } : {})
+    };
 
     await this.db.prepare(`
       UPDATE switch_requests SET
@@ -733,7 +753,7 @@ class CloudflareDatabase implements Database {
       JSON.stringify(customerInfoWithoutAddress),
       JSON.stringify(address),
       JSON.stringify(updated.currentProvider),
-      JSON.stringify(updated.newProvider),
+      JSON.stringify(newProviderWithSnapshot),
       JSON.stringify(updated.billData),
       JSON.stringify(updated.savings),
       safeStatus,
