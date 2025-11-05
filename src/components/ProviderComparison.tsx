@@ -155,8 +155,8 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ providerName: c.provider.name, area: billData.priceArea, kwh })
               });
-              const json = await res.json();
-              const data = json?.data || {};
+              const json = (await res.json()) as ApiResponse<any>;
+              const data = (json && (json as any).data) ? (json as any).data : {};
               const surcharge = Number(data.surcharge || 0);
               const cert = Number(data.el_certificate_fee || 0);
               const discount = Number(data._12_month_discount || 0);
