@@ -363,10 +363,10 @@ export default function SwitchRequestsAdminPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ providerName: req.newProvider.name, area, kwh: req.billData.totalKWh })
         });
-        const json = await res.json() as { success?: boolean; data?: { price?: number; total?: number } };
+        const json = await res.json() as { success?: boolean; data?: { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number } };
         return json?.success ? (json.data || {}) : {};
       } catch {
-        return {} as { price?: number; total?: number };
+        return {} as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number };
       }
     }));
 
@@ -374,21 +374,22 @@ export default function SwitchRequestsAdminPage() {
       const provider = req.newProvider;
       const customer = req.customerInfo;
       const address = customer.address;
-      const lookup = lookups[idx] as { price?: number; total?: number };
+      const lookup = lookups[idx] as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number };
+      const formatOre = (v?: number) => (typeof v === 'number' && isFinite(v) ? `${v.toFixed(2)} öre/kWh` : '');
 
-      // Avtalspris = spotpris (öre/kWh) från lookup.price
-      const avtalspris = typeof lookup?.price === 'number' ? lookup.price : '';
+      // Avtalspris = spotpris (öre/kWh) från lookup.price, formaterat
+      const avtalspris = formatOre(lookup?.price);
       
       const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
       const bindning = provider.contractLength ?? '';
       const manadsavgift = provider.monthlyFee ?? '';
       const paslag = provider.contractType === 'rörligt' ? (provider.energyPrice ?? '') : '';
-      const elcertifikat = ''; // Saknas i datamodellen
-      const rabatt = (typeof provider.freeMonths === 'number' && provider.freeMonths > 0) ? `${provider.freeMonths} fria mån` : '';
+      const elcertifikat = formatOre(lookup?.el_certificate_fee);
+      const rabatt = formatOre(lookup?._12_month_discount);
       
       const forbrukning = req.billData.totalKWh;
-      // Total = total (exkl moms) från lookup.total (öre/kWh)
-      const total = typeof lookup?.total === 'number' ? lookup.total : '';
+      // Total = total (exkl moms) från lookup.total (öre/kWh) formaterat
+      const total = formatOre(lookup?.total);
       
       const elursprung = 'NordenMix';
       const forbrukningKwh = forbrukning;
