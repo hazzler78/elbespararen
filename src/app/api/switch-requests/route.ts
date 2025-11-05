@@ -45,11 +45,22 @@ export async function POST(request: NextRequest) {
     // Hämta selectedContract om det finns (för fastpris)
     const selectedContract = body.selectedContract as import("@/lib/types").ContractAlternative | undefined;
 
+    // Om selectedContract finns, applicera valt pris/avgift/bindning på newProvider vid lagring
+    let newProviderToStore = body.newProvider as import("@/lib/types").ElectricityProvider;
+    if (selectedContract) {
+      newProviderToStore = {
+        ...newProviderToStore,
+        energyPrice: typeof selectedContract.fastpris === 'number' ? selectedContract.fastpris : newProviderToStore.energyPrice,
+        monthlyFee: typeof selectedContract.månadskostnad === 'number' ? selectedContract.månadskostnad : newProviderToStore.monthlyFee,
+        contractLength: typeof selectedContract.bindningstid === 'number' ? selectedContract.bindningstid : newProviderToStore.contractLength
+      } as any;
+    }
+
     // Skapa ny switch request via databas
     const switchRequest = await db.createSwitchRequest({
       customerInfo: body.customerInfo as import("@/lib/types").CustomerInfo,
       currentProvider: body.currentProvider as import("@/lib/types").CurrentProviderInfo,
-      newProvider: body.newProvider as import("@/lib/types").ElectricityProvider,
+      newProvider: newProviderToStore,
       billData: body.billData as import("@/lib/types").BillData,
       savings: body.savings as import("@/lib/types").SavingsCalculation,
       status: "pending",
