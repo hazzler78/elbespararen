@@ -53,6 +53,7 @@
     { "name": "Umeå", "netId": "UMA" },
     { "name": "Luleå", "netId": "LUL" },
     { "name": "Karlstad", "netId": "KST" }
+    ,{ "name": "Slöinge", "netId": "FBG" }
   ]
 }
 
