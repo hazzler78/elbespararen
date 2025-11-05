@@ -29,6 +29,7 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
   const [enteredKwh, setEnteredKwh] = useState<number | null>(enableConsumptionEntry ? null : billData.totalKWh);
   const [spotPrices, setSpotPrices] = useState<{ [key: string]: number } | null>(null);
+  const [lookupSurcharges, setLookupSurcharges] = useState<Record<string, number>>({}); // providerId -> surcharge (kr/kWh, incl VAT)
 
   const toKebab = (value: string) =>
     value
@@ -133,6 +134,55 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
     })();
   }, [enableConsumptionEntry]);
 
+  // Fetch provider-specific surcharge (incl. VAT) for rörligt based on area and kWh band
+  useEffect(() => {
+    if (!comparisonData) return;
+    if (!billData.priceArea) return;
+    const kwh = Math.max(0, Number(enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh));
+    if (kwh <= 0) return;
+
+    const variableComparisons = comparisonData.comparisons.filter(c => c.provider.contractType === 'rörligt');
+    if (variableComparisons.length === 0) return;
+
+    let isCancelled = false;
+    (async () => {
+      try {
+        const results = await Promise.all(
+          variableComparisons.map(async (c) => {
+            try {
+              const res = await fetch('/api/prices/lookup', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ providerName: c.provider.name, area: billData.priceArea, kwh })
+              });
+              const json = await res.json();
+              const data = json?.data || {};
+              const surcharge = Number(data.surcharge || 0);
+              const cert = Number(data.el_certificate_fee || 0);
+              const discount = Number(data._12_month_discount || 0);
+              // Values are in öre/kWh; convert to kr/kWh and include VAT (25%)
+              const surchargeOre = surcharge + cert + discount; // discount may be negative
+              const surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+              return [c.provider.id, surchargeKrInclVat] as const;
+            } catch {
+              return [c.provider.id, undefined] as const;
+            }
+          })
+        );
+        if (isCancelled) return;
+        const map: Record<string, number> = {};
+        for (const [pid, val] of results) {
+          if (typeof val === 'number' && isFinite(val)) map[pid] = val;
+        }
+        setLookupSurcharges(prev => ({ ...prev, ...map }));
+      } catch {
+        // ignore
+      }
+    })();
+
+    return () => { isCancelled = true; };
+  }, [comparisonData, billData.priceArea, enableConsumptionEntry, enteredKwh, billData.totalKWh]);
+
   if (isLoading) {
     return (
       <div
@@ -233,7 +283,7 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
         const area = billData.priceArea?.toLowerCase();
         const spot = area ? (spotPrices[area] || 0) : 0; // kr/kWh
         if (spot > 0) {
-          const surcharge = comparison.provider.energyPrice || 0; // kr/kWh
+          const surcharge = lookupSurcharges[comparison.provider.id] ?? (comparison.provider.energyPrice || 0); // kr/kWh incl VAT
           const monthlyFee = comparison.provider.monthlyFee || 0;
           const kwh = Math.max(0, effectiveKwh);
           const energyCost = (spot + surcharge) * kwh;
@@ -360,7 +410,7 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
                   <p className="font-semibold">
                     {(() => {
                       const selectedContract = getSelectedContract(bestOption.provider);
-                      const price = selectedContract?.fastpris || bestOption.provider.energyPrice;
+                      const price = selectedContract?.fastpris || lookupSurcharges[bestOption.provider.id] || bestOption.provider.energyPrice;
                       return formatPricePerKwh(price);
                     })()}
                   </p>

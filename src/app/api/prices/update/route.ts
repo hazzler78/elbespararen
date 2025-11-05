@@ -36,6 +36,48 @@ function normalizeProviderName(name: string): string {
   return PROVIDER_NAME_ALIASES[key] || name;
 }
 
+// Rörliga leverantörer vi vill uppdatera automatiskt (måste redan finnas i databasen)
+const VARIABLE_PROVIDERS_TO_UPDATE = [
+  normalizeProviderName("Cheap Energy"),
+  normalizeProviderName("Svekraft"),
+  normalizeProviderName("Stockholms Elbolag")
+];
+
+// Kandidat-URL:er att läsa spotpriser ifrån (öre/kWh i källan)
+const SPOT_CANDIDATE_URLS: string[] = [
+  "https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json",
+  "https://energi2.se/Site_Priser_Energi2_de2.json",
+  "https://www.stockholmselbolag.se/Site_Priser_SthlmsEL_de2.json",
+  "https://elify.se/Site_Priser_SvealandsEL_de2.json",
+  "https://svekraft.com/Site_Priser_Svekraft_de2.json",
+  "https://elify.se/Site_Priser_Motala_de2.json"
+];
+
+async function fetchSpotPrices(): Promise<Record<string, number>> {
+  for (const url of SPOT_CANDIDATE_URLS) {
+    try {
+      const res = await fetch(url, { headers: { 'User-Agent': 'Elbespararen/1.0', 'Accept': 'application/json' } });
+      if (!res.ok) continue;
+      const data: any = await res.json();
+      const prices = (data && (data.spot_prices || data.spotPrices)) || null;
+      if (!prices || typeof prices !== 'object') continue;
+      const norm = (v: any) => typeof v === 'number' ? v / 100 : undefined; // konvertera till kr/kWh
+      const result = {
+        se1: norm(prices.se1 ?? prices.SE1),
+        se2: norm(prices.se2 ?? prices.SE2),
+        se3: norm(prices.se3 ?? prices.SE3),
+        se4: norm(prices.se4 ?? prices.SE4)
+      } as Record<string, number | undefined>;
+      if (result.se1 || result.se2 || result.se3 || result.se4) {
+        return Object.fromEntries(Object.entries(result).filter(([, v]) => typeof v === 'number')) as Record<string, number>;
+      }
+    } catch {
+      // prova nästa URL
+    }
+  }
+  throw new Error('Could not fetch spot prices from candidates');
+}
+
 const PRICE_ENDPOINTS = [
   {
     endpoint: "cheapenergy_v2",
@@ -326,12 +368,8 @@ export async function POST(request: NextRequest) {
     const existingProviders = await db.getAllProviders();
     console.log(`[Price Update] Found ${existingProviders.length} existing providers (including inactive)`);
     
-    // Logga vilka leverantörer som INTE påverkas (Rörliga)
-    const rörligaProviders = existingProviders.filter(p => p.contractType === "rörligt");
-    if (rörligaProviders.length > 0) {
-      console.log(`[Price Update] Found ${rörligaProviders.length} Rörliga providers that will NOT be updated:`, 
-        rörligaProviders.map(p => p.name));
-    }
+    // Förbered lista över rörliga som kan bevaras oförändrade; vissa uppdateras nedan
+    const allRörliga = existingProviders.filter(p => p.contractType === "rörligt");
 
     // Uppdatera priser för varje endpoint
     for (const endpoint of PRICE_ENDPOINTS) {
@@ -463,6 +501,39 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Uppdatera RÖRLIGT för specifika leverantörer (utan att skapa dubbletter)
+    try {
+      const spot = await fetchSpotPrices();
+      // Välj ett referensområde (SE3) för visningspris om tillgängligt, annars första tillgängliga
+      const se3 = spot.se3 ?? spot.SE3;
+      const referencePrice = typeof se3 === 'number' ? se3 : (Object.values(spot)[0] as number | undefined);
+      if (typeof referencePrice === 'number') {
+        for (const targetName of VARIABLE_PROVIDERS_TO_UPDATE) {
+          const provider = existingProviders.find(p => p.contractType === 'rörligt' && normalizeProviderName(p.name).toLowerCase() === targetName.toLowerCase());
+          if (provider) {
+            // OBS: För rörligt används provider.energyPrice som PÅSLAG i UI.
+            // Själva spotpriset hämtas dynamiskt per prisområde i frontend (/api/spot-prices).
+            // Därför uppdaterar vi inte energyPrice här, utan säkerställer bara att leverantören är aktiv.
+            const updated = await db.updateProvider(provider.id, {
+              isActive: true
+            });
+            updateResults.push({ provider: provider.name, action: 'kept_variable_active', success: true, data: updated });
+            successCount++;
+          } else {
+            updateResults.push({ provider: targetName, action: 'variable_not_found', success: false, error: 'No existing rörligt provider with this name' });
+            errorCount++;
+          }
+        }
+      } else {
+        updateResults.push({ provider: 'spot', action: 'variable_skip', success: false, error: 'No reference spot price available' });
+        errorCount++;
+      }
+    } catch (e) {
+      console.error('[Price Update] Variable update failed:', e);
+      updateResults.push({ provider: 'spot', action: 'variable_error', success: false, error: e instanceof Error ? e.message : 'Unknown error' });
+      errorCount++;
+    }
+
     // Rensa dubbletter av leverantörer efter prisuppdatering
     console.log(`[Price Update] Cleaning up duplicate providers...`);
     await cleanupDuplicateProviders(db);
@@ -477,9 +548,13 @@ export async function POST(request: NextRequest) {
         total: PRICE_ENDPOINTS.length,
         successful: successCount,
         errors: errorCount,
-        preserved_rörliga: rörligaProviders.map(p => p.name)
+        preserved_rörliga: allRörliga
+          .filter(p => !VARIABLE_PROVIDERS_TO_UPDATE.map(v => v.toLowerCase()).includes(normalizeProviderName(p.name).toLowerCase()))
+          .map(p => p.name)
       },
-      preserved_rörliga: rörligaProviders.map(p => ({
+      preserved_rörliga: allRörliga
+        .filter(p => !VARIABLE_PROVIDERS_TO_UPDATE.map(v => v.toLowerCase()).includes(normalizeProviderName(p.name).toLowerCase()))
+        .map(p => ({
         name: p.name,
         contractType: p.contractType,
         reason: "Rörliga leverantörer uppdateras inte automatiskt"
