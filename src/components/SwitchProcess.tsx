@@ -871,7 +871,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                   <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-4">
                     <h4 className="font-semibold mb-1 text-sm">Ny leverantör: {provider.name}</h4>
                     <p className="text-xs text-muted mb-2">{provider.description}</p>
-                    <div className="grid grid-cols-2 gap-3 text-xs">
+                      <div className="grid grid-cols-2 gap-3 text-xs">
                       <div>
                         <p className="text-muted">Månadskostnad</p>
                         <p className="font-semibold">
@@ -883,8 +883,25 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                           {provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
                         </p>
                         <p className="font-semibold">
-                          {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(Number(provider.energyPrice))}
+                          {(() => {
+                            if (provider.contractType === 'fastpris') {
+                              return formatPricePerKwh(Number(selectedContract?.fastpris ?? provider.energyPrice));
+                            }
+                            // rörligt: visa påslag inkl. moms baserat på lookup
+                            const s = Number(providerPriceInfo?.surcharge || 0);
+                            const e = Number(providerPriceInfo?.el_certificate_fee || 0);
+                            const d = Number(providerPriceInfo?._12_month_discount || 0);
+                            if (!isNaN(s + e + d) && (s !== 0 || e !== 0 || d !== 0)) {
+                              const surchargeKrInclVat = ((s + e + d) / 100) * 1.25; // öre→kr, +25% moms
+                              return formatPricePerKwh(surchargeKrInclVat);
+                            }
+                            // fallback till provider.energyPrice (antagen kr/kWh)
+                            return formatPricePerKwh(Number(provider.energyPrice));
+                          })()}
                         </p>
+                          {provider.contractType === 'rörligt' && (
+                            <p className="text-[11px] text-muted mt-0.5">inkl. 25% moms</p>
+                          )}
                       </div>
                     </div>
                   </div>
@@ -898,7 +915,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         <ul className="text-xs text-muted space-y-0.5">
                           <li>• Vi sköter hela bytet åt dig</li>
                           <li>• Du får bekräftelse via e-post</li>
-                          <li>• Du kan avbryta bytet fram till bekräftelse från {provider.name}</li>
+                          <li>• Du kan ångra bytet inom 14 dagar</li>
                         </ul>
                       </div>
                     </div>
