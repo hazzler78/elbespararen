@@ -77,6 +77,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     vat?: number;
   }>(null);
   const [spotPriceKrPerKwh, setSpotPriceKrPerKwh] = useState<number | null>(null);
+  const [showPriceDetails, setShowPriceDetails] = useState<boolean>(false);
 
   // Track switch request started when component mounts
   useEffect(() => {
@@ -805,12 +806,21 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         Ditt valda avtal med {provider.name}
                         <span
                           title={buildTooltip() || 'Ingen prisinformation tillgänglig'}
-                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary cursor-help"
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-primary/20 text-primary cursor-pointer"
                           aria-label="Mer information om priset"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setShowPriceDetails(v => !v)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPriceDetails(v => !v); }}
                         >
                           <Info className="w-3 h-3" />
                         </span>
                       </h4>
+                      {showPriceDetails && (
+                        <div className="mt-1 text-[11px] whitespace-pre-line bg-white border border-border rounded p-2">
+                          {buildTooltip() || 'Ingen prisinformation tillgänglig'}
+                        </div>
+                      )}
                       <p className="text-xl font-bold text-primary">
                         {selectedContract?.fastpris ? formatPricePerKwh(selectedContract.fastpris) : formatPricePerKwh(provider.energyPrice)}
                       </p>
@@ -824,12 +834,21 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                         Din besparing med {provider.name}
                         <span
                           title={buildTooltip() || 'Ingen prisinformation tillgänglig'}
-                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/20 text-success cursor-help"
+                          className="inline-flex items-center justify-center w-4 h-4 rounded-full bg-success/20 text-success cursor-pointer"
                           aria-label="Mer information om priset"
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setShowPriceDetails(v => !v)}
+                          onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') setShowPriceDetails(v => !v); }}
                         >
                           <Info className="w-3 h-3" />
                         </span>
                       </h4>
+                      {showPriceDetails && (
+                        <div className="mt-1 text-[11px] whitespace-pre-line bg-white border border-border rounded p-2">
+                          {buildTooltip() || 'Ingen prisinformation tillgänglig'}
+                        </div>
+                      )}
                       <p className="text-xl font-bold text-success">
                         {savings.potentialSavings} kr per månad
                       </p>
