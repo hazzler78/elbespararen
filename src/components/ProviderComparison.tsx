@@ -138,8 +138,9 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   useEffect(() => {
     if (!comparisonData) return;
     if (!billData.priceArea) return;
-    const kwh = Math.max(0, Number(enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh));
-    if (kwh <= 0) return;
+    // Always fetch a surcharge band even if user hasn't entered consumption yet
+    const providedKwh = Number(enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh);
+    const kwh = Number.isFinite(providedKwh) && providedKwh > 0 ? providedKwh : 2000; // default band
 
     const variableComparisons = comparisonData.comparisons.filter(c => c.provider.contractType === 'rörligt');
     if (variableComparisons.length === 0) return;
