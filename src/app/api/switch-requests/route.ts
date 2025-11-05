@@ -309,10 +309,32 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const updatedSwitchRequest = await db.updateSwitchRequest(String(body.id), {
-      status: body.status ? (body.status as import("@/lib/types").SwitchStatus) : undefined,
-      notes: body.notes ? String(body.notes) : undefined
-    });
+    // Hämta befintlig för ev. djup uppdatering
+    const existing = await db.getSwitchRequest(String(body.id));
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Bytförfrågan hittades inte" },
+        { status: 404 }
+      );
+    }
+
+    // Bygg upp uppdatering
+    const partial: Partial<import("@/lib/types").SwitchRequest> = {};
+    if (body.status) {
+      partial.status = body.status as import("@/lib/types").SwitchStatus;
+    }
+    if (typeof body.notes === 'string') {
+      partial.notes = String(body.notes);
+    }
+    // Stöd för uppdatering av leveransdatum (currentProvider.contractEndDate)
+    if (typeof (body as any).contractEndDate === 'string') {
+      partial.currentProvider = {
+        ...existing.currentProvider,
+        contractEndDate: String((body as any).contractEndDate)
+      } as any;
+    }
+
+    const updatedSwitchRequest = await db.updateSwitchRequest(String(body.id), partial);
 
     return NextResponse.json({
       success: true,

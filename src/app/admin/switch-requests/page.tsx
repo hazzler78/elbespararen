@@ -102,6 +102,27 @@ export default function SwitchRequestsAdminPage() {
     }
   };
 
+  const updateContractEndDate = async (id: string, date: string) => {
+    try {
+      const response = await fetch("/api/switch-requests", {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ id, contractEndDate: date })
+      });
+      const result = await response.json() as ApiResponse<SwitchRequest>;
+      if (result.success && result.data) {
+        setSwitchRequests(switchRequests.map(req => req.id === id ? result.data! : req));
+      } else {
+        alert('❌ Kunde inte spara leveransdatum: ' + (result.error || 'Okänt fel'));
+      }
+    } catch (error) {
+      console.error("Error updating contract end date:", error);
+      alert('❌ Nätverksfel: ' + (error instanceof Error ? error.message : 'Okänt fel'));
+    }
+  };
+
   const deleteSwitchRequest = async (id: string) => {
     if (!confirm(`Är du säker på att du vill ta bort denna bytförfrågan? (ID: ${id})\n\nDetta kan inte ångras!`)) {
       return;
@@ -781,7 +802,7 @@ export default function SwitchRequestsAdminPage() {
                           </div>
 
                           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-                            {/* Nuvarande leverantör */}
+                          {/* Nuvarande leverantör */}
                             <div className="bg-gray-50 rounded-lg p-4">
                               <h4 className="font-semibold mb-2 flex items-center gap-2 text-gray-900">
                                 <FileText className="w-4 h-4" />
@@ -791,21 +812,57 @@ export default function SwitchRequestsAdminPage() {
                               <p className="text-sm text-gray-600">
                                 {formatCurrency(request.currentProvider.currentMonthlyCost)}/månad
                               </p>
-                              {request.currentProvider.contractEndDate && (
-                                <p className="text-sm text-gray-600">
-                                  Uppstart: {new Date(request.currentProvider.contractEndDate).toLocaleDateString("sv-SE")}
-                                </p>
-                              )}
+                            <div className="mt-3">
+                              <label className="block text-xs text-gray-500 mb-1">Leveransdatum</label>
+                              <div className="flex gap-2 items-center">
+                                <input
+                                  type="date"
+                                  value={(() => {
+                                    const d = request.currentProvider.contractEndDate;
+                                    if (!d) return '';
+                                    const dt = new Date(d);
+                                    if (isNaN(dt.getTime())) return '';
+                                    return dt.toISOString().split('T')[0];
+                                  })()}
+                                  onChange={(e) => updateContractEndDate(request.id, e.target.value)}
+                                  className="px-2 py-1 border border-gray-300 rounded text-sm"
+                                />
+                              </div>
+                            </div>
                             </div>
 
-                            {/* Ny leverantör */}
+                          {/* Ny leverantör */}
                             <div className="bg-blue-50 rounded-lg p-4">
                               <h4 className="font-semibold mb-2 flex items-center gap-2 text-blue-900">
                                 <CheckCircle2 className="w-4 h-4" />
                                 Ny leverantör
                               </h4>
                               <p className="font-medium text-gray-900">{request.newProvider.name}</p>
-                              <p className="text-sm text-gray-600">{request.newProvider.description}</p>
+                            <p className="text-sm text-gray-600">{request.newProvider.description}</p>
+                            <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+                              <div>
+                                <span className="text-gray-500">Avtalstyp: </span>
+                                <span className="font-medium">{request.newProvider.contractType}</span>
+                              </div>
+                              {typeof request.newProvider.monthlyFee === 'number' && (
+                                <div>
+                                  <span className="text-gray-500">Månadsavgift: </span>
+                                  <span className="font-medium">{formatCurrency(request.newProvider.monthlyFee)}</span>
+                                </div>
+                              )}
+                              {typeof request.newProvider.energyPrice === 'number' && (
+                                <div>
+                                  <span className="text-gray-500">{request.newProvider.contractType === 'fastpris' ? 'Fastpris' : 'Påslag'}: </span>
+                                  <span className="font-medium">{request.newProvider.contractType === 'fastpris' ? `${request.newProvider.energyPrice.toFixed(2)} kr/kWh` : `${request.newProvider.energyPrice.toFixed(2)} kr/kWh`}</span>
+                                </div>
+                              )}
+                              {typeof request.newProvider.contractLength === 'number' && (
+                                <div>
+                                  <span className="text-gray-500">Bindning: </span>
+                                  <span className="font-medium">{request.newProvider.contractLength} mån</span>
+                                </div>
+                              )}
+                            </div>
                             </div>
                           </div>
 
