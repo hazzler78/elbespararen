@@ -25,10 +25,44 @@ export default function SwitchRequestsAdminPage() {
   const [sortBy, setSortBy] = useState<"date" | "provider" | "status">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
+  const [priceInfos, setPriceInfos] = useState<Record<string, {
+    area?: string;
+    price?: number;
+    surcharge?: number;
+    el_certificate_fee?: number;
+    monthly_fee?: number;
+    total?: number;
+    total_with_vat?: number;
+  }>>({});
 
   useEffect(() => {
     fetchSwitchRequests();
   }, []);
+
+  // Hämta rörligt pris (snapshot) för visning i admin
+  useEffect(() => {
+    (async () => {
+      try {
+        const entries = await Promise.all((switchRequests || []).map(async (req) => {
+          try {
+            if (!req?.newProvider || req.newProvider.contractType !== 'rörligt') return [req.id, null] as const;
+            const area = (req.billData?.priceArea || 'se3').toLowerCase();
+            const res = await fetch('/api/prices/lookup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ providerName: req.newProvider.name, area, kwh: req.billData?.totalKWh || 0 })
+            });
+            const json = await res.json() as { success?: boolean; data?: any };
+            if (json?.success && json?.data) return [req.id, json.data] as const;
+          } catch { /* ignore per-request */ }
+          return [req.id, null] as const;
+        }));
+        const map: Record<string, any> = {};
+        for (const [id, val] of entries) { if (val) map[id] = val; }
+        setPriceInfos(map);
+      } catch { /* ignore */ }
+    })();
+  }, [switchRequests]);
 
   const fetchSwitchRequests = async () => {
     try {
@@ -851,11 +885,27 @@ export default function SwitchRequestsAdminPage() {
                                   <span className="font-medium">{formatCurrency(request.newProvider.monthlyFee)}</span>
                                 </div>
                               )}
-                              {typeof request.newProvider.energyPrice === 'number' && (
+                              {request.newProvider.contractType === 'fastpris' && typeof request.newProvider.energyPrice === 'number' && (
                                 <div>
-                                  <span className="text-gray-500">{request.newProvider.contractType === 'fastpris' ? 'Fastpris' : 'Påslag'}: </span>
-                                  <span className="font-medium">{request.newProvider.contractType === 'fastpris' ? `${request.newProvider.energyPrice.toFixed(2)} kr/kWh` : `${request.newProvider.energyPrice.toFixed(2)} kr/kWh`}</span>
+                                  <span className="text-gray-500">Fastpris: </span>
+                                  <span className="font-medium">{request.newProvider.energyPrice.toFixed(2)} kr/kWh</span>
                                 </div>
+                              )}
+                              {request.newProvider.contractType === 'rörligt' && (
+                                <>
+                                  <div>
+                                    <span className="text-gray-500">Påslag: </span>
+                                    <span className="font-medium">{(request.newProvider.energyPrice ?? 0).toFixed(2)} kr/kWh</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Spotpris (öre/kWh): </span>
+                                    <span className="font-medium">{priceInfos[request.id]?.price != null ? (Number(priceInfos[request.id].price).toFixed(2)) : '-'}</span>
+                                  </div>
+                                  <div>
+                                    <span className="text-gray-500">Total (öre/kWh): </span>
+                                    <span className="font-medium">{priceInfos[request.id]?.total != null ? (Number(priceInfos[request.id].total).toFixed(2)) : '-'}</span>
+                                  </div>
+                                </>
                               )}
                               {typeof request.newProvider.contractLength === 'number' && (
                                 <div>
