@@ -436,7 +436,9 @@ export default function SwitchRequestsAdminPage() {
           }
         }
       }
-      const leveransdatum = ''; // Saknas i datamodellen
+      const leveransdatum = (req.currentProvider?.contractEndDate
+        ? new Date(req.currentProvider.contractEndDate).toLocaleDateString('sv-SE')
+        : '');
       const importtyp = '0'; // 0 = Leverantörsbyte
       // Kolumner AE, AF, AG, AH, AJ, AK ska vara tomma:
       // AE (31): Avtals-id, AF (32): Fullmakt-förnamn, AG (33): Fullmakt-efternamn,
