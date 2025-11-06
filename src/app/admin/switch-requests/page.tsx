@@ -480,11 +480,11 @@ export default function SwitchRequestsAdminPage() {
       const fullmaktEfternamn = '';
       const fullmaktPersonnr = '';
       const orderdatum = new Date(req.createdAt).toLocaleDateString('sv-SE');
-      const orderId = '';
+      const orderId = ''; // Lämnas tomt
       const agentnamn = '';
       const ljudfilsnamn = ''; // Internt QA-fält
       const ljudkontrollant = ''; // Internt QA-fält
-      const saljarId = ''; // Internt fält
+      const saljarId = req.id; // Switch ID nummer som kunderna får av oss
       const kontorsId = ''; // Internt fält
       const debiteringsgrupp = 'Elchef.se';
       const andelReduceradEnergiskatt = ''; // Saknas i datamodellen
