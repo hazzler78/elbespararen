@@ -6,7 +6,7 @@ import CookieConsentBanner from "@/components/CookieConsentBanner";
 
 export const metadata: Metadata = {
   title: "Elbespararen – Se din faktura med nya ögon",
-  description: "AI-driven analys av din elräkning. Hitta dolda avgifter och se hur mycket du kan spara på spotpris.",
+  description: "AI-driven analys av din elräkning. Hitta onödiga extra avgifter och se hur mycket du kan spara på spotpris.",
 };
 
 export default function RootLayout({

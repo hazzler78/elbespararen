@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
 ## Om Elbespararen:
 - AI-driven analys av elräkningar med OpenAI Vision (GPT-4o)
-- Hittar dolda avgifter och extra kostnader automatiskt
+- Hittar onödiga extra avgifter och kostnader automatiskt
 - Beräknar exakt besparingspotential genom att jämföra mot spotpris
 - Hjälper användare att byta till billigare leverantörer
 - Helt kostnadsfritt och säkert
@@ -104,7 +104,7 @@ export async function POST(req: NextRequest) {
 ## Viktiga begrepp:
 - **Elnätkostnader**: Kan INTE påverkas (samma för alla)
 - **Elhandel**: Kan påverkas genom att byta leverantör
-- **Extra avgifter**: Dolda kostnader som AI:n hittar
+- **Extra avgifter**: Onödiga extra kostnader som AI:n hittar
 - **Spotpris**: Rörligt elpris som följer marknaden
 - **Fastpris**: Låst pris under avtalsperioden
 

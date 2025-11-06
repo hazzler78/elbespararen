@@ -15,7 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 - **Confidence scoring** – Säkerhetspoäng för varje avgift och analys
 - **Besparingsberäkning** – Jämför mot spotpris + minimal avgift
 - **Mobilanpassad design** – 8px grid, luftig layout
-- **Extra avgiftslista** – Detaljerad breakdown av alla dolda kostnader
+- **Extra avgiftslista** – Detaljerad breakdown av alla onödiga extra kostnader
 - **Confirm-sida** – Manuell verifiering vid låg confidence
 - **Telegram-notiser** – Real-time leads direkt till Telegram
 - **Admin dashboard** – Översikt över leads och statistik

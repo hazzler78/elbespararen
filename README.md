@@ -1,11 +1,11 @@
 # Elbespararen v7
 
-En Next.js-applikation som analyserar elräkningar med OpenAI Vision för att identifiera dolda avgifter och beräkna potentiella besparingar.
+En Next.js-applikation som analyserar elräkningar med OpenAI Vision för att identifiera onödiga extra avgifter och beräkna potentiella besparingar.
 
 ## 🚀 Funktioner
 
 - **AI-driven analys** av elräkningar med GPT-4o Vision
-- **Automatisk identifiering** av extra avgifter och dolda kostnader
+- **Automatisk identifiering** av extra avgifter och onödiga extra kostnader
 - **Besparingsberäkning** baserat på spotpris och billigare alternativ
 - **Leverantörsjämförelse** med databas över elleverantörer
 - **Bytprocess** för kunder som vill byta leverantör

@@ -21,12 +21,12 @@ export default function AboutPage() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Om <span className="text-primary">Elbespararen</span>
+              Om <span className="text-primary">Elbespararen – en tjänst från Elchef</span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
               Vi gör elmarknaden transparent genom AI-driven analys av din elfaktura. 
-              Hitta dolda avgifter och se exakt hur mycket du kan spara.
+              Hitta onödiga extra avgifter och se exakt hur mycket du kan spara.
             </p>
           </motion.div>
         </div>
@@ -102,7 +102,7 @@ export default function AboutPage() {
                   <h3 className="text-xl font-semibold">AI-driven analys</h3>
                 </div>
                 <p className="text-muted">
-                  Vår AI läser din faktura visuellt och hittar alla dolda avgifter som du skulle missa. 
+                  Vår AI läser din faktura visuellt och hittar alla onödiga extra avgifter som du skulle missa. 
                   Genom att träna på tusentals fakturor blir den allt mer exakt. Vi visar exakt vad du betalar för – och vad du kan spara.
                 </p>
               </motion.div>

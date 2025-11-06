@@ -89,7 +89,7 @@ npm run dev
 
 ### 3. Resultat-sida
 - Se potentiella besparingar
-- Kolla dolda avgifter
+- Kolla onödiga extra avgifter
 - Testa kontaktformuläret (data sparas ej än)
 
 ### 4. Admin-sida

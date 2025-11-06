@@ -114,7 +114,7 @@ export default function PrivacyPage() {
               <ul className="list-disc pl-6 text-muted mb-6 space-y-2">
                 <li><strong>Anonymisering:</strong> Alla personuppgifter (namn, adress, kundnummer) anonymiseras omedelbart</li>
                 <li><strong>Strukturell analys:</strong> AI:n lär sig identifiera olika fakturaformat och avgiftstyper</li>
-                <li><strong>Förbättring:</strong> Varje faktura hjälper oss att bli bättre på att hitta dolda avgifter</li>
+                <li><strong>Förbättring:</strong> Varje faktura hjälper oss att bli bättre på att hitta onödiga extra avgifter</li>
                 <li><strong>Transparens:</strong> Du bidrar till att göra elmarknaden mer transparent för alla</li>
               </ul>
 

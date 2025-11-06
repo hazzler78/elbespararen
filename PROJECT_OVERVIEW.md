@@ -8,7 +8,7 @@ En komplett översikt över projektets struktur, arkitektur och implementation.
 
 Skapa en AI-driven Next.js-app som:
 1. **Analyserar** svenska elräkningar visuellt med OpenAI Vision
-2. **Hittar** alla dolda avgifter och extra kostnader
+2. **Hittar** alla onödiga extra avgifter och kostnader
 3. **Beräknar** potentiella besparingar mot spotpris
 4. **Konverterar** besökare till leads via kontaktformulär
 5. **Ger** en förtroendeingivande, transparent användarupplevelse
@@ -82,7 +82,7 @@ elbespararen_v9/
 ├── components/                # React komponenter
 │   ├── UploadCard.tsx        # Drag-drop upload + preview
 │   ├── ResultSummary.tsx     # Huvudresultat med besparingar
-│   ├── ExtraFeesList.tsx     # Lista över dolda avgifter
+│   ├── ExtraFeesList.tsx     # Lista över onödiga extra avgifter
 │   ├── ConfidenceBadge.tsx   # Säkerhetsindikator (färgkodad)
 │   ├── ContactForm.tsx       # Lead-formulär
 │   └── StickyCTA.tsx         # Sticky bottom CTA bar
