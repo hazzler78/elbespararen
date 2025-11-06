@@ -1,10 +1,50 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Cookie, Settings, Shield, Eye, Database, BarChart3 } from "lucide-react";
 import Link from "next/link";
+import { getCookieConsent, hasAnalyticsConsent, setCookieConsent, clearCookieConsent } from "@/lib/cookie-consent";
 
 export default function CookiesPage() {
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [analyticsAllowed, setAnalyticsAllowed] = useState(false);
+  const [loaded, setLoaded] = useState(false);
+
+  useEffect(() => {
+    // Initialize state from stored consent
+    const consent = getCookieConsent();
+    setAnalyticsAllowed(consent?.analytics === true);
+    setLoaded(true);
+  }, []);
+
+  const openSettings = () => setIsSettingsOpen(true);
+  const closeSettings = () => setIsSettingsOpen(false);
+
+  const acceptAll = () => {
+    setCookieConsent(true);
+    setAnalyticsAllowed(true);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cookieConsentChanged", { detail: { analytics: true } }));
+    }
+  };
+
+  const saveSettings = () => {
+    setCookieConsent(analyticsAllowed);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cookieConsentChanged", { detail: { analytics: analyticsAllowed } }));
+    }
+    closeSettings();
+  };
+
+  const revokeConsent = () => {
+    clearCookieConsent();
+    setAnalyticsAllowed(false);
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("cookieConsentChanged", { detail: { analytics: false } }));
+    }
+  };
+
   return (
     <main className="min-h-screen bg-background">
       {/* Hero Section */}
@@ -187,17 +227,35 @@ export default function CookiesPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm">Analytiska cookies</span>
-                    <span className="text-xs bg-yellow-100 text-yellow-800 px-2 py-1 rounded">Valfria</span>
+                    {loaded && (
+                      analyticsAllowed ? (
+                        <span className="text-xs bg-green-100 text-green-800 px-2 py-1 rounded">Aktiverade</span>
+                      ) : (
+                        <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded">Inaktiverade</span>
+                      )
+                    )}
                   </div>
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4">
-                <button className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold">
+                <button
+                  onClick={openSettings}
+                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+                >
                   Ändra cookie-inställningar
                 </button>
-                <button className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold">
+                <button
+                  onClick={acceptAll}
+                  className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors font-semibold"
+                >
                   Acceptera alla cookies
+                </button>
+                <button
+                  onClick={revokeConsent}
+                  className="px-6 py-3 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors font-semibold"
+                >
+                  Återkalla samtycke
                 </button>
               </div>
             </div>
@@ -287,6 +345,45 @@ export default function CookiesPage() {
           </Link>
         </motion.div>
       </section>
+      {/* Settings Modal */}
+      {isSettingsOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/50" onClick={closeSettings} />
+          <div className="relative bg-white rounded-xl shadow-2xl border border-border w-full max-w-lg mx-4 p-6">
+            <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+              <Settings className="w-5 h-5 text-primary" />
+              Cookie-inställningar
+            </h3>
+            <p className="text-sm text-muted mb-6">Välj vilka kategorier du vill tillåta.</p>
+
+            <div className="space-y-4 mb-6">
+              <div className="flex items-start justify-between gap-4 p-4 border rounded-lg">
+                <div>
+                  <div className="font-medium">Analytiska cookies</div>
+                  <div className="text-sm text-muted">Hjälper oss förstå hur webbplatsen används (anonymiserat).</div>
+                </div>
+                <label className="inline-flex items-center cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={analyticsAllowed}
+                    onChange={(e) => setAnalyticsAllowed(e.target.checked)}
+                    className="sr-only"
+                  />
+                  <span className={`w-11 h-6 flex items-center bg-gray-200 rounded-full p-1 transition-colors ${analyticsAllowed ? "bg-primary" : "bg-gray-300"}`}>
+                    <span className={`bg-white w-4 h-4 rounded-full shadow transform transition-transform ${analyticsAllowed ? "translate-x-5" : "translate-x-0"}`} />
+                  </span>
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3">
+              <button onClick={closeSettings} className="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50">Avbryt</button>
+              <button onClick={saveSettings} className="px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90">Spara</button>
+            </div>
+          </div>
+        </div>
+      )}
+
     </main>
   );
 }
