@@ -276,11 +276,21 @@ export async function POST(request: NextRequest) {
     // Skicka Telegram-notis till admin
     if (isTelegramConfigured()) {
       try {
+        console.log("[switch-requests] Sending Telegram notification for switch:", switchRequest.id);
         await sendTelegramNotification(switchRequest);
+        console.log("[switch-requests] Telegram notification sent successfully");
       } catch (error) {
         console.error("[switch-requests] Telegram notification failed:", error);
+        if (error instanceof Error) {
+          console.error("[switch-requests] Error details:", {
+            message: error.message,
+            stack: error.stack
+          });
+        }
         // Fortsätt även om Telegram misslyckas
       }
+    } else {
+      console.log("[switch-requests] Telegram not configured - skipping notification");
     }
 
     // TODO: Integrera med leverantörens API
