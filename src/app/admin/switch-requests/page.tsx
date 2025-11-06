@@ -362,7 +362,8 @@ export default function SwitchRequestsAdminPage() {
           price: req.priceSnapshot.price,
           total: req.priceSnapshot.total,
           el_certificate_fee: req.priceSnapshot.el_certificate_fee,
-          _12_month_discount: req.priceSnapshot._12_month_discount
+          _12_month_discount: req.priceSnapshot._12_month_discount,
+          surcharge: (req.priceSnapshot as any).surcharge
         };
       }
       // Fallback till lookup för gamla förfrågningar utan snapshot
@@ -373,10 +374,10 @@ export default function SwitchRequestsAdminPage() {
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ providerName: req.newProvider.name, area, kwh: req.billData.totalKWh })
         });
-        const json = await res.json() as { success?: boolean; data?: { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number } };
+        const json = await res.json() as { success?: boolean; data?: { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number; surcharge?: number } };
         return json?.success ? (json.data || {}) : {};
       } catch {
-        return {} as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number };
+        return {} as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number; surcharge?: number };
       }
     }));
 
@@ -384,7 +385,7 @@ export default function SwitchRequestsAdminPage() {
       const provider = req.newProvider;
       const customer = req.customerInfo;
       const address = customer.address;
-      const lookup = lookups[idx] as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number };
+      const lookup = lookups[idx] as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number; surcharge?: number };
       const formatOre = (v?: number) => (typeof v === 'number' && isFinite(v) ? `${v.toFixed(2)} öre/kWh` : '');
 
       // Avtalspris = spotpris (öre/kWh) från lookup.price, formaterat
@@ -393,7 +394,7 @@ export default function SwitchRequestsAdminPage() {
       const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
       const bindning = provider.contractType === 'rörligt' ? 0 : (provider.contractLength ?? '');
       const manadsavgift = provider.monthlyFee ?? '';
-      const paslag = provider.contractType === 'rörligt' ? (provider.energyPrice ?? '') : '';
+      const paslag = provider.contractType === 'rörligt' ? formatOre(lookup?.surcharge) : '';
       const elcertifikat = formatOre(lookup?.el_certificate_fee);
       const rabatt = formatOre(lookup?._12_month_discount);
       
