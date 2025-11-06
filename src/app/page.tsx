@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { Zap, Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
+import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
@@ -19,8 +19,8 @@ export default function Home() {
           >
             {/* Logo/Title */}
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <Zap className="w-5 h-5 text-primary" />
-              <span className="text-sm font-semibold text-primary">Elbespararen</span>
+              <img src="/green_elchef.svg" alt="Elchef" className="w-5 h-5" />
+              <span className="text-sm font-semibold text-primary">Elchef</span>
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
@@ -30,7 +30,7 @@ export default function Home() {
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
               AI-driven analys hittar onödiga extra avgifter och visar exakt hur mycket du kan spara. 
-              Din faktura hjälper oss att träna AI:n för bättre analyser. Enkelt, säkert och helt kostnadsfritt.
+              Elbespararen - en tjänst från Elchef. Enkelt, säkert och helt kostnadsfritt.
             </p>
 
             {/* CTA */}
