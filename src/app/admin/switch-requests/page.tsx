@@ -391,7 +391,7 @@ export default function SwitchRequestsAdminPage() {
       const avtalspris = formatOre(lookup?.price);
       
       const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
-      const bindning = provider.contractLength ?? '';
+      const bindning = provider.contractType === 'rörligt' ? 0 : (provider.contractLength ?? '');
       const manadsavgift = provider.monthlyFee ?? '';
       const paslag = provider.contractType === 'rörligt' ? (provider.energyPrice ?? '') : '';
       const elcertifikat = formatOre(lookup?.el_certificate_fee);

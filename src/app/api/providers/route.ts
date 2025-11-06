@@ -90,7 +90,14 @@ export async function POST(request: NextRequest) {
       monthlyFee: Number(body.monthlyFee),
       energyPrice: Number(body.energyPrice),
       freeMonths: Number(body.freeMonths) || 0,
-      contractLength: Number(body.contractLength) || 12,
+      // Bevara 0 för rörligt, defaulta annars till 12 månader om ej angivet
+      contractLength: (() => {
+        const type = (body.contractType as "rörligt" | "fastpris") || "rörligt";
+        if (type === "rörligt") return 0;
+        const raw = body.contractLength;
+        const num = raw === undefined || raw === null || raw === '' ? undefined : Number(raw);
+        return num ?? 12;
+      })(),
       contractType: (body.contractType as "rörligt" | "fastpris") || "rörligt",
       isActive: body.isActive !== false,
       features: (body.features as string[]) || [],
