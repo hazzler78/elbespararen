@@ -25,8 +25,9 @@ export default function AboutPage() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
-              Vi gör elmarknaden transparent genom AI-driven analys av din elfaktura. 
-              Hitta onödiga extra avgifter och se exakt hur mycket du kan spara.
+              Elbespararen är utvecklad av VKNG LTD och drivs under varumärket Elchef. Vi gör elmarknaden 
+              transparent genom AI-driven analys av din elfaktura så att du ser onödiga extraavgifter och 
+              exakt hur mycket du kan spara.
             </p>
           </motion.div>
         </div>
@@ -60,6 +61,15 @@ export default function AboutPage() {
                 bakom kulisserna – och hur svårt det är för vanliga människor att veta vad som är ett bra avtal, och vad som bara ser bra ut på ytan.
               </p>
 
+              <div className="bg-primary/5 border border-primary/10 rounded-lg p-6 mb-8">
+                <h3 className="text-xl font-semibold mb-3 text-primary">Elchef & VKNG LTD</h3>
+                <p className="text-muted leading-relaxed">
+                  Elbespararen är en tjänst från Elchef, bolagiserad genom VKNG LTD. Vårt team verkar från flera europeiska 
+                  länder och kombinerar branscherfarenhet med teknisk innovation. Vi är ett oberoende techbolag – inte ett elbolag – 
+                  vilket gör att vi alltid kan agera i kundens bästa intresse.
+                </p>
+              </div>
+
               <p className="text-muted mb-8 leading-relaxed">
                 Vår AI lär sig kontinuerligt av varje faktura som analyseras. Genom att träna på tusentals svenska elräkningar 
                 blir vår analys allt mer exakt och kan hitta avgifter som människor skulle missa. Varje faktura du laddar upp 
@@ -92,7 +102,26 @@ export default function AboutPage() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.2 }}
+                transition={{ delay: 0.15 }}
+                className="bg-white p-6 rounded-lg border border-border"
+              >
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+                    <Users className="w-6 h-6 text-primary" />
+                  </div>
+                  <h3 className="text-xl font-semibold">Byggt av VKNG LTD</h3>
+                </div>
+                <p className="text-muted">
+                  Elchef-teamet bakom Elbespararen sitter inom VKNG LTD och består av experter på både teknik och elmarknaden. 
+                  Vi finansieras helt utan koppling till elbolagen och kan därför stå på din sida i varje rekommendation.
+                </p>
+              </motion.div>
+
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                whileInView={{ opacity: 1, x: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.25 }}
                 className="bg-white p-6 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -111,7 +140,7 @@ export default function AboutPage() {
                 initial={{ opacity: 0, x: -20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.3 }}
+                transition={{ delay: 0.35 }}
                 className="bg-white p-6 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3 mb-4">
@@ -130,7 +159,7 @@ export default function AboutPage() {
                 initial={{ opacity: 0, x: 20 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: 0.4 }}
+                transition={{ delay: 0.45 }}
                 className="bg-white p-6 rounded-lg border border-border"
               >
                 <div className="flex items-center gap-3 mb-4">

@@ -142,8 +142,8 @@ export default function ContactPage() {
                 <Clock className="w-6 h-6 text-accent" />
               </div>
               <h3 className="font-semibold text-lg mb-2">Öppettider</h3>
-              <p className="text-muted mb-2">Mån-fre: 09:00-17:00</p>
-              <p className="text-sm text-muted">Svensk tid</p>
+              <p className="text-muted mb-2">Mån-fre: 09:00-16:00</p>
+              <p className="text-sm text-muted">Telefon: 073-686 23 60</p>
             </motion.div>
           </div>
         </div>
