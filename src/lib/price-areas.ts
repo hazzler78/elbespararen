@@ -1,7 +1,7 @@
 // Mappning av svenska postnummer till elprisområden
 // Baserat på Svenska Kraftnäts officiella prisområden
 
-import POSTAL_TO_AREA from "./postal-to-area";
+import { PREFIX_TO_AREA, POSTAL_EXCEPTIONS } from "./postal-to-area";
 
 export type PriceAreaCode = 'se1' | 'se2' | 'se3' | 'se4';
 
@@ -17,10 +17,18 @@ export function isPriceAreaCode(value: string): value is PriceAreaCode {
 
 const DATASET_FALLBACK: PriceAreaCode = 'se3';
 
-const POSTAL_AREA_MAP: Record<string, PriceAreaCode> = (() => {
+const POSTAL_EXCEPTIONS_MAP: Record<string, PriceAreaCode> = (() => {
   const map: Record<string, PriceAreaCode> = {};
-  for (const [postal, area] of Object.entries(POSTAL_TO_AREA)) {
+  for (const [postal, area] of Object.entries(POSTAL_EXCEPTIONS)) {
     map[postal] = isPriceAreaCode(area) ? area : DATASET_FALLBACK;
+  }
+  return map;
+})();
+
+const PREFIX_AREA_MAP: Record<string, PriceAreaCode> = (() => {
+  const map: Record<string, PriceAreaCode> = {};
+  for (const [prefix, area] of Object.entries(PREFIX_TO_AREA)) {
+    map[prefix] = isPriceAreaCode(area) ? area : DATASET_FALLBACK;
   }
   return map;
 })();
@@ -89,16 +97,16 @@ export function getPriceAreaFromPostalCode(postalCode: string): PriceAreaCode {
     return fallback;
   }
 
-  const datasetArea = POSTAL_AREA_MAP[code];
-  if (datasetArea) {
-    return datasetArea;
+  const exactArea = POSTAL_EXCEPTIONS_MAP[code];
+  if (exactArea) {
+    return exactArea;
   }
 
   const prefix2 = code.substring(0, 2);
   const prefix3 = code.length >= 3 ? code.substring(0, 3) : null;
 
-  if (prefix3 && POSTAL_PREFIX_OVERRIDES[prefix3]) {
-    return POSTAL_PREFIX_OVERRIDES[prefix3];
+  if (prefix3 && PREFIX_AREA_MAP[prefix3]) {
+    return PREFIX_AREA_MAP[prefix3];
   }
 
   if (POSTAL_PREFIX_OVERRIDES[prefix2]) {
