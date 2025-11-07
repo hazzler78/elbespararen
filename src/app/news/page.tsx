@@ -2,10 +2,126 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar, Image as ImageIcon } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import type { NewsPost, ApiResponse } from "@/lib/types";
+
+type VideoProvider = "youtube" | "svt";
+
+interface VideoEmbedInfo {
+  provider: VideoProvider;
+  embedUrl: string;
+  originalUrl: string;
+}
+
+const parseYouTubeStartTime = (value: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+
+  // Plain seconds (e.g. 90)
+  if (/^\d+$/.test(value)) {
+    return Number(value);
+  }
+
+  const match = value.match(/(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?/i);
+  if (!match) {
+    return null;
+  }
+
+  const [, hours, minutes, seconds] = match;
+  const totalSeconds =
+    (hours ? Number(hours) * 3600 : 0) +
+    (minutes ? Number(minutes) * 60 : 0) +
+    (seconds ? Number(seconds) : 0);
+
+  return totalSeconds > 0 ? totalSeconds : null;
+};
+
+const getVideoEmbedInfo = (rawUrl?: string | null): VideoEmbedInfo | null => {
+  if (!rawUrl) {
+    return null;
+  }
+
+  try {
+    const parsed = new URL(rawUrl);
+    const hostname = parsed.hostname.replace(/^www\./, "").toLowerCase();
+
+    if (
+      hostname === "youtu.be" ||
+      hostname === "youtube.com" ||
+      hostname === "m.youtube.com" ||
+      hostname.endsWith(".youtube.com") ||
+      hostname === "youtube-nocookie.com"
+    ) {
+      let videoId = "";
+
+      if (hostname === "youtu.be") {
+        videoId = parsed.pathname.slice(1);
+      } else {
+        const pathParts = parsed.pathname.split("/").filter(Boolean);
+
+        if (parsed.pathname === "/watch" || parsed.pathname === "/") {
+          videoId = parsed.searchParams.get("v") ?? "";
+        } else if (pathParts[0] === "embed" || pathParts[0] === "shorts") {
+          videoId = pathParts[1] ?? "";
+        } else if (pathParts.length >= 1) {
+          videoId = pathParts[pathParts.length - 1];
+        }
+      }
+
+      if (!videoId) {
+        return null;
+      }
+
+      const startTime = parseYouTubeStartTime(parsed.searchParams.get("t") ?? parsed.searchParams.get("start"));
+      const playlist = parsed.searchParams.get("list");
+
+      const params = new URLSearchParams({ rel: "0" });
+      if (startTime !== null) {
+        params.set("start", String(startTime));
+      }
+      if (playlist) {
+        params.set("list", playlist);
+      }
+
+      const embedUrl = `https://www.youtube-nocookie.com/embed/${encodeURIComponent(videoId)}${params.toString() ? `?${params.toString()}` : ""}`;
+
+      return {
+        provider: "youtube",
+        embedUrl,
+        originalUrl: rawUrl,
+      };
+    }
+
+    if (hostname === "svtplay.se" || hostname.endsWith(".svtplay.se")) {
+      const pathParts = parsed.pathname.split("/").filter(Boolean);
+      const videoIndex = pathParts.indexOf("video");
+
+      if (videoIndex !== -1 && pathParts.length > videoIndex + 1) {
+        const videoId = pathParts[videoIndex + 1];
+        const embedParams = new URLSearchParams(parsed.search);
+
+        // Remove modal param to avoid forced modals in embeds
+        embedParams.delete("modal");
+
+        const queryString = embedParams.toString();
+        const embedUrl = `https://www.svtplay.se/embed/${encodeURIComponent(videoId)}${queryString ? `?${queryString}` : ""}`;
+
+        return {
+          provider: "svt",
+          embedUrl,
+          originalUrl: rawUrl,
+        };
+      }
+    }
+  } catch (error) {
+    console.warn("Kunde inte skapa videoinbäddning", rawUrl, error);
+  }
+
+  return null;
+};
 
 export default function NewsPage() {
   const [posts, setPosts] = useState<NewsPost[]>([]);
@@ -98,15 +214,19 @@ export default function NewsPage() {
                 </div>
               ) : (
                 <div className="space-y-8 mt-8">
-                  {posts.map((post, index) => (
-                    <motion.article
-                      key={post.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      whileInView={{ opacity: 1, y: 0 }}
-                      viewport={{ once: true }}
-                      transition={{ duration: 0.5, delay: index * 0.1 }}
-                      className="border-l-4 border-primary pl-6 py-6 hover:bg-gray-50 rounded-r-lg transition-colors"
-                    >
+                  {posts.map((post, index) => {
+                    const embedInfo = getVideoEmbedInfo(post.externalLink);
+                    const shouldShowImage = Boolean(post.imageUrl && !embedInfo);
+
+                    return (
+                      <motion.article
+                        key={post.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        whileInView={{ opacity: 1, y: 0 }}
+                        viewport={{ once: true }}
+                        transition={{ duration: 0.5, delay: index * 0.1 }}
+                        className="border-l-4 border-primary pl-6 py-6 hover:bg-gray-50 rounded-r-lg transition-colors"
+                      >
                       <div className="flex items-center gap-2 text-sm text-muted mb-3">
                         <Calendar className="w-4 h-4" />
                         <span>{new Date(post.publishedAt).toLocaleDateString("sv-SE", {
@@ -132,10 +252,31 @@ export default function NewsPage() {
                         )}
                       </h3>
                       
-                      {post.imageUrl && (
+                      {embedInfo && (
                         <div className="mb-4">
-                          <img 
-                            src={post.imageUrl} 
+                          <div
+                            className="relative w-full overflow-hidden rounded-lg border border-border bg-black"
+                            style={{ paddingTop: "56.25%" }}
+                          >
+                            <iframe
+                              src={embedInfo.embedUrl}
+                              title={`${post.title} – videospelare`}
+                              className="absolute inset-0 h-full w-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                              allowFullScreen
+                              referrerPolicy="strict-origin-when-cross-origin"
+                            />
+                          </div>
+                          <p className="mt-2 text-sm text-muted">
+                            Videon spelas upp från {embedInfo.provider === "youtube" ? "YouTube" : "SVT Play"}.
+                          </p>
+                        </div>
+                      )}
+
+                      {shouldShowImage && (
+                        <div className="mb-4">
+                          <img
+                            src={post.imageUrl}
                             alt={post.title}
                             className="w-full max-w-2xl h-auto rounded-lg object-cover border border-border"
                           />
@@ -161,8 +302,9 @@ export default function NewsPage() {
                           <ExternalLink className="w-4 h-4" />
                         </a>
                       )}
-                    </motion.article>
-                  ))}
+                      </motion.article>
+                    );
+                  })}
                 </div>
               )}
             </div>
