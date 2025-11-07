@@ -15,7 +15,15 @@ export function isPriceAreaCode(value: string): value is PriceAreaCode {
   return value === 'se1' || value === 'se2' || value === 'se3' || value === 'se4';
 }
 
-const POSTAL_AREA_MAP: Record<string, PriceAreaCode> = POSTAL_TO_AREA;
+const DATASET_FALLBACK: PriceAreaCode = 'se3';
+
+const POSTAL_AREA_MAP: Record<string, PriceAreaCode> = (() => {
+  const map: Record<string, PriceAreaCode> = {};
+  for (const [postal, area] of Object.entries(POSTAL_TO_AREA)) {
+    map[postal] = isPriceAreaCode(area) ? area : DATASET_FALLBACK;
+  }
+  return map;
+})();
 
 export const PRICE_AREAS: Record<PriceAreaCode, PriceArea> = {
   se1: {
@@ -75,7 +83,7 @@ const POSTAL_PREFIX_RULES: PostalPrefixRule[] = [
 // Baserat på första 1-2 siffrorna i postnumret
 export function getPriceAreaFromPostalCode(postalCode: string): PriceAreaCode {
   const code = postalCode.replace(/\s/g, '');
-  const fallback: PriceAreaCode = 'se3';
+  const fallback: PriceAreaCode = DATASET_FALLBACK;
 
   if (code.length < 2 || /\D/.test(code)) {
     return fallback;
