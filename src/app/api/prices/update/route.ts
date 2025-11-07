@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import type { ContractAlternative } from "@/lib/types";
-import { getPriceAreaFromPostalCode, PRICE_AREAS } from "@/lib/price-areas";
+import { getPriceAreaFromPostalCode, PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
 
 export const runtime = 'edge';
 
@@ -323,8 +323,11 @@ function createVariableProvidersFromSpotPrices(data: any, providerName: string):
   // Skapa en rörlig leverantör för varje prisområde
   Object.entries(spotPrices).forEach(([areaCode, spotPrice]: [string, any]) => {
     if (typeof spotPrice === 'number' && spotPrice > 0) {
+      const areaLabel = isPriceAreaCode(areaCode)
+        ? PRICE_AREAS[areaCode].name
+        : areaCode.toUpperCase();
       variableProviders.push({
-        namn: `${providerName} Rörligt (${PRICE_AREAS[areaCode]?.name || areaCode.toUpperCase()})`,
+        namn: `${providerName} Rörligt (${areaLabel})`,
         fastpris: undefined, // Rörligt har inget fastpris
         månadskostnad: 0, // Oftast ingen månadskostnad för rörliga avtal
         bindningstid: 0, // Ingen bindningstid för rörliga avtal

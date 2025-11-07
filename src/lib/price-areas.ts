@@ -9,6 +9,10 @@ export interface PriceArea {
   description: string;
 }
 
+export function isPriceAreaCode(value: string): value is PriceAreaCode {
+  return value === 'se1' || value === 'se2' || value === 'se3' || value === 'se4';
+}
+
 export const PRICE_AREAS: Record<PriceAreaCode, PriceArea> = {
   se1: {
     code: 'se1',
