@@ -1,7 +1,7 @@
 // Mappning av svenska postnummer till elprisområden
 // Baserat på Svenska Kraftnäts officiella prisområden
 
-import postalToAreaData from "./postal-to-area.json" assert { type: "json" };
+import postalToAreaData from "./postal-to-area.json";
 
 export type PriceAreaCode = 'se1' | 'se2' | 'se3' | 'se4';
 
