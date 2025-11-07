@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { MapPin, AlertCircle, CheckCircle2 } from "lucide-react";
-import { getPriceAreaFromPostalCode, isValidSwedishPostalCode, formatPostalCode, PRICE_AREAS } from "@/lib/price-areas";
+import { getPriceAreaFromPostalCode, isValidSwedishPostalCode, formatPostalCode, PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
 
 interface PostalCodeInputProps {
   value: string;
@@ -81,10 +81,10 @@ export default function PostalCodeInput({ value, onChange, className = "" }: Pos
             <MapPin className="w-4 h-4 text-blue-600" />
             <div>
               <p className="text-sm font-medium text-blue-800">
-                {PRICE_AREAS[priceArea]?.name}
+                {isPriceAreaCode(priceArea) ? PRICE_AREAS[priceArea].name : priceArea?.toUpperCase()}
               </p>
               <p className="text-xs text-blue-600">
-                {PRICE_AREAS[priceArea]?.description}
+                {isPriceAreaCode(priceArea) ? PRICE_AREAS[priceArea].description : ""}
               </p>
             </div>
           </div>
