@@ -1,64 +1,102 @@
 // Mappning av svenska postnummer till elprisområden
 // Baserat på Svenska Kraftnäts officiella prisområden
 
+export type PriceAreaCode = 'se1' | 'se2' | 'se3' | 'se4';
+
 export interface PriceArea {
-  code: string;
+  code: PriceAreaCode;
   name: string;
   description: string;
 }
 
-export const PRICE_AREAS: Record<string, PriceArea> = {
+export const PRICE_AREAS: Record<PriceAreaCode, PriceArea> = {
   se1: {
     code: 'se1',
-    name: 'SE1 - Norra Sverige',
-    description: 'Lappland, Norrbotten, Västerbotten, Jämtland, Västernorrland'
+    name: 'SE1 - Norra Norrland',
+    description: 'Norrbotten och nordligaste delarna av Lappland'
   },
   se2: {
-    code: 'se2', 
-    name: 'SE2 - Mellansverige',
-    description: 'Svealand, Stockholm, Uppsala, Södermanland, Västmanland, Dalarna, Gävleborg'
+    code: 'se2',
+    name: 'SE2 - Södra Norrland',
+    description: 'Västerbotten, Jämtland, Västernorrland och norra Hälsingland'
   },
   se3: {
     code: 'se3',
-    name: 'SE3 - Sydvästra Sverige', 
-    description: 'Västra Götaland, Halland, Värmland, Örebro'
+    name: 'SE3 - Mellansverige',
+    description: 'Stockholm, Mälardalen, Västra Götaland och större delen av Svealand'
   },
   se4: {
     code: 'se4',
-    name: 'SE4 - Sydöstra Sverige',
-    description: 'Skåne, Blekinge, Småland, Östergötland, Gotland'
+    name: 'SE4 - Södra Sverige',
+    description: 'Skåne, Blekinge, Småland, Öland och Gotland'
   }
 };
 
+const POSTAL_PREFIX_OVERRIDES: Record<string, PriceAreaCode> = {
+  '10': 'se3',
+  '11': 'se3',
+  '12': 'se3',
+  '13': 'se3',
+  '14': 'se3',
+  '15': 'se3',
+  '16': 'se3',
+  '17': 'se3',
+  '18': 'se3',
+  '19': 'se3',
+  '186': 'se3'
+};
+
+interface PostalPrefixRule {
+  min: number;
+  max: number;
+  area: PriceAreaCode;
+}
+
+const POSTAL_PREFIX_RULES: PostalPrefixRule[] = [
+  { min: 10, max: 19, area: 'se3' },
+  { min: 20, max: 29, area: 'se4' },
+  { min: 30, max: 34, area: 'se3' },
+  { min: 35, max: 39, area: 'se4' },
+  { min: 40, max: 59, area: 'se3' },
+  { min: 60, max: 69, area: 'se3' },
+  { min: 70, max: 89, area: 'se2' },
+  { min: 90, max: 99, area: 'se1' }
+];
+
 // Mappning av postnummer till prisområden
 // Baserat på första 1-2 siffrorna i postnumret
-export function getPriceAreaFromPostalCode(postalCode: string): string {
-  // Ta bort eventuella mellanslag och konvertera till nummer
+export function getPriceAreaFromPostalCode(postalCode: string): PriceAreaCode {
   const code = postalCode.replace(/\s/g, '');
-  const firstDigits = parseInt(code.substring(0, 2));
-  
-  // SE1 - Norra Sverige (80xxx-99xxx)
-  if (firstDigits >= 80 && firstDigits <= 99) {
-    return 'se1';
+  const fallback: PriceAreaCode = 'se3';
+
+  if (code.length < 2 || /\D/.test(code)) {
+    return fallback;
   }
-  
-  // SE2 - Mellansverige (10xxx-79xxx, undantag för vissa)
-  if (firstDigits >= 10 && firstDigits <= 79) {
-    // Undantag för SE3 och SE4 områden
-    if (firstDigits >= 40 && firstDigits <= 59) {
-      return 'se3'; // Västra Götaland, Halland
-    }
-    if (firstDigits >= 20 && firstDigits <= 39) {
-      return 'se4'; // Skåne, Blekinge, Småland, Östergötland
-    }
-    if (firstDigits >= 60 && firstDigits <= 69) {
-      return 'se3'; // Värmland, Örebro
-    }
-    return 'se2'; // Stockholm, Uppsala, etc.
+
+  const prefix2 = code.substring(0, 2);
+  const prefix3 = code.length >= 3 ? code.substring(0, 3) : null;
+
+  if (prefix3 && POSTAL_PREFIX_OVERRIDES[prefix3]) {
+    return POSTAL_PREFIX_OVERRIDES[prefix3];
   }
-  
-  // Fallback till SE2 (Stockholm-området)
-  return 'se2';
+
+  if (POSTAL_PREFIX_OVERRIDES[prefix2]) {
+    return POSTAL_PREFIX_OVERRIDES[prefix2];
+  }
+
+  const firstTwoDigits = parseInt(prefix2, 10);
+
+  if (Number.isNaN(firstTwoDigits)) {
+    return fallback;
+  }
+
+  const match = POSTAL_PREFIX_RULES.find((rule) => firstTwoDigits >= rule.min && firstTwoDigits <= rule.max);
+
+  if (match) {
+    return match.area;
+  }
+
+  return fallback;
 }
 
 // Hjälpfunktion för att validera postnummer
