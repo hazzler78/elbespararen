@@ -1,7 +1,7 @@
 // Mappning av svenska postnummer till elprisområden
 // Baserat på Svenska Kraftnäts officiella prisområden
 
-import postalToAreaData from "./postal-to-area.json";
+import POSTAL_TO_AREA from "./postal-to-area";
 
 export type PriceAreaCode = 'se1' | 'se2' | 'se3' | 'se4';
 
@@ -15,20 +15,7 @@ export function isPriceAreaCode(value: string): value is PriceAreaCode {
   return value === 'se1' || value === 'se2' || value === 'se3' || value === 'se4';
 }
 
-const POSTAL_AREA_MAP: Record<string, PriceAreaCode> = (() => {
-  const entries = Object.entries(postalToAreaData as Record<string, string>);
-  const map: Record<string, PriceAreaCode> = {};
-
-  for (const [postal, area] of entries) {
-    const trimmedPostal = postal.trim();
-    const normalizedArea = area.trim().toLowerCase();
-    if (trimmedPostal.length === 5 && isPriceAreaCode(normalizedArea)) {
-      map[trimmedPostal] = normalizedArea;
-    }
-  }
-
-  return map;
-})();
+const POSTAL_AREA_MAP: Record<string, PriceAreaCode> = POSTAL_TO_AREA;
 
 export const PRICE_AREAS: Record<PriceAreaCode, PriceArea> = {
   se1: {
