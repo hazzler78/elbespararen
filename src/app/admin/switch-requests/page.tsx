@@ -356,6 +356,13 @@ export default function SwitchRequestsAdminPage() {
 
     // Använd sparad priceSnapshot om den finns (för framtida konsistens), annars lookup
     const lookups = await Promise.all(selectedData.map(async (req) => {
+      const isVariable = req.newProvider.contractType === 'rörligt';
+
+      // Fastpris behöver inte externa prisuppslag – lämna tomt
+      if (!isVariable) {
+        return {} as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number; surcharge?: number };
+      }
+
       // Prioritera sparad snapshot
       if (req.priceSnapshot) {
         return {
@@ -366,6 +373,7 @@ export default function SwitchRequestsAdminPage() {
           surcharge: (req.priceSnapshot as any).surcharge
         };
       }
+
       // Fallback till lookup för gamla förfrågningar utan snapshot
       try {
         const area = (req.billData.priceArea || 'se3').toLowerCase();
@@ -386,21 +394,25 @@ export default function SwitchRequestsAdminPage() {
       const customer = req.customerInfo;
       const address = customer.address;
       const lookup = lookups[idx] as { price?: number; total?: number; el_certificate_fee?: number; _12_month_discount?: number; surcharge?: number };
+      const contractType = (provider.contractType || '').toLowerCase();
+      const isVariable = contractType.startsWith('rör');
+      const isFast = contractType.startsWith('fast');
+      const toOre = (value?: number) => (typeof value === 'number' && isFinite(value) ? `${(value * 100).toFixed(2)} öre/kWh` : '');
       const formatOre = (v?: number) => (typeof v === 'number' && isFinite(v) ? `${v.toFixed(2)} öre/kWh` : '');
 
-      // Avtalspris = spotpris (öre/kWh) från lookup.price, formaterat
-      const avtalspris = formatOre(lookup?.price);
+      // Avtalspris = spotpris (öre/kWh) för rörligt, annars fastpris (kr -> öre)
+      const avtalspris = isVariable ? formatOre(lookup?.price) : toOre(provider.energyPrice);
       
-      const avtalsform = provider.contractType === 'fastpris' ? 'fastavtal' : 'rörligt';
-      const bindning = provider.contractType === 'rörligt' ? 0 : (provider.contractLength ?? '');
+      const avtalsform = isFast ? 'fastavtal' : 'rörligt';
+      const bindning = isVariable ? 0 : (provider.contractLength ?? '');
       const manadsavgift = provider.monthlyFee ?? '';
-      const paslag = provider.contractType === 'rörligt' ? formatOre(lookup?.surcharge) : '';
-      const elcertifikat = formatOre(lookup?.el_certificate_fee);
-      const rabatt = formatOre(lookup?._12_month_discount);
+      const paslag = isVariable ? formatOre(lookup?.surcharge) : '';
+      const elcertifikat = isVariable ? formatOre(lookup?.el_certificate_fee) : '';
+      const rabatt = isVariable ? formatOre(lookup?._12_month_discount) : '';
       
       const forbrukning = req.billData.totalKWh;
-      // Total = total (exkl moms) från lookup.total (öre/kWh) formaterat
-      const total = formatOre(lookup?.total);
+      // Total = total (exkl moms) från lookup.total (öre/kWh) formaterat (endast rörligt)
+      const total = isVariable ? formatOre(lookup?.total) : '';
       
       const elursprung = 'NordenMix';
       const forbrukningKwh = forbrukning;
