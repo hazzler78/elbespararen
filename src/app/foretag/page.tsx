@@ -85,15 +85,14 @@ export default function ForetagPage() {
             <div className="space-y-4">
               <h2 className="text-3xl font-bold text-primary">Så fungerar det</h2>
               <p className="text-muted text-lg leading-relaxed">
-                Ladda upp fakturor från era anläggningar eller låt oss hämta dem via befintliga kundportaler. Vi
-                sammanställer en skräddarsydd analys med besparingspotential, risker och konkreta åtgärdsförslag. Ni
-                väljer själva om ni vill gå vidare med oss eller använda insikterna internt.
+                Ladda upp fakturor från era anläggningar. Vi sammanställer en tydlig analys med besparingspotential och
+                konkreta åtgärdsförslag. Ni väljer själva om ni vill gå vidare med oss eller använda insikterna internt.
               </p>
             </div>
             <ul className="grid md:grid-cols-2 gap-4 text-muted">
               <li className="bg-white/60 rounded-lg border border-primary/10 p-4">
                 <strong className="block text-foreground mb-1">1. Onboarding</strong>
-                Vi sätter upp en säker delningsyta och definierar vilka anläggningar som ska analyseras.
+                Ni delar fakturorna med oss och vi stämmer av vilka anläggningar som ingår.
               </li>
               <li className="bg-white/60 rounded-lg border border-primary/10 p-4">
                 <strong className="block text-foreground mb-1">2. AI-analys</strong>
