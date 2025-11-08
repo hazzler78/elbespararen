@@ -21,6 +21,18 @@ export type SaveBillImageResult = {
   arrayBuffer: ArrayBuffer;
 };
 
+type R2LikeBucket = {
+  put: (
+    key: string,
+    value: ArrayBuffer | ArrayBufferView | ReadableStream | Blob | string,
+    options?: unknown
+  ) => Promise<unknown>;
+};
+
+type BillImageEnv = {
+  BILL_IMAGES?: R2LikeBucket;
+};
+
 const EXTENSION_BY_MIME: Record<string, string> = {
   "image/jpeg": "jpg",
   "image/png": "png",
@@ -49,7 +61,14 @@ function buildObjectKey(file: File): string {
   return `bill-uploads/${datePrefix}/${random}.${extension}`;
 }
 
-function resolveR2Binding(): any | undefined {
+let hasLoggedMissingBinding = false;
+
+function resolveR2Binding(explicitEnv?: BillImageEnv): BillImageEnv | undefined {
+  if (explicitEnv?.BILL_IMAGES) {
+    console.log("[bill-images] Found BILL_IMAGES via explicit env override");
+    return explicitEnv;
+  }
+
   const globalEnv = (globalThis as any)?.env;
   if (globalEnv?.BILL_IMAGES) {
     console.log("[bill-images] Found BILL_IMAGES via globalThis.env");
@@ -62,14 +81,31 @@ function resolveR2Binding(): any | undefined {
       console.log("[bill-images] Found BILL_IMAGES via getRequestContext().env");
       return ctxEnv;
     }
+
+    if (!hasLoggedMissingBinding && ctxEnv) {
+      hasLoggedMissingBinding = true;
+      const availableKeys = Object.keys(ctxEnv);
+      console.warn("[bill-images] BILL_IMAGES binding missing in getRequestContext().env. Available keys:", availableKeys);
+    }
   }
 
-  console.warn("[bill-images] BILL_IMAGES binding not found in available contexts");
+  if (!hasLoggedMissingBinding) {
+    hasLoggedMissingBinding = true;
+    const availableKeys = globalEnv ? Object.keys(globalEnv) : [];
+    console.warn("[bill-images] BILL_IMAGES binding not found in available contexts. Available keys:", availableKeys);
+  }
+
   return undefined;
 }
 
-async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: string, metadata?: BillImageMetadata) {
-  const env = resolveR2Binding();
+async function saveToR2(
+  arrayBuffer: ArrayBuffer,
+  key: string,
+  contentType: string,
+  metadata?: BillImageMetadata,
+  envOverride?: BillImageEnv
+) {
+  const env = resolveR2Binding(envOverride);
   if (!env?.BILL_IMAGES) {
     throw new Error("[bill-images] R2 binding BILL_IMAGES saknas i runtime");
   }
@@ -100,14 +136,18 @@ async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: stri
   };
 }
 
-export async function saveBillImage(file: File, metadata?: BillImageMetadata): Promise<SaveBillImageResult> {
+export async function saveBillImage(
+  file: File,
+  metadata?: BillImageMetadata,
+  options?: { env?: BillImageEnv }
+): Promise<SaveBillImageResult> {
   const arrayBuffer = await file.arrayBuffer();
   const contentType = file.type || "application/octet-stream";
   const key = buildObjectKey(file);
   const bytes = arrayBuffer.byteLength;
 
   try {
-    const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata);
+    const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata, options?.env);
 
     return {
       key,

@@ -128,10 +128,10 @@ export default function ForetagPage() {
                 Kontakta oss
               </Link>
               <a
-                href="mailto:team@elbespararen.se"
+                href="mailto:info@elchef.se"
                 className="inline-flex items-center gap-2 px-6 py-3 rounded-lg border border-border text-foreground hover:bg-muted/40 transition-colors duration-200"
               >
-                team@elbespararen.se
+                info@elchef.se
               </a>
             </div>
           </motion.div>

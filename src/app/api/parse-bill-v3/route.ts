@@ -63,8 +63,14 @@ export async function POST(req: NextRequest) {
     let savedImageResult: Awaited<ReturnType<typeof saveBillImage>> | null = null;
     let arrayBuffer: ArrayBuffer;
 
+    const requestEnv =
+      (typeof (globalThis as any).getRequestContext === "function"
+        ? (globalThis as any).getRequestContext()?.env
+        : undefined) ||
+      (globalThis as any)?.env;
+
     try {
-      savedImageResult = await saveBillImage(file, { postalCode, priceArea });
+      savedImageResult = await saveBillImage(file, { postalCode, priceArea }, { env: requestEnv });
       arrayBuffer = savedImageResult.arrayBuffer;
       console.log(`[parse-bill-v3] Faktura sparad: ${savedImageResult.key} (${savedImageResult.storage})`);
     } catch (storageError) {
