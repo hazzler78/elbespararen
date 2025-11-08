@@ -19,6 +19,10 @@ export interface BillData {
   totalAmount: number; // Total belopp att betala
   postalCode?: string; // Postnummer för prisområdesdetektering
   priceArea?: string; // Automatiskt detekterat prisområde (se1, se2, se3, se4)
+  imageKey?: string; // Nyckel till sparad fakturabild
+  imageUrl?: string; // Ev. publik URL till fakturabild
+  originalFileName?: string; // Ursprungligt filnamn
+  uploadedAt?: string; // ISO-tid när fakturan laddades upp
 }
 
 export interface SavingsCalculation {

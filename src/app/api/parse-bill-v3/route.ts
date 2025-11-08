@@ -5,6 +5,7 @@ import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 import { applyCorrections, validateBillData } from "@/lib/ai-corrections";
 import { providerRouter } from "@/lib/ai-provider-routing";
+import { saveBillImage } from "@/lib/storage/bill-images";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -33,6 +34,8 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const file = formData.get("file") as File;
     const customPrompt = formData.get("prompt") as string;
+    const postalCode = (formData.get("postalCode") as string | null) ?? undefined;
+    const priceArea = (formData.get("priceArea") as string | null) ?? undefined;
 
     if (!file) {
       return NextResponse.json(
@@ -57,8 +60,20 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    let savedImageResult: Awaited<ReturnType<typeof saveBillImage>> | null = null;
+    let arrayBuffer: ArrayBuffer;
+
+    try {
+      savedImageResult = await saveBillImage(file, { postalCode, priceArea });
+      arrayBuffer = savedImageResult.arrayBuffer;
+      console.log(`[parse-bill-v3] Faktura sparad: ${savedImageResult.key} (${savedImageResult.storage})`);
+    } catch (storageError) {
+      console.error("[parse-bill-v3] Kunde inte spara fakturabild:", storageError);
+      arrayBuffer = await file.arrayBuffer();
+      savedImageResult = null;
+    }
+
     // Konvertera fil till Base64
-    const arrayBuffer = await file.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const base64Image = buffer.toString("base64");
     const dataUrl = `data:${file.type};base64,${base64Image}`;
@@ -151,13 +166,30 @@ export async function POST(req: NextRequest) {
     console.log(`[parse-bill-v3] Extra avgifter detalj:`, JSON.stringify(billData.extraFeesDetailed, null, 2));
     console.log(`[parse-bill-v3] Period: ${billData.period}, Förbrukning: ${billData.totalKWh} kWh, Avtalstyp: ${billData.contractType}`);
 
+    if (postalCode && !billData.postalCode) {
+      billData.postalCode = postalCode;
+    }
+
+    if (priceArea && !billData.priceArea) {
+      billData.priceArea = priceArea;
+    }
+
+    if (savedImageResult) {
+      billData.imageKey = savedImageResult.key;
+      billData.imageUrl = savedImageResult.url;
+      billData.originalFileName = file.name;
+      billData.uploadedAt = savedImageResult.uploadedAt;
+    }
+
     return NextResponse.json({
       success: true,
       data: billData,
       meta: {
         fileName: file.name,
         fileSize: file.size,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        imageKey: savedImageResult?.key,
+        storage: savedImageResult?.storage ?? "unknown"
       }
     });
 
