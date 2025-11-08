@@ -49,13 +49,34 @@ function buildObjectKey(file: File): string {
   return `bill-uploads/${datePrefix}/${random}.${extension}`;
 }
 
-async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: string, metadata?: BillImageMetadata) {
-  let env: any = {};
-
-  if (typeof (globalThis as any).getRequestContext === "function") {
-    env = (globalThis as any).getRequestContext()?.env ?? {};
+async function resolveR2Binding(): Promise<any | undefined> {
+  const globalEnv = (globalThis as any)?.env;
+  if (globalEnv?.BILL_IMAGES) {
+    return globalEnv;
   }
 
+  if (typeof (globalThis as any).getRequestContext === "function") {
+    const ctxEnv = (globalThis as any).getRequestContext()?.env;
+    if (ctxEnv?.BILL_IMAGES) {
+      return ctxEnv;
+    }
+  }
+
+  try {
+    const cloudflareEnv = await import("cloudflare:env");
+    if ((cloudflareEnv as any)?.env?.BILL_IMAGES) {
+      return (cloudflareEnv as any).env;
+    }
+  } catch (error) {
+    // cloudflare:env is not available locally (Node dev) – ignore
+    console.debug("[bill-images] cloudflare:env not available:", error);
+  }
+
+  return undefined;
+}
+
+async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: string, metadata?: BillImageMetadata) {
+  const env = await resolveR2Binding();
   if (!env?.BILL_IMAGES) {
     throw new Error("[bill-images] R2 binding BILL_IMAGES saknas i runtime");
   }
