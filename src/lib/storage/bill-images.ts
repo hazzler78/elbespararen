@@ -49,24 +49,6 @@ function buildObjectKey(file: File): string {
   return `bill-uploads/${datePrefix}/${random}.${extension}`;
 }
 
-async function saveToLocalFilesystem(arrayBuffer: ArrayBuffer, key: string, contentType: string) {
-  const path = await (async () => {
-    const { join } = await import("path");
-    const { mkdir } = await import("fs/promises");
-    const uploadsDir = join(process.cwd(), "data", "uploads");
-    await mkdir(uploadsDir, { recursive: true });
-    return join(uploadsDir, key.replace(/\//g, "_"));
-  })();
-
-  const { writeFile } = await import("fs/promises");
-  await writeFile(path, new Uint8Array(arrayBuffer));
-
-  return {
-    path,
-    url: undefined as string | undefined,
-  };
-}
-
 async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: string, metadata?: BillImageMetadata) {
   let env: any = {};
 
@@ -105,32 +87,31 @@ export async function saveBillImage(file: File, metadata?: BillImageMetadata): P
   const key = buildObjectKey(file);
   const bytes = arrayBuffer.byteLength;
 
-  const isDevelopment = typeof process !== "undefined" && process.env.NODE_ENV === "development";
+  try {
+    const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata);
 
-  if (isDevelopment) {
-    const { url } = await saveToLocalFilesystem(arrayBuffer, key, contentType);
     return {
       key,
-      storage: "local",
+      storage: "r2",
       url,
+      bytes,
+      contentType,
+      uploadedAt,
+      arrayBuffer,
+    };
+  } catch (error) {
+    console.warn("[bill-images] Kunde inte spara till R2 - fortsätter utan bildlagring:", error);
+
+    return {
+      key,
+      storage: "skipped",
+      url: undefined,
       bytes,
       contentType,
       uploadedAt: new Date().toISOString(),
       arrayBuffer,
     };
   }
-
-  const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata);
-
-  return {
-    key,
-    storage: "r2",
-    url,
-    bytes,
-    contentType,
-    uploadedAt,
-    arrayBuffer,
-  };
 }
 
 
