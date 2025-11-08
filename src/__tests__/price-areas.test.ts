@@ -4,6 +4,7 @@ describe("getPriceAreaFromPostalCode", () => {
   it("returns SE3 for Stockholm-area postal codes", () => {
     expect(getPriceAreaFromPostalCode("18660")).toBe("se3");
     expect(getPriceAreaFromPostalCode("11120")).toBe("se3");
+    expect(getPriceAreaFromPostalCode("43266")).toBe("se3");
   });
 
   it("handles southern Sweden as SE4", () => {

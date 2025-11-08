@@ -1137,6 +1137,7 @@ export const POSTAL_EXCEPTIONS: Record<string, string> = {
   '43083': 'se4',
   '43084': 'se4',
   '43085': 'se4',
+  '43266': 'se3',
   '43900': 'se4',
   '43905': 'se4',
   '43921': 'se4',
