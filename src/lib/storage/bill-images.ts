@@ -14,7 +14,7 @@ type BillImageMetadata = {
 export type SaveBillImageResult = {
   key: string;
   url?: string;
-  storage: "r2" | "local";
+  storage: "r2" | "skipped";
   bytes: number;
   contentType: string;
   uploadedAt: string;
