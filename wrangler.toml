@@ -13,11 +13,21 @@ binding = "BILL_IMAGES"
 bucket_name = "elbespararen-bill-images"
 
 [env.production]
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "elbespararen-db"
+database_id = "a475e6e6-5228-4598-8751-634e7de05ec0"
+
 [[env.production.r2_buckets]]
 binding = "BILL_IMAGES"
 bucket_name = "elbespararen-bill-images"
 
 [env.preview]
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "elbespararen-db"
+database_id = "a475e6e6-5228-4598-8751-634e7de05ec0"
+
 [[env.preview.r2_buckets]]
 binding = "BILL_IMAGES"
 bucket_name = "elbespararen-bill-images"
