@@ -52,16 +52,19 @@ function buildObjectKey(file: File): string {
 function resolveR2Binding(): any | undefined {
   const globalEnv = (globalThis as any)?.env;
   if (globalEnv?.BILL_IMAGES) {
+    console.log("[bill-images] Found BILL_IMAGES via globalThis.env");
     return globalEnv;
   }
 
   if (typeof (globalThis as any).getRequestContext === "function") {
     const ctxEnv = (globalThis as any).getRequestContext()?.env;
     if (ctxEnv?.BILL_IMAGES) {
+      console.log("[bill-images] Found BILL_IMAGES via getRequestContext().env");
       return ctxEnv;
     }
   }
 
+  console.warn("[bill-images] BILL_IMAGES binding not found in available contexts");
   return undefined;
 }
 
@@ -70,6 +73,11 @@ async function saveToR2(arrayBuffer: ArrayBuffer, key: string, contentType: stri
   if (!env?.BILL_IMAGES) {
     throw new Error("[bill-images] R2 binding BILL_IMAGES saknas i runtime");
   }
+
+  console.log("[bill-images] Using BILL_IMAGES binding to store object", {
+    key,
+    hasPut: typeof env.BILL_IMAGES?.put === "function"
+  });
 
   const uploadedAt = new Date().toISOString();
 
