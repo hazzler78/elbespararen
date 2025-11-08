@@ -27,6 +27,12 @@ const footerSections: FooterSection[] = [
     ]
   },
   {
+    title: "För företag",
+    links: [
+      { label: "Företag", href: "/foretag" }
+    ]
+  },
+  {
     title: "Vanliga frågor",
     links: [
       { label: "FAQ", href: "/faq" }

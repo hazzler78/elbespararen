@@ -20,6 +20,7 @@ describe('Footer Component', () => {
     
     // Check that all section titles are present (mobile button + desktop heading + desktop link)
     expect(screen.getAllByText('Om oss')).toHaveLength(3); // Mobile button + desktop heading + desktop link
+    expect(screen.getAllByText('För företag')).toHaveLength(2); // Mobile button + desktop heading
     expect(screen.getAllByText('Vanliga frågor')).toHaveLength(2); // Mobile button + desktop heading
     expect(screen.getAllByText('Juridiskt')).toHaveLength(2); // Mobile button + desktop heading
   });
@@ -67,6 +68,7 @@ describe('Footer Component', () => {
     // Check specific links exist
     expect(screen.getByRole('link', { name: 'Om oss' })).toHaveAttribute('href', '/about');
     expect(screen.getByRole('link', { name: 'Kontakt' })).toHaveAttribute('href', '/contact');
+    expect(screen.getByRole('link', { name: 'Företag' })).toHaveAttribute('href', '/foretag');
     expect(screen.getByRole('link', { name: 'FAQ' })).toHaveAttribute('href', '/faq');
   });
 });
