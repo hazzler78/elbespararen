@@ -17,7 +17,7 @@ export const maxDuration = 30;
  */
 export async function POST(
   req: NextRequest,
-  context: { env?: Record<string, unknown> }
+  context: any
 ) {
   try {
     // Validera API-nyckel
