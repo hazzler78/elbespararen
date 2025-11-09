@@ -5,13 +5,17 @@ compatibility_flags = ["nodejs_compat"]
 pages_build_output_dir = ".vercel/output/static"
 
 [env.production]
-bindings = [
-  { type = "r2_bucket", name = "BILL_IMAGES", bucket_name = "elbespararen-bill-images" },
-  { type = "d1", name = "DB", database_name = "elbespararen-db", database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" }
+r2_buckets = [
+  { binding = "BILL_IMAGES", bucket_name = "elbespararen-bill-images" }
+]
+d1_databases = [
+  { binding = "DB", database_name = "elbespararen-db", database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" }
 ]
 
 [env.preview]
-bindings = [
-  { type = "r2_bucket", name = "BILL_IMAGES", bucket_name = "elbespararen-bill-images" },
-  { type = "d1", name = "DB", database_name = "elbespararen-db", database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" }
+r2_buckets = [
+  { binding = "BILL_IMAGES", bucket_name = "elbespararen-bill-images" }
+]
+d1_databases = [
+  { binding = "DB", database_name = "elbespararen-db", database_id = "a475e6e6-5228-4598-8751-634e7de05ec0" }
 ]
