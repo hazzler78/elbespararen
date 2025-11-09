@@ -62,7 +62,7 @@ function buildObjectKey(file: File): string {
 }
 
 let hasLoggedMissingBinding = false;
-let cachedCloudflareImport: BillImageEnv | null | undefined;
+let hasLoggedEnvKeys = false;
 
 async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEnv | undefined> {
   if (explicitEnv?.BILL_IMAGES) {
@@ -70,10 +70,15 @@ async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEn
     return explicitEnv;
   }
 
-  const globalEnv = (globalThis as any)?.env;
+  const globalEnv = ((globalThis as any)?.env ??
+    (globalThis as any)?.CF_PAGES?.env) as BillImageEnv | undefined;
   if (globalEnv?.BILL_IMAGES) {
     console.log("[bill-images] Found BILL_IMAGES via globalThis.env");
     return globalEnv;
+  }
+  if (globalEnv && !hasLoggedEnvKeys) {
+    hasLoggedEnvKeys = true;
+    console.log("[bill-images] global env keys", Object.keys(globalEnv));
   }
 
   if (typeof (globalThis as any).getRequestContext === "function") {
@@ -88,31 +93,6 @@ async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEn
       const availableKeys = Object.keys(ctxEnv);
       console.warn("[bill-images] BILL_IMAGES binding missing in getRequestContext().env. Available keys:", availableKeys);
     }
-  }
-
-  if (cachedCloudflareImport === undefined) {
-    if (typeof globalThis === "object" && "env" in (globalThis as any)) {
-      cachedCloudflareImport = ((globalThis as any).env ?? null) as BillImageEnv | null;
-      if (cachedCloudflareImport?.BILL_IMAGES) {
-        console.log("[bill-images] Found BILL_IMAGES via globalThis.env (cached)");
-        return cachedCloudflareImport;
-      }
-    } else {
-      try {
-        const loader = Function("return import('cloudflare:env')");
-        const cloudflareModule = await loader();
-        cachedCloudflareImport = (cloudflareModule?.env ?? null) as BillImageEnv | null;
-        if (cachedCloudflareImport?.BILL_IMAGES) {
-          console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
-          return cachedCloudflareImport;
-        }
-      } catch (error) {
-        cachedCloudflareImport = null;
-        console.debug("[bill-images] cloudflare:env import failed (likely local dev environment)", error);
-      }
-    }
-  } else if (cachedCloudflareImport?.BILL_IMAGES) {
-    return cachedCloudflareImport;
   }
 
   if (!hasLoggedMissingBinding) {
