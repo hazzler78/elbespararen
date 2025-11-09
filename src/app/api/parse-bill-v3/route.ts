@@ -69,6 +69,12 @@ export async function POST(req: NextRequest) {
         : undefined) ||
       (globalThis as any)?.env;
 
+    if (requestEnv) {
+      console.log("[parse-bill-v3] request env keys:", Object.keys(requestEnv));
+    } else {
+      console.log("[parse-bill-v3] request env is undefined");
+    }
+
     try {
       savedImageResult = await saveBillImage(file, { postalCode, priceArea }, { env: requestEnv });
       arrayBuffer = savedImageResult.arrayBuffer;
