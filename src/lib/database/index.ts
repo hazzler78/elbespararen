@@ -286,6 +286,8 @@ class MockDatabase implements Database {
 }
 
 // Cloudflare D1 Database Implementation (för produktion)
+type D1RunResult = { meta?: { changes?: number } };
+
 class CloudflareDatabase implements Database {
   private db: CloudflareD1Database;
 
@@ -519,7 +521,7 @@ class CloudflareDatabase implements Database {
       console.log('[Database] updateProvider SQL:', sql);
       console.log('[Database] updateProvider values:', values);
 
-      const result = await this.db.prepare(sql).bind(...values).run();
+      const result = await this.db.prepare(sql).bind(...values).run() as { meta?: { changes?: number } };
 
       console.log('[Database] updateProvider result:', result);
       
@@ -538,7 +540,7 @@ class CloudflareDatabase implements Database {
   async deleteProvider(id: string): Promise<boolean> {
     const result = await this.db.prepare(`
       DELETE FROM electricity_providers WHERE id = ?
-    `).bind(id).run();
+    `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
   }
@@ -619,7 +621,7 @@ class CloudflareDatabase implements Database {
     const updated = { ...existing, ...leadData };
     const now = new Date().toISOString();
 
-    await this.db.prepare(`
+    const result = await this.db.prepare(`
       UPDATE leads SET
         email = ?, phone = ?, bill_data = ?, savings_data = ?, status = ?
       WHERE id = ?
@@ -630,7 +632,11 @@ class CloudflareDatabase implements Database {
       JSON.stringify(updated.savings),
       updated.status,
       id
-    ).run();
+    ).run() as D1RunResult;
+
+    if (result.meta?.changes === 0) {
+      throw new Error(`No rows were updated for lead ${id}`);
+    }
 
     return updated;
   }
@@ -638,7 +644,7 @@ class CloudflareDatabase implements Database {
   async deleteLead(id: string): Promise<boolean> {
     const result = await this.db.prepare(`
       DELETE FROM leads WHERE id = ?
-    `).bind(id).run();
+    `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
   }
@@ -762,7 +768,7 @@ class CloudflareDatabase implements Database {
       ...(updated.priceSnapshot ? { _priceSnapshot: updated.priceSnapshot } : {})
     };
 
-    await this.db.prepare(`
+    const result = await this.db.prepare(`
       UPDATE switch_requests SET
         customer_info = ?, address = ?, current_provider = ?, new_provider = ?,
         bill_data = ?, savings = ?, status = ?, notes = ?, updated_at = ?
@@ -778,7 +784,11 @@ class CloudflareDatabase implements Database {
       updated.notes || null,
       now,
       id
-    ).run();
+    ).run() as D1RunResult;
+
+    if (result.meta?.changes === 0) {
+      throw new Error(`No rows were updated for switch request ${id}`);
+    }
 
     return updated;
   }
@@ -786,7 +796,7 @@ class CloudflareDatabase implements Database {
   async deleteSwitchRequest(id: string): Promise<boolean> {
     const result = await this.db.prepare(`
       DELETE FROM switch_requests WHERE id = ?
-    `).bind(id).run();
+    `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
   }
@@ -932,7 +942,7 @@ class CloudflareDatabase implements Database {
   async deleteNewsPost(id: string): Promise<boolean> {
     const result = await this.db.prepare(`
       DELETE FROM news_posts WHERE id = ?
-    `).bind(id).run();
+    `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
   }
