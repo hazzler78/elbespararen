@@ -2,9 +2,12 @@
 const nextConfig = {
   // Ensure path aliases work in OpenNext builds
   webpack: (config, { isServer }) => {
+    const path = require("path");
     config.resolve.alias = {
       ...config.resolve.alias,
-      '@': require('path').resolve(__dirname, 'src'),
+      '@': path.resolve(__dirname, 'src'),
+      'node:stream': path.resolve(__dirname, 'src/shims/node-stream'),
+      'node:child_process': path.resolve(__dirname, 'src/shims/node-child-process'),
     };
     
     // Aggressively reduce bundle size for Cloudflare Pages
