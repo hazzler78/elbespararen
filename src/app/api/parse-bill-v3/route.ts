@@ -71,7 +71,9 @@ export async function POST(
         ? (globalThis as any).getRequestContext()?.env
         : undefined) ||
       context?.env ||
-      (globalThis as any)?.env;
+      (context as any)?.cloudflare?.env ||
+      (globalThis as any)?.env ||
+      (globalThis as any)?.CF_PAGES?.env;
 
     if (requestEnv) {
       console.log("[parse-bill-v3] request env keys:", Object.keys(requestEnv));
