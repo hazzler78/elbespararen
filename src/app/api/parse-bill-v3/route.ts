@@ -15,7 +15,10 @@ export const maxDuration = 30;
  * POST /api/parse-bill-v3
  * Analyserar elräkning med OpenAI Vision
  */
-export async function POST(req: NextRequest) {
+export async function POST(
+  req: NextRequest,
+  context: { env?: Record<string, unknown> }
+) {
   try {
     // Validera API-nyckel
     if (!process.env.OPENAI_API_KEY) {
@@ -63,10 +66,11 @@ export async function POST(req: NextRequest) {
     let savedImageResult: Awaited<ReturnType<typeof saveBillImage>> | null = null;
     let arrayBuffer: ArrayBuffer;
 
-    const requestEnv =
+    const requestEnv: Record<string, unknown> | undefined =
       (typeof (globalThis as any).getRequestContext === "function"
         ? (globalThis as any).getRequestContext()?.env
         : undefined) ||
+      context?.env ||
       (globalThis as any)?.env;
 
     if (requestEnv) {
