@@ -71,17 +71,14 @@ async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
   if (!cloudflareEnvPromise) {
     cloudflareEnvPromise = (async () => {
       try {
-        const moduleName = ["cloudflare", "env"].join(":");
-        const dynamicImport = new Function("specifier", "return import(specifier);") as (
-          specifier: string
-        ) => Promise<unknown>;
-        const mod = await dynamicImport(moduleName);
-        const env = (mod as { env?: BillImageEnv }).env;
-        if (env && !hasLoggedCloudflareImportSuccess) {
-          hasLoggedCloudflareImportSuccess = true;
-          console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
+        // Some runtimes expose bindings via a virtual module `cloudflare:env`,
+        // but importing it directly breaks the Next.js build step.
+        // If the module is unavailable we just fall back to the other strategies.
+        if (!hasLoggedCloudflareImportWarning) {
+          hasLoggedCloudflareImportWarning = true;
+          console.debug("[bill-images] cloudflare:env import skipped (not supported in this build environment)");
         }
-        return env;
+        return undefined;
       } catch (error) {
         if (!hasLoggedCloudflareImportWarning) {
           hasLoggedCloudflareImportWarning = true;

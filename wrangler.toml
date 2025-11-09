@@ -1,0 +1,12 @@
+name = "elbespararen"
+compatibility_date = "2025-03-25"
+
+pages_build_output_dir = ".vercel/output/static"
+pages_functions_dir = ".vercel/output/functions"
+
+[[r2_buckets]]
+binding = "BILL_IMAGES"
+bucket_name = "elbespararen-bill-images"
+preview_bucket_name = "elbespararen-bill-images"
+
+
