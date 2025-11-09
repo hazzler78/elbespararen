@@ -71,7 +71,11 @@ async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
   if (!cloudflareEnvPromise) {
     cloudflareEnvPromise = (async () => {
       try {
-        const mod = await import("cloudflare:env");
+        const moduleName = ["cloudflare", "env"].join(":");
+        const dynamicImport = new Function("specifier", "return import(specifier);") as (
+          specifier: string
+        ) => Promise<unknown>;
+        const mod = await dynamicImport(moduleName);
         const env = (mod as { env?: BillImageEnv }).env;
         if (env && !hasLoggedCloudflareImportSuccess) {
           hasLoggedCloudflareImportSuccess = true;
@@ -91,7 +95,7 @@ async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
   return cloudflareEnvPromise;
 }
 
-async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEnv | undefined> {
+async function resolveR2Binding(explicitEnv?: BillImageEnv | null): Promise<BillImageEnv | undefined> {
   if (explicitEnv?.BILL_IMAGES) {
     console.log("[bill-images] Found BILL_IMAGES via explicit env override");
     return explicitEnv;
