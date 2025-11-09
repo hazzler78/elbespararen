@@ -92,7 +92,8 @@ async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEn
 
   if (!cachedCloudflareImport) {
     try {
-      const cloudflareModule = await import("cloudflare:env");
+      const loader = Function("return import('cloudflare:env')");
+      const cloudflareModule = await loader();
       cachedCloudflareImport = cloudflareModule?.env as BillImageEnv;
       if (cachedCloudflareImport?.BILL_IMAGES) {
         console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
