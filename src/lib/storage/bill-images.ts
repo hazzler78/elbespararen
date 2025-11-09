@@ -62,8 +62,9 @@ function buildObjectKey(file: File): string {
 }
 
 let hasLoggedMissingBinding = false;
+let cachedCloudflareImport: BillImageEnv | null | undefined;
 
-function resolveR2Binding(explicitEnv?: BillImageEnv): BillImageEnv | undefined {
+async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEnv | undefined> {
   if (explicitEnv?.BILL_IMAGES) {
     console.log("[bill-images] Found BILL_IMAGES via explicit env override");
     return explicitEnv;
@@ -89,6 +90,23 @@ function resolveR2Binding(explicitEnv?: BillImageEnv): BillImageEnv | undefined 
     }
   }
 
+  if (!cachedCloudflareImport) {
+    try {
+      const cloudflareModule = await import("cloudflare:env");
+      cachedCloudflareImport = cloudflareModule?.env as BillImageEnv;
+      if (cachedCloudflareImport?.BILL_IMAGES) {
+        console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
+        return cachedCloudflareImport;
+      }
+    } catch (error) {
+      // cloudflare:env finns bara i Workers-miljö – ignorera när vi kör lokalt
+      cachedCloudflareImport = null;
+      console.debug("[bill-images] cloudflare:env import failed (likely local dev environment)", error);
+    }
+  } else if (cachedCloudflareImport?.BILL_IMAGES) {
+    return cachedCloudflareImport;
+  }
+
   if (!hasLoggedMissingBinding) {
     hasLoggedMissingBinding = true;
     const availableKeys = globalEnv ? Object.keys(globalEnv) : [];
@@ -105,7 +123,7 @@ async function saveToR2(
   metadata?: BillImageMetadata,
   envOverride?: BillImageEnv
 ) {
-  const env = resolveR2Binding(envOverride);
+  const env = await resolveR2Binding(envOverride);
   if (!env?.BILL_IMAGES) {
     throw new Error("[bill-images] R2 binding BILL_IMAGES saknas i runtime");
   }
