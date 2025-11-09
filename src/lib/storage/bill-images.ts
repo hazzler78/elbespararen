@@ -90,19 +90,26 @@ async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEn
     }
   }
 
-  if (!cachedCloudflareImport) {
-    try {
-      const loader = Function("return import('cloudflare:env')");
-      const cloudflareModule = await loader();
-      cachedCloudflareImport = cloudflareModule?.env as BillImageEnv;
+  if (cachedCloudflareImport === undefined) {
+    if (typeof globalThis === "object" && "env" in (globalThis as any)) {
+      cachedCloudflareImport = ((globalThis as any).env ?? null) as BillImageEnv | null;
       if (cachedCloudflareImport?.BILL_IMAGES) {
-        console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
+        console.log("[bill-images] Found BILL_IMAGES via globalThis.env (cached)");
         return cachedCloudflareImport;
       }
-    } catch (error) {
-      // cloudflare:env finns bara i Workers-miljö – ignorera när vi kör lokalt
-      cachedCloudflareImport = null;
-      console.debug("[bill-images] cloudflare:env import failed (likely local dev environment)", error);
+    } else {
+      try {
+        const loader = Function("return import('cloudflare:env')");
+        const cloudflareModule = await loader();
+        cachedCloudflareImport = (cloudflareModule?.env ?? null) as BillImageEnv | null;
+        if (cachedCloudflareImport?.BILL_IMAGES) {
+          console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
+          return cachedCloudflareImport;
+        }
+      } catch (error) {
+        cachedCloudflareImport = null;
+        console.debug("[bill-images] cloudflare:env import failed (likely local dev environment)", error);
+      }
     }
   } else if (cachedCloudflareImport?.BILL_IMAGES) {
     return cachedCloudflareImport;
