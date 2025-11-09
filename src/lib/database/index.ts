@@ -300,26 +300,31 @@ class CloudflareDatabase implements Database {
       ORDER BY energy_price ASC
     `).all();
 
-    return result.results.map((row: Record<string, unknown>) => ({
-      id: String(row.id),
-      name: String(row.name),
-      description: String(row.description),
-      monthlyFee: Number(row.monthly_fee),
-      energyPrice: Number(row.energy_price),
-      freeMonths: Number(row.free_months),
-      contractLength: Number(row.contract_length),
-      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
-      isActive: Boolean(row.is_active),
-      userHidden: Boolean(row.user_hidden || false),
-      features: JSON.parse(String(row.features || '[]')) as string[],
-      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
-      websiteUrl: row.website_url ? String(row.website_url) : undefined,
-      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
-      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
-      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
-      createdAt: new Date(String(row.created_at)),
-      updatedAt: new Date(String(row.updated_at))
-    }));
+    const rows = Array.isArray(result.results) ? result.results : [];
+
+    return rows.map((value) => {
+      const row = value as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        name: String(row.name),
+        description: String(row.description),
+        monthlyFee: Number(row.monthly_fee),
+        energyPrice: Number(row.energy_price),
+        freeMonths: Number(row.free_months),
+        contractLength: Number(row.contract_length),
+        contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
+        isActive: Boolean(row.is_active),
+        userHidden: Boolean(row.user_hidden || false),
+        features: JSON.parse(String(row.features || "[]")) as string[],
+        logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+        websiteUrl: row.website_url ? String(row.website_url) : undefined,
+        affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
+        phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+        avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at)),
+      };
+    });
   }
 
   async getAllProviders(): Promise<ElectricityProvider[]> {
@@ -328,26 +333,31 @@ class CloudflareDatabase implements Database {
       ORDER BY energy_price ASC
     `).all();
 
-    return result.results.map((row: Record<string, unknown>) => ({
-      id: String(row.id),
-      name: String(row.name),
-      description: String(row.description),
-      monthlyFee: Number(row.monthly_fee),
-      energyPrice: Number(row.energy_price),
-      freeMonths: Number(row.free_months),
-      contractLength: Number(row.contract_length),
-      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
-      isActive: Boolean(row.is_active),
-      userHidden: Boolean(row.user_hidden || false),
-      features: JSON.parse(String(row.features || '[]')) as string[],
-      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
-      websiteUrl: row.website_url ? String(row.website_url) : undefined,
-      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
-      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
-      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
-      createdAt: new Date(String(row.created_at)),
-      updatedAt: new Date(String(row.updated_at))
-    }));
+    const rows = Array.isArray(result.results) ? result.results : [];
+
+    return rows.map((value) => {
+      const row = value as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        name: String(row.name),
+        description: String(row.description),
+        monthlyFee: Number(row.monthly_fee),
+        energyPrice: Number(row.energy_price),
+        freeMonths: Number(row.free_months),
+        contractLength: Number(row.contract_length),
+        contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
+        isActive: Boolean(row.is_active),
+        userHidden: Boolean(row.user_hidden || false),
+        features: JSON.parse(String(row.features || "[]")) as string[],
+        logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+        websiteUrl: row.website_url ? String(row.website_url) : undefined,
+        affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
+        phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
+        avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at)),
+      };
+    });
   }
 
   async getProvider(id: string): Promise<ElectricityProvider | null> {
@@ -540,15 +550,20 @@ class CloudflareDatabase implements Database {
       ORDER BY created_at DESC
     `).all();
 
-    return result.results.map((row: Record<string, unknown>) => ({
-      id: String(row.id),
-      email: String(row.email || ''),
-      phone: String(row.phone || ''),
-      billData: JSON.parse(String(row.bill_data)),
-      savings: JSON.parse(String(row.savings_data)),
-      status: String(row.status) as Lead['status'],
-      createdAt: new Date(String(row.created_at))
-    }));
+    const rows = Array.isArray(result.results) ? result.results : [];
+
+    return rows.map((value) => {
+      const row = value as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        email: String(row.email || ""),
+        phone: String(row.phone || ""),
+        billData: JSON.parse(String(row.bill_data)),
+        savings: JSON.parse(String(row.savings_data)),
+        status: String(row.status) as Lead["status"],
+        createdAt: new Date(String(row.created_at)),
+      };
+    });
   }
 
   async getLead(id: string): Promise<Lead | null> {
@@ -635,7 +650,10 @@ class CloudflareDatabase implements Database {
       ORDER BY created_at DESC
     `).all();
 
-    return result.results.map((row: Record<string, unknown>) => {
+    const rows = Array.isArray(result.results) ? result.results : [];
+
+    return rows.map((value) => {
+      const row = value as Record<string, unknown>;
       const customerInfo = JSON.parse(String(row.customer_info));
       const address = JSON.parse(String(row.address));
       const newProviderRaw = JSON.parse(String(row.new_provider));
@@ -782,18 +800,23 @@ class CloudflareDatabase implements Database {
       
       const result = await this.db.prepare(query).all();
 
-      return result.results.map((row: Record<string, unknown>) => ({
-        id: String(row.id),
-        title: String(row.title),
-        excerpt: row.excerpt ? String(row.excerpt) : undefined,
-        content: String(row.content),
-        imageUrl: row.image_url ? String(row.image_url) : undefined,
-        externalLink: row.external_link ? String(row.external_link) : undefined,
-        publishedAt: new Date(String(row.published_at || row.created_at)),
-        createdAt: new Date(String(row.created_at)),
-        updatedAt: new Date(String(row.updated_at)),
-        isPublished: Boolean(row.is_published)
-      }));
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          title: String(row.title),
+          excerpt: row.excerpt ? String(row.excerpt) : undefined,
+          content: String(row.content),
+          imageUrl: row.image_url ? String(row.image_url) : undefined,
+          externalLink: row.external_link ? String(row.external_link) : undefined,
+          publishedAt: new Date(String(row.published_at || row.created_at)),
+          createdAt: new Date(String(row.created_at)),
+          updatedAt: new Date(String(row.updated_at)),
+          isPublished: Boolean(row.is_published),
+        };
+      });
     } catch (error) {
       // Om tabellen inte finns ännu (t.ex. på remote), returnera tom array
       const errorMessage = error instanceof Error ? error.message : String(error);

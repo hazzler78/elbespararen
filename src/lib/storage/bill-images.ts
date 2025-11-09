@@ -71,8 +71,7 @@ async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
   if (!cloudflareEnvPromise) {
     cloudflareEnvPromise = (async () => {
       try {
-        const specifier = "cloudflare:env" as string;
-        const mod = await import(specifier);
+        const mod = await import("cloudflare:env");
         const env = (mod as { env?: BillImageEnv }).env;
         if (env && !hasLoggedCloudflareImportSuccess) {
           hasLoggedCloudflareImportSuccess = true;
