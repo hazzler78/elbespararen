@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import type { D1Database } from "@cloudflare/workers-types";
+import type { CloudflareD1Database } from "@/types/cloudflare";
 
 export const runtime = 'edge';
 
@@ -55,22 +55,22 @@ function normalizeArea(area: string | null | undefined): string {
   return ['se1','se2','se3','se4'].includes(a) ? a : 'se3';
 }
 
-async function getBinding(): Promise<{ db: D1Database | null }>{
+async function getBinding(): Promise<{ db: CloudflareD1Database | null }>{
   let env: any = {};
   if ((globalThis as any).getRequestContext) env = (globalThis as any).getRequestContext()?.env ?? {};
   if (!env.DB && (process.env as any).DB) env.DB = (process.env as any).DB;
   if (!env.DB && (globalThis as any).env?.DB) env.DB = (globalThis as any).env.DB;
-  return { db: (env?.DB || null) as D1Database | null };
+  return { db: (env?.DB || null) as CloudflareD1Database | null };
 }
 
-async function readCache(db: D1Database, providerKey: string, area: string) {
+async function readCache(db: CloudflareD1Database, providerKey: string, area: string) {
   const row = await db.prepare("SELECT data, updated_at FROM price_cache WHERE provider_key = ? AND area = ?")
     .bind(providerKey, area).first();
   if (!row) return null;
   return { data: JSON.parse(String((row as any).data)), updatedAt: String((row as any).updated_at) } as { data: any; updatedAt: string };
 }
 
-async function writeCache(db: D1Database, providerKey: string, area: string, payload: any) {
+async function writeCache(db: CloudflareD1Database, providerKey: string, area: string, payload: any) {
   const now = new Date().toISOString();
   await db.prepare("INSERT OR REPLACE INTO price_cache (provider_key, area, data, updated_at) VALUES (?, ?, ?, ?)")
     .bind(providerKey, area, JSON.stringify(payload), now).run();

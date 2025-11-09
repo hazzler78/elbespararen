@@ -63,11 +63,44 @@ function buildObjectKey(file: File): string {
 
 let hasLoggedMissingBinding = false;
 let hasLoggedEnvKeys = false;
+let hasLoggedCloudflareImportWarning = false;
+let hasLoggedCloudflareImportSuccess = false;
+let cloudflareEnvPromise: Promise<BillImageEnv | undefined> | null = null;
+
+async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
+  if (!cloudflareEnvPromise) {
+    cloudflareEnvPromise = (async () => {
+      try {
+        const specifier = "cloudflare:env" as string;
+        const mod = await import(specifier);
+        const env = (mod as { env?: BillImageEnv }).env;
+        if (env && !hasLoggedCloudflareImportSuccess) {
+          hasLoggedCloudflareImportSuccess = true;
+          console.log("[bill-images] Found BILL_IMAGES via cloudflare:env import");
+        }
+        return env;
+      } catch (error) {
+        if (!hasLoggedCloudflareImportWarning) {
+          hasLoggedCloudflareImportWarning = true;
+          const message = error instanceof Error ? error.message : String(error);
+          console.debug("[bill-images] cloudflare:env import unavailable:", message);
+        }
+        return undefined;
+      }
+    })();
+  }
+  return cloudflareEnvPromise;
+}
 
 async function resolveR2Binding(explicitEnv?: BillImageEnv): Promise<BillImageEnv | undefined> {
   if (explicitEnv?.BILL_IMAGES) {
     console.log("[bill-images] Found BILL_IMAGES via explicit env override");
     return explicitEnv;
+  }
+
+  const importedEnv = await loadCloudflareEnv();
+  if (importedEnv?.BILL_IMAGES) {
+    return importedEnv;
   }
 
   const globalEnv = ((globalThis as any)?.env ??

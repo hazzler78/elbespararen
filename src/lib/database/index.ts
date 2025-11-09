@@ -2,7 +2,7 @@
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
 import { ElectricityProvider, Lead, SwitchRequest, NewsPost } from "@/lib/types";
-import type { D1Database } from "@cloudflare/workers-types";
+import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
 const mockProviders: ElectricityProvider[] = [
@@ -287,9 +287,9 @@ class MockDatabase implements Database {
 
 // Cloudflare D1 Database Implementation (för produktion)
 class CloudflareDatabase implements Database {
-  private db: D1Database;
+  private db: CloudflareD1Database;
 
-  constructor(db: D1Database) {
+  constructor(db: CloudflareD1Database) {
     this.db = db;
   }
 
@@ -924,7 +924,7 @@ export function createDatabase(): Database {
 
   // För bakåtkompatibilitet om DB exponeras som env-variabel i Node-miljö
   if (typeof process !== 'undefined' && typeof process.env !== 'undefined' && typeof (process.env as unknown as Record<string, unknown>).DB !== 'undefined') {
-    return new CloudflareDatabase((process.env as unknown as Record<string, unknown>).DB as unknown as D1Database);
+    return new CloudflareDatabase((process.env as unknown as Record<string, unknown>).DB as unknown as CloudflareD1Database);
   }
 
   throw new Error('[Database] No D1 database available - D1 database is required for production');
@@ -934,7 +934,7 @@ export function createDatabase(): Database {
 export function createDatabaseFromBinding(binding: unknown): Database {
   if (binding) {
     console.log('[Database] Using CloudflareDatabase with D1 binding');
-    return new CloudflareDatabase(binding as D1Database);
+    return new CloudflareDatabase(binding as CloudflareD1Database);
   }
   // Fallback till mock database i utveckling
   console.log('[Database] No D1 binding, using MockDatabase in development');
