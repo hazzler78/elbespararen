@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
+import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 import SwitchProcess from "./SwitchProcess";
 
 interface ProviderComparisonProps {
@@ -31,29 +32,6 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
   const [spotPrices, setSpotPrices] = useState<{ [key: string]: number } | null>(null);
   const [lookupSurcharges, setLookupSurcharges] = useState<Record<string, number>>({}); // providerId -> surcharge (kr/kWh, incl VAT)
 
-  const toKebab = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/å/g, 'a')
-      .replace(/ä/g, 'a')
-      .replace(/ö/g, 'o')
-      .replace(/[^a-z0-9]+/g, '-')
-      .replace(/(^-|-$)/g, '');
-
-  const getFallbackLogo = (name: string) => `/logos/${toKebab(name)}.svg`;
-
-  const getLogoUrl = (name: string, logoUrl?: string) => {
-    // Normalize admin-provided value; fallback to kebab-case svg in /logos
-    const raw = (logoUrl || "").trim();
-    if (raw) {
-      if (/^https?:\/\//i.test(raw)) return raw; // absolute URL
-      if (raw.startsWith("/")) return raw; // already relative from public
-      const withFolder = `/logos/${raw}`;
-      return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
-    }
-    return getFallbackLogo(name);
-  };
-
   const getTags = (provider: any): string[] => {
     const tags: string[] = [];
     if (Array.isArray(provider.features)) {
@@ -75,15 +53,6 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
     if (!hasAreaCodes) return all;
     if (!area) return [];
     return all.filter((a: ContractAlternative) => a.areaCode === area);
-  };
-
-  const handleLogoError: React.ReactEventHandler<HTMLImageElement> = (e) => {
-    const element = e.currentTarget;
-    const providerName = element.getAttribute('data-provider-name');
-    if (!providerName) return;
-    const fallback = getFallbackLogo(providerName);
-    if (element.src.endsWith(fallback)) return; // already tried
-    element.src = fallback;
   };
 
   useEffect(() => {
@@ -350,10 +319,9 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
             <div className="md:col-span-2">
               <div className="flex items-center gap-3 mb-2">
                 <img
-                  src={getLogoUrl(bestOption.provider.name, bestOption.provider.logoUrl)}
+                  src={resolveProviderLogo(bestOption.provider.name, bestOption.provider.logoUrl)}
                   alt={`${bestOption.provider.name} logo`}
-                  data-provider-name={bestOption.provider.name}
-                  onError={handleLogoError}
+                  onError={createProviderLogoErrorHandler(bestOption.provider.name)}
                   className="h-20 w-auto object-contain max-w-[160px]"
                   style={{
                     imageRendering: 'crisp-edges',
@@ -485,10 +453,9 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
               <div>
                 <div className="flex items-center gap-2 mb-1">
                   <img
-                    src={getLogoUrl(comparison.provider.name, comparison.provider.logoUrl)}
+                    src={resolveProviderLogo(comparison.provider.name, comparison.provider.logoUrl)}
                     alt={`${comparison.provider.name} logo`}
-                    data-provider-name={comparison.provider.name}
-                    onError={handleLogoError}
+                    onError={createProviderLogoErrorHandler(comparison.provider.name)}
                     className="h-12 w-auto object-contain max-w-[120px]"
                     style={{
                       imageRendering: 'crisp-edges',

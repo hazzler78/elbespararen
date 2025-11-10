@@ -1,46 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { ReactEventHandler } from "react";
 import { motion } from "framer-motion";
 import { Briefcase, Sparkles, ShieldCheck, LineChart, MessageCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
+import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 
 export default function ForetagPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
   const [isLoadingProviders, setIsLoadingProviders] = useState(true);
   const [providersError, setProvidersError] = useState<string | null>(null);
-
-  const toKebab = (value: string) =>
-    value
-      .toLowerCase()
-      .replace(/å/g, "a")
-      .replace(/ä/g, "a")
-      .replace(/ö/g, "o")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/(^-|-$)/g, "");
-
-  const getLogoUrl = (name: string, logoUrl?: string) => {
-    const raw = (logoUrl || "").trim();
-    if (raw) {
-      if (/^https?:\/\//i.test(raw)) return raw;
-      if (raw.startsWith("/")) return raw;
-      const withFolder = `/logos/${raw}`;
-      return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
-    }
-    return `/logos/${toKebab(name)}.svg`;
-  };
-
-  const handleLogoError: ReactEventHandler<HTMLImageElement> = (event) => {
-    const element = event.currentTarget;
-    const providerName = element.getAttribute("data-provider-name");
-    if (!providerName) return;
-    const fallback = `/logos/${toKebab(providerName)}.svg`;
-    if (element.src.endsWith(fallback)) return;
-    element.src = fallback;
-  };
 
   useEffect(() => {
     let isMounted = true;
@@ -191,10 +162,9 @@ export default function ForetagPage() {
                   >
                     <div className="flex items-start gap-4">
                       <img
-                        src={getLogoUrl(provider.name, provider.logoUrl)}
+                        src={resolveProviderLogo(provider.name, provider.logoUrl)}
                         alt={`${provider.name} logotyp`}
-                        data-provider-name={provider.name}
-                        onError={handleLogoError}
+                        onError={createProviderLogoErrorHandler(provider.name)}
                         className="h-16 w-16 object-contain rounded-md bg-muted/40 p-2"
                         loading="lazy"
                       />

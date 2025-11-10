@@ -1,6 +1,56 @@
 import * as React from 'react';
 
 /**
+ * Converts provider names to a standardized kebab-case slug.
+ */
+export function providerNameToSlug(value: string): string {
+  return (value || "")
+    .toLowerCase()
+    .replace(/å/g, "a")
+    .replace(/ä/g, "a")
+    .replace(/ö/g, "o")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/(^-|-$)/g, "");
+}
+
+/**
+ * Returns the default fallback logo path for a given provider name.
+ */
+export function getFallbackProviderLogo(name: string): string {
+  return `/logos/${providerNameToSlug(name)}.svg`;
+}
+
+/**
+ * Resolves the most suitable logo URL given an explicit value and provider name.
+ * - Absolute URLs are returned untouched.
+ * - Relative paths (starting with "/") are respected.
+ * - Bare filenames get `/logos/` prefix and `.svg` appended if missing.
+ * - No value falls back to the derived `/logos/{slug}.svg`.
+ */
+export function resolveProviderLogo(name: string, logoUrl?: string): string {
+  const raw = (logoUrl || "").trim();
+  if (raw) {
+    if (/^https?:\/\//i.test(raw)) return raw;
+    if (raw.startsWith("/")) return raw;
+    const withFolder = `/logos/${raw}`;
+    return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
+  }
+  return getFallbackProviderLogo(name);
+}
+
+/**
+ * Creates a reusable error handler that swaps to the fallback logo when the image fails.
+ */
+export function createProviderLogoErrorHandler(name: string) {
+  const fallback = getFallbackProviderLogo(name);
+  return (event: React.SyntheticEvent<HTMLImageElement>) => {
+    const img = event.currentTarget;
+    if (img.src.endsWith(fallback)) return;
+    img.src = fallback;
+  };
+}
+
+/**
  * Logo utility functions for better image quality and rendering
  */
 
