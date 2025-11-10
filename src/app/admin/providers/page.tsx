@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { formatPricePerKwh } from "@/lib/calculations";
 import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone, Zap } from "lucide-react";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
+import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 
 export default function ProvidersAdminPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
@@ -230,7 +231,16 @@ export default function ProvidersAdminPage() {
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-4">
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
-                          <h3 className="text-lg sm:text-xl font-bold text-gray-900">{provider.name}</h3>
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={resolveProviderLogo(provider.name, provider.logoUrl)}
+                              alt={`${provider.name} logotyp`}
+                              onError={createProviderLogoErrorHandler(provider.name)}
+                              className="h-10 w-10 rounded object-contain bg-white border border-gray-200 p-1"
+                              loading="lazy"
+                            />
+                            <h3 className="text-lg sm:text-xl font-bold text-gray-900">{provider.name}</h3>
+                          </div>
                           <span className={`px-3 py-1 rounded-full text-xs font-medium self-start ${
                             provider.isActive 
                               ? "bg-green-100 text-green-800" 
