@@ -1,5 +1,8 @@
-// Helper för att spara uppladdade elfakturor i Cloudflare R2 (produktion)
-// och lokalt filsystem (utveckling).
+import { createClient } from "@supabase/supabase-js";
+
+// Helper för att spara uppladdade elfakturor i Supabase Storage (produktion)
+// och lokalt filsystem (utveckling). Behåller R2 som fallback om Supabase
+// saknas eller felar.
 //
 // Designmål:
 // - Återanvänd ArrayBuffer för vidare bearbetning (t.ex. OpenAI Vision)
@@ -14,7 +17,7 @@ type BillImageMetadata = {
 export type SaveBillImageResult = {
   key: string;
   url?: string;
-  storage: "r2" | "skipped";
+  storage: "supabase" | "r2" | "skipped";
   bytes: number;
   contentType: string;
   uploadedAt: string;
@@ -66,6 +69,8 @@ let hasLoggedEnvKeys = false;
 let hasLoggedCloudflareImportWarning = false;
 let hasLoggedCloudflareImportSuccess = false;
 let cloudflareEnvPromise: Promise<BillImageEnv | undefined> | null = null;
+let hasLoggedMissingSupabaseConfig = false;
+let hasLoggedSupabaseSuccess = false;
 
 async function loadCloudflareEnv(): Promise<BillImageEnv | undefined> {
   if (!cloudflareEnvPromise) {
@@ -175,6 +180,83 @@ async function saveToR2(
   };
 }
 
+function getRuntimeEnv(name: string): string | undefined {
+  try {
+    if (typeof (globalThis as any).getRequestContext === "function") {
+      const value = (globalThis as any).getRequestContext()?.env?.[name];
+      if (typeof value === "string" && value.length > 0) return value;
+    }
+  } catch {}
+
+  try {
+    const value = (globalThis as any)?.env?.[name];
+    if (typeof value === "string" && value.length > 0) return value;
+  } catch {}
+
+  try {
+    const value = (globalThis as any)?.CF_PAGES?.env?.[name];
+    if (typeof value === "string" && value.length > 0) return value;
+  } catch {}
+
+  try {
+    const value = (process.env as any)?.[name];
+    if (typeof value === "string" && value.length > 0) return value;
+  } catch {}
+
+  return undefined;
+}
+
+async function saveToSupabase(
+  arrayBuffer: ArrayBuffer,
+  key: string,
+  contentType: string,
+  metadata?: BillImageMetadata
+) {
+  const supabaseUrl = getRuntimeEnv("SUPABASE_URL");
+  const supabaseKey = getRuntimeEnv("SUPABASE_SERVICE_KEY");
+
+  if (!supabaseUrl || !supabaseKey) {
+    if (!hasLoggedMissingSupabaseConfig) {
+      hasLoggedMissingSupabaseConfig = true;
+      console.warn(
+        "[bill-images] Supabase-konfiguration saknas (SUPABASE_URL eller SUPABASE_SERVICE_KEY)."
+      );
+    }
+    throw new Error("Supabase credentials missing");
+  }
+
+  const supabase = createClient(supabaseUrl, supabaseKey, {
+    auth: { persistSession: false },
+    global: { headers: { "X-Client-Info": "elbespararen-bill-images" } },
+  });
+
+  const bucket = "bill_images";
+  const uploadedAt = new Date().toISOString();
+
+  const { error } = await supabase.storage.from(bucket).upload(key, arrayBuffer, {
+    contentType,
+    metadata: {
+      uploadedAt,
+      ...(metadata?.postalCode ? { postalCode: metadata.postalCode } : {}),
+      ...(metadata?.priceArea ? { priceArea: metadata.priceArea } : {}),
+    },
+  });
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  if (!hasLoggedSupabaseSuccess) {
+    hasLoggedSupabaseSuccess = true;
+    console.log("[bill-images] Lagrar bilder i Supabase bucket:", bucket);
+  }
+
+  return {
+    url: undefined as string | undefined,
+    uploadedAt,
+  };
+}
+
 export async function saveBillImage(
   file: File,
   metadata?: BillImageMetadata,
@@ -186,11 +268,11 @@ export async function saveBillImage(
   const bytes = arrayBuffer.byteLength;
 
   try {
-    const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata, options?.env);
+    const { url, uploadedAt } = await saveToSupabase(arrayBuffer, key, contentType, metadata);
 
     return {
       key,
-      storage: "r2",
+      storage: "supabase",
       url,
       bytes,
       contentType,
@@ -198,17 +280,33 @@ export async function saveBillImage(
       arrayBuffer,
     };
   } catch (error) {
-    console.warn("[bill-images] Kunde inte spara till R2 - fortsätter utan bildlagring:", error);
+    console.warn("[bill-images] Kunde inte spara till Supabase - försöker R2:", error);
 
-    return {
-      key,
-      storage: "skipped",
-      url: undefined,
-      bytes,
-      contentType,
-      uploadedAt: new Date().toISOString(),
-      arrayBuffer,
-    };
+    try {
+      const { url, uploadedAt } = await saveToR2(arrayBuffer, key, contentType, metadata, options?.env);
+
+      return {
+        key,
+        storage: "r2",
+        url,
+        bytes,
+        contentType,
+        uploadedAt,
+        arrayBuffer,
+      };
+    } catch (r2Error) {
+      console.warn("[bill-images] Kunde inte spara till R2 - fortsätter utan bildlagring:", r2Error);
+
+      return {
+        key,
+        storage: "skipped",
+        url: undefined,
+        bytes,
+        contentType,
+        uploadedAt: new Date().toISOString(),
+        arrayBuffer,
+      };
+    }
   }
 }
 

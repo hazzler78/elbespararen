@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@cloudflare/workers-types": "^4.20251011.0",
+    "@supabase/supabase-js": "^2.80.0",
     "@types/node": "^20",
     "@types/react": "^18",
     "autoprefixer": "^10.4.20",
