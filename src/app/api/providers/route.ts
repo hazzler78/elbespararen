@@ -31,8 +31,14 @@ export async function GET(request: NextRequest) {
     // Kontrollera om vi ska inkludera dolda leverantörer
     const url = new URL(request.url);
     const includeHidden = url.searchParams.get('includeHidden') === 'true';
+    const customerTypeParam = url.searchParams.get('customerType');
+    const customerType = customerTypeParam === 'business' ? 'business' : customerTypeParam === 'private' ? 'private' : undefined;
     
-    const providers = includeHidden ? await db.getAllProviders() : await db.getProviders();
+    let providers = includeHidden ? await db.getAllProviders() : await db.getProviders(customerType ?? "private");
+
+    if (includeHidden && customerType) {
+      providers = providers.filter(provider => provider.customerType === customerType);
+    }
     
     return NextResponse.json({
       success: true,
@@ -84,6 +90,8 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    const customerType = body.customerType === 'business' ? 'business' : 'private';
+
     const newProvider = await db.createProvider({
       name: String(body.name),
       description: String(body.description),
@@ -100,6 +108,7 @@ export async function POST(request: NextRequest) {
       })(),
       contractType: (body.contractType as "rörligt" | "fastpris") || "rörligt",
       isActive: body.isActive !== false,
+      customerType,
       features: (body.features as string[]) || [],
       logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
@@ -164,6 +173,7 @@ export async function PUT(request: NextRequest) {
       contractType: body.contractType ? (body.contractType as "rörligt" | "fastpris") : undefined,
       isActive: body.isActive !== undefined ? Boolean(body.isActive) : undefined,
       userHidden: body.userHidden !== undefined ? Boolean(body.userHidden) : undefined,
+      customerType: body.customerType ? (body.customerType === 'business' ? 'business' : 'private') : undefined,
       features: body.features ? (body.features as string[]) : undefined,
       logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
       websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,

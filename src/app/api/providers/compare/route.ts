@@ -84,7 +84,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Jämför alla aktiva leverantörer
-    const activeProviders = providers.filter(provider => provider.isActive);
+    const activeProviders = providers.filter(provider => provider.isActive && provider.customerType !== "business");
     console.log('[providers/compare] Active providers:', activeProviders);
     
     const comparisons: ProviderComparison[] = activeProviders

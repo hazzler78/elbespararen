@@ -240,6 +240,15 @@ export default function ProvidersAdminPage() {
                           }`}>
                             {provider.isActive ? "Aktiv" : provider.userHidden ? "Dold av användare" : "Inaktiv"}
                           </span>
+                          <span
+                            className={`px-3 py-1 rounded-full text-xs font-medium self-start ${
+                              provider.customerType === "business"
+                                ? "bg-blue-100 text-blue-800"
+                                : "bg-gray-100 text-gray-700"
+                            }`}
+                          >
+                            {provider.customerType === "business" ? "Företag" : "Privat"}
+                          </span>
                         </div>
                         <p className="text-gray-600 mb-3 text-sm sm:text-base">{provider.description}</p>
                         
@@ -416,6 +425,7 @@ function ProviderForm({
     contractLength: provider?.contractLength || 12,
     contractType: provider?.contractType || "rörligt" as "rörligt" | "fastpris",
     isActive: provider?.isActive ?? true,
+    customerType: provider?.customerType || "private",
     features: provider?.features || [],
     logoUrl: provider?.logoUrl || "",
     websiteUrl: provider?.websiteUrl || "",
@@ -542,6 +552,22 @@ function ProviderForm({
                 {formData.contractType === "rörligt" 
                   ? "Priset varierar med spotpriset + påslag" 
                   : "Fast pris per kWh under hela avtalsperioden"}
+              </p>
+            </div>
+
+            <div>
+              <label className="block text-sm font-medium mb-1">Kundtyp *</label>
+              <select
+                value={formData.customerType}
+                onChange={(e) => setFormData({ ...formData, customerType: e.target.value as "private" | "business" })}
+                className="w-full border border-border rounded-lg px-3 py-2"
+                required
+              >
+                <option value="private">Privat</option>
+                <option value="business">Företag</option>
+              </select>
+              <p className="text-xs text-muted mt-1">
+                Företagsleverantörer visas endast på företagssidan och inte i ordinarie jämförelser.
               </p>
             </div>
 

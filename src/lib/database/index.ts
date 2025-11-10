@@ -17,6 +17,7 @@ const mockProviders: ElectricityProvider[] = [
     contractType: "rörligt",
     isActive: true,
     userHidden: false,
+    customerType: "private",
     features: [
       "0 kr månadskostnad",
       "0 kr de första 12 månaderna", 
@@ -41,6 +42,7 @@ const mockProviders: ElectricityProvider[] = [
     contractType: "rörligt",
     isActive: true,
     userHidden: false,
+    customerType: "private",
     features: [
       "100% förnybar energi",
       "Låg månadskostnad",
@@ -59,7 +61,7 @@ const mockProviders: ElectricityProvider[] = [
 // Database interface
 export interface Database {
   // Providers
-  getProviders(): Promise<ElectricityProvider[]>;
+  getProviders(customerType?: "private" | "business"): Promise<ElectricityProvider[]>;
   getAllProviders(): Promise<ElectricityProvider[]>;
   getProvider(id: string): Promise<ElectricityProvider | null>;
   createProvider(provider: Omit<ElectricityProvider, 'id' | 'createdAt' | 'updatedAt'>): Promise<ElectricityProvider>;
@@ -104,8 +106,11 @@ class MockDatabase implements Database {
     return MockDatabase.instance;
   }
 
-  async getProviders(): Promise<ElectricityProvider[]> {
-    return [...this.providers];
+  async getProviders(customerType: "private" | "business" = "private"): Promise<ElectricityProvider[]> {
+    return this.providers
+      .filter(provider => provider.isActive)
+      .filter(provider => (provider.customerType ?? "private") === customerType)
+      .map(provider => ({ ...provider }));
   }
 
   async getAllProviders(): Promise<ElectricityProvider[]> {
@@ -119,6 +124,7 @@ class MockDatabase implements Database {
   async createProvider(providerData: Omit<ElectricityProvider, 'id' | 'createdAt' | 'updatedAt'>): Promise<ElectricityProvider> {
     const provider: ElectricityProvider = {
       ...providerData,
+      customerType: providerData.customerType ?? "private",
       id: `provider-${Date.now()}`,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -295,12 +301,13 @@ class CloudflareDatabase implements Database {
     this.db = db;
   }
 
-  async getProviders(): Promise<ElectricityProvider[]> {
+  async getProviders(customerType: "private" | "business" = "private"): Promise<ElectricityProvider[]> {
     const result = await this.db.prepare(`
       SELECT * FROM electricity_providers 
       WHERE is_active = 1 
+        AND customer_type = ?
       ORDER BY energy_price ASC
-    `).all();
+    `).bind(customerType).all();
 
     const rows = Array.isArray(result.results) ? result.results : [];
 
@@ -317,6 +324,7 @@ class CloudflareDatabase implements Database {
         contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
         isActive: Boolean(row.is_active),
         userHidden: Boolean(row.user_hidden || false),
+        customerType: (row.customer_type as "private" | "business") || "private",
         features: JSON.parse(String(row.features || "[]")) as string[],
         logoUrl: row.logo_url ? String(row.logo_url) : undefined,
         websiteUrl: row.website_url ? String(row.website_url) : undefined,
@@ -350,6 +358,7 @@ class CloudflareDatabase implements Database {
         contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
         isActive: Boolean(row.is_active),
         userHidden: Boolean(row.user_hidden || false),
+        customerType: (row.customer_type as "private" | "business") || "private",
         features: JSON.parse(String(row.features || "[]")) as string[],
         logoUrl: row.logo_url ? String(row.logo_url) : undefined,
         websiteUrl: row.website_url ? String(row.website_url) : undefined,
@@ -381,6 +390,7 @@ class CloudflareDatabase implements Database {
       contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
       isActive: Boolean(row.is_active),
       userHidden: Boolean(row.user_hidden || false),
+      customerType: (row.customer_type as "private" | "business") || "private",
       features: JSON.parse(String(row.features || '[]')) as string[],
       logoUrl: row.logo_url ? String(row.logo_url) : undefined,
       websiteUrl: row.website_url ? String(row.website_url) : undefined,
@@ -399,9 +409,9 @@ class CloudflareDatabase implements Database {
           await this.db.prepare(`
             INSERT INTO electricity_providers (
               id, name, description, monthly_fee, energy_price, free_months, 
-              contract_length, contract_type, is_active, user_hidden, features, logo_url, website_url, 
+              contract_length, contract_type, is_active, user_hidden, customer_type, features, logo_url, website_url, 
               affiliate_url, phone_number, avtalsalternativ, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             id,
             providerData.name,
@@ -413,6 +423,7 @@ class CloudflareDatabase implements Database {
             providerData.contractType,
             providerData.isActive ? 1 : 0,
             providerData.userHidden ? 1 : 0,
+            providerData.customerType ?? "private",
             JSON.stringify(providerData.features),
             providerData.logoUrl || null,
             providerData.websiteUrl || null,
@@ -425,6 +436,7 @@ class CloudflareDatabase implements Database {
 
     return {
       ...providerData,
+      customerType: providerData.customerType ?? "private",
       id,
       createdAt: new Date(now),
       updatedAt: new Date(now)
@@ -481,6 +493,10 @@ class CloudflareDatabase implements Database {
       if (providerData.userHidden !== undefined) {
         fieldsToUpdate.push('user_hidden = ?');
         values.push(providerData.userHidden ? 1 : 0);
+      }
+      if (providerData.customerType !== undefined) {
+        fieldsToUpdate.push('customer_type = ?');
+        values.push(providerData.customerType);
       }
       if (providerData.features !== undefined) {
         fieldsToUpdate.push('features = ?');

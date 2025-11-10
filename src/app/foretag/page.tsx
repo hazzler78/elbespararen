@@ -1,10 +1,85 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import type { ReactEventHandler } from "react";
 import { motion } from "framer-motion";
-import { Briefcase, Sparkles, ShieldCheck, LineChart, MessageCircle } from "lucide-react";
+import { Briefcase, Sparkles, ShieldCheck, LineChart, MessageCircle, ExternalLink } from "lucide-react";
 import Link from "next/link";
+import type { ElectricityProvider, ApiResponse } from "@/lib/types";
+import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 
 export default function ForetagPage() {
+  const [providers, setProviders] = useState<ElectricityProvider[]>([]);
+  const [isLoadingProviders, setIsLoadingProviders] = useState(true);
+  const [providersError, setProvidersError] = useState<string | null>(null);
+
+  const toKebab = (value: string) =>
+    value
+      .toLowerCase()
+      .replace(/å/g, "a")
+      .replace(/ä/g, "a")
+      .replace(/ö/g, "o")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
+
+  const getLogoUrl = (name: string, logoUrl?: string) => {
+    const raw = (logoUrl || "").trim();
+    if (raw) {
+      if (/^https?:\/\//i.test(raw)) return raw;
+      if (raw.startsWith("/")) return raw;
+      const withFolder = `/logos/${raw}`;
+      return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
+    }
+    return `/logos/${toKebab(name)}.svg`;
+  };
+
+  const handleLogoError: ReactEventHandler<HTMLImageElement> = (event) => {
+    const element = event.currentTarget;
+    const providerName = element.getAttribute("data-provider-name");
+    if (!providerName) return;
+    const fallback = `/logos/${toKebab(providerName)}.svg`;
+    if (element.src.endsWith(fallback)) return;
+    element.src = fallback;
+  };
+
+  useEffect(() => {
+    let isMounted = true;
+    (async () => {
+      try {
+        setIsLoadingProviders(true);
+        setProvidersError(null);
+
+        const response = await fetch("/api/providers?customerType=business");
+        const result = (await response.json()) as ApiResponse<ElectricityProvider[]>;
+
+        if (!isMounted) {
+          return;
+        }
+
+        if (result.success && result.data) {
+          setProviders(result.data);
+        } else {
+          setProviders([]);
+          setProvidersError(result.error || "Kunde inte hämta företagsleverantörer just nu.");
+        }
+      } catch (error) {
+        if (!isMounted) {
+          return;
+        }
+        console.error("[foretag] Failed to fetch business providers:", error);
+        setProvidersError("Tekniskt fel vid hämtning av företagsleverantörer.");
+      } finally {
+        if (isMounted) {
+          setIsLoadingProviders(false);
+        }
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
   return (
     <main className="min-h-screen bg-background">
       <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">
@@ -74,6 +149,146 @@ export default function ForetagPage() {
                 <p className="text-muted leading-relaxed">{card.description}</p>
               </div>
             ))}
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="space-y-6"
+          >
+            <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+              <div>
+                <h2 className="text-3xl font-bold text-foreground">
+                  Rekommenderade elleverantörer för företag
+                </h2>
+                <p className="text-muted text-lg leading-relaxed">
+                  Vi samarbetar med leverantörer som specialiserar sig på företags- och fastighetsavtal.
+                  De visas inte i våra konsumentjämförelser utan endast här på företagssidan.
+                </p>
+              </div>
+            </div>
+
+            {isLoadingProviders ? (
+              <div className="bg-white border border-border rounded-xl p-8 text-center">
+                <p className="text-muted">Hämtar företagsleverantörer...</p>
+              </div>
+            ) : providersError ? (
+              <div className="bg-error/10 border border-error/30 text-error rounded-xl p-6 text-center">
+                <p className="font-semibold mb-1">Kunde inte ladda leverantörer</p>
+                <p className="text-sm">{providersError}</p>
+              </div>
+            ) : providers.length > 0 ? (
+              <div className="grid gap-6 md:grid-cols-2">
+                {providers.map((provider, index) => (
+                  <motion.div
+                    key={provider.id}
+                    initial={{ opacity: 0, y: 10 }}
+                    whileInView={{ opacity: 1, y: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ delay: index * 0.05 }}
+                    className="bg-white border border-border rounded-xl p-6 shadow-sm flex flex-col gap-4"
+                  >
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={getLogoUrl(provider.name, provider.logoUrl)}
+                        alt={`${provider.name} logotyp`}
+                        data-provider-name={provider.name}
+                        onError={handleLogoError}
+                        className="h-16 w-16 object-contain rounded-md bg-muted/40 p-2"
+                        loading="lazy"
+                      />
+                      <div className="flex-1 space-y-1">
+                        <h3 className="text-xl font-semibold text-foreground">{provider.name}</h3>
+                        <div className="flex flex-wrap gap-2 text-xs font-medium">
+                          <span className="px-2 py-1 rounded-full bg-blue-100 text-blue-800">
+                            Företagsavtal
+                          </span>
+                          <span className="px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                            {provider.contractType === "rörligt" ? "Rörligt" : "Fastpris"}
+                          </span>
+                          {provider.freeMonths > 0 && (
+                            <span className="px-2 py-1 rounded-full bg-green-100 text-green-800">
+                              {provider.freeMonths} fria mån
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <p className="text-muted text-sm leading-relaxed">
+                      {provider.description}
+                    </p>
+
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted">Månadskostnad</p>
+                        <p className="font-semibold text-foreground">
+                          {provider.monthlyFee === 0
+                            ? "0 kr/mån"
+                            : `${formatCurrency(provider.monthlyFee)}/mån`}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted">Påslag</p>
+                        <p className="font-semibold text-foreground">
+                          {formatPricePerKwh(provider.energyPrice)}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted">Bindningstid</p>
+                        <p className="font-semibold text-foreground">
+                          {provider.contractLength > 0 ? `${provider.contractLength} månader` : "Ingen"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs uppercase tracking-wide text-muted">Support</p>
+                        <p className="font-semibold text-foreground">
+                          {provider.phoneNumber || "Via kontoansvarig"}
+                        </p>
+                      </div>
+                    </div>
+
+                    {Array.isArray(provider.features) && provider.features.length > 0 && (
+                      <div className="flex flex-wrap gap-2">
+                        {provider.features.slice(0, 5).map((feature, featureIndex) => (
+                          <span
+                            key={`${provider.id}-feature-${featureIndex}`}
+                            className="px-3 py-1 rounded-full bg-primary/10 text-primary text-xs"
+                          >
+                            {feature}
+                          </span>
+                        ))}
+                        {provider.features.length > 5 && (
+                          <span className="px-3 py-1 rounded-full bg-muted text-xs text-muted-foreground">
+                            +{provider.features.length - 5} till
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {provider.websiteUrl && (
+                      <a
+                        href={provider.websiteUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-primary font-semibold hover:underline text-sm"
+                      >
+                        Besök leverantörens sida
+                        <ExternalLink className="w-4 h-4" />
+                      </a>
+                    )}
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-white border border-dashed border-border rounded-xl p-8 text-center text-muted">
+                <p>
+                  Vi uppdaterar just nu våra företagsavtal. Kontakta oss så berättar vi vilka alternativ som
+                  passar er verksamhet bäst.
+                </p>
+              </div>
+            )}
           </motion.div>
 
           <motion.div

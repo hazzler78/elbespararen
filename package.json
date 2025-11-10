@@ -17,6 +17,8 @@
     "test": "jest --watch",
     "test:ci": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":80,\"functions\":80,\"lines\":80,\"statements\":80}}'",
     "verify": "node scripts/verify-setup.js",
+    "mailerlite:count": "node scripts/mailerlite-subscriber-count.js",
+    "mailerlite:lookup": "node scripts/mailerlite-check-subscribers.js",
     "cf-typegen": "wrangler types --env-interface CloudflareEnv cloudflare-env.d.ts",
     "db:migrate": "wrangler d1 migrations apply elbespararen-db",
     "db:migrate:remote": "wrangler d1 migrations apply elbespararen-db --remote",

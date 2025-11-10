@@ -72,6 +72,7 @@ export interface ElectricityProvider {
   contractType: "rörligt" | "fastpris"; // Avtalstyp
   isActive: boolean;
   userHidden?: boolean; // Markering när användaren medvetet dolt leverantören
+  customerType: "private" | "business"; // Vilken målgrupp avtalet riktar sig mot
   features: string[];
   logoUrl?: string;
   websiteUrl?: string;
