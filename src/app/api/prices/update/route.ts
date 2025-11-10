@@ -420,6 +420,7 @@ export async function POST(request: NextRequest) {
               contractLength: priceResponse.data.bindningstid || 12,
               contractType: "fastpris",
               isActive: true,
+              customerType: "private",
               features: Array.isArray(priceResponse.data.features) ? priceResponse.data.features : [`${canonicalName} fastpris`],
               websiteUrl: `https://${endpoint.url.split('//')[1].split('/')[0]}`,
               phoneNumber: undefined,
