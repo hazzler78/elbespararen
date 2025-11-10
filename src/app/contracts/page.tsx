@@ -150,34 +150,13 @@ export default function ContractsPage() {
                 savings={savings} 
                 hideSavings={true}
                 enableConsumptionEntry={true}
+                onRequestContact={handleScrollToContact}
+                secondaryCta={{
+                  label: "Ladda upp min faktura",
+                  href: "/upload"
+                }}
               />
             )}
-
-            {/* CTA Section */}
-            <div
-              className="mt-8 text-center"
-            >
-              <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 border-2 border-primary/20">
-                <h2 className="text-2xl font-bold mb-3">
-                  Behöver du personlig hjälp att välja?
-                </h2>
-                <p className="text-muted mb-6">
-                  Vi hjälper dig hitta det bästa elavtalet för just din situation och sköter bytet åt dig.
-                </p>
-                <button
-                  onClick={handleScrollToContact}
-                  className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all mr-4"
-                >
-                  Ja, jag vill ha personlig hjälp
-                </button>
-                <Link
-                  href="/upload"
-                  className="inline-flex items-center gap-2 px-8 py-3 border border-primary text-primary font-semibold rounded-lg hover:bg-primary/5 transition-all"
-                >
-                  Ladda upp min faktura
-                </Link>
-              </div>
-            </div>
 
             {/* Contact Form */}
             <div

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import Link from "next/link";
 import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
@@ -12,6 +13,11 @@ interface ProviderComparisonProps {
   savings?: SavingsCalculation;
   hideSavings?: boolean; // Hide savings field for contracts page
   enableConsumptionEntry?: boolean; // On contracts page: ask for kWh and hide prices until provided
+  onRequestContact?: () => void;
+  secondaryCta?: {
+    label: string;
+    href: string;
+  };
 }
 
 interface ComparisonData {
@@ -21,7 +27,14 @@ interface ComparisonData {
   recommendedProviders: number;
 }
 
-export default function ProviderComparison({ billData, savings, hideSavings = false, enableConsumptionEntry = false }: ProviderComparisonProps) {
+export default function ProviderComparison({
+  billData,
+  savings,
+  hideSavings = false,
+  enableConsumptionEntry = false,
+  onRequestContact,
+  secondaryCta
+}: ProviderComparisonProps) {
   const [comparisonData, setComparisonData] = useState<ComparisonData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -200,6 +213,9 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
     return hasAreaCodes ? options.length > 0 : true;
   });
   const bestOption = filteredComparisons[0];
+  const remainingComparisons = filteredComparisons.slice(bestOption ? 1 : 0);
+  const variableComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType === "rörligt");
+  const fixedComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType !== "rörligt");
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
     const affiliate = (comparison.provider as any).affiliateUrl as string | undefined;
@@ -244,6 +260,138 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
 
   const effectiveKwh = enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh;
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
+
+  const renderComparisonCard = (comparison: ProviderComparison) => {
+    const selectedContract = getSelectedContract(comparison.provider);
+    const monthlyFee = selectedContract?.månadskostnad || comparison.provider.monthlyFee;
+    const priceValue = selectedContract?.fastpris || lookupSurcharges[comparison.provider.id] || comparison.provider.energyPrice;
+    const calculatedCost = formatCurrency(calculateProviderCost(comparison, selectedContract));
+    const showSavings = !hideSavings && comparison.provider.contractType === "rörligt";
+
+    return (
+      <div
+        key={comparison.provider.id}
+        className="bg-white rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
+      >
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <img
+                src={resolveProviderLogo(comparison.provider.name, comparison.provider.logoUrl)}
+                alt={`${comparison.provider.name} logo`}
+                onError={createProviderLogoErrorHandler(comparison.provider.name)}
+                className="h-12 w-auto object-contain max-w-[120px]"
+                style={{
+                  imageRendering: 'crisp-edges',
+                  WebkitImageRendering: 'crisp-edges'
+                } as React.CSSProperties}
+                loading="lazy"
+              />
+              <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
+            </div>
+            <p className="text-sm text-muted">{comparison.provider.description}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {getTags(comparison.provider).map((feature, index) => (
+                <span
+                  key={index}
+                  className="flex items-center gap-1 bg-gray-50 px-2.5 py-0.5 rounded-full text-xs border border-border/60"
+                >
+                  <CheckCircle2 className="w-3 h-3 text-success" />
+                  {feature}
+                </span>
+              ))}
+            </div>
+          </div>
+          {comparison.isRecommended && comparison.estimatedSavings > 0 && (
+            <div className="flex items-center gap-1 bg-success/10 text-success px-2 py-1 rounded-full text-xs">
+              <Zap className="w-3 h-3" />
+              Rekommenderad
+            </div>
+          )}
+        </div>
+
+        {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && getAreaOptions(comparison.provider).length > 1 && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Välj avtalslängd
+            </label>
+            <div className="relative">
+              {(() => {
+                const options = getAreaOptions(comparison.provider);
+                return (
+                  <select
+                    value={selectedContracts[comparison.provider.id] || 0}
+                    onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
+                  >
+                    {options.map((contract, contractIndex) => (
+                      <option key={contractIndex} value={contractIndex}>
+                        {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
+                      </option>
+                    ))}
+                  </select>
+                );
+              })()}
+              <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+            </div>
+          </div>
+        )}
+
+        <div className="grid grid-cols-2 gap-4 mb-4">
+          <div>
+            <p className="text-sm text-muted">Månadskostnad</p>
+            <p className="font-semibold">
+              {monthlyFee === 0 ? "0 kr" : `${monthlyFee} kr`}
+            </p>
+          </div>
+          <div>
+            <p className="text-sm text-muted">
+              {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
+            </p>
+            <p className="font-semibold">
+              {formatPricePerKwh(priceValue)}
+            </p>
+          </div>
+        </div>
+
+        {comparison.provider.contractType === "rörligt" && (
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <p className="text-sm text-muted">Beräknad kostnad</p>
+              <p className="font-bold text-lg">
+                {showPrices ? calculatedCost : '—'}
+              </p>
+            </div>
+            {showSavings && (
+              <div className="text-right">
+                <p className="text-sm text-muted">Besparing</p>
+                <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
+                  {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleSwitchClick(comparison)}
+            className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          >
+            Välj
+          </button>
+          {comparison.provider.phoneNumber && (
+            <a
+              href={`tel:${comparison.provider.phoneNumber}`}
+              className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
+            >
+              <Phone className="w-4 h-4" />
+            </a>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const calculateProviderCost = (comparison: ProviderComparison, selectedContract?: ContractAlternative | null) => {
     // Rörligt
@@ -437,150 +585,45 @@ export default function ProviderComparison({ billData, savings, hideSavings = fa
       )}
 
       {/* Andra alternativ */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {filteredComparisons.filter((comparison, index) => {
-          // Om första leverantören har besparingar, visa den inte här (den visas redan i "Bästa val")
-          if (index === 0 && bestOption && bestOption.estimatedSavings > 0) {
-            return false;
-          }
-          return true;
-        }).map((comparison, index) => (
-          <div
-            key={comparison.provider.id}
-            className="bg-white rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <img
-                    src={resolveProviderLogo(comparison.provider.name, comparison.provider.logoUrl)}
-                    alt={`${comparison.provider.name} logo`}
-                    onError={createProviderLogoErrorHandler(comparison.provider.name)}
-                    className="h-12 w-auto object-contain max-w-[120px]"
-                    style={{
-                      imageRendering: 'crisp-edges',
-                      WebkitImageRendering: 'crisp-edges'
-                    } as React.CSSProperties}
-                    loading="lazy"
-                  />
-                  <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
-                </div>
-                <p className="text-sm text-muted">{comparison.provider.description}</p>
-                {/* Tags / Features */}
-                <div className="flex flex-wrap gap-2 mt-2">
-                  {getTags(comparison.provider).map((feature, index) => (
-                    <span
-                      key={index}
-                      className="flex items-center gap-1 bg-gray-50 px-2.5 py-0.5 rounded-full text-xs border border-border/60"
-                    >
-                      <CheckCircle2 className="w-3 h-3 text-success" />
-                      {feature}
-                    </span>
-                  ))}
-                </div>
-              </div>
-              {comparison.isRecommended && comparison.estimatedSavings > 0 && (
-                <div className="flex items-center gap-1 bg-success/10 text-success px-2 py-1 rounded-full text-xs">
-                  <Zap className="w-3 h-3" />
-                  Rekommenderad
-                </div>
-              )}
-            </div>
+      <div className="space-y-6">
+        {variableComparisons.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {variableComparisons.map(renderComparisonCard)}
+          </div>
+        )}
 
-            {/* Avtalslängd dropdown för fastpris */}
-            {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && getAreaOptions(comparison.provider).length > 1 && (
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Välj avtalslängd
-                </label>
-                <div className="relative">
-                  {(() => {
-                    const options = getAreaOptions(comparison.provider);
-                    return (
-                      <select
-                        value={selectedContracts[comparison.provider.id] || 0}
-                        onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
-                      >
-                        {options.map((contract, contractIndex) => (
-                          <option key={contractIndex} value={contractIndex}>
-                            {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
-                          </option>
-                        ))}
-                      </select>
-                    );
-                  })()}
-                  <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                </div>
-              </div>
-            )}
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <p className="text-sm text-muted">Månadskostnad</p>
-                <p className="font-semibold">
-                  {(() => {
-                    const selectedContract = getSelectedContract(comparison.provider);
-                    const monthlyFee = selectedContract?.månadskostnad || comparison.provider.monthlyFee;
-                    return monthlyFee === 0 ? "0 kr" : `${monthlyFee} kr`;
-                  })()}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm text-muted">
-                  {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
-                </p>
-                <p className="font-semibold">
-                  {(() => {
-                    const selectedContract = getSelectedContract(comparison.provider);
-                    const price = selectedContract?.fastpris || comparison.provider.energyPrice;
-                    return formatPricePerKwh(price);
-                  })()}
-                </p>
-              </div>
-            </div>
-
-            {comparison.provider.contractType === "rörligt" && (
-              <div className="flex items-center justify-between mb-4">
-              <div>
-                <p className="text-sm text-muted">Beräknad kostnad</p>
-                <p className="font-bold text-lg">
-                  {showPrices ? (
-                    formatCurrency(calculateProviderCost(comparison, getSelectedContract(comparison.provider)))
-                  ) : (
-                    '—'
-                  )}
-                </p>
-              </div>
-                {!hideSavings && (
-                  <div className="text-right">
-                    <p className="text-sm text-muted">Besparing</p>
-                    <p className={`font-bold ${comparison.estimatedSavings > 0 ? 'text-success' : 'text-error'}`}>
-                      {comparison.estimatedSavings > 0 ? '+' : ''}{formatCurrency(comparison.estimatedSavings)}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            <div className="flex gap-2">
-              <button 
-                onClick={() => handleSwitchClick(comparison)}
-                className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+        {onRequestContact && (
+          <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-6 md:p-8 text-center border-2 border-primary/20">
+            <h2 className="text-2xl font-bold mb-3">
+              Behöver du personlig hjälp att välja?
+            </h2>
+            <p className="text-muted mb-6">
+              Vi hjälper dig hitta det bästa elavtalet för just din situation och sköter bytet åt dig.
+            </p>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center">
+              <button
+                onClick={onRequestContact}
+                className="px-8 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 transition-all"
               >
-                Välj
+                Ja, jag vill ha personlig hjälp
               </button>
-              {comparison.provider.phoneNumber && (
-                <a
-                  href={`tel:${comparison.provider.phoneNumber}`}
-                  className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
+              {secondaryCta && (
+                <Link
+                  href={secondaryCta.href}
+                  className="px-8 py-3 border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary/5 transition-all"
                 >
-                  <Phone className="w-4 h-4" />
-                </a>
+                  {secondaryCta.label}
+                </Link>
               )}
             </div>
           </div>
-        ))}
+        )}
+
+        {fixedComparisons.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {fixedComparisons.map(renderComparisonCard)}
+          </div>
+        )}
       </div>
 
       {/* Sammanfattning */}
