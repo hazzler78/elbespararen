@@ -214,6 +214,9 @@ export default function ProviderComparison({
   });
   const bestOption = filteredComparisons[0];
   const remainingComparisons = filteredComparisons.slice(bestOption ? 1 : 0);
+  const bestOptionAreaOptions = bestOption ? getAreaOptions(bestOption.provider) : [];
+  const bestOptionHasMultipleAreaOptions =
+    !!bestOption && bestOption.provider.contractType === "fastpris" && bestOptionAreaOptions.length > 1;
   const variableComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType === "rörligt");
   const fixedComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType !== "rörligt");
 
@@ -262,6 +265,8 @@ export default function ProviderComparison({
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
 
   const renderComparisonCard = (comparison: ProviderComparison) => {
+    const areaOptions = getAreaOptions(comparison.provider);
+    const hasMultipleAreaOptions = comparison.provider.contractType === "fastpris" && areaOptions.length > 1;
     const selectedContract = getSelectedContract(comparison.provider);
     const monthlyFee = selectedContract?.månadskostnad || comparison.provider.monthlyFee;
     const priceValue = selectedContract?.fastpris || lookupSurcharges[comparison.provider.id] || comparison.provider.energyPrice;
@@ -310,28 +315,23 @@ export default function ProviderComparison({
           )}
         </div>
 
-        {comparison.provider.contractType === "fastpris" && comparison.provider.avtalsalternativ && getAreaOptions(comparison.provider).length > 1 && (
+        {hasMultipleAreaOptions && (
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               Välj avtalslängd
             </label>
             <div className="relative">
-              {(() => {
-                const options = getAreaOptions(comparison.provider);
-                return (
-                  <select
-                    value={selectedContracts[comparison.provider.id] || 0}
-                    onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
-                  >
-                    {options.map((contract, contractIndex) => (
-                      <option key={contractIndex} value={contractIndex}>
-                        {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
-                      </option>
-                    ))}
-                  </select>
-                );
-              })()}
+              <select
+                value={selectedContracts[comparison.provider.id] || 0}
+                onChange={(e) => handleContractChange(comparison.provider.id, parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8 text-sm"
+              >
+                {areaOptions.map((contract, contractIndex) => (
+                  <option key={contractIndex} value={contractIndex}>
+                    {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
+                  </option>
+                ))}
+              </select>
               <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
             </div>
           </div>
@@ -480,30 +480,25 @@ export default function ProviderComparison({
                 <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
               </div>
               <p className="text-muted mb-4">{bestOption.provider.description}</p>
-              
+
               {/* Avtalslängd dropdown för fastpris */}
-              {bestOption.provider.contractType === "fastpris" && bestOption.provider.avtalsalternativ && getAreaOptions(bestOption.provider).length > 1 && (
+              {bestOptionHasMultipleAreaOptions && (
                 <div className="mb-4">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Välj avtalslängd
                   </label>
                   <div className="relative">
-                    {(() => {
-                      const options = getAreaOptions(bestOption.provider);
-                      return (
                         <select
                           value={selectedContracts[bestOption.provider.id] || 0}
                           onChange={(e) => handleContractChange(bestOption.provider.id, parseInt(e.target.value))}
                           className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8"
                         >
-                          {options.map((contract, index) => (
+                          {bestOptionAreaOptions.map((contract, index) => (
                             <option key={index} value={index}>
                               {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
                             </option>
                           ))}
                         </select>
-                      );
-                    })()}
                     <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
                   </div>
                 </div>
