@@ -1,11 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { ElectricityProvider, ProviderComparison, BillData } from "@/lib/types";
+import { ElectricityProvider, ProviderComparison, BillData, ApiResponse } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
-function resolveVariableMarkup(provider: ElectricityProvider): number {
+interface PriceLookupResponse {
+  surcharge?: number;
+  el_certificate_fee?: number;
+  _12_month_discount?: number;
+}
+
+function computeFallbackMarkup(provider: ElectricityProvider): number {
   const surcharge = Number(provider.surcharge ?? 0);
   const elCert = Number(provider.elCertificateFee ?? 0);
   const discount = Number(provider.twelveMonthDiscount ?? 0);
@@ -21,33 +27,101 @@ function resolveVariableMarkup(provider: ElectricityProvider): number {
   return provider.energyPrice || 0;
 }
 
-function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
-  const { totalKWh, elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed } = billData;
-  
+async function resolveVariableMarkup(
+  provider: ElectricityProvider,
+  billData: BillData,
+  origin: string,
+  lookupCache: Map<string, number>
+): Promise<number> {
+  if (provider.contractType !== "rörligt") {
+    return provider.energyPrice || 0;
+  }
+
+  const fallbackMarkup = computeFallbackMarkup(provider);
+
+  const priceArea = billData.priceArea;
+  if (!priceArea) {
+    return fallbackMarkup;
+  }
+
+  const cacheKey = `${provider.id}:${priceArea}`;
+  if (lookupCache.has(cacheKey)) {
+    return lookupCache.get(cacheKey)!;
+  }
+
+  const kwh = billData.totalKWh > 0 ? billData.totalKWh : 2000;
+
+  try {
+    const res = await fetch(`${origin}/api/prices/lookup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        providerName: provider.name,
+        area: priceArea,
+        kwh
+      })
+    });
+
+    if (res.ok) {
+      const json = await res.json() as ApiResponse<PriceLookupResponse>;
+      if (json.success && json.data) {
+        const surcharge = Number(json.data.surcharge ?? 0);
+        const elCert = Number(json.data.el_certificate_fee ?? 0);
+        const discount = Number(json.data._12_month_discount ?? 0);
+        const totalOre = surcharge + elCert + discount;
+        if (Number.isFinite(totalOre)) {
+          const totalKr = totalOre / 100;
+          const totalKrInclVat = totalKr * 1.25;
+          const rounded = Math.max(0, Number(totalKrInclVat.toFixed(6)));
+          lookupCache.set(cacheKey, rounded);
+          return rounded;
+        }
+      }
+    } else {
+      console.warn(`[providers/compare] Lookup failed for ${provider.name} (${priceArea}): ${res.status} ${res.statusText}`);
+    }
+  } catch (error) {
+    console.warn(`[providers/compare] Lookup error for ${provider.name}:`, error);
+  }
+
+  lookupCache.set(cacheKey, fallbackMarkup);
+  return fallbackMarkup;
+}
+
+async function calculateProviderCost(
+  provider: ElectricityProvider,
+  billData: BillData,
+  origin: string,
+  markupCache: Map<string, number>
+): Promise<number> {
+  const totalKWh = billData.totalKWh > 0 ? billData.totalKWh : 1;
+  const { elnatCost, extraFeesDetailed } = billData;
+
   // Använd samma logik som "billigaste alternativ"
   // Billigaste alternativ = nuvarande kostnad - besparing
   // AI:n returnerar belopp EXKL. moms, men konsumenter behöver se priser INKL. moms
   const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
   const calculatedExtraFeesWithVAT = calculatedExtraFees * 1.25;
   const cheapestAlternative = billData.totalAmount - calculatedExtraFeesWithVAT;
-  
+
   // Beräkna energipris baserat på billigaste alternativ
   const availableForEnergy = cheapestAlternative - elnatCost;
   const energyPrice = availableForEnergy / totalKWh;
-  
-  // För rörliga avtal, använd provider.energyPrice som påslag
-  // För fastpris, använd provider.energyPrice direkt
-  const variableMarkup = resolveVariableMarkup(provider);
-  const finalEnergyPrice = provider.contractType === "rörligt" 
+
+  // För rörliga avtal, hämta område-specifikt påslag
+  const variableMarkup = await resolveVariableMarkup(provider, billData, origin, markupCache);
+  const finalEnergyPrice = provider.contractType === "rörligt"
     ? energyPrice + variableMarkup
     : (provider.energyPrice || 0);
   const energyCost = totalKWh * finalEnergyPrice;
-  
+
   // Beräkna effektiv månadskostnad över 12 månader baserat på gratis månader
   // Exempel: 5 fria månader => betala 7/12 av månadsavgiften i snitt
   const freeMonths = Math.max(0, Math.min(12, provider.freeMonths || 0));
   const monthlyFee = ((provider.monthlyFee || 0) * (12 - freeMonths)) / 12;
-  
+
   // Total kostnad = elnät + energi + månadskostnad
   return elnatCost + energyCost + monthlyFee;
 }
@@ -104,9 +178,12 @@ export async function POST(request: NextRequest) {
     const activeProviders = providers.filter(provider => provider.isActive && provider.customerType !== "business");
     console.log('[providers/compare] Active providers:', activeProviders);
     
-    const comparisons: ProviderComparison[] = activeProviders
-      .map(provider => {
-        const estimatedCost = calculateProviderCost(provider, bill);
+    const origin = new URL(request.url).origin;
+    const markupCache = new Map<string, number>();
+
+    const comparisons: ProviderComparison[] = (await Promise.all(
+      activeProviders.map(async provider => {
+        const estimatedCost = await calculateProviderCost(provider, bill, origin, markupCache);
         const estimatedSavings = currentCost - estimatedCost;
         
         console.log(`[providers/compare] Provider ${provider.name}: estimatedCost=${estimatedCost}, estimatedSavings=${estimatedSavings}`);
@@ -118,6 +195,7 @@ export async function POST(request: NextRequest) {
           isRecommended: false // Sätt till false som default, vi hanterar detta i frontend
         };
       })
+    ))
       .sort((a, b) => {
         // Grupp 1: Rörligt alltid före Fastpris
         const aType = a.provider.contractType;
