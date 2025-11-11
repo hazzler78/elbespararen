@@ -84,7 +84,17 @@ function findAreaArray(obj: any, area: string): any[] | null {
   const direct = obj[area];
   if (Array.isArray(direct)) return direct as any[];
   // Search known containers first
-  const preferredKeys = ['variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices'];
+  const preferredKeys = [
+    'variable_monthly_rate',
+    'variable_prices',
+    'variable',
+    'no_commitment_prices',
+    'variable_hourly_rate',
+    'spot',
+    'prices',
+    'data',
+    'variable_fixed_prices'
+  ];
   for (const key of preferredKeys) {
     if (obj[key]) {
       const found = findAreaArray(obj[key], area);
