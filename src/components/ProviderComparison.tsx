@@ -140,9 +140,18 @@ export default function ProviderComparison({
               });
               const json = (await res.json()) as ApiResponse<any>;
               const data = (json && (json as any).data) ? (json as any).data : {};
-              const surcharge = Number(data.surcharge || 0);
-              const cert = Number(data.el_certificate_fee || 0);
-              const discount = Number(data._12_month_discount || 0);
+              const parse = (value: any) => {
+                if (typeof value === 'number') return value;
+                if (typeof value === 'string') {
+                  const normalized = value.replace(',', '.');
+                  const parsed = Number(normalized);
+                  return Number.isFinite(parsed) ? parsed : 0;
+                }
+                return 0;
+              };
+              const surcharge = parse((data as any).surcharge);
+              const cert = parse((data as any).el_certificate_fee ?? (data as any).elCertificateFee);
+              const discount = parse((data as any)._12_month_discount ?? (data as any)['12_month_discount']);
               // Values are in öre/kWh; convert to kr/kWh and include VAT (25%)
               const surchargeOre = surcharge + cert + discount; // discount may be negative
               const surchargeKrInclVat = (surchargeOre / 100) * 1.25;

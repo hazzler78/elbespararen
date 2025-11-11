@@ -9,22 +9,17 @@ interface PriceLookupResponse {
   surcharge?: number;
   el_certificate_fee?: number;
   _12_month_discount?: number;
+  [key: string]: unknown;
 }
 
-function computeFallbackMarkup(provider: ElectricityProvider): number {
-  const surcharge = Number(provider.surcharge ?? 0);
-  const elCert = Number(provider.elCertificateFee ?? 0);
-  const discount = Number(provider.twelveMonthDiscount ?? 0);
-  const totalOre = surcharge + elCert + discount;
-  if (Number.isFinite(totalOre) && Math.abs(totalOre) > 0.0001) {
-    const totalKr = totalOre / 100;
-    const totalKrInclVat = totalKr * 1.25;
-    const rounded = Number(totalKrInclVat.toFixed(6));
-    if (rounded >= 0) {
-      return rounded;
-    }
+function parseNumber(value: unknown): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  if (typeof value === 'string') {
+    const normalized = value.replace(',', '.');
+    const parsed = Number(normalized);
+    return Number.isFinite(parsed) ? parsed : 0;
   }
-  return provider.energyPrice || 0;
+  return 0;
 }
 
 async function resolveVariableMarkup(
@@ -37,7 +32,7 @@ async function resolveVariableMarkup(
     return provider.energyPrice || 0;
   }
 
-  const fallbackMarkup = computeFallbackMarkup(provider);
+  const fallbackMarkup = provider.energyPrice || 0;
 
   const priceArea = billData.priceArea;
   if (!priceArea) {
@@ -67,9 +62,9 @@ async function resolveVariableMarkup(
     if (res.ok) {
       const json = await res.json() as ApiResponse<PriceLookupResponse>;
       if (json.success && json.data) {
-        const surcharge = Number(json.data.surcharge ?? 0);
-        const elCert = Number(json.data.el_certificate_fee ?? 0);
-        const discount = Number(json.data._12_month_discount ?? 0);
+        const surcharge = parseNumber(json.data.surcharge ?? (json.data as any).surcharge);
+        const elCert = parseNumber(json.data.el_certificate_fee ?? (json.data as any).elCertificateFee);
+        const discount = parseNumber(json.data._12_month_discount ?? (json.data as any)['12_month_discount']);
         const totalOre = surcharge + elCert + discount;
         if (Number.isFinite(totalOre)) {
           const totalKr = totalOre / 100;

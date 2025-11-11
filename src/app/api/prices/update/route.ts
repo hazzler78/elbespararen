@@ -612,23 +612,14 @@ export async function POST(request: NextRequest) {
             let action = 'kept_variable_active';
 
             if (components) {
-              const energyPrice = computeEnergyPriceFromComponents(
+              updatePayload.energyPrice = computeEnergyPriceFromComponents(
                 components.surcharge,
                 components.elCertificateFee,
                 components.twelveMonthDiscount
               );
-              updatePayload.surcharge = components.surcharge;
-              updatePayload.elCertificateFee = components.elCertificateFee;
-              updatePayload.twelveMonthDiscount = components.twelveMonthDiscount;
-              updatePayload.energyPrice = energyPrice;
               action = 'variable_updated';
-
-              provider.surcharge = components.surcharge;
-              provider.elCertificateFee = components.elCertificateFee;
-              provider.twelveMonthDiscount = components.twelveMonthDiscount;
-              provider.energyPrice = energyPrice;
             } else {
-              console.log(`[Price Update] No variable component data for ${canonicalTarget}, keeping existing surcharge values`);
+              console.log(`[Price Update] No variable component data for ${canonicalTarget}, keeping existing energy price`);
             }
 
             const updated = await db.updateProvider(provider.id, updatePayload);

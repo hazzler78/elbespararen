@@ -12,9 +12,6 @@ const mockProviders: ElectricityProvider[] = [
     description: "Billigaste alternativet med 0 kr i månadskostnad och 0 kr de första 12 månaderna",
     monthlyFee: 0,
     energyPrice: 0.45,
-    surcharge: 0,
-    elCertificateFee: 0,
-    twelveMonthDiscount: 0,
     freeMonths: 12,
     contractLength: 12,
     contractType: "rörligt",
@@ -40,9 +37,6 @@ const mockProviders: ElectricityProvider[] = [
     description: "Miljövänlig el med 100% förnybar energi",
     monthlyFee: 29,
     energyPrice: 0.52,
-    surcharge: 0,
-    elCertificateFee: 0,
-    twelveMonthDiscount: 0,
     freeMonths: 0,
     contractLength: 24,
     contractType: "rörligt",
@@ -130,9 +124,6 @@ class MockDatabase implements Database {
   async createProvider(providerData: Omit<ElectricityProvider, 'id' | 'createdAt' | 'updatedAt'>): Promise<ElectricityProvider> {
     const provider: ElectricityProvider = {
       ...providerData,
-      surcharge: providerData.surcharge ?? 0,
-      elCertificateFee: providerData.elCertificateFee ?? 0,
-      twelveMonthDiscount: providerData.twelveMonthDiscount ?? 0,
       customerType: providerData.customerType ?? "private",
       id: `provider-${Date.now()}`,
       createdAt: new Date(),
@@ -328,9 +319,6 @@ class CloudflareDatabase implements Database {
         description: String(row.description),
         monthlyFee: Number(row.monthly_fee),
         energyPrice: Number(row.energy_price),
-        surcharge: Number(row.surcharge ?? 0),
-        elCertificateFee: Number(row.el_certificate_fee ?? 0),
-        twelveMonthDiscount: Number(row.twelve_month_discount ?? 0),
         freeMonths: Number(row.free_months),
         contractLength: Number(row.contract_length),
         contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
@@ -365,9 +353,6 @@ class CloudflareDatabase implements Database {
         description: String(row.description),
         monthlyFee: Number(row.monthly_fee),
         energyPrice: Number(row.energy_price),
-        surcharge: Number(row.surcharge ?? 0),
-        elCertificateFee: Number(row.el_certificate_fee ?? 0),
-        twelveMonthDiscount: Number(row.twelve_month_discount ?? 0),
         freeMonths: Number(row.free_months),
         contractLength: Number(row.contract_length),
         contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
@@ -400,9 +385,6 @@ class CloudflareDatabase implements Database {
       description: String(row.description),
       monthlyFee: Number(row.monthly_fee),
       energyPrice: Number(row.energy_price),
-      surcharge: Number(row.surcharge ?? 0),
-      elCertificateFee: Number(row.el_certificate_fee ?? 0),
-      twelveMonthDiscount: Number(row.twelve_month_discount ?? 0),
       freeMonths: Number(row.free_months),
       contractLength: Number(row.contract_length),
       contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
@@ -426,19 +408,16 @@ class CloudflareDatabase implements Database {
 
           await this.db.prepare(`
             INSERT INTO electricity_providers (
-              id, name, description, monthly_fee, energy_price, surcharge, el_certificate_fee, twelve_month_discount, free_months, 
+              id, name, description, monthly_fee, energy_price, free_months, 
               contract_length, contract_type, is_active, user_hidden, customer_type, features, logo_url, website_url, 
               affiliate_url, phone_number, avtalsalternativ, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
           `).bind(
             id,
             providerData.name,
             providerData.description,
             providerData.monthlyFee,
             providerData.energyPrice,
-            providerData.surcharge ?? 0,
-            providerData.elCertificateFee ?? 0,
-            providerData.twelveMonthDiscount ?? 0,
             providerData.freeMonths,
             providerData.contractLength,
             providerData.contractType,
@@ -457,9 +436,6 @@ class CloudflareDatabase implements Database {
 
     return {
       ...providerData,
-      surcharge: providerData.surcharge ?? 0,
-      elCertificateFee: providerData.elCertificateFee ?? 0,
-      twelveMonthDiscount: providerData.twelveMonthDiscount ?? 0,
       customerType: providerData.customerType ?? "private",
       id,
       createdAt: new Date(now),
@@ -497,18 +473,6 @@ class CloudflareDatabase implements Database {
       if (providerData.energyPrice !== undefined) {
         fieldsToUpdate.push('energy_price = ?');
         values.push(providerData.energyPrice);
-      }
-      if (providerData.surcharge !== undefined) {
-        fieldsToUpdate.push('surcharge = ?');
-        values.push(providerData.surcharge);
-      }
-      if (providerData.elCertificateFee !== undefined) {
-        fieldsToUpdate.push('el_certificate_fee = ?');
-        values.push(providerData.elCertificateFee);
-      }
-      if (providerData.twelveMonthDiscount !== undefined) {
-        fieldsToUpdate.push('twelve_month_discount = ?');
-        values.push(providerData.twelveMonthDiscount);
       }
       if (providerData.freeMonths !== undefined) {
         fieldsToUpdate.push('free_months = ?');
