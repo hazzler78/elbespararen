@@ -66,7 +66,10 @@ export interface ElectricityProvider {
   name: string;
   description: string;
   monthlyFee: number; // kr/månad
-  energyPrice: number; // kr/kWh (för rörligt avtal) eller fastpris (för fastprisavtal)
+  energyPrice: number; // kr/kWh (för rörligt avtal) eller fastpris (för fastprisavtal), inkl. moms när tillgängligt
+  surcharge?: number; // öre/kWh exkl. moms
+  elCertificateFee?: number; // öre/kWh exkl. moms
+  twelveMonthDiscount?: number; // öre/kWh exkl. moms (kan vara negativt)
   freeMonths: number; // Antal gratis månader
   contractLength: number; // Månader
   contractType: "rörligt" | "fastpris"; // Avtalstyp

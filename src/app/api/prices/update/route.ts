@@ -1,9 +1,90 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
-import type { ContractAlternative } from "@/lib/types";
+import type { ContractAlternative, ElectricityProvider } from "@/lib/types";
 import { getPriceAreaFromPostalCode, PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
 
 export const runtime = 'edge';
+
+function computeEnergyPriceFromComponents(
+  surchargeOre?: number,
+  elCertificateFeeOre?: number,
+  twelveMonthDiscountOre?: number
+): number {
+  const surcharge = Number(surchargeOre ?? 0);
+  const elCert = Number(elCertificateFeeOre ?? 0);
+  const discount = Number(twelveMonthDiscountOre ?? 0);
+  const totalOre = surcharge + elCert + discount;
+  if (!Number.isFinite(totalOre)) return 0;
+  const totalKr = totalOre / 100;
+  const totalKrInclVat = totalKr * 1.25;
+  return Math.max(0, Number(totalKrInclVat.toFixed(6)));
+}
+
+function findAreaArray(obj: any, area: string): any[] | null {
+  if (!obj || typeof obj !== 'object') return null;
+  if (Array.isArray(obj)) return null;
+  const direct = obj[area];
+  if (Array.isArray(direct)) return direct as any[];
+  const preferredKeys = ['variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices'];
+  for (const key of preferredKeys) {
+    if (obj[key]) {
+      const found = findAreaArray(obj[key], area);
+      if (found) return found;
+    }
+  }
+  for (const key of Object.keys(obj)) {
+    const val = obj[key];
+    if (val && typeof val === 'object') {
+      const found = findAreaArray(val, area);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+function extractVariableComponents(data: any): { surcharge: number; elCertificateFee: number; twelveMonthDiscount: number } | null {
+  if (!data || typeof data !== 'object') return null;
+  const preferredAreas = ['se3', 'SE3', 'se2', 'SE2', 'se1', 'SE1', 'se4', 'SE4'];
+  let pack: any = null;
+
+  for (const area of preferredAreas) {
+    const variants = Array.from(new Set([area, String(area).toLowerCase(), String(area).toUpperCase()]));
+    for (const variant of variants) {
+      const buckets = findAreaArray(data, variant);
+      if (Array.isArray(buckets) && buckets.length > 0) {
+        const targetBucket = buckets.find((b: any) => b?.no_commitment || b?.standard) ?? buckets[0];
+        pack = targetBucket?.no_commitment ?? targetBucket?.standard ?? targetBucket ?? null;
+        if (pack) break;
+      }
+    }
+    if (pack) break;
+  }
+
+  if (!pack || typeof pack !== 'object') return null;
+
+  const surcharge = Number(pack.surcharge ?? pack.påslag ?? 0);
+  const elCertificateFee = Number(pack.el_certificate_fee ?? pack.elcertifikatavgift ?? 0);
+  const twelveMonthDiscount = Number(
+    pack['12_month_discount'] ??
+    pack._12_month_discount ??
+    pack.twelve_month_discount ??
+    0
+  );
+
+  if (
+    !Number.isFinite(surcharge) &&
+    !Number.isFinite(elCertificateFee) &&
+    !Number.isFinite(twelveMonthDiscount)
+  ) {
+    return null;
+  }
+
+  return {
+    surcharge: Number.isFinite(surcharge) ? surcharge : 0,
+    elCertificateFee: Number.isFinite(elCertificateFee) ? elCertificateFee : 0,
+    twelveMonthDiscount: Number.isFinite(twelveMonthDiscount) ? twelveMonthDiscount : 0
+  };
+}
 
 // Leverantörer med deras endpoints och URL:er
 // Normaliseringskarta för leverantörsnamn
@@ -120,11 +201,15 @@ interface PriceData {
   gratis_månader?: number;
   features?: string[];
   avtalsalternativ?: ContractAlternative[];
+  surcharge?: number;
+  el_certificate_fee?: number;
+  twelve_month_discount?: number;
 }
 
 interface ProviderPriceResponse {
   success: boolean;
   data?: PriceData;
+  raw?: any;
   error?: string;
 }
 
@@ -175,7 +260,8 @@ async function fetchProviderPrices(endpoint: string, url: string): Promise<Provi
 
     return {
       success: true,
-      data: priceData
+      data: priceData,
+      raw: data
     };
 
   } catch (error) {
@@ -373,6 +459,7 @@ export async function POST(request: NextRequest) {
     
     // Förbered lista över rörliga som kan bevaras oförändrade; vissa uppdateras nedan
     const allRörliga = existingProviders.filter(p => p.contractType === "rörligt");
+    const latestVariableData = new Map<string, any>();
 
     // Uppdatera priser för varje endpoint
     for (const endpoint of PRICE_ENDPOINTS) {
@@ -381,6 +468,9 @@ export async function POST(request: NextRequest) {
         
         if (priceResponse.success && priceResponse.data) {
           const canonicalName = normalizeProviderName(endpoint.providerName);
+          if (priceResponse.raw) {
+            latestVariableData.set(canonicalName.toLowerCase(), priceResponse.raw);
+          }
           // Hitta befintlig Fastpris-leverantör för denna endpoint
           // Prioritera att hitta en befintlig leverantör istället för att skapa nya
           let provider = existingProviders.find(p => 
@@ -513,18 +603,39 @@ export async function POST(request: NextRequest) {
       const referencePrice = typeof se3 === 'number' ? se3 : (Object.values(spot)[0] as number | undefined);
       if (typeof referencePrice === 'number') {
         for (const targetName of VARIABLE_PROVIDERS_TO_UPDATE) {
-          const provider = existingProviders.find(p => p.contractType === 'rörligt' && normalizeProviderName(p.name).toLowerCase() === targetName.toLowerCase());
+          const canonicalTarget = normalizeProviderName(targetName);
+          const provider = existingProviders.find(p => p.contractType === 'rörligt' && normalizeProviderName(p.name).toLowerCase() === canonicalTarget.toLowerCase());
           if (provider) {
-            // OBS: För rörligt används provider.energyPrice som PÅSLAG i UI.
-            // Själva spotpriset hämtas dynamiskt per prisområde i frontend (/api/spot-prices).
-            // Därför uppdaterar vi inte energyPrice här, utan säkerställer bara att leverantören är aktiv.
-            const updated = await db.updateProvider(provider.id, {
-              isActive: true
-            });
-            updateResults.push({ provider: provider.name, action: 'kept_variable_active', success: true, data: updated });
+            const rawVariable = latestVariableData.get(canonicalTarget.toLowerCase());
+            const components = rawVariable ? extractVariableComponents(rawVariable) : null;
+            const updatePayload: Partial<ElectricityProvider> = { isActive: true };
+            let action = 'kept_variable_active';
+
+            if (components) {
+              const energyPrice = computeEnergyPriceFromComponents(
+                components.surcharge,
+                components.elCertificateFee,
+                components.twelveMonthDiscount
+              );
+              updatePayload.surcharge = components.surcharge;
+              updatePayload.elCertificateFee = components.elCertificateFee;
+              updatePayload.twelveMonthDiscount = components.twelveMonthDiscount;
+              updatePayload.energyPrice = energyPrice;
+              action = 'variable_updated';
+
+              provider.surcharge = components.surcharge;
+              provider.elCertificateFee = components.elCertificateFee;
+              provider.twelveMonthDiscount = components.twelveMonthDiscount;
+              provider.energyPrice = energyPrice;
+            } else {
+              console.log(`[Price Update] No variable component data for ${canonicalTarget}, keeping existing surcharge values`);
+            }
+
+            const updated = await db.updateProvider(provider.id, updatePayload);
+            updateResults.push({ provider: provider.name, action, success: true, data: updated });
             successCount++;
           } else {
-            updateResults.push({ provider: targetName, action: 'variable_not_found', success: false, error: 'No existing rörligt provider with this name' });
+            updateResults.push({ provider: canonicalTarget, action: 'variable_not_found', success: false, error: 'No existing rörligt provider with this name' });
             errorCount++;
           }
         }

@@ -1,3 +1,17 @@
+function computeEnergyPriceFromComponents(
+  surchargeOre?: number,
+  elCertificateFeeOre?: number,
+  twelveMonthDiscountOre?: number
+): number {
+  const surcharge = Number(surchargeOre ?? 0);
+  const elCert = Number(elCertificateFeeOre ?? 0);
+  const discount = Number(twelveMonthDiscountOre ?? 0);
+  const totalOre = surcharge + elCert + discount;
+  if (!Number.isFinite(totalOre)) return 0;
+  const totalKr = totalOre / 100; // öre → kr
+  const totalKrInclVat = totalKr * 1.25; // Visa inkl. moms i kostnadsberäkningar
+  return Math.max(0, Number(totalKrInclVat.toFixed(6)));
+}
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 
@@ -79,7 +93,7 @@ export async function POST(request: NextRequest) {
     const body = await request.json() as Record<string, unknown>;
     
     // Validera obligatoriska fält
-    const requiredFields = ['name', 'description', 'monthlyFee', 'energyPrice'];
+    const requiredFields = ['name', 'description', 'monthlyFee'];
     for (const field of requiredFields) {
       // Använd hasOwnProperty och kolla undefined/null, inte falsy (0 är ett giltigt värde)
       if (body[field] === undefined || body[field] === null || body[field] === '') {
@@ -92,11 +106,24 @@ export async function POST(request: NextRequest) {
 
     const customerType = body.customerType === 'business' ? 'business' : 'private';
 
+    const surchargeOre = Number((body as any).surcharge ?? (body as any).surchargeOre ?? 0);
+    const elCertOre = Number((body as any).el_certificate_fee ?? (body as any).elCertificateFee ?? 0);
+    const discountOre = Number((body as any)["12_month_discount"] ?? (body as any).twelveMonthDiscount ?? 0);
+
+    const computedEnergyPrice = body.energyPrice !== undefined && body.energyPrice !== null && body.energyPrice !== ''
+      ? Number(body.energyPrice)
+      : computeEnergyPriceFromComponents(surchargeOre, elCertOre, discountOre);
+
+    const energyPriceValue = Number.isFinite(computedEnergyPrice) ? computedEnergyPrice : 0;
+
     const newProvider = await db.createProvider({
       name: String(body.name),
       description: String(body.description),
       monthlyFee: Number(body.monthlyFee),
-      energyPrice: Number(body.energyPrice),
+      energyPrice: energyPriceValue,
+      surcharge: Number.isFinite(surchargeOre) ? surchargeOre : 0,
+      elCertificateFee: Number.isFinite(elCertOre) ? elCertOre : 0,
+      twelveMonthDiscount: Number.isFinite(discountOre) ? discountOre : 0,
       freeMonths: Number(body.freeMonths) || 0,
       // Bevara 0 för rörligt, defaulta annars till 12 månader om ej angivet
       contractLength: (() => {
@@ -163,11 +190,34 @@ export async function PUT(request: NextRequest) {
 
     console.log('[providers] PUT - updating provider with data:', body);
     
+    const surchargeOre = (body as any).surcharge ?? (body as any).surchargeOre ?? (body as any).surcharge_ore;
+    const elCertOre = (body as any).elCertificateFee ?? (body as any).el_certificate_fee;
+    const discountOre = (body as any).twelveMonthDiscount ?? (body as any)["12_month_discount"];
+
+    const existingProvider = await db.getProvider(String(body.id));
+    if (!existingProvider) {
+      return NextResponse.json(
+        { success: false, error: "Leverantör hittades inte" },
+        { status: 404 }
+      );
+    }
+
     const updatedProvider = await db.updateProvider(String(body.id), {
       name: body.name ? String(body.name) : undefined,
       description: body.description ? String(body.description) : undefined,
       monthlyFee: body.monthlyFee !== undefined ? Number(body.monthlyFee) : undefined,
-      energyPrice: body.energyPrice !== undefined ? Number(body.energyPrice) : undefined,
+      energyPrice: body.energyPrice !== undefined
+        ? Number(body.energyPrice)
+        : (surchargeOre !== undefined || elCertOre !== undefined || discountOre !== undefined
+            ? computeEnergyPriceFromComponents(
+                surchargeOre !== undefined ? Number(surchargeOre) : existingProvider.surcharge,
+                elCertOre !== undefined ? Number(elCertOre) : existingProvider.elCertificateFee,
+                discountOre !== undefined ? Number(discountOre) : existingProvider.twelveMonthDiscount
+              )
+            : undefined),
+      surcharge: surchargeOre !== undefined ? Number(surchargeOre) : undefined,
+      elCertificateFee: elCertOre !== undefined ? Number(elCertOre) : undefined,
+      twelveMonthDiscount: discountOre !== undefined ? Number(discountOre) : undefined,
       freeMonths: body.freeMonths !== undefined ? Number(body.freeMonths) : undefined,
       contractLength: body.contractLength !== undefined ? Number(body.contractLength) : undefined,
       contractType: body.contractType ? (body.contractType as "rörligt" | "fastpris") : undefined,

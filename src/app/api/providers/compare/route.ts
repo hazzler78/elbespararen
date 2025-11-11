@@ -5,6 +5,22 @@ import { createDatabaseFromBinding } from "@/lib/database";
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
+function resolveVariableMarkup(provider: ElectricityProvider): number {
+  const surcharge = Number(provider.surcharge ?? 0);
+  const elCert = Number(provider.elCertificateFee ?? 0);
+  const discount = Number(provider.twelveMonthDiscount ?? 0);
+  const totalOre = surcharge + elCert + discount;
+  if (Number.isFinite(totalOre) && Math.abs(totalOre) > 0.0001) {
+    const totalKr = totalOre / 100;
+    const totalKrInclVat = totalKr * 1.25;
+    const rounded = Number(totalKrInclVat.toFixed(6));
+    if (rounded >= 0) {
+      return rounded;
+    }
+  }
+  return provider.energyPrice || 0;
+}
+
 function calculateProviderCost(provider: ElectricityProvider, billData: BillData): number {
   const { totalKWh, elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed } = billData;
   
@@ -21,8 +37,9 @@ function calculateProviderCost(provider: ElectricityProvider, billData: BillData
   
   // För rörliga avtal, använd provider.energyPrice som påslag
   // För fastpris, använd provider.energyPrice direkt
+  const variableMarkup = resolveVariableMarkup(provider);
   const finalEnergyPrice = provider.contractType === "rörligt" 
-    ? energyPrice + (provider.energyPrice || 0) 
+    ? energyPrice + variableMarkup
     : (provider.energyPrice || 0);
   const energyCost = totalKWh * finalEnergyPrice;
   
