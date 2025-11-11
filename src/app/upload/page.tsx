@@ -1,14 +1,22 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
-import { ArrowLeft, FileText, ArrowRight } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import { BillData } from "@/lib/types";
 
+type ExampleImage = {
+  src: string;
+  alt: string;
+  caption: string;
+};
+
 export default function UploadPage() {
   const router = useRouter();
+  const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
 
   const handleUploadSuccess = (data: BillData) => {
     // Debug: logga vad som sparas
@@ -32,6 +40,27 @@ export default function UploadPage() {
   const handleUploadError = (error: string) => {
     console.error("Upload error:", error);
   };
+
+  useEffect(() => {
+    if (!selectedImage) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setSelectedImage(null);
+      }
+    };
+
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedImage]);
 
   return (
     <main className="min-h-screen bg-background py-12 px-4">
@@ -72,7 +101,7 @@ export default function UploadPage() {
           transition={{ delay: 0.2 }}
           className="mb-12 max-w-4xl mx-auto"
         >
-          <div className="grid md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
             {/* Good Example */}
             <div className="text-center">
               <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center justify-center gap-2">
@@ -80,13 +109,26 @@ export default function UploadPage() {
                 Bra exempel
               </h3>
               <div className="bg-white rounded-lg border-2 border-green-200 p-4 shadow-sm">
-                <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img 
-                    src="/good-invoice-example.jpg" 
-                    alt="Bra exempel på faktura" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedImage({
+                      src: "/good-invoice-example.jpg",
+                      alt: "Bra exempel på faktura",
+                      caption: "Bra exempel – tydlig faktura med elhandel och specifikationer",
+                    })
+                  }
+                  aria-label="Förstora bra fakturaexempel"
+                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                >
+                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                    <img 
+                      src="/good-invoice-example.jpg" 
+                      alt="Bra exempel på faktura" 
+                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
+                    />
+                  </div>
+                </button>
                 <p className="text-sm text-muted">
                   Tydlig text, rätt faktura (elhandel), visar specifikationerna
                 </p>
@@ -100,13 +142,26 @@ export default function UploadPage() {
                 Dåligt exempel
               </h3>
               <div className="bg-white rounded-lg border-2 border-red-200 p-4 shadow-sm">
-                <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                  <img 
-                    src="/bad-invoice-example.jpg" 
-                    alt="Dåligt exempel på faktura" 
-                    className="w-full h-full object-cover"
-                  />
-                </div>
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedImage({
+                      src: "/bad-invoice-example.jpg",
+                      alt: "Dåligt exempel på faktura",
+                      caption: "Dåligt exempel – otydlig text och bara elnät utan elhandel",
+                    })
+                  }
+                  aria-label="Förstora dåligt fakturaexempel"
+                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                >
+                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                    <img 
+                      src="/bad-invoice-example.jpg" 
+                      alt="Dåligt exempel på faktura" 
+                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
+                    />
+                  </div>
+                </button>
                 <p className="text-sm text-muted">
                   Otydlig text, bara elnät, elhandel saknas
                 </p>
@@ -186,6 +241,47 @@ export default function UploadPage() {
             </ul>
           </div>
         </motion.div>
+
+        <AnimatePresence>
+          {selectedImage && (
+            <motion.div
+              key="image-modal"
+              className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedImage(null)}
+              role="dialog"
+              aria-modal="true"
+              aria-label={selectedImage.alt}
+            >
+              <motion.div
+                className="relative max-w-4xl w-full"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                onClick={(event) => event.stopPropagation()}
+              >
+                <button
+                  type="button"
+                  onClick={() => setSelectedImage(null)}
+                  aria-label="Stäng bild"
+                  className="absolute -top-2 -right-2 bg-white text-foreground rounded-full p-2 shadow-lg focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+                <img
+                  src={selectedImage.src}
+                  alt={selectedImage.alt}
+                  className="w-full h-auto max-h-[80vh] object-contain rounded-lg shadow-2xl"
+                />
+                <p className="mt-4 text-center text-sm text-white/80">
+                  {selectedImage.caption}
+                </p>
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
     </main>
   );
