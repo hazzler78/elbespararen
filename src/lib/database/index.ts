@@ -97,6 +97,7 @@ class MockDatabase implements Database {
   private leads: Lead[] = [];
   private switchRequests: SwitchRequest[] = [];
   private newsPosts: NewsPost[] = [];
+  public bestChoiceProviderId: string | null = null; // För settings API
 
   // Singleton pattern för att behålla state mellan requests i utveckling
   static getInstance(): MockDatabase {

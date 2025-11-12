@@ -1,15 +1,19 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X } from "lucide-react";
 import Link from "next/link";
-import { Lead } from "@/lib/types";
+import { Lead, ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
 export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "new" | "contacted" | "converted" | "rejected">("all");
+  const [providers, setProviders] = useState<ElectricityProvider[]>([]);
+  const [bestChoiceProviderId, setBestChoiceProviderId] = useState<string | null>(null);
+  const [isLoadingSettings, setIsLoadingSettings] = useState(true);
+  const [isSavingSettings, setIsSavingSettings] = useState(false);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -28,7 +32,38 @@ export default function AdminPage() {
       }
     };
 
+    const fetchProviders = async () => {
+      try {
+        const response = await fetch('/api/providers?includeHidden=true');
+        const result = await response.json() as ApiResponse<ElectricityProvider[]>;
+        if (result.success && result.data) {
+          setProviders(result.data.filter(p => p.isActive));
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av leverantörer:', error);
+      }
+    };
+
+    const fetchSettings = async () => {
+      try {
+        setIsLoadingSettings(true);
+        const response = await fetch('/api/settings');
+        if (response.ok) {
+          const data = await response.json() as ApiResponse<{ bestChoiceProviderId: string | null }>;
+          if (data.success && data.data) {
+            setBestChoiceProviderId(data.data.bestChoiceProviderId);
+          }
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av inställningar:', error);
+      } finally {
+        setIsLoadingSettings(false);
+      }
+    };
+
     fetchLeads();
+    fetchProviders();
+    fetchSettings();
   }, []);
 
   const filteredLeads = filter === "all" 
@@ -42,6 +77,36 @@ export default function AdminPage() {
     converted: leads.filter(l => l.status === "converted").length,
     totalSavings: leads.reduce((sum, l) => sum + l.savings.potentialSavings, 0)
   };
+
+  const handleBestChoiceChange = async (providerId: string | null) => {
+    try {
+      setIsSavingSettings(true);
+      const response = await fetch('/api/settings', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ bestChoiceProviderId: providerId }),
+      });
+
+      if (response.ok) {
+        const data = await response.json() as ApiResponse<{ bestChoiceProviderId: string | null }>;
+        if (data.success && data.data) {
+          setBestChoiceProviderId(data.data.bestChoiceProviderId);
+          alert('✅ Bästa val uppdaterat!');
+        }
+      } else {
+        alert('❌ Kunde inte spara inställning');
+      }
+    } catch (error) {
+      console.error('Fel vid sparande av inställning:', error);
+      alert('❌ Nätverksfel vid sparande');
+    } finally {
+      setIsSavingSettings(false);
+    }
+  };
+
+  const selectedProvider = providers.find(p => p.id === bestChoiceProviderId);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -116,6 +181,57 @@ export default function AdminPage() {
               </div>
               <p className="text-2xl sm:text-3xl font-bold text-gray-900">{formatCurrency(stats.totalSavings)}</p>
             </div>
+          </div>
+
+          {/* Best Choice Selection */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <Star className="w-5 h-5 text-yellow-500" />
+              <h2 className="text-xl font-bold text-gray-900">Bästa val</h2>
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              Välj vilken leverantör som ska visas som "Bästa val" i jämförelsen. Om inget val görs används automatisk sortering.
+            </p>
+            
+            {isLoadingSettings ? (
+              <p className="text-gray-500">Laddar inställningar...</p>
+            ) : (
+              <div className="space-y-4">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <select
+                    value={bestChoiceProviderId || ""}
+                    onChange={(e) => handleBestChoiceChange(e.target.value || null)}
+                    disabled={isSavingSettings}
+                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <option value="">Ingen (använd automatisk sortering)</option>
+                    {providers.map((provider) => (
+                      <option key={provider.id} value={provider.id}>
+                        {provider.name}
+                      </option>
+                    ))}
+                  </select>
+                  {bestChoiceProviderId && (
+                    <button
+                      onClick={() => handleBestChoiceChange(null)}
+                      disabled={isSavingSettings}
+                      className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    >
+                      <X className="w-4 h-4" />
+                      Rensa val
+                    </button>
+                  )}
+                </div>
+                
+                {selectedProvider && (
+                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                    <p className="text-sm font-medium text-blue-900 mb-1">Vald leverantör:</p>
+                    <p className="text-lg font-bold text-blue-700">{selectedProvider.name}</p>
+                    <p className="text-sm text-blue-600 mt-1">{selectedProvider.description}</p>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Filter */}

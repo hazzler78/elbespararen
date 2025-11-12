@@ -176,6 +176,35 @@ export async function POST(request: NextRequest) {
     const origin = new URL(request.url).origin;
     const markupCache = new Map<string, number>();
 
+    // Hämta best choice provider från inställningar direkt från databasen
+    let bestChoiceProviderId: string | null = null;
+    try {
+      const dbAny = db as any;
+      if (dbAny.db && typeof dbAny.db.prepare === 'function') {
+        // CloudflareDatabase - läs direkt från app_settings tabell
+        try {
+          const result = await dbAny.db.prepare(`
+            SELECT value FROM app_settings WHERE key = 'best_choice_provider_id'
+          `).first();
+          if (result) {
+            bestChoiceProviderId = String(result.value);
+            console.log('[providers/compare] Best choice provider ID from DB:', bestChoiceProviderId);
+          }
+        } catch (sqlError) {
+          // Tabellen kanske inte finns ännu, det är okej
+          console.log('[providers/compare] Settings table not found, using default sorting');
+        }
+      } else {
+        // MockDatabase - läs från property
+        if (dbAny.bestChoiceProviderId) {
+          bestChoiceProviderId = dbAny.bestChoiceProviderId;
+          console.log('[providers/compare] Best choice provider ID from mock:', bestChoiceProviderId);
+        }
+      }
+    } catch (error) {
+      console.warn('[providers/compare] Could not read best choice setting:', error);
+    }
+
     const comparisons: ProviderComparison[] = (await Promise.all(
       activeProviders.map(async provider => {
         const estimatedCost = await calculateProviderCost(provider, bill, origin, markupCache);
@@ -192,6 +221,14 @@ export async function POST(request: NextRequest) {
       })
     ))
       .sort((a, b) => {
+        // Prioritera manuellt vald best choice provider först (om den finns och är aktiv)
+        if (bestChoiceProviderId) {
+          const aIsBestChoice = a.provider.id === bestChoiceProviderId;
+          const bIsBestChoice = b.provider.id === bestChoiceProviderId;
+          if (aIsBestChoice && !bIsBestChoice) return -1;
+          if (!aIsBestChoice && bIsBestChoice) return 1;
+        }
+
         // Grupp 1: Rörligt alltid före Fastpris
         const aType = a.provider.contractType;
         const bType = b.provider.contractType;
@@ -215,7 +252,7 @@ export async function POST(request: NextRequest) {
 
         // Tie-breaker 3: lägst energyPrice
         return (a.provider.energyPrice || 0) - (b.provider.energyPrice || 0);
-      }); // Rörligt först, sedan sortering inom grupp
+      }); // Best choice först (om vald), sedan rörligt, sedan sortering inom grupp
     
     // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
     const recommendedCount = Math.min(3, comparisons.filter(c => c.estimatedSavings > 0).length);
