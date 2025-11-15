@@ -19,6 +19,10 @@ export default function Hotjar() {
   
   // Don't load if disabled or no ID
   if (!analyticsEnabled || !hotjarId) {
+    // Log why Hotjar is not loading
+    if (typeof window !== 'undefined') {
+      console.warn('[Hotjar] Not loading - Analytics enabled:', analyticsEnabled, 'Hotjar ID:', hotjarId);
+    }
     return null;
   }
 
@@ -29,14 +33,12 @@ export default function Hotjar() {
         // Allow loading if consent is given OR if skipConsent is enabled (for testing/verification)
         const hasConsent = skipConsent || hasAnalyticsConsent();
         
-        // Debug logging in development
-        if (process.env.NODE_ENV === 'development') {
-          console.log('[Hotjar] Analytics enabled:', analyticsEnabled);
-          console.log('[Hotjar] Hotjar ID:', hotjarId);
-          console.log('[Hotjar] Skip consent:', skipConsent);
-          console.log('[Hotjar] Has consent:', hasAnalyticsConsent());
-          console.log('[Hotjar] Will load:', hasConsent);
-        }
+        // Debug logging (always show to help diagnose issues)
+        console.log('[Hotjar] Analytics enabled:', analyticsEnabled);
+        console.log('[Hotjar] Hotjar ID:', hotjarId);
+        console.log('[Hotjar] Skip consent:', skipConsent);
+        console.log('[Hotjar] Has consent:', hasAnalyticsConsent());
+        console.log('[Hotjar] Will load:', hasConsent);
         
         setShouldLoad(hasConsent);
       }
@@ -66,6 +68,20 @@ export default function Hotjar() {
     <Script
       id="hotjar-tracking"
       strategy="afterInteractive"
+      onLoad={() => {
+        console.log('[Hotjar] Script loaded successfully');
+        // Verify Hotjar is available
+        setTimeout(() => {
+          if ((window as any).hj) {
+            console.log('[Hotjar] Hotjar initialized:', (window as any).hj);
+          } else {
+            console.warn('[Hotjar] Hotjar script loaded but window.hj not found');
+          }
+        }, 1000);
+      }}
+      onError={(e) => {
+        console.error('[Hotjar] Failed to load script:', e);
+      }}
       dangerouslySetInnerHTML={{
         __html: `
           (function(h,o,t,j,a,r){
