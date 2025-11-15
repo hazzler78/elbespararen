@@ -4,6 +4,19 @@ import { ApiResponse } from "@/lib/types";
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
+/**
+ * Google Analytics Data API response types
+ */
+interface GAResponse {
+  rows?: Array<{
+    dimensionValues: Array<{ value: string }>;
+    metricValues: Array<{ value: string }>;
+  }>;
+  totals?: Array<{
+    metricValues: Array<{ value: string }>;
+  }>;
+}
+
 interface AnalyticsData {
   totalVisits: number;
   uniqueVisitors: number;
@@ -20,68 +33,227 @@ interface AnalyticsData {
 }
 
 /**
+ * OBS: Service Account kräver JWT-signering som inte fungerar i Edge runtime.
+ * Använd GOOGLE_ANALYTICS_ACCESS_TOKEN direkt istället.
+ * För att få access token, se docs/GOOGLE_ANALYTICS_SETUP.md
+ */
+
+/**
+ * Hämta data från Google Analytics Data API
+ */
+async function fetchGAData(
+  propertyId: string,
+  accessToken: string,
+  dimensions: string[],
+  metrics: string[],
+  dateRanges: Array<{ startDate: string; endDate: string }>
+): Promise<GAResponse> {
+  const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${accessToken}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      dimensions: dimensions.map(d => ({ name: d })),
+      metrics: metrics.map(m => ({ name: m })),
+      dateRanges,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`GA API error: ${response.statusText} - ${errorText}`);
+  }
+
+  return response.json();
+}
+
+/**
+ * Konvertera period till datum-intervall
+ */
+function getDateRange(period: string): { startDate: string; endDate: string } {
+  const endDate = new Date();
+  const startDate = new Date();
+  
+  switch (period) {
+    case '7d':
+      startDate.setDate(endDate.getDate() - 7);
+      break;
+    case '30d':
+      startDate.setDate(endDate.getDate() - 30);
+      break;
+    case '90d':
+      startDate.setDate(endDate.getDate() - 90);
+      break;
+    case '12mo':
+      startDate.setMonth(endDate.getMonth() - 12);
+      break;
+    default:
+      startDate.setDate(endDate.getDate() - 30);
+  }
+  
+  return {
+    startDate: startDate.toISOString().split('T')[0],
+    endDate: endDate.toISOString().split('T')[0],
+  };
+}
+
+/**
  * GET /api/analytics
- * Hämtar analytics-data
- * För nu returnerar vi mock-data eller länkar till externa dashboards
- * Kan utökas med Google Analytics API-integration senare
+ * Hämtar analytics-data från Google Analytics Data API
  */
 export async function GET(request: NextRequest) {
   try {
     const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
-    const gaId = process.env.NEXT_PUBLIC_GA_ID;
-    const hotjarId = process.env.NEXT_PUBLIC_HOTJAR_ID;
+    const gaPropertyId = process.env.GOOGLE_ANALYTICS_PROPERTY_ID;
+    const gaAccessToken = process.env.GOOGLE_ANALYTICS_ACCESS_TOKEN;
 
-    // Om analytics inte är aktiverat, returnera info om att aktivera det
+    // Om analytics inte är aktiverat
     if (!analyticsEnabled) {
       return NextResponse.json({
         success: true,
         data: {
           enabled: false,
-          message: "Analytics är inte aktiverat. Aktivera det i .env för att se data.",
-          links: {
-            googleAnalytics: gaId ? `https://analytics.google.com/analytics/web/#/p${gaId.replace('G-', '')}/reports/dashboard` : null,
-            hotjar: hotjarId ? `https://insights.hotjar.com/sites/${hotjarId}/dashboard` : null,
-          }
+          message: "Analytics är inte aktiverat. Sätt NEXT_PUBLIC_ENABLE_ANALYTICS=true i .env för att se data.",
         }
-      } as ApiResponse<{ enabled: boolean; message: string; links: { googleAnalytics: string | null; hotjar: string | null } }>);
+      } as ApiResponse<{ enabled: boolean; message: string }>);
     }
 
-    // TODO: Här kan vi lägga till Google Analytics Data API-integration
-    // För nu returnerar vi en struktur med länkar till externa dashboards
-    // och kan lägga till mock-data för utveckling
+    // Kontrollera om Google Analytics är konfigurerat
+    if (!gaPropertyId) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: true,
+          analytics: null,
+          message: "Google Analytics Property ID saknas. Lägg till GOOGLE_ANALYTICS_PROPERTY_ID i .env.",
+        }
+      } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
+    }
 
-    const data: AnalyticsData = {
-      totalVisits: 0, // Kommer från GA API
-      uniqueVisitors: 0, // Kommer från GA API
-      pageViews: 0, // Kommer från GA API
-      topPages: [], // Kommer från GA API
-      visitsByDay: [], // Kommer från GA API
-      referrers: [], // Kommer från GA API
-      devices: {
-        desktop: 0,
-        mobile: 0,
-        tablet: 0,
-      },
-      lastUpdated: new Date().toISOString(),
-    };
+    // Hämta access token
+    // OBS: Service Account kräver JWT-signering som inte fungerar i Edge runtime
+    // Använd GOOGLE_ANALYTICS_ACCESS_TOKEN direkt (se docs/GOOGLE_ANALYTICS_SETUP.md)
+    const accessToken = gaAccessToken;
 
-    return NextResponse.json({
-      success: true,
-      data: {
-        enabled: true,
-        analytics: data,
-        links: {
-          googleAnalytics: gaId ? `https://analytics.google.com/analytics/web/#/p${gaId.replace('G-', '')}/reports/dashboard` : null,
-          hotjar: hotjarId ? `https://insights.hotjar.com/sites/${hotjarId}/dashboard` : null,
+    if (!accessToken) {
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: true,
+          analytics: null,
+          message: "Google Analytics Access Token saknas. Lägg till GOOGLE_ANALYTICS_ACCESS_TOKEN i .env. Se docs/GOOGLE_ANALYTICS_SETUP.md för instruktioner.",
+        }
+      } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
+    }
+
+    // Hämta tidsperiod från query params (default: 30d)
+    const url = new URL(request.url);
+    const period = url.searchParams.get('period') || '30d';
+    const validPeriods = ['7d', '30d', '90d', '12mo'];
+    const finalPeriod = validPeriods.includes(period) ? period : '30d';
+    const dateRange = getDateRange(finalPeriod);
+
+    // Hämta data från Google Analytics API
+    try {
+      // Hämta aggregerad statistik
+      const statsResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        [],
+        ['sessions', 'totalUsers', 'screenPageViews'],
+        [dateRange]
+      );
+
+      // Hämta topp-sidor
+      const pagesResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        ['pagePath'],
+        ['screenPageViews'],
+        [dateRange]
+      );
+
+      // Hämta källor
+      const sourcesResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        ['sessionSource'],
+        ['sessions'],
+        [dateRange]
+      );
+
+      // Hämta enheter
+      const devicesResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        ['deviceCategory'],
+        ['sessions'],
+        [dateRange]
+      );
+
+      // Hämta tidsdata
+      const timeseriesResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        ['date'],
+        ['sessions'],
+        [dateRange]
+      );
+
+      // Transformera data till vårt format
+      const totalStats = statsResponse.totals?.[0]?.metricValues || [];
+      const data: AnalyticsData = {
+        totalVisits: parseInt(totalStats[0]?.value || '0', 10),
+        uniqueVisitors: parseInt(totalStats[1]?.value || '0', 10),
+        pageViews: parseInt(totalStats[2]?.value || '0', 10),
+        topPages: (pagesResponse.rows || [])
+          .slice(0, 10)
+          .map(row => ({
+            path: row.dimensionValues[0]?.value || '',
+            views: parseInt(row.metricValues[0]?.value || '0', 10),
+          })),
+        visitsByDay: (timeseriesResponse.rows || []).map(row => ({
+          date: row.dimensionValues[0]?.value || '',
+          visits: parseInt(row.metricValues[0]?.value || '0', 10),
+        })),
+        referrers: (sourcesResponse.rows || [])
+          .slice(0, 10)
+          .map(row => ({
+            source: row.dimensionValues[0]?.value || 'Direct',
+            visits: parseInt(row.metricValues[0]?.value || '0', 10),
+          })),
+        devices: {
+          desktop: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'desktop') 
+            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'desktop')!.metricValues[0]?.value || '0', 10)
+            : 0,
+          mobile: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'mobile')
+            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'mobile')!.metricValues[0]?.value || '0', 10)
+            : 0,
+          tablet: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'tablet')
+            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'tablet')!.metricValues[0]?.value || '0', 10)
+            : 0,
         },
-        note: "För att se riktig data, integrera Google Analytics Data API. För nu kan du använda länkarna ovan."
-      }
-    } as ApiResponse<{
-      enabled: boolean;
-      analytics: AnalyticsData;
-      links: { googleAnalytics: string | null; hotjar: string | null };
-      note: string;
-    }>);
+        lastUpdated: new Date().toISOString(),
+      };
+
+      return NextResponse.json({
+        success: true,
+        data: {
+          enabled: true,
+          analytics: data,
+        }
+      } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData }>);
+    } catch (apiError) {
+      console.error('[analytics] GA API error:', apiError);
+      return NextResponse.json({
+        success: false,
+        error: `Kunde inte hämta data från Google Analytics: ${apiError instanceof Error ? apiError.message : 'Okänt fel'}`,
+      }, { status: 500 });
+    }
   } catch (error) {
     console.error("[analytics] GET error:", error);
     return NextResponse.json(

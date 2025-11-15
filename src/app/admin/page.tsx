@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X, BarChart3, ExternalLink } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X, BarChart3 } from "lucide-react";
 import Link from "next/link";
 import { Lead, ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
@@ -21,13 +21,8 @@ interface AnalyticsData {
       tablet: number;
     };
     lastUpdated: string;
-  };
-  links?: {
-    googleAnalytics: string | null;
-    hotjar: string | null;
-  };
+  } | null;
   message?: string;
-  note?: string;
 }
 
 export default function AdminPage() {
@@ -209,10 +204,9 @@ export default function AdminPage() {
               </div>
               <Link
                 href="/admin/analytics"
-                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
               >
-                Visa mer
-                <ExternalLink className="w-4 h-4" />
+                Visa mer →
               </Link>
             </div>
             
@@ -242,68 +236,18 @@ export default function AdminPage() {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-3">
+                  <div>
                     <p className="text-sm text-gray-600">
-                      Analytics är aktiverat. För att se detaljerad statistik, använd länkarna nedan eller integrera Google Analytics API.
+                      {analyticsData.message || "Konfigurera Google Analytics för att se data."}
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {analyticsData.links?.googleAnalytics && (
-                        <a
-                          href={analyticsData.links.googleAnalytics}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          Google Analytics
-                        </a>
-                      )}
-                      {analyticsData.links?.hotjar && (
-                        <a
-                          href={analyticsData.links.hotjar}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm"
-                        >
-                          <ExternalLink className="w-4 h-4" />
-                          Hotjar Dashboard
-                        </a>
-                      )}
-                    </div>
                   </div>
                 )}
               </div>
             ) : (
-              <div className="space-y-3">
+              <div>
                 <p className="text-sm text-gray-600">
                   {analyticsData?.message || "Analytics är inte aktiverat. Aktivera det i .env för att se besöksstatistik."}
                 </p>
-                {analyticsData?.links && (analyticsData.links.googleAnalytics || analyticsData.links.hotjar) && (
-                  <div className="flex flex-wrap gap-2">
-                    {analyticsData.links.googleAnalytics && (
-                      <a
-                        href={analyticsData.links.googleAnalytics}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Google Analytics
-                      </a>
-                    )}
-                    {analyticsData.links.hotjar && (
-                      <a
-                        href={analyticsData.links.hotjar}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Hotjar Dashboard
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
             )}
           </div>

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, ExternalLink, TrendingUp, Users, Eye, Monitor, Smartphone, Tablet, Globe, Calendar, ArrowLeft } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Eye, Monitor, Smartphone, Tablet, Globe, Calendar, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { ApiResponse } from "@/lib/types";
 
@@ -20,13 +20,8 @@ interface AnalyticsData {
       tablet: number;
     };
     lastUpdated: string;
-  };
-  links?: {
-    googleAnalytics: string | null;
-    hotjar: string | null;
-  };
+  } | null;
   message?: string;
-  note?: string;
 }
 
 export default function AnalyticsPage() {
@@ -38,7 +33,7 @@ export default function AnalyticsPage() {
     const fetchAnalytics = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('/api/analytics');
+        const response = await fetch(`/api/analytics?period=${timeRange}`);
         if (response.ok) {
           const data = await response.json() as ApiResponse<AnalyticsData>;
           if (data.success && data.data) {
@@ -88,35 +83,9 @@ export default function AnalyticsPage() {
             <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
               <BarChart3 className="w-16 h-16 text-gray-300 mx-auto mb-4" />
               <h2 className="text-xl font-bold text-gray-900 mb-2">Analytics inte aktiverat</h2>
-              <p className="text-gray-600 mb-6">
+              <p className="text-gray-600">
                 {analyticsData?.message || "Aktivera analytics i .env för att se besöksstatistik."}
               </p>
-              {analyticsData?.links && (analyticsData.links.googleAnalytics || analyticsData.links.hotjar) && (
-                <div className="flex flex-wrap justify-center gap-3">
-                  {analyticsData.links.googleAnalytics && (
-                    <a
-                      href={analyticsData.links.googleAnalytics}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      Öppna Google Analytics
-                    </a>
-                  )}
-                  {analyticsData.links.hotjar && (
-                    <a
-                      href={analyticsData.links.hotjar}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-                    >
-                      <ExternalLink className="w-5 h-5" />
-                      Öppna Hotjar Dashboard
-                    </a>
-                  )}
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -144,43 +113,15 @@ export default function AnalyticsPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Analytics</h1>
                 <p className="text-gray-600">Besöksstatistik och användarinsikter</p>
               </div>
-              <div className="flex items-center gap-2">
-                <select
-                  value={timeRange}
-                  onChange={(e) => setTimeRange(e.target.value as "7d" | "30d" | "90d")}
-                  className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
-                >
-                  <option value="7d">Senaste 7 dagarna</option>
-                  <option value="30d">Senaste 30 dagarna</option>
-                  <option value="90d">Senaste 90 dagarna</option>
-                </select>
-                {analyticsData.links && (
-                  <div className="flex gap-2">
-                    {analyticsData.links.googleAnalytics && (
-                      <a
-                        href={analyticsData.links.googleAnalytics}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        GA Dashboard
-                      </a>
-                    )}
-                    {analyticsData.links.hotjar && (
-                      <a
-                        href={analyticsData.links.hotjar}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex items-center gap-2 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
-                      >
-                        <ExternalLink className="w-4 h-4" />
-                        Hotjar
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
+              <select
+                value={timeRange}
+                onChange={(e) => setTimeRange(e.target.value as "7d" | "30d" | "90d")}
+                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
+              >
+                <option value="7d">Senaste 7 dagarna</option>
+                <option value="30d">Senaste 30 dagarna</option>
+                <option value="90d">Senaste 90 dagarna</option>
+              </select>
             </div>
           </div>
 
@@ -297,48 +238,7 @@ export default function AnalyticsPage() {
             </div>
           )}
 
-          {/* Info Note */}
-          {analyticsData.note && (
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p className="text-sm text-blue-700">
-                💡 <strong>Tips:</strong> {analyticsData.note}
-              </p>
-            </div>
-          )}
 
-          {/* External Links */}
-          {analyticsData.links && (analyticsData.links.googleAnalytics || analyticsData.links.hotjar) && (
-            <div className="mt-8 bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">Externa dashboards</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                För mer detaljerad analys och avancerade rapporter, öppna dina externa analytics-dashboards:
-              </p>
-              <div className="flex flex-wrap gap-3">
-                {analyticsData.links.googleAnalytics && (
-                  <a
-                    href={analyticsData.links.googleAnalytics}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                    Öppna Google Analytics Dashboard
-                  </a>
-                )}
-                {analyticsData.links.hotjar && (
-                  <a
-                    href={analyticsData.links.hotjar}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 bg-purple-600 text-white px-6 py-3 rounded-lg hover:bg-purple-700 transition-colors"
-                  >
-                    <ExternalLink className="w-5 h-5" />
-                    Öppna Hotjar Dashboard
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </div>
