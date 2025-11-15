@@ -1,10 +1,34 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X } from "lucide-react";
+import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X, BarChart3, ExternalLink } from "lucide-react";
 import Link from "next/link";
 import { Lead, ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
+
+interface AnalyticsData {
+  enabled: boolean;
+  analytics?: {
+    totalVisits: number;
+    uniqueVisitors: number;
+    pageViews: number;
+    topPages: Array<{ path: string; views: number }>;
+    visitsByDay: Array<{ date: string; visits: number }>;
+    referrers: Array<{ source: string; visits: number }>;
+    devices: {
+      desktop: number;
+      mobile: number;
+      tablet: number;
+    };
+    lastUpdated: string;
+  };
+  links?: {
+    googleAnalytics: string | null;
+    hotjar: string | null;
+  };
+  message?: string;
+  note?: string;
+}
 
 export default function AdminPage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -14,6 +38,8 @@ export default function AdminPage() {
   const [bestChoiceProviderId, setBestChoiceProviderId] = useState<string | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
+  const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
 
   useEffect(() => {
     const fetchLeads = async () => {
@@ -61,9 +87,27 @@ export default function AdminPage() {
       }
     };
 
+    const fetchAnalytics = async () => {
+      try {
+        setIsLoadingAnalytics(true);
+        const response = await fetch('/api/analytics');
+        if (response.ok) {
+          const data = await response.json() as ApiResponse<AnalyticsData>;
+          if (data.success && data.data) {
+            setAnalyticsData(data.data);
+          }
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av analytics:', error);
+      } finally {
+        setIsLoadingAnalytics(false);
+      }
+    };
+
     fetchLeads();
     fetchProviders();
     fetchSettings();
+    fetchAnalytics();
   }, []);
 
   const filteredLeads = filter === "all" 
@@ -144,8 +188,124 @@ export default function AdminPage() {
                   <span className="hidden sm:inline">Prisuppdateringar</span>
                   <span className="sm:hidden">Priser</span>
                 </Link>
+                <Link
+                  href="/admin/analytics"
+                  className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                >
+                  <BarChart3 className="w-4 h-4" />
+                  <span className="hidden sm:inline">Analytics</span>
+                  <span className="sm:hidden">Stats</span>
+                </Link>
               </div>
             </div>
+          </div>
+
+          {/* Analytics Quick View */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <BarChart3 className="w-5 h-5 text-indigo-600" />
+                <h2 className="text-xl font-bold text-gray-900">Besöksstatistik</h2>
+              </div>
+              <Link
+                href="/admin/analytics"
+                className="text-sm text-indigo-600 hover:text-indigo-700 font-medium flex items-center gap-1"
+              >
+                Visa mer
+                <ExternalLink className="w-4 h-4" />
+              </Link>
+            </div>
+            
+            {isLoadingAnalytics ? (
+              <p className="text-gray-500">Laddar analytics...</p>
+            ) : analyticsData && analyticsData.enabled ? (
+              <div>
+                {analyticsData.analytics ? (
+                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Totalt besök</p>
+                      <p className="text-2xl font-bold text-gray-900">{analyticsData.analytics.totalVisits.toLocaleString('sv-SE')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Unika besökare</p>
+                      <p className="text-2xl font-bold text-gray-900">{analyticsData.analytics.uniqueVisitors.toLocaleString('sv-SE')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Sidvisningar</p>
+                      <p className="text-2xl font-bold text-gray-900">{analyticsData.analytics.pageViews.toLocaleString('sv-SE')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Senast uppdaterad</p>
+                      <p className="text-sm font-medium text-gray-600">
+                        {new Date(analyticsData.analytics.lastUpdated).toLocaleDateString('sv-SE')}
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    <p className="text-sm text-gray-600">
+                      Analytics är aktiverat. För att se detaljerad statistik, använd länkarna nedan eller integrera Google Analytics API.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {analyticsData.links?.googleAnalytics && (
+                        <a
+                          href={analyticsData.links.googleAnalytics}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Google Analytics
+                        </a>
+                      )}
+                      {analyticsData.links?.hotjar && (
+                        <a
+                          href={analyticsData.links.hotjar}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+                        >
+                          <ExternalLink className="w-4 h-4" />
+                          Hotjar Dashboard
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-gray-600">
+                  {analyticsData?.message || "Analytics är inte aktiverat. Aktivera det i .env för att se besöksstatistik."}
+                </p>
+                {analyticsData?.links && (analyticsData.links.googleAnalytics || analyticsData.links.hotjar) && (
+                  <div className="flex flex-wrap gap-2">
+                    {analyticsData.links.googleAnalytics && (
+                      <a
+                        href={analyticsData.links.googleAnalytics}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 bg-blue-50 text-blue-700 px-4 py-2 rounded-lg hover:bg-blue-100 transition-colors text-sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Google Analytics
+                      </a>
+                    )}
+                    {analyticsData.links.hotjar && (
+                      <a
+                        href={analyticsData.links.hotjar}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="flex items-center gap-2 bg-purple-50 text-purple-700 px-4 py-2 rounded-lg hover:bg-purple-100 transition-colors text-sm"
+                      >
+                        <ExternalLink className="w-4 h-4" />
+                        Hotjar Dashboard
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Stats */}

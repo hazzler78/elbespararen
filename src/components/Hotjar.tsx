@@ -59,6 +59,34 @@ export default function Hotjar() {
     };
   }, [skipConsent, analyticsEnabled, hotjarId]);
 
+  // Verify Hotjar loaded after script should have loaded
+  useEffect(() => {
+    if (!shouldLoad) return;
+
+    // Check if Hotjar is loaded after a delay
+    const checkHotjarLoaded = () => {
+      setTimeout(() => {
+        if (typeof window !== 'undefined') {
+          if ((window as any).hj) {
+            console.log('[Hotjar] ✅ Hotjar initialized successfully');
+            console.log('[Hotjar] window.hj available:', (window as any).hj);
+            // Check if Hotjar script is in DOM
+            const hotjarScript = document.querySelector('script[src*="static.hotjar.com"]');
+            if (hotjarScript) {
+              console.log('[Hotjar] ✅ Hotjar script found in DOM');
+            } else {
+              console.warn('[Hotjar] ⚠️ Hotjar script not found in DOM');
+            }
+          } else {
+            console.warn('[Hotjar] ⚠️ window.hj not found - Hotjar may not have loaded');
+          }
+        }
+      }, 2000); // Check after 2 seconds
+    };
+
+    checkHotjarLoaded();
+  }, [shouldLoad]);
+
   // Only render script if should load
   if (!shouldLoad) {
     return null;
