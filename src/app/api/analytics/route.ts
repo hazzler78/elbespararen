@@ -335,10 +335,31 @@ export async function GET(request: NextRequest) {
 
       // Transformera data till vårt format
       const totalStats = statsResponse.totals?.[0]?.metricValues || [];
+      
+      // Beräkna totals från detaljdata som fallback
+      const totalPageViews = (pagesResponse.rows || []).reduce((sum, row) => 
+        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      );
+      const totalSessions = (sourcesResponse.rows || []).reduce((sum, row) => 
+        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      );
+      const totalDevices = (devicesResponse.rows || []).reduce((sum, row) => 
+        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      );
+      
+      // Debug: Logga vad vi får från API
+      console.log('[analytics] Total stats from API:', {
+        totals: totalStats,
+        calculatedSessions: totalSessions,
+        calculatedPageViews: totalPageViews,
+        calculatedDevices: totalDevices,
+      });
+      
       const data: AnalyticsData = {
-        totalVisits: parseInt(totalStats[0]?.value || '0', 10),
-        uniqueVisitors: parseInt(totalStats[1]?.value || '0', 10),
-        pageViews: parseInt(totalStats[2]?.value || '0', 10),
+        // Använd totals från API om tillgängligt, annars beräkna från detaljdata
+        totalVisits: totalStats[0]?.value ? parseInt(totalStats[0].value, 10) : (totalSessions || totalDevices),
+        uniqueVisitors: totalStats[1]?.value ? parseInt(totalStats[1].value, 10) : totalDevices,
+        pageViews: totalStats[2]?.value ? parseInt(totalStats[2].value, 10) : totalPageViews,
         topPages: (pagesResponse.rows || [])
           .slice(0, 10)
           .map(row => ({
