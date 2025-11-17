@@ -27,7 +27,7 @@ interface AnalyticsData {
 export default function AnalyticsPage() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<"7d" | "30d" | "90d">("30d");
+  const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d" | "90d">("30d");
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -115,9 +115,10 @@ export default function AnalyticsPage() {
               </div>
               <select
                 value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as "7d" | "30d" | "90d")}
+                onChange={(e) => setTimeRange(e.target.value as "24h" | "7d" | "30d" | "90d")}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent text-sm"
               >
+                <option value="24h">Senaste 24 timmarna</option>
                 <option value="7d">Senaste 7 dagarna</option>
                 <option value="30d">Senaste 30 dagarna</option>
                 <option value="90d">Senaste 90 dagarna</option>

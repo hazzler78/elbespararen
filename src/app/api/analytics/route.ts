@@ -190,6 +190,9 @@ function getDateRange(period: string): { startDate: string; endDate: string } {
   const startDate = new Date();
   
   switch (period) {
+    case '24h':
+      startDate.setHours(endDate.getHours() - 24);
+      break;
     case '7d':
       startDate.setDate(endDate.getDate() - 7);
       break;
@@ -279,7 +282,7 @@ export async function GET(request: NextRequest) {
     // Hämta tidsperiod från query params (default: 30d)
     const url = new URL(request.url);
     const period = url.searchParams.get('period') || '30d';
-    const validPeriods = ['7d', '30d', '90d', '12mo'];
+    const validPeriods = ['24h', '7d', '30d', '90d', '12mo'];
     const finalPeriod = validPeriods.includes(period) ? period : '30d';
     const dateRange = getDateRange(finalPeriod);
 
