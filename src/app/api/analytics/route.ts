@@ -206,7 +206,7 @@ function getDateRange(period: string): { startDate: string; endDate: string } {
       startDate.setMonth(endDate.getMonth() - 12);
       break;
     default:
-      startDate.setDate(endDate.getDate() - 30);
+      startDate.setHours(endDate.getHours() - 24);
   }
   
   return {
@@ -279,11 +279,11 @@ export async function GET(request: NextRequest) {
       } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
     }
 
-    // Hämta tidsperiod från query params (default: 30d)
+    // Hämta tidsperiod från query params (default: 24h)
     const url = new URL(request.url);
-    const period = url.searchParams.get('period') || '30d';
+    const period = url.searchParams.get('period') || '24h';
     const validPeriods = ['24h', '7d', '30d', '90d', '12mo'];
-    const finalPeriod = validPeriods.includes(period) ? period : '30d';
+    const finalPeriod = validPeriods.includes(period) ? period : '24h';
     const dateRange = getDateRange(finalPeriod);
 
     // Hämta data från Google Analytics API

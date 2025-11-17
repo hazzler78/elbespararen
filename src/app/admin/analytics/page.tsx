@@ -27,7 +27,7 @@ interface AnalyticsData {
 export default function AnalyticsPage() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d" | "90d">("30d");
+  const [timeRange, setTimeRange] = useState<"24h" | "7d" | "30d" | "90d">("24h");
 
   useEffect(() => {
     const fetchAnalytics = async () => {
