@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types";
 
-// Node.js runtime krävs för JWT-signering med service account
-// Edge runtime stödjer inte crypto-bibliotek som behövs för JWT
-export const runtime = 'nodejs';
+// Edge runtime krävs av next-on-pages för Cloudflare
+export const runtime = 'edge';
 
 /**
  * Google Analytics Data API response types
@@ -34,16 +33,61 @@ interface AnalyticsData {
 }
 
 /**
+ * Konvertera PEM private key till CryptoKey för Web Crypto API
+ */
+async function importPrivateKey(pem: string): Promise<CryptoKey> {
+  // Ta bort PEM headers och newlines
+  const pemHeader = '-----BEGIN PRIVATE KEY-----';
+  const pemFooter = '-----END PRIVATE KEY-----';
+  const pemContents = pem
+    .replace(pemHeader, '')
+    .replace(pemFooter, '')
+    .replace(/\s/g, '');
+  
+  // Konvertera base64 till ArrayBuffer
+  const binaryDer = Uint8Array.from(atob(pemContents), c => c.charCodeAt(0));
+  
+  // Importera nyckeln
+  return await crypto.subtle.importKey(
+    'pkcs8',
+    binaryDer.buffer,
+    {
+      name: 'RSASSA-PKCS1-v1_5',
+      hash: 'SHA-256',
+    },
+    false,
+    ['sign']
+  );
+}
+
+/**
+ * Base64URL encode
+ */
+function base64url(str: string): string {
+  // I Edge runtime använder vi TextEncoder och base64
+  const encoder = new TextEncoder();
+  const data = encoder.encode(str);
+  // Konvertera Uint8Array till string för btoa
+  let binary = '';
+  for (let i = 0; i < data.length; i++) {
+    binary += String.fromCharCode(data[i]);
+  }
+  const base64 = btoa(binary);
+  return base64
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=/g, '');
+}
+
+/**
  * Hämta OAuth access token från service account credentials
+ * Använder Web Crypto API för Edge runtime
  */
 async function getAccessTokenFromServiceAccount(serviceAccountJson: string): Promise<string> {
   try {
     const credentials = JSON.parse(serviceAccountJson);
     const { client_email, private_key } = credentials;
 
-    // Använd Node.js crypto för att skapa JWT
-    const crypto = await import('crypto');
-    
     const now = Math.floor(Date.now() / 1000);
     const header = {
       alg: 'RS256',
@@ -59,27 +103,29 @@ async function getAccessTokenFromServiceAccount(serviceAccountJson: string): Pro
     };
 
     // Skapa JWT (base64url encoding)
-    const base64url = (str: string) => {
-      return Buffer.from(str)
-        .toString('base64')
-        .replace(/\+/g, '-')
-        .replace(/\//g, '_')
-        .replace(/=/g, '');
-    };
-    
     const encodedHeader = base64url(JSON.stringify(header));
     const encodedClaim = base64url(JSON.stringify(claim));
     const signatureInput = `${encodedHeader}.${encodedClaim}`;
     
-    // Signera med private key
-    const sign = crypto.createSign('RSA-SHA256');
-    sign.update(signatureInput);
-    const signature = sign.sign(private_key, 'base64')
+    // Importera private key och signera med Web Crypto API
+    const cryptoKey = await importPrivateKey(private_key);
+    const encoder = new TextEncoder();
+    const data = encoder.encode(signatureInput);
+    const signature = await crypto.subtle.sign(
+      { name: 'RSASSA-PKCS1-v1_5' },
+      cryptoKey,
+      data
+    );
+    
+    // Konvertera signature till base64url
+    const signatureArray = Array.from(new Uint8Array(signature));
+    const signatureBase64 = btoa(String.fromCharCode(...signatureArray));
+    const signatureBase64url = signatureBase64
       .replace(/\+/g, '-')
       .replace(/\//g, '_')
       .replace(/=/g, '');
     
-    const jwt = `${signatureInput}.${signature}`;
+    const jwt = `${signatureInput}.${signatureBase64url}`;
     
     // Exchange JWT för access token
     const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
