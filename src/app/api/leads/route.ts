@@ -158,3 +158,77 @@ async function sendTelegramNotification(lead: Lead) {
   }
 }
 
+export async function PUT(req: NextRequest) {
+  try {
+    const body = await req.json() as { 
+      id: string; 
+      status?: "new" | "contacted" | "converted" | "rejected";
+      email?: string;
+      phone?: string;
+    };
+    const { id, status, email, phone } = body;
+
+    if (!id) {
+      return NextResponse.json(
+        { success: false, error: "Lead ID krävs" },
+        { status: 400 }
+      );
+    }
+
+    // Hämta D1-binding från Edge-runtime
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    const db = createDatabaseFromBinding(env?.DB);
+
+    // Hämta befintlig lead
+    const existing = await db.getLead(String(id));
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, error: "Lead hittades inte" },
+        { status: 404 }
+      );
+    }
+
+    // Bygg upp uppdatering
+    const partial: Partial<Lead> = {};
+    if (status) {
+      partial.status = status;
+    }
+    if (email !== undefined) {
+      partial.email = email;
+    }
+    if (phone !== undefined) {
+      partial.phone = phone;
+    }
+
+    const updatedLead = await db.updateLead(String(id), partial);
+
+    return NextResponse.json({
+      success: true,
+      data: updatedLead
+    });
+  } catch (error) {
+    console.error("[leads] PUT error:", error);
+    const message = error instanceof Error ? error.message : "Kunde inte uppdatera lead";
+    return NextResponse.json(
+      { success: false, error: message },
+      { status: 500 }
+    );
+  }
+}
+
