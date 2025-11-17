@@ -226,17 +226,18 @@ export async function GET(request: NextRequest) {
             source: row.dimensionValues[0]?.value || 'Direct',
             visits: parseInt(row.metricValues[0]?.value || '0', 10),
           })),
-        devices: {
-          desktop: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'desktop') 
-            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'desktop')!.metricValues[0]?.value || '0', 10)
-            : 0,
-          mobile: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'mobile')
-            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'mobile')!.metricValues[0]?.value || '0', 10)
-            : 0,
-          tablet: (devicesResponse.rows || []).find(r => r.dimensionValues[0]?.value === 'tablet')
-            ? parseInt(devicesResponse.rows.find(r => r.dimensionValues[0]?.value === 'tablet')!.metricValues[0]?.value || '0', 10)
-            : 0,
-        },
+        devices: (() => {
+          const deviceRows = devicesResponse.rows || [];
+          const desktopRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'desktop');
+          const mobileRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'mobile');
+          const tabletRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'tablet');
+          
+          return {
+            desktop: desktopRow ? parseInt(desktopRow.metricValues[0]?.value || '0', 10) : 0,
+            mobile: mobileRow ? parseInt(mobileRow.metricValues[0]?.value || '0', 10) : 0,
+            tablet: tabletRow ? parseInt(tabletRow.metricValues[0]?.value || '0', 10) : 0,
+          };
+        })(),
         lastUpdated: new Date().toISOString(),
       };
 
