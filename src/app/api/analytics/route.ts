@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types";
 
-// Edge runtime krävs av next-on-pages
-export const runtime = 'edge';
+// Node.js runtime krävs för JWT-signering med service account
+// Edge runtime stödjer inte crypto-bibliotek som behövs för JWT
+export const runtime = 'nodejs';
 
 /**
  * Google Analytics Data API response types
@@ -33,10 +34,74 @@ interface AnalyticsData {
 }
 
 /**
- * OBS: Service Account kräver JWT-signering som inte fungerar i Edge runtime.
- * Använd GOOGLE_ANALYTICS_ACCESS_TOKEN direkt istället.
- * För att få access token, se docs/GOOGLE_ANALYTICS_SETUP.md
+ * Hämta OAuth access token från service account credentials
  */
+async function getAccessTokenFromServiceAccount(serviceAccountJson: string): Promise<string> {
+  try {
+    const credentials = JSON.parse(serviceAccountJson);
+    const { client_email, private_key } = credentials;
+
+    // Använd Node.js crypto för att skapa JWT
+    const crypto = await import('crypto');
+    
+    const now = Math.floor(Date.now() / 1000);
+    const header = {
+      alg: 'RS256',
+      typ: 'JWT',
+    };
+
+    const claim = {
+      iss: client_email,
+      scope: 'https://www.googleapis.com/auth/analytics.readonly',
+      aud: 'https://oauth2.googleapis.com/token',
+      exp: now + 3600,
+      iat: now,
+    };
+
+    // Skapa JWT (base64url encoding)
+    const base64url = (str: string) => {
+      return Buffer.from(str)
+        .toString('base64')
+        .replace(/\+/g, '-')
+        .replace(/\//g, '_')
+        .replace(/=/g, '');
+    };
+    
+    const encodedHeader = base64url(JSON.stringify(header));
+    const encodedClaim = base64url(JSON.stringify(claim));
+    const signatureInput = `${encodedHeader}.${encodedClaim}`;
+    
+    // Signera med private key
+    const sign = crypto.createSign('RSA-SHA256');
+    sign.update(signatureInput);
+    const signature = sign.sign(private_key, 'base64')
+      .replace(/\+/g, '-')
+      .replace(/\//g, '_')
+      .replace(/=/g, '');
+    
+    const jwt = `${signatureInput}.${signature}`;
+    
+    // Exchange JWT för access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
+        assertion: jwt,
+      }),
+    });
+
+    if (!tokenResponse.ok) {
+      const errorText = await tokenResponse.text();
+      throw new Error(`Failed to get access token: ${tokenResponse.statusText} - ${errorText}`);
+    }
+
+    const tokenData = await tokenResponse.json();
+    return tokenData.access_token;
+  } catch (error) {
+    throw new Error(`Token error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+  }
+}
 
 /**
  * Hämta data från Google Analytics Data API
@@ -110,6 +175,7 @@ export async function GET(request: NextRequest) {
     const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
     const gaPropertyId = process.env.GOOGLE_ANALYTICS_PROPERTY_ID;
     const gaAccessToken = process.env.GOOGLE_ANALYTICS_ACCESS_TOKEN;
+    const gaServiceAccount = process.env.GOOGLE_APPLICATION_CREDENTIALS;
 
     // Om analytics inte är aktiverat
     if (!analyticsEnabled) {
@@ -134,10 +200,24 @@ export async function GET(request: NextRequest) {
       } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
     }
 
-    // Hämta access token
-    // OBS: Service Account kräver JWT-signering som inte fungerar i Edge runtime
-    // Använd GOOGLE_ANALYTICS_ACCESS_TOKEN direkt (se docs/GOOGLE_ANALYTICS_SETUP.md)
-    const accessToken = gaAccessToken;
+    // Hämta access token - antingen direkt eller från service account
+    let accessToken = gaAccessToken;
+    
+    if (!accessToken && gaServiceAccount) {
+      try {
+        accessToken = await getAccessTokenFromServiceAccount(gaServiceAccount);
+      } catch (tokenError) {
+        console.error('[analytics] Service account token error:', tokenError);
+        return NextResponse.json({
+          success: true,
+          data: {
+            enabled: true,
+            analytics: null,
+            message: `Kunde inte hämta access token från service account: ${tokenError instanceof Error ? tokenError.message : 'Okänt fel'}. Kontrollera att GOOGLE_APPLICATION_CREDENTIALS är korrekt formaterad JSON.`,
+          }
+        } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
+      }
+    }
 
     if (!accessToken) {
       return NextResponse.json({
@@ -145,7 +225,7 @@ export async function GET(request: NextRequest) {
         data: {
           enabled: true,
           analytics: null,
-          message: "Google Analytics Access Token saknas. Lägg till GOOGLE_ANALYTICS_ACCESS_TOKEN i .env. Se docs/GOOGLE_ANALYTICS_SETUP.md för instruktioner.",
+          message: "Google Analytics Access Token saknas. Lägg till antingen GOOGLE_ANALYTICS_ACCESS_TOKEN eller GOOGLE_APPLICATION_CREDENTIALS i .env. Se docs/GOOGLE_ANALYTICS_SETUP.md för instruktioner.",
         }
       } as ApiResponse<{ enabled: boolean; analytics: AnalyticsData | null; message: string }>);
     }
