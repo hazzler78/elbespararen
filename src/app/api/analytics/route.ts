@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types";
+import { createClient } from "@supabase/supabase-js";
 
 // Edge runtime krävs av next-on-pages för Cloudflare
 export const runtime = 'edge';
@@ -21,6 +22,7 @@ interface AnalyticsData {
   totalVisits: number;
   uniqueVisitors: number;
   pageViews: number;
+  analyzedBills: number;
   topPages: Array<{ path: string; views: number }>;
   visitsByDay: Array<{ date: string; visits: number }>;
   referrers: Array<{ source: string; visits: number }>;
@@ -216,6 +218,95 @@ function getDateRange(period: string): { startDate: string; endDate: string } {
 }
 
 /**
+ * Räkna antal analyserade fakturor från Supabase Storage
+ */
+async function countAnalyzedBills(period?: string): Promise<number> {
+  try {
+    // Hämta Supabase-credentials från environment
+    const supabaseUrl = 
+      (globalThis as any).getRequestContext?.()?.env?.SUPABASE_URL ||
+      (globalThis as any).env?.SUPABASE_URL ||
+      (process.env as any).SUPABASE_URL;
+    
+    const supabaseKey = 
+      (globalThis as any).getRequestContext?.()?.env?.SUPABASE_SERVICE_KEY ||
+      (globalThis as any).env?.SUPABASE_SERVICE_KEY ||
+      (process.env as any).SUPABASE_SERVICE_KEY;
+
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('[analytics] Supabase credentials saknas för att räkna fakturor');
+      return 0;
+    }
+
+    const supabase = createClient(supabaseUrl, supabaseKey, {
+      auth: { persistSession: false },
+    });
+
+    const bucket = "bill_images";
+    let count = 0;
+
+    // Om period angiven, filtrera baserat på datum
+    if (period) {
+      const dateRange = getDateRange(period);
+      const start = new Date(dateRange.startDate);
+      const end = new Date(dateRange.endDate);
+      
+      // Lista filer för varje dag i perioden
+      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
+        const datePrefix = d.toISOString().slice(0, 10); // YYYY-MM-DD
+        const path = `bill-uploads/${datePrefix}`;
+        
+        const { data, error } = await supabase.storage
+          .from(bucket)
+          .list(path, { limit: 1000 });
+        
+        if (!error && data) {
+          // Räkna endast filer (inte mappar) - filer har ett id
+          count += data.filter(item => item.id !== null).length;
+        }
+      }
+      
+      return count;
+    }
+
+    // Räkna alla fakturor (ingen period-filter)
+    // Rekursivt lista alla mappar i bill-uploads
+    const { data: folders, error: foldersError } = await supabase.storage
+      .from(bucket)
+      .list("bill-uploads", { limit: 1000 });
+
+    if (foldersError) {
+      console.error('[analytics] Error listing folders from Supabase:', foldersError);
+      return 0;
+    }
+
+    if (!folders) {
+      return 0;
+    }
+
+    // Lista filer i varje datum-mapp
+    for (const folder of folders) {
+      if (folder.id === null && folder.name) {
+        // Detta är en mapp (datum-mapp)
+        const path = `bill-uploads/${folder.name}`;
+        const { data: files, error: filesError } = await supabase.storage
+          .from(bucket)
+          .list(path, { limit: 1000 });
+        
+        if (!filesError && files) {
+          count += files.filter(item => item.id !== null).length;
+        }
+      }
+    }
+
+    return count;
+  } catch (error) {
+    console.error('[analytics] Error in countAnalyzedBills:', error);
+    return 0;
+  }
+}
+
+/**
  * GET /api/analytics
  * Hämtar analytics-data från Google Analytics Data API
  */
@@ -333,6 +424,9 @@ export async function GET(request: NextRequest) {
         [dateRange]
       );
 
+      // Räkna analyserade fakturor från Supabase
+      const analyzedBillsCount = await countAnalyzedBills(finalPeriod);
+
       // Transformera data till vårt format
       const totalStats = statsResponse.totals?.[0]?.metricValues || [];
       
@@ -360,6 +454,7 @@ export async function GET(request: NextRequest) {
         totalVisits: totalStats[0]?.value ? parseInt(totalStats[0].value, 10) : (totalSessions || totalDevices),
         uniqueVisitors: totalStats[1]?.value ? parseInt(totalStats[1].value, 10) : totalDevices,
         pageViews: totalStats[2]?.value ? parseInt(totalStats[2].value, 10) : totalPageViews,
+        analyzedBills: analyzedBillsCount,
         topPages: (pagesResponse.rows || [])
           .slice(0, 10)
           .map(row => ({
