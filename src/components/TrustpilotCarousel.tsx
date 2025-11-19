@@ -147,6 +147,15 @@ const placeholderReviews: TrustpilotReview[] = [
     fullReviewText: "Min Pappa hade Eon betala månadsavgift påslag påslag sparar nu ca 5000 kr på 1 år.",
     image: "",
     date: "2025-06-07"
+  },
+  {
+    id: "15",
+    name: "Ulf Åberg",
+    rating: 5,
+    reviewText: "Elens Robin Hood är Mathias Nilsson, från södra Halland. Han har järn- och el koll som få. Helt suverän hjälpsamhet och vänlighet, samt kompetens.",
+    fullReviewText: "Elens Robin Hood är Mathias Nilsson, från södra Halland. Han har järn- och el koll som få. Vilken hjälpsamhet i denna djungel där priser läggs på av elbolagen och där vi konsumenter får betala det ena efter det andra, men som inte blir oss till gagn, utan el-bolagen. Helt suverän hjälpsamhet och vänlighet, samt kompetens. Min fru sa: Finns det sådana människor idag? Ja, en heter Mathias Nilsson, svarade jag efter att ha sett honom på Hallands nytt. Tack gode Gud för att det finns ljus i vår mörka tidsålder.",
+    image: "",
+    date: "2025-11-18"
   }
 ];
 
