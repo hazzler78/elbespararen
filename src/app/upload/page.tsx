@@ -94,18 +94,12 @@ export default function UploadPage() {
           </p>
         </motion.div>
 
-        {/* Upload Card */}
-        <UploadCard
-          onUploadSuccess={handleUploadSuccess}
-          onUploadError={handleUploadError}
-        />
-
-        {/* Alternative: View contracts without invoice */}
+        {/* Alternative: View contracts without invoice - Moved up */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="mt-8 text-center"
+          transition={{ delay: 0.1 }}
+          className="mb-8 text-center"
         >
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -139,6 +133,12 @@ export default function UploadPage() {
             </p>
           </div>
         </motion.div>
+
+        {/* Upload Card */}
+        <UploadCard
+          onUploadSuccess={handleUploadSuccess}
+          onUploadError={handleUploadError}
+        />
 
         {/* Info */}
         <motion.div
