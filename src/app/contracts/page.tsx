@@ -137,13 +137,13 @@ export default function ContractsPage() {
                     Visar avtal för {postalCode}
                   </p>
                   <p className="text-sm text-blue-600">
-                    Ange din förbrukning på nästa steg för att se exakta priser
+                    Ange din förbrukning nedan för att se exakta priser
                   </p>
                 </div>
               </div>
             </div>
 
-            {/* Provider Comparison */}
+            {/* Provider Comparison - "Bästa alternativen" is sticky when scrolling */}
             {mockBillData && savings && (
               <ProviderComparison 
                 billData={mockBillData} 

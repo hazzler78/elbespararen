@@ -429,8 +429,8 @@ export default function ProviderComparison({
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="text-center">
+      {/* Header - Sticky on contracts page */}
+      <div className={`text-center ${enableConsumptionEntry ? 'sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 mb-6 border-b border-border shadow-sm' : ''}`}>
         <h2 className="text-2xl font-bold mb-2">Bästa alternativen för dig</h2>
         {enableConsumptionEntry ? (
           <div className="flex items-center justify-center gap-3 text-muted">
