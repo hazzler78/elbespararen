@@ -94,82 +94,6 @@ export default function UploadPage() {
           </p>
         </motion.div>
 
-        {/* Example Images Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="mb-12 max-w-4xl mx-auto"
-        >
-          <div className="grid grid-cols-2 gap-4 md:gap-6">
-            {/* Good Example */}
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center justify-center gap-2">
-                <span className="text-2xl">✓</span>
-                Bra exempel
-              </h3>
-              <div className="bg-white rounded-lg border-2 border-green-200 p-4 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedImage({
-                      src: "/good-invoice-example.jpg",
-                      alt: "Bra exempel på faktura",
-                      caption: "Bra exempel – tydlig faktura med elhandel och specifikationer",
-                    })
-                  }
-                  aria-label="Förstora bra fakturaexempel"
-                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
-                >
-                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                    <img 
-                      src="/good-invoice-example.jpg" 
-                      alt="Bra exempel på faktura" 
-                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
-                    />
-                  </div>
-                </button>
-                <p className="text-sm text-muted">
-                  Tydlig text, rätt faktura (elhandel), visar specifikationerna
-                </p>
-              </div>
-            </div>
-
-            {/* Bad Example */}
-            <div className="text-center">
-              <h3 className="text-lg font-semibold mb-3 text-red-600 flex items-center justify-center gap-2">
-                <span className="text-2xl">✗</span>
-                Dåligt exempel
-              </h3>
-              <div className="bg-white rounded-lg border-2 border-red-200 p-4 shadow-sm">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSelectedImage({
-                      src: "/bad-invoice-example.jpg",
-                      alt: "Dåligt exempel på faktura",
-                      caption: "Dåligt exempel – otydlig text och bara elnät utan elhandel",
-                    })
-                  }
-                  aria-label="Förstora dåligt fakturaexempel"
-                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
-                >
-                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
-                    <img 
-                      src="/bad-invoice-example.jpg" 
-                      alt="Dåligt exempel på faktura" 
-                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
-                    />
-                  </div>
-                </button>
-                <p className="text-sm text-muted">
-                  Otydlig text, bara elnät, elhandel saknas
-                </p>
-              </div>
-            </div>
-          </div>
-        </motion.div>
-
         {/* Upload Card */}
         <UploadCard
           onUploadSuccess={handleUploadSuccess}
@@ -239,6 +163,82 @@ export default function UploadPage() {
                 <span>Du får en tydlig rapport med besparingspotential</span>
               </li>
             </ul>
+          </div>
+        </motion.div>
+
+        {/* Example Images Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mt-12 max-w-4xl mx-auto"
+        >
+          <div className="grid grid-cols-2 gap-4 md:gap-6">
+            {/* Good Example */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-3 text-green-600 flex items-center justify-center gap-2">
+                <span className="text-2xl">✓</span>
+                Bra exempel
+              </h3>
+              <div className="bg-white rounded-lg border-2 border-green-200 p-4 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedImage({
+                      src: "/good-invoice-example.jpg",
+                      alt: "Bra exempel på faktura",
+                      caption: "Bra exempel – tydlig faktura med elhandel och specifikationer",
+                    })
+                  }
+                  aria-label="Förstora bra fakturaexempel"
+                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                >
+                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                    <img
+                      src="/good-invoice-example.jpg"
+                      alt="Bra exempel på faktura"
+                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
+                    />
+                  </div>
+                </button>
+                <p className="text-sm text-muted">
+                  Tydlig text, rätt faktura (elhandel), visar specifikationerna
+                </p>
+              </div>
+            </div>
+
+            {/* Bad Example */}
+            <div className="text-center">
+              <h3 className="text-lg font-semibold mb-3 text-red-600 flex items-center justify-center gap-2">
+                <span className="text-2xl">✗</span>
+                Dåligt exempel
+              </h3>
+              <div className="bg-white rounded-lg border-2 border-red-200 p-4 shadow-sm">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSelectedImage({
+                      src: "/bad-invoice-example.jpg",
+                      alt: "Dåligt exempel på faktura",
+                      caption: "Dåligt exempel – otydlig text och bara elnät utan elhandel",
+                    })
+                  }
+                  aria-label="Förstora dåligt fakturaexempel"
+                  className="block w-full focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 rounded-lg"
+                >
+                  <div className="aspect-[3/4] bg-gray-100 rounded-lg overflow-hidden mb-3">
+                    <img
+                      src="/bad-invoice-example.jpg"
+                      alt="Dåligt exempel på faktura"
+                      className="w-full h-full object-cover cursor-zoom-in transition-transform duration-200 hover:scale-[1.02]"
+                    />
+                  </div>
+                </button>
+                <p className="text-sm text-muted">
+                  Otydlig text, bara elnät, elhandel saknas
+                </p>
+              </div>
+            </div>
           </div>
         </motion.div>
 
