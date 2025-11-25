@@ -1,14 +1,73 @@
 "use client";
 
-import { motion } from "framer-motion";
-import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Eye, TrendingDown, Shield, ArrowRight, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 
 export default function Home() {
+  const [isBannerOpen, setIsBannerOpen] = useState(false);
+
   return (
     <main className="min-h-screen">
+      {/* Compact dropdown banner */}
+      <section className="relative bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 z-50">
+        <div className="max-w-6xl mx-auto relative">
+          <button
+            onClick={() => setIsBannerOpen(!isBannerOpen)}
+            className="w-full px-4 py-3 flex items-center justify-between hover:bg-primary/5 transition-colors"
+          >
+            <span className="text-sm font-semibold text-gray-900">
+              Teckna elavtal direkt
+            </span>
+            {isBannerOpen ? (
+              <ChevronUp className="w-4 h-4 text-gray-600" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-gray-600" />
+            )}
+          </button>
+          
+          <AnimatePresence>
+            {isBannerOpen && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.3 }}
+                className="absolute top-full left-0 right-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 shadow-lg overflow-hidden"
+                style={{ position: 'absolute' }}
+              >
+                <div className="px-4 pb-4 pt-2">
+                  <p className="text-xs text-muted mb-3 text-center">
+                    Välj mellan rörligt pris eller fastpris med fastprisgarant
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                    <a
+                      href="https://www.cheapenergy.se/teckna-elavtal-cheap-elchef/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-white border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-all duration-200 text-center"
+                    >
+                      Rörligt
+                    </a>
+                    <a
+                      href="https://www.svealandselbolag.se/elchef-fastpris/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-white border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-all duration-200 text-center"
+                    >
+                      Fastpris med fastprisgarant
+                    </a>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </section>
+
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
