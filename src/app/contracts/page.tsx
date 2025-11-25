@@ -139,7 +139,7 @@ export default function ContractsPage() {
                     Visar avtal för {postalCode}
                   </p>
                   <p className="text-sm text-blue-600">
-                    Ange din förbrukning nedan för att se exakta priser
+                    Teckna avtal direkt med snabbval nedan, eller ange din förbrukning längre ner för att se exakta priser
                   </p>
                 </div>
               </div>
