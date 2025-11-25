@@ -22,6 +22,30 @@ function parseNumber(value: unknown): number {
   return 0;
 }
 
+// Hitta det billigaste fastprisalternativet för en provider
+function getCheapestFixedPrice(provider: ElectricityProvider, priceArea?: string | null): number {
+  if (provider.contractType !== "fastpris" || !provider.avtalsalternativ || provider.avtalsalternativ.length === 0) {
+    return provider.energyPrice || 0;
+  }
+
+  // Filtrera alternativ efter område om areaCode finns
+  const relevantAlternatives = provider.avtalsalternativ.filter(alt => {
+    if (!alt.areaCode) return true;
+    return priceArea ? alt.areaCode === priceArea : true;
+  });
+
+  if (relevantAlternatives.length === 0) {
+    return provider.energyPrice || 0;
+  }
+
+  // Hitta det lägsta fastpriset
+  const prices = relevantAlternatives
+    .map(alt => alt.fastpris || 0)
+    .filter(price => price > 0);
+  
+  return prices.length > 0 ? Math.min(...prices) : (provider.energyPrice || 0);
+}
+
 async function resolveVariableMarkup(
   provider: ElectricityProvider,
   billData: BillData,
@@ -105,17 +129,55 @@ async function calculateProviderCost(
   const availableForEnergy = cheapestAlternative - elnatCost;
   const energyPrice = availableForEnergy / totalKWh;
 
-  // För rörliga avtal, hämta område-specifikt påslag
-  const variableMarkup = await resolveVariableMarkup(provider, billData, origin, markupCache);
-  const finalEnergyPrice = provider.contractType === "rörligt"
-    ? energyPrice + variableMarkup
-    : (provider.energyPrice || 0);
-  const energyCost = totalKWh * finalEnergyPrice;
+  let finalEnergyPrice: number;
+  let monthlyFee: number;
 
-  // Beräkna effektiv månadskostnad över 12 månader baserat på gratis månader
-  // Exempel: 5 fria månader => betala 7/12 av månadsavgiften i snitt
-  const freeMonths = Math.max(0, Math.min(12, provider.freeMonths || 0));
-  const monthlyFee = ((provider.monthlyFee || 0) * (12 - freeMonths)) / 12;
+  // För fastprisavtal med flera alternativ, hitta det billigaste alternativet
+  if (provider.contractType === "fastpris" && provider.avtalsalternativ && provider.avtalsalternativ.length > 0) {
+    const priceArea = billData.priceArea;
+    // Filtrera alternativ efter område om areaCode finns
+    const relevantAlternatives = provider.avtalsalternativ.filter(alt => {
+      if (!alt.areaCode) return true; // Om inget areaCode, använd alltid
+      return priceArea ? alt.areaCode === priceArea : true;
+    });
+
+    if (relevantAlternatives.length > 0) {
+      // Beräkna total kostnad för varje alternativ och välj det billigaste
+      const alternativesWithCost = relevantAlternatives.map(alt => {
+        const altFastpris = alt.fastpris || 0;
+        const altMonthlyFee = alt.månadskostnad || 0;
+        const altFreeMonths = alt.gratis_månader || 0;
+        // Beräkna effektiv månadskostnad över 12 månader
+        const effectiveMonthlyFee = ((altMonthlyFee * (12 - altFreeMonths)) / 12);
+        const energyCost = totalKWh * altFastpris;
+        const totalCost = elnatCost + energyCost + effectiveMonthlyFee;
+        return { alt, totalCost, fastpris: altFastpris, monthlyFee: effectiveMonthlyFee };
+      });
+
+      // Sortera efter total kostnad och välj det billigaste
+      alternativesWithCost.sort((a, b) => a.totalCost - b.totalCost);
+      const cheapestAlt = alternativesWithCost[0];
+      finalEnergyPrice = cheapestAlt.fastpris;
+      monthlyFee = cheapestAlt.monthlyFee;
+    } else {
+      // Fallback om inga alternativ matchar området
+      finalEnergyPrice = provider.energyPrice || 0;
+      const freeMonths = Math.max(0, Math.min(12, provider.freeMonths || 0));
+      monthlyFee = ((provider.monthlyFee || 0) * (12 - freeMonths)) / 12;
+    }
+  } else {
+    // För rörliga avtal eller fastpris utan alternativ
+    const variableMarkup = await resolveVariableMarkup(provider, billData, origin, markupCache);
+    finalEnergyPrice = provider.contractType === "rörligt"
+      ? energyPrice + variableMarkup
+      : (provider.energyPrice || 0);
+    
+    // Beräkna effektiv månadskostnad över 12 månader baserat på gratis månader
+    const freeMonths = Math.max(0, Math.min(12, provider.freeMonths || 0));
+    monthlyFee = ((provider.monthlyFee || 0) * (12 - freeMonths)) / 12;
+  }
+
+  const energyCost = totalKWh * finalEnergyPrice;
 
   // Total kostnad = elnät + energi + månadskostnad
   return elnatCost + energyCost + monthlyFee;
@@ -250,8 +312,14 @@ export async function POST(request: NextRequest) {
           return (a.provider.monthlyFee || 0) - (b.provider.monthlyFee || 0);
         }
 
-        // Tie-breaker 3: lägst energyPrice
-        return (a.provider.energyPrice || 0) - (b.provider.energyPrice || 0);
+        // Tie-breaker 3: lägst energyPrice (för fastpris: använd billigaste alternativet)
+        const aPrice = a.provider.contractType === "fastpris" 
+          ? getCheapestFixedPrice(a.provider, bill.priceArea)
+          : (a.provider.energyPrice || 0);
+        const bPrice = b.provider.contractType === "fastpris"
+          ? getCheapestFixedPrice(b.provider, bill.priceArea)
+          : (b.provider.energyPrice || 0);
+        return aPrice - bPrice;
       }); // Best choice först (om vald), sedan rörligt, sedan sortering inom grupp
     
     // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
