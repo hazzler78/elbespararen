@@ -87,9 +87,11 @@ export default function ContractsPage() {
           <h1 className="text-3xl md:text-4xl font-bold mb-4">
             Se tillgängliga elavtal
           </h1>
-          <p className="text-lg text-muted">
-            Ange ditt postnummer för att se de bästa elavtalen i ditt område.
-          </p>
+          {!showContracts && (
+            <p className="text-lg text-muted">
+              Ange ditt postnummer för att se de bästa elavtalen i ditt område.
+            </p>
+          )}
         </div>
 
         {!showContracts ? (
@@ -130,7 +132,7 @@ export default function ContractsPage() {
           >
             {/* Area Info */}
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-8">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 mb-4">
                 <MapPin className="w-5 h-5 text-blue-600" />
                 <div>
                   <p className="font-medium text-blue-800">
@@ -140,6 +142,25 @@ export default function ContractsPage() {
                     Ange din förbrukning nedan för att se exakta priser
                   </p>
                 </div>
+              </div>
+              {/* Quick action buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
+                <a
+                  href="https://www.cheapenergy.se/teckna-elavtal-cheap-elchef/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
+                >
+                  Rörligt
+                </a>
+                <a
+                  href="https://www.svealandselbolag.se/elchef-fastpris/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
+                >
+                  Fastpris med fastprisgarant
+                </a>
               </div>
             </div>
 

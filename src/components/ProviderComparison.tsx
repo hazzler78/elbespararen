@@ -591,9 +591,12 @@ export default function ProviderComparison({
       {/* Andra alternativ */}
       <div className="space-y-6">
         {variableComparisons.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {variableComparisons.map(renderComparisonCard)}
-          </div>
+          <>
+            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">Rörligt</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {variableComparisons.map(renderComparisonCard)}
+            </div>
+          </>
         )}
 
         {onRequestContact && (
@@ -624,9 +627,12 @@ export default function ProviderComparison({
         )}
 
         {fixedComparisons.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {fixedComparisons.map(renderComparisonCard)}
-          </div>
+          <>
+            <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">Fastpris</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {fixedComparisons.map(renderComparisonCard)}
+            </div>
+          </>
         )}
       </div>
 
