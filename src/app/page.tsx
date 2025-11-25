@@ -13,20 +13,32 @@ export default function Home() {
   return (
     <main className="min-h-screen">
       {/* Compact dropdown banner */}
-      <section className="relative bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 z-50">
+      <section className="relative bg-gradient-to-r from-primary/15 to-primary/8 border-b-2 border-primary/30 z-50 shadow-sm">
         <div className="max-w-6xl mx-auto relative">
           <button
             onClick={() => setIsBannerOpen(!isBannerOpen)}
-            className="w-full px-4 py-3 flex items-center justify-between hover:bg-primary/5 transition-colors"
+            className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-primary/15 active:bg-primary/20 transition-all cursor-pointer group"
           >
-            <span className="text-sm font-semibold text-gray-900">
-              Teckna elavtal direkt
-            </span>
-            {isBannerOpen ? (
-              <ChevronUp className="w-4 h-4 text-gray-600" />
-            ) : (
-              <ChevronDown className="w-4 h-4 text-gray-600" />
-            )}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-sm font-bold text-primary group-hover:text-primary/90 transition-colors">
+                ⚡ Teckna elavtal direkt
+              </span>
+              <span className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors hidden sm:inline">
+                Klicka för att visa alternativ
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              {!isBannerOpen && (
+                <span className="text-xs text-primary font-medium hidden md:inline">
+                  Visa alternativ
+                </span>
+              )}
+              {isBannerOpen ? (
+                <ChevronUp className="w-5 h-5 text-primary transition-colors" />
+              ) : (
+                <ChevronDown className="w-5 h-5 text-primary transition-colors animate-bounce" />
+              )}
+            </div>
           </button>
           
           <AnimatePresence>
