@@ -81,12 +81,42 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
   // Add welcome message when chat opens for the first time
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      let welcomeContent: string;
+      
+      if (billData) {
+        const extraFeesTotal = billData.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+        const estimatedSavings = Math.round(extraFeesTotal * 1.25);
+        welcomeContent = `Hej! 👋 Jag ser att du redan har analyserat din elräkning här på Elbespararen. 
+
+Baserat på din analys kan du spara cirka **${estimatedSavings} kr/månad** genom att byta till spotpris och slippa onödiga extra avgifter.
+
+Jag kan hjälpa dig med:
+• Frågor om din faktura och analys
+• Förklaringar av olika avgifter
+• Tips om hur du kan spara mer pengar
+• Information om elavtal och leverantörer
+
+Vad undrar du?`;
+      } else {
+        welcomeContent = `Hej! 👋 Välkommen till Elbespararen!
+
+Jag är här för att hjälpa dig förstå din elräkning och hitta besparingsmöjligheter. 
+
+Jag kan hjälpa dig med:
+• Förklaringar av olika avgifter på elräkningar
+• Tips om hur du kan spara pengar på elen
+• Information om elavtal, spotpris och fastpris
+• Frågor om elbesparingar generellt
+
+**Kom igång:** Ladda upp din elräkning på startsidan så analyserar vi den med AI och visar exakt hur mycket du kan spara!
+
+Vad undrar du?`;
+      }
+      
       const welcomeMessage: ChatMessage = {
         id: 'welcome',
         role: 'assistant',
-        content: billData 
-          ? `Hej! Jag ser att du har analyserat din elräkning. Du kan spara cirka ${Math.round(billData.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0) * 1.25)} kr/månad genom att byta till spotpris. Har du några frågor om din faktura eller besparingsmöjligheter?`
-          : 'Hej! Jag är här för att hjälpa dig med frågor om elbesparingar och din elräkning. Vad undrar du?',
+        content: welcomeContent,
         timestamp: new Date()
       };
       setMessages([welcomeMessage]);
