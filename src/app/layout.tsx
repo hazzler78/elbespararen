@@ -3,6 +3,7 @@ import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Hotjar from "@/components/Hotjar";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import ChatWidget from "@/components/ChatWidget";
 
 export const metadata: Metadata = {
   title: "Elbespararen – Se din faktura med nya ögon",
@@ -21,6 +22,7 @@ export default function RootLayout({
         <Hotjar />
         <CookieConsentBanner />
         {children}
+        <ChatWidget />
       </body>
     </html>
   );

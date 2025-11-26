@@ -18,15 +18,44 @@ interface ChatWidgetProps {
   className?: string;
 }
 
-export default function ChatWidget({ billData, className = '' }: ChatWidgetProps) {
+export default function ChatWidget({ billData: propBillData, className = '' }: ChatWidgetProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sessionId, setSessionId] = useState<string | null>(null);
+  const [billData, setBillData] = useState<BillData | undefined>(propBillData);
+  const [isAdminPage, setIsAdminPage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Check if we're on an admin page
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      setIsAdminPage(window.location.pathname.startsWith('/admin'));
+    }
+  }, []);
+
+  // Read billData from sessionStorage if not provided as prop
+  useEffect(() => {
+    if (!billData && typeof window !== 'undefined') {
+      const stored = sessionStorage.getItem('billData');
+      if (stored) {
+        try {
+          const data: BillData = JSON.parse(stored);
+          setBillData(data);
+        } catch (e) {
+          console.error('Failed to parse billData from sessionStorage:', e);
+        }
+      }
+    }
+  }, [billData]);
+
+  // Don't render on admin pages
+  if (isAdminPage) {
+    return null;
+  }
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {

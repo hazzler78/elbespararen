@@ -11,7 +11,6 @@ import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import ProviderComparison from "@/components/ProviderComparison";
-import ChatWidget from "@/components/ChatWidget";
 import { AnalyticsEvents, trackPageView } from "@/lib/analytics";
 
 export default function ResultPage() {
@@ -230,10 +229,6 @@ export default function ResultPage() {
           </div>
         </div>
       </main>
-
-
-      {/* Chat Widget */}
-      <ChatWidget billData={billData || undefined} />
     </>
   );
 }
