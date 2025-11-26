@@ -159,7 +159,7 @@ export default function ContractsPage() {
                   rel="noopener noreferrer"
                   className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
                 >
-                  Fastpris med fastprisgarant
+                  Fastpris med prisgaranti
                 </a>
               </div>
             </div>

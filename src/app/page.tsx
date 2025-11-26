@@ -70,7 +70,7 @@ export default function Home() {
                       rel="noopener noreferrer"
                       className="px-4 py-2 bg-white border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-all duration-200 text-center"
                     >
-                      Fastpris med fastprisgarant
+                      Fastpris med prisgaranti
                     </a>
                   </div>
                 </div>
