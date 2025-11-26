@@ -52,11 +52,6 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
     }
   }, [billData]);
 
-  // Don't render on admin pages
-  if (isAdminPage) {
-    return null;
-  }
-
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -122,6 +117,11 @@ Vad undrar du?`;
       setMessages([welcomeMessage]);
     }
   }, [isOpen, billData]);
+
+  // Don't render on admin pages - check AFTER all hooks
+  if (isAdminPage) {
+    return null;
+  }
 
   const sendMessage = async () => {
     if (!inputValue.trim() || isLoading) return;
