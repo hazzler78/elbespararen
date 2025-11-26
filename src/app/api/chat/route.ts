@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import OpenAI from "openai";
+import { createDatabaseFromBinding } from "@/lib/database";
+import { ChatMessage } from "@/lib/types";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -49,7 +51,7 @@ export async function POST(req: NextRequest) {
     });
 
     // Parse and validate request body
-    let body: { message?: string; context?: unknown };
+    let body: { message?: string; context?: unknown; sessionId?: string };
     try {
       body = await req.json();
     } catch (error) {
@@ -59,7 +61,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, context } = body;
+    const { message, context, sessionId } = body;
+    
+    // Generate session ID if not provided
+    const chatSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    
+    // Get user agent
+    const userAgent = req.headers.get('user-agent') || undefined;
+    
+    // Get database connection
+    let env: any = {};
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    const db = createDatabaseFromBinding(env?.DB);
 
     // Validate message
     if (!message || typeof message !== 'string') {
@@ -132,31 +153,95 @@ export async function POST(req: NextRequest) {
     // Add user message
     messages.push({ role: "user", content: message.trim() });
 
+    // Save user message to database
+    try {
+      await db.createChatMessage({
+        sessionId: chatSessionId,
+        role: 'user',
+        content: message.trim(),
+        context: context && typeof context === 'object' ? context as ChatMessage['context'] : undefined,
+        ipAddress: clientIP,
+        userAgent: userAgent
+      });
+    } catch (dbError) {
+      console.error("[chat] Failed to save user message to database:", dbError);
+      // Continue even if database save fails
+    }
+
     // Call OpenAI with enhanced error handling
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages,
-      temperature: 0.7,
-      max_tokens: 300
-    });
+    const startTime = Date.now();
+    let response;
+    let reply: string | null = null;
+    let responseTimeMs: number | undefined;
+    let errorMessage: string | undefined;
 
-    const reply = response.choices[0]?.message?.content;
+    try {
+      response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages,
+        temperature: 0.7,
+        max_tokens: 300
+      });
 
-    if (!reply) {
-      throw new Error("Tom respons från OpenAI");
+      reply = response.choices[0]?.message?.content || null;
+      responseTimeMs = Date.now() - startTime;
+
+      if (!reply) {
+        throw new Error("Tom respons från OpenAI");
+      }
+    } catch (openaiError) {
+      responseTimeMs = Date.now() - startTime;
+      errorMessage = openaiError instanceof Error ? openaiError.message : String(openaiError);
+      
+      // Save error to database
+      try {
+        await db.createChatMessage({
+          sessionId: chatSessionId,
+          role: 'assistant',
+          content: '',
+          ipAddress: clientIP,
+          userAgent: userAgent,
+          model: "gpt-4o-mini",
+          responseTimeMs,
+          error: errorMessage
+        });
+      } catch (dbError) {
+        console.error("[chat] Failed to save error message to database:", dbError);
+      }
+      
+      throw openaiError;
+    }
+
+    // Save assistant response to database
+    try {
+      await db.createChatMessage({
+        sessionId: chatSessionId,
+        role: 'assistant',
+        content: reply.trim(),
+        context: context && typeof context === 'object' ? context as ChatMessage['context'] : undefined,
+        ipAddress: clientIP,
+        userAgent: userAgent,
+        model: "gpt-4o-mini",
+        responseTimeMs
+      });
+    } catch (dbError) {
+      console.error("[chat] Failed to save assistant message to database:", dbError);
+      // Continue even if database save fails
     }
 
     // Log successful interaction (without sensitive data)
-    console.log(`[chat] Successful interaction - IP: ${clientIP}, Message length: ${message.length}, Has context: ${!!context}`);
+    console.log(`[chat] Successful interaction - IP: ${clientIP}, Session: ${chatSessionId}, Message length: ${message.length}, Has context: ${!!context}, Response time: ${responseTimeMs}ms`);
 
     return NextResponse.json({
       success: true,
       reply: reply.trim(),
+      sessionId: chatSessionId,
       meta: {
         model: "gpt-4o-mini",
         timestamp: new Date().toISOString(),
         messageLength: message.length,
-        hasContext: !!context
+        hasContext: !!context,
+        responseTimeMs
       }
     });
 

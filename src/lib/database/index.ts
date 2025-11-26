@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest, NewsPost } from "@/lib/types";
+import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
@@ -88,6 +88,12 @@ export interface Database {
   createNewsPost(newsPost: Omit<NewsPost, 'id' | 'createdAt' | 'updatedAt'>): Promise<NewsPost>;
   updateNewsPost(id: string, newsPost: Partial<NewsPost>): Promise<NewsPost>;
   deleteNewsPost(id: string): Promise<boolean>;
+
+  // Chat Messages
+  getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]>;
+  getChatMessage(id: string): Promise<ChatMessage | null>;
+  createChatMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage>;
+  deleteChatMessage(id: string): Promise<boolean>;
 }
 
 // Mock Database Implementation (för utveckling)
@@ -97,6 +103,7 @@ class MockDatabase implements Database {
   private leads: Lead[] = [];
   private switchRequests: SwitchRequest[] = [];
   private newsPosts: NewsPost[] = [];
+  private chatMessages: ChatMessage[] = [];
   public bestChoiceProviderId: string | null = null; // För settings API
 
   // Singleton pattern för att behålla state mellan requests i utveckling
@@ -288,6 +295,47 @@ class MockDatabase implements Database {
       return false;
     }
     this.newsPosts.splice(index, 1);
+    return true;
+  }
+
+  // Chat Messages
+  async getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]> {
+    let messages = [...this.chatMessages];
+    
+    if (sessionId) {
+      messages = messages.filter(m => m.sessionId === sessionId);
+    }
+    
+    // Sortera efter datum (nyaste först)
+    messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    if (limit) {
+      messages = messages.slice(0, limit);
+    }
+    
+    return messages;
+  }
+
+  async getChatMessage(id: string): Promise<ChatMessage | null> {
+    return this.chatMessages.find(m => m.id === id) || null;
+  }
+
+  async createChatMessage(messageData: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage> {
+    const message: ChatMessage = {
+      ...messageData,
+      id: `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date()
+    };
+    this.chatMessages.push(message);
+    return message;
+  }
+
+  async deleteChatMessage(id: string): Promise<boolean> {
+    const index = this.chatMessages.findIndex(m => m.id === id);
+    if (index === -1) {
+      return false;
+    }
+    this.chatMessages.splice(index, 1);
     return true;
   }
 }
@@ -962,6 +1010,142 @@ class CloudflareDatabase implements Database {
     `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
+  }
+
+  // Chat Messages
+  async getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]> {
+    try {
+      let query = 'SELECT * FROM chat_messages';
+      const bindings: unknown[] = [];
+
+      if (sessionId) {
+        query += ' WHERE session_id = ?';
+        bindings.push(sessionId);
+      }
+
+      query += ' ORDER BY created_at DESC';
+
+      if (limit) {
+        query += ' LIMIT ?';
+        bindings.push(limit);
+      }
+
+      const result = await this.db.prepare(query).bind(...bindings).all();
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          sessionId: String(row.session_id),
+          role: String(row.role) as 'user' | 'assistant' | 'system',
+          content: String(row.content),
+          context: row.context ? JSON.parse(String(row.context)) : undefined,
+          ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+          userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          model: row.model ? String(row.model) : undefined,
+          responseTimeMs: row.response_time_ms ? Number(row.response_time_ms) : undefined,
+          error: row.error ? String(row.error) : undefined,
+          createdAt: new Date(String(row.created_at))
+        };
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('chat_messages')) {
+        console.warn('[Database] chat_messages table does not exist. Please run the migration first.');
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async getChatMessage(id: string): Promise<ChatMessage | null> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM chat_messages WHERE id = ?
+      `).bind(id).first();
+
+      if (!result) {
+        return null;
+      }
+
+      const row = result as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        sessionId: String(row.session_id),
+        role: String(row.role) as 'user' | 'assistant' | 'system',
+        content: String(row.content),
+        context: row.context ? JSON.parse(String(row.context)) : undefined,
+        ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+        userAgent: row.user_agent ? String(row.user_agent) : undefined,
+        model: row.model ? String(row.model) : undefined,
+        responseTimeMs: row.response_time_ms ? Number(row.response_time_ms) : undefined,
+        error: row.error ? String(row.error) : undefined,
+        createdAt: new Date(String(row.created_at))
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('chat_messages')) {
+        console.warn('[Database] chat_messages table does not exist. Please run the migration first.');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async createChatMessage(messageData: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage> {
+    try {
+      const id = `chat-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date().toISOString();
+
+      await this.db.prepare(`
+        INSERT INTO chat_messages (
+          id, session_id, role, content, context, ip_address, user_agent,
+          model, response_time_ms, error, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        messageData.sessionId,
+        messageData.role,
+        messageData.content,
+        messageData.context ? JSON.stringify(messageData.context) : null,
+        messageData.ipAddress || null,
+        messageData.userAgent || null,
+        messageData.model || null,
+        messageData.responseTimeMs || null,
+        messageData.error || null,
+        now
+      ).run();
+
+      return {
+        ...messageData,
+        id,
+        createdAt: new Date(now)
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('chat_messages')) {
+        throw new Error('chat_messages table does not exist. Please run the migration first.');
+      }
+      throw error;
+    }
+  }
+
+  async deleteChatMessage(id: string): Promise<boolean> {
+    try {
+      const result = await this.db.prepare(`
+        DELETE FROM chat_messages WHERE id = ?
+      `).bind(id).run() as D1RunResult;
+
+      return (result.meta?.changes || 0) > 0;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('chat_messages')) {
+        console.warn('[Database] chat_messages table does not exist.');
+        return false;
+      }
+      throw error;
+    }
   }
 }
 

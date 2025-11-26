@@ -14,7 +14,8 @@ import {
   Settings,
   BarChart3,
   Lock,
-  Newspaper
+  Newspaper,
+  MessageCircle
 } from "lucide-react";
 
 const ADMIN_PASSWORD = "grodan2025";
@@ -49,6 +50,12 @@ const navigation = [
     href: "/admin/news",
     icon: Newspaper,
     description: "Hantera nyheter och pressmeddelanden"
+  },
+  {
+    name: "Chat-meddelanden",
+    href: "/admin/chat",
+    icon: MessageCircle,
+    description: "Visa och analysera AI-chattmeddelanden"
   }
 ];
 

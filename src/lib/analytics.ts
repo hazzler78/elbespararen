@@ -113,5 +113,18 @@ export const AnalyticsEvents = {
   // Errors
   errorOccurred: (errorType: string) => 
     trackEvent('error_occurred', 'error', errorType),
+
+  // Chat interactions
+  chatOpened: () => 
+    trackEvent('chat_opened', 'engagement', 'chat'),
+  
+  chatMessageSent: (hasContext?: boolean) => 
+    trackEvent('chat_message_sent', 'engagement', hasContext ? 'with_context' : 'without_context'),
+  
+  chatMessageReceived: (responseTimeMs?: number) => 
+    trackEvent('chat_message_received', 'engagement', 'ai_response', responseTimeMs),
+  
+  chatError: (errorType: string) => 
+    trackEvent('chat_error', 'error', errorType),
 };
 

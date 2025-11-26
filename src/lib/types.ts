@@ -184,6 +184,28 @@ export interface NewsPost {
   isPublished: boolean; // Om false, visas inte på /news sidan
 }
 
+// Chat Message types
+export interface ChatMessage {
+  id: string;
+  sessionId: string; // Unik session-ID för varje chat-session
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  context?: {
+    totalAmount?: number;
+    extraFeesTotal?: number;
+    extraFeesDetailed?: ExtraFeeDetailed[];
+    totalKWh?: number;
+    period?: string;
+    contractType?: "fast" | "rörligt";
+  };
+  ipAddress?: string;
+  userAgent?: string;
+  model?: string; // AI-modell som användes
+  responseTimeMs?: number; // Svarstid i millisekunder
+  error?: string;
+  createdAt: Date;
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;

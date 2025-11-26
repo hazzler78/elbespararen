@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { BillData } from '@/lib/types';
+import { AnalyticsEvents } from '@/lib/analytics';
 
 interface ChatMessage {
   id: string;
@@ -23,6 +24,7 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
   const [inputValue, setInputValue] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [sessionId, setSessionId] = useState<string | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -37,6 +39,15 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
       inputRef.current.focus();
     }
   }, [isOpen]);
+
+  // Generate session ID when chat opens
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      const newSessionId = `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      setSessionId(newSessionId);
+      AnalyticsEvents.chatOpened();
+    }
+  }, [isOpen, sessionId]);
 
   // Add welcome message when chat opens for the first time
   useEffect(() => {
@@ -68,6 +79,9 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
     setIsLoading(true);
     setError(null);
 
+    // Track message sent
+    AnalyticsEvents.chatMessageSent(!!billData);
+
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
@@ -76,6 +90,7 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
         },
         body: JSON.stringify({
           message: userMessage.content,
+          sessionId: sessionId,
           context: billData ? {
             totalAmount: billData.totalAmount,
             extraFeesTotal: billData.extraFeesTotal,
@@ -87,10 +102,17 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
         }),
       });
 
-      const data = await response.json() as { success?: boolean; reply?: string; error?: string };
+      const data = await response.json() as { success?: boolean; reply?: string; error?: string; sessionId?: string; meta?: { responseTimeMs?: number } };
 
       if (!response.ok) {
-        throw new Error(data.error || 'Något gick fel');
+        const errorMsg = data.error || 'Något gick fel';
+        AnalyticsEvents.chatError(errorMsg);
+        throw new Error(errorMsg);
+      }
+
+      // Update session ID if provided
+      if (data.sessionId && data.sessionId !== sessionId) {
+        setSessionId(data.sessionId);
       }
 
       if (data.success && data.reply) {
@@ -101,11 +123,16 @@ export default function ChatWidget({ billData, className = '' }: ChatWidgetProps
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
+        
+        // Track message received
+        AnalyticsEvents.chatMessageReceived(data.meta?.responseTimeMs);
       } else {
         throw new Error('Inget svar från AI:n');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Något gick fel');
+      const errorMsg = err instanceof Error ? err.message : 'Något gick fel';
+      setError(errorMsg);
+      AnalyticsEvents.chatError(errorMsg);
       console.error('Chat error:', err);
     } finally {
       setIsLoading(false);
