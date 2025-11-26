@@ -211,7 +211,7 @@ Vad undrar du?`;
   };
 
   return (
-    <div className={`fixed bottom-4 right-4 z-[100] ${className}`}>
+    <div className={`fixed bottom-20 right-4 z-[100] ${className}`}>
       {/* Chat Toggle Button */}
       <AnimatePresence>
         {!isOpen && (
