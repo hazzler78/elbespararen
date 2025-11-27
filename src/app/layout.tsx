@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Hotjar from "@/components/Hotjar";
+import TikTokPixel from "@/components/TikTokPixel";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import ChatWidget from "@/components/ChatWidget";
 
@@ -20,6 +21,7 @@ export default function RootLayout({
       <body className="antialiased">
         <GoogleAnalytics />
         <Hotjar />
+        <TikTokPixel />
         <CookieConsentBanner />
         {children}
         <ChatWidget />
