@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
@@ -18,17 +18,34 @@ export default function ContractsPage() {
   const [priceArea, setPriceArea] = useState<string | null>(null);
   const [detectedArea, setDetectedArea] = useState<string | null>(null);
   const [showContracts, setShowContracts] = useState(false);
+  const [lastSavedPostalCode, setLastSavedPostalCode] = useState<string | null>(null);
   const contactFormRef = useRef<HTMLDivElement>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Funktion för att spara postal code analytics
-  const savePostalCodeAnalytics = async (
+  // Cleanup timeout när komponenten unmountas
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Funktion för att spara postal code analytics med debounce
+  const savePostalCodeAnalytics = useCallback(async (
     postalCode: string,
     detectedArea: string | null,
     selectedArea: string,
     wasManuallyChanged: boolean
   ) => {
+    // Förhindra att samma postnummer sparas flera gånger
+    if (lastSavedPostalCode === postalCode) {
+      return;
+    }
+
     try {
-      await fetch('/api/postal-code-analytics', {
+      console.log('[ContractsPage] Saving postal code analytics:', { postalCode, detectedArea, selectedArea, wasManuallyChanged });
+      const response = await fetch('/api/postal-code-analytics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -41,11 +58,19 @@ export default function ContractsPage() {
           pageContext: 'contracts'
         })
       });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('[ContractsPage] Failed to save analytics:', result);
+      } else {
+        console.log('[ContractsPage] Analytics saved successfully:', result);
+        setLastSavedPostalCode(postalCode);
+      }
     } catch (error) {
       // Tyst fel - analytics ska inte påverka användarupplevelsen
-      console.warn('[ContractsPage] Failed to save postal code analytics:', error);
+      console.error('[ContractsPage] Failed to save postal code analytics:', error);
     }
-  };
+  }, [lastSavedPostalCode]);
 
   const handlePostalCodeChange = (code: string, area: string | null, wasManuallyChanged?: boolean, detected?: string | null) => {
     setPostalCode(code);
@@ -53,14 +78,20 @@ export default function ContractsPage() {
     if (detected !== undefined) {
       setDetectedArea(detected);
     }
-    // Spara analytics när både postnummer och område är valt
+    // Rensa tidigare timeout
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    // Spara analytics när både postnummer och område är valt (med debounce)
     if (code && area && isValidSwedishPostalCode(code)) {
-      savePostalCodeAnalytics(
-        code,
-        detected || null,
-        area,
-        wasManuallyChanged || false
-      );
+      saveTimeoutRef.current = setTimeout(() => {
+        savePostalCodeAnalytics(
+          code,
+          detected || null,
+          area,
+          wasManuallyChanged || false
+        );
+      }, 1000); // Vänta 1 sekund efter senaste ändringen
     }
   };
 

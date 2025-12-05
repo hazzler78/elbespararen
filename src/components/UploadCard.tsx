@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
@@ -22,17 +22,34 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
   const [detectedArea, setDetectedArea] = useState<string | null>(null);
+  const [lastSavedPostalCode, setLastSavedPostalCode] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Funktion för att spara postal code analytics
-  const savePostalCodeAnalytics = async (
+  // Cleanup timeout när komponenten unmountas
+  useEffect(() => {
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, []);
+
+  // Funktion för att spara postal code analytics med debounce
+  const savePostalCodeAnalytics = useCallback(async (
     postalCode: string,
     detectedArea: string | null,
     selectedArea: string,
     wasManuallyChanged: boolean
   ) => {
+    // Förhindra att samma postnummer sparas flera gånger
+    if (lastSavedPostalCode === postalCode) {
+      return;
+    }
+
     try {
-      await fetch('/api/postal-code-analytics', {
+      console.log('[UploadCard] Saving postal code analytics:', { postalCode, detectedArea, selectedArea, wasManuallyChanged });
+      const response = await fetch('/api/postal-code-analytics', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -45,11 +62,19 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
           pageContext: 'upload'
         })
       });
+      
+      const result = await response.json();
+      if (!response.ok) {
+        console.error('[UploadCard] Failed to save analytics:', result);
+      } else {
+        console.log('[UploadCard] Analytics saved successfully:', result);
+        setLastSavedPostalCode(postalCode);
+      }
     } catch (error) {
       // Tyst fel - analytics ska inte påverka användarupplevelsen
-      console.warn('[UploadCard] Failed to save postal code analytics:', error);
+      console.error('[UploadCard] Failed to save postal code analytics:', error);
     }
-  };
+  }, [lastSavedPostalCode]);
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
@@ -221,14 +246,20 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
                 if (detected) {
                   setDetectedArea(detected);
                 }
-                // Spara analytics när både postnummer och område är valt
+                // Rensa tidigare timeout
+                if (saveTimeoutRef.current) {
+                  clearTimeout(saveTimeoutRef.current);
+                }
+                // Spara analytics när både postnummer och område är valt (med debounce)
                 if (code && area && isValidSwedishPostalCode(code)) {
-                  savePostalCodeAnalytics(
-                    code,
-                    detected || null,
-                    area,
-                    wasManuallyChanged || false
-                  );
+                  saveTimeoutRef.current = setTimeout(() => {
+                    savePostalCodeAnalytics(
+                      code,
+                      detected || null,
+                      area,
+                      wasManuallyChanged || false
+                    );
+                  }, 1000); // Vänta 1 sekund efter senaste ändringen
                 }
               }}
               className="mb-4"

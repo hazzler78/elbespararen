@@ -105,6 +105,14 @@ export async function POST(req: NextRequest) {
                       'unknown';
     const userAgent = req.headers.get('user-agent') || undefined;
 
+    console.log("[postal-code-analytics] Saving analytics:", {
+      postalCode,
+      detectedArea,
+      selectedArea,
+      wasManuallyChanged,
+      pageContext
+    });
+
     // Skapa analytics entry
     const analytics = await db.createPostalCodeAnalytics({
       postalCode,
