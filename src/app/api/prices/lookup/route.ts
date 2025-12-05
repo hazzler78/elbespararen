@@ -121,7 +121,17 @@ export async function POST(request: NextRequest) {
     const kwh = Math.max(0, Number(body.kwh || 0));
 
     if (!providerKey) {
-      return NextResponse.json({ success: false, error: 'Unknown provider' }, { status: 400 });
+      // Return empty data instead of error for unknown providers
+      // This prevents console errors when providers aren't in the lookup map
+      console.warn(`[prices/lookup] Unknown provider: ${body.providerName}`);
+      return NextResponse.json({ 
+        success: true, 
+        data: {
+          area,
+          range: null,
+          source: 'unknown'
+        } as Normalized
+      });
     }
 
     const url = URL_MAP[providerKey];
