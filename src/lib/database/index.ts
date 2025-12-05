@@ -1233,6 +1233,10 @@ class CloudflareDatabase implements Database {
 
       return rows.map((value) => {
         const row = value as Record<string, unknown>;
+        const createdAtStr = String(row.created_at || '');
+        // Konvertera created_at från databas (ISO string) till Date-objekt
+        const createdAt = createdAtStr ? new Date(createdAtStr) : new Date();
+        
         return {
           id: String(row.id),
           postalCode: String(row.postal_code),
@@ -1242,7 +1246,7 @@ class CloudflareDatabase implements Database {
           ipAddress: row.ip_address ? String(row.ip_address) : undefined,
           userAgent: row.user_agent ? String(row.user_agent) : undefined,
           pageContext: row.page_context ? String(row.page_context) : undefined,
-          createdAt: new Date(String(row.created_at))
+          createdAt: createdAt
         };
       });
     } catch (error) {

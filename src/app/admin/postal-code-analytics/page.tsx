@@ -25,7 +25,14 @@ export default function PostalCodeAnalyticsPage() {
       const result = await response.json() as ApiResponse<PostalCodeAnalytics[]>;
       
       if (result.success && result.data) {
-        setAnalytics(result.data);
+        // Konvertera createdAt från sträng till Date-objekt om det behövs
+        const processedData = result.data.map(item => ({
+          ...item,
+          createdAt: item.createdAt instanceof Date 
+            ? item.createdAt 
+            : new Date(item.createdAt as any)
+        }));
+        setAnalytics(processedData);
       }
     } catch (error) {
       console.error("Error fetching postal code analytics:", error);
