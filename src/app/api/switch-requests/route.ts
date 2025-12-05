@@ -215,6 +215,9 @@ export async function POST(request: NextRequest) {
         console.log("[switch-requests] Fastpris priceInfo for email:", priceInfo);
       }
       
+      // Hämta receipts group för att bestämma rätt avsändaradress
+      const receiptsGroup = getDefaultReceiptsGroupId();
+      
       await sendOrderConfirmationEmail({
         toEmail: switchRequest.customerInfo.email,
         toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim(),
@@ -224,7 +227,8 @@ export async function POST(request: NextRequest) {
         contractType: contractType,
         priceArea: priceArea,
         ...priceInfo,
-        brand: "Elchef.se"
+        brand: "Elchef.se",
+        groupId: receiptsGroup // Skicka med groupId för att välja rätt avsändaradress
       });
       
       console.log("[switch-requests] Order confirmation email sent successfully to:", switchRequest.customerInfo.email);
@@ -258,15 +262,17 @@ export async function POST(request: NextRequest) {
     // Om kunden samtyckt till marknadsföring: skicka välkomstbrev och lägg till i nyhetsbrev
     if (switchRequest.customerInfo.consentToMarketing && switchRequest.customerInfo.email) {
       try {
+        const newsletterGroup = getDefaultNewsletterGroupId();
         await Promise.all([
           sendWelcomeEmail({
             toEmail: switchRequest.customerInfo.email,
-            toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
+            toName: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim(),
+            groupId: newsletterGroup // Skicka med groupId för att välja rätt avsändaradress
           }),
           addToNewsletter({
             email: switchRequest.customerInfo.email,
             name: `${switchRequest.customerInfo.firstName} ${switchRequest.customerInfo.lastName}`.trim()
-          }, getDefaultNewsletterGroupId())
+          }, newsletterGroup)
         ]);
       } catch (e) {
         console.error("[switch-requests] Failed to process marketing welcome/subscription:", e);

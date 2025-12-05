@@ -53,7 +53,9 @@ export async function POST(req: NextRequest) {
 
     if (sendTestEmail) {
       try {
-        await sendEmail("Test: Elchef.se e-post", `<div>Hej ${name || ''}! Detta är ett test.</div>`, { email, name });
+        // Använd receipts group för att bestämma rätt avsändaradress
+        const receiptsGroup = getDefaultReceiptsGroupId();
+        await sendEmail("Test: Elchef.se e-post", `<div>Hej ${name || ''}! Detta är ett test.</div>`, { email, name }, receiptsGroup);
         results.sendEmail = "ok";
       } catch (e) {
         console.error("[email-test] sendEmail failed", e);
@@ -63,6 +65,7 @@ export async function POST(req: NextRequest) {
 
     if (sendOrderConfirmation && email) {
       try {
+        const receiptsGroup = getDefaultReceiptsGroupId();
         await sendOrderConfirmationEmail({
           toEmail: email,
           toName: name,
@@ -71,7 +74,8 @@ export async function POST(req: NextRequest) {
           contractType: body.contractType || "rörligt",
           priceArea: body.priceArea || "3",
           estimatedSavings: 150,
-          brand: "Elchef.se"
+          brand: "Elchef.se",
+          groupId: receiptsGroup
         });
         results.sendOrderConfirmation = "ok";
       } catch (e) {
@@ -135,7 +139,8 @@ export async function GET(req: NextRequest) {
     if (email) {
       if (sendTestEmail) {
         try {
-          await sendEmail("Test: Elchef.se e-post (GET)", `<div>Hej ${name || ''}! Detta är ett test (GET).</div>`, { email, name });
+          const receiptsGroup = getDefaultReceiptsGroupId();
+          await sendEmail("Test: Elchef.se e-post (GET)", `<div>Hej ${name || ''}! Detta är ett test (GET).</div>`, { email, name }, receiptsGroup);
           results.sendEmail = "ok";
         } catch (e) {
           console.error("[email-test][GET] sendEmail failed", e);
@@ -165,6 +170,7 @@ export async function GET(req: NextRequest) {
 
       if (sendOrderConfirmation) {
         try {
+          const receiptsGroup = getDefaultReceiptsGroupId();
           await sendOrderConfirmationEmail({
             toEmail: email,
             toName: name,
@@ -173,7 +179,8 @@ export async function GET(req: NextRequest) {
             contractType: (contractType as any) || "rörligt",
             priceArea: priceArea || "3",
             estimatedSavings: 150,
-            brand: "Elchef.se"
+            brand: "Elchef.se",
+            groupId: receiptsGroup
           });
           results.sendOrderConfirmation = "ok";
         } catch (e) {

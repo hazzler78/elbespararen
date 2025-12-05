@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage } from "@/lib/types";
+import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
@@ -94,6 +94,10 @@ export interface Database {
   getChatMessage(id: string): Promise<ChatMessage | null>;
   createChatMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage>;
   deleteChatMessage(id: string): Promise<boolean>;
+
+  // Postal Code Analytics
+  createPostalCodeAnalytics(analytics: Omit<PostalCodeAnalytics, 'id' | 'createdAt'>): Promise<PostalCodeAnalytics>;
+  getPostalCodeAnalytics(limit?: number): Promise<PostalCodeAnalytics[]>;
 }
 
 // Mock Database Implementation (för utveckling)
@@ -104,6 +108,7 @@ class MockDatabase implements Database {
   private switchRequests: SwitchRequest[] = [];
   private newsPosts: NewsPost[] = [];
   private chatMessages: ChatMessage[] = [];
+  private postalCodeAnalytics: PostalCodeAnalytics[] = [];
   public bestChoiceProviderId: string | null = null; // För settings API
 
   // Singleton pattern för att behålla state mellan requests i utveckling
@@ -337,6 +342,30 @@ class MockDatabase implements Database {
     }
     this.chatMessages.splice(index, 1);
     return true;
+  }
+
+  // Postal Code Analytics methods
+  async createPostalCodeAnalytics(analyticsData: Omit<PostalCodeAnalytics, 'id' | 'createdAt'>): Promise<PostalCodeAnalytics> {
+    const analytics: PostalCodeAnalytics = {
+      ...analyticsData,
+      id: `postal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date()
+    };
+    this.postalCodeAnalytics.push(analytics);
+    return analytics;
+  }
+
+  async getPostalCodeAnalytics(limit?: number): Promise<PostalCodeAnalytics[]> {
+    let analytics = [...this.postalCodeAnalytics];
+    
+    // Sortera efter datum (nyaste först)
+    analytics.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    if (limit) {
+      analytics = analytics.slice(0, limit);
+    }
+    
+    return analytics;
   }
 }
 
@@ -1143,6 +1172,84 @@ class CloudflareDatabase implements Database {
       if (errorMessage.includes('no such table') || errorMessage.includes('chat_messages')) {
         console.warn('[Database] chat_messages table does not exist.');
         return false;
+      }
+      throw error;
+    }
+  }
+
+  // Postal Code Analytics methods
+  async createPostalCodeAnalytics(analyticsData: Omit<PostalCodeAnalytics, 'id' | 'createdAt'>): Promise<PostalCodeAnalytics> {
+    try {
+      const id = `postal-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date().toISOString();
+
+      await this.db.prepare(`
+        INSERT INTO postal_code_analytics (
+          id, postal_code, detected_area, selected_area, was_manually_changed,
+          ip_address, user_agent, page_context, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        analyticsData.postalCode,
+        analyticsData.detectedArea || null,
+        analyticsData.selectedArea,
+        analyticsData.wasManuallyChanged ? 1 : 0,
+        analyticsData.ipAddress || null,
+        analyticsData.userAgent || null,
+        analyticsData.pageContext || null,
+        now
+      ).run();
+
+      return {
+        ...analyticsData,
+        id,
+        createdAt: new Date(now)
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('postal_code_analytics')) {
+        throw new Error('postal_code_analytics table does not exist. Please run the migration first.');
+      }
+      throw error;
+    }
+  }
+
+  async getPostalCodeAnalytics(limit?: number): Promise<PostalCodeAnalytics[]> {
+    try {
+      let query = `
+        SELECT * FROM postal_code_analytics
+        ORDER BY created_at DESC
+      `;
+      
+      if (limit) {
+        query += ` LIMIT ?`;
+      }
+
+      const result = limit 
+        ? await this.db.prepare(query).bind(limit).all()
+        : await this.db.prepare(query).all();
+
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          postalCode: String(row.postal_code),
+          detectedArea: row.detected_area ? String(row.detected_area) : undefined,
+          selectedArea: String(row.selected_area),
+          wasManuallyChanged: Boolean(row.was_manually_changed),
+          ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+          userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          pageContext: row.page_context ? String(row.page_context) : undefined,
+          createdAt: new Date(String(row.created_at))
+        };
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('postal_code_analytics')) {
+        console.warn('[Database] postal_code_analytics table does not exist.');
+        return [];
       }
       throw error;
     }

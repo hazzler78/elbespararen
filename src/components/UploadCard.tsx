@@ -7,6 +7,7 @@ import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
 import PostalCodeInput from "./PostalCodeInput";
 import { AnalyticsEvents } from "@/lib/analytics";
+import { isValidSwedishPostalCode } from "@/lib/price-areas";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -20,7 +21,35 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
   const [error, setError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
+  const [detectedArea, setDetectedArea] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Funktion för att spara postal code analytics
+  const savePostalCodeAnalytics = async (
+    postalCode: string,
+    detectedArea: string | null,
+    selectedArea: string,
+    wasManuallyChanged: boolean
+  ) => {
+    try {
+      await fetch('/api/postal-code-analytics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postalCode,
+          detectedArea: detectedArea || undefined,
+          selectedArea,
+          wasManuallyChanged,
+          pageContext: 'upload'
+        })
+      });
+    } catch (error) {
+      // Tyst fel - analytics ska inte påverka användarupplevelsen
+      console.warn('[UploadCard] Failed to save postal code analytics:', error);
+    }
+  };
 
   const handleFileSelect = (selectedFile: File) => {
     setFile(selectedFile);
@@ -186,9 +215,21 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
           >
             <PostalCodeInput
               value={postalCode}
-              onChange={(code, area) => {
+              onChange={(code, area, wasManuallyChanged, detected) => {
                 setPostalCode(code);
                 setPriceArea(area);
+                if (detected) {
+                  setDetectedArea(detected);
+                }
+                // Spara analytics när både postnummer och område är valt
+                if (code && area && isValidSwedishPostalCode(code)) {
+                  savePostalCodeAnalytics(
+                    code,
+                    detected || null,
+                    area,
+                    wasManuallyChanged || false
+                  );
+                }
               }}
               className="mb-4"
             />

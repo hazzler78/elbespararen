@@ -206,6 +206,19 @@ export interface ChatMessage {
   createdAt: Date;
 }
 
+// Postal Code Analytics types
+export interface PostalCodeAnalytics {
+  id: string;
+  postalCode: string;
+  detectedArea?: string; // Automatiskt detekterat område (se1, se2, se3, se4)
+  selectedArea: string; // Slutligt valt område
+  wasManuallyChanged: boolean; // Om användaren ändrade området manuellt
+  ipAddress?: string;
+  userAgent?: string;
+  pageContext?: string; // Var användaren var när de angav postnummer (t.ex. "upload", "contracts")
+  createdAt: Date;
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;

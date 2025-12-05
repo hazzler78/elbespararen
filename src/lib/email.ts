@@ -15,13 +15,121 @@ function getEnvVar(name: string): string | undefined {
   return (process.env as any)?.[name] as string | undefined;
 }
 
+interface EmailDomainConfig {
+  from: string;
+  fromName: string;
+  newsletterGroupId?: string;
+  receiptsGroupId?: string;
+}
+
 function getEmailConfig() {
   const MAILERLITE_API_KEY = getEnvVar("MAILERLITE_API_KEY");
+  
+  // Sverige (Elchef.se)
+  const MAIL_FROM_SE = getEnvVar("MAIL_FROM_SE") || getEnvVar("MAIL_FROM") || "info@elchef.se";
+  const MAIL_FROM_NAME_SE = getEnvVar("MAIL_FROM_NAME_SE") || getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
+  const MAILERLITE_GROUP_NEWSLETTER_SE = getEnvVar("MAILERLITE_GROUP_NEWSLETTER_SE") || getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
+  const MAILERLITE_GROUP_RECEIPTS_SE = getEnvVar("MAILERLITE_GROUP_RECEIPTS_SE") || getEnvVar("MAILERLITE_GROUP_RECEIPTS");
+  
+  // Norge (Stromsjef.no)
+  const MAIL_FROM_NO = getEnvVar("MAIL_FROM_NO") || "post@stromsjef.no";
+  const MAIL_FROM_NAME_NO = getEnvVar("MAIL_FROM_NAME_NO") || "Stromsjef.no";
+  const MAILERLITE_GROUP_NEWSLETTER_NO = getEnvVar("MAILERLITE_GROUP_NEWSLETTER_NO");
+  const MAILERLITE_GROUP_RECEIPTS_NO = getEnvVar("MAILERLITE_GROUP_RECEIPTS_NO");
+  
+  // Bakåtkompatibilitet (standard)
   const MAIL_FROM = getEnvVar("MAIL_FROM") || "info@elchef.se";
   const MAIL_FROM_NAME = getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
   const MAILERLITE_GROUP_NEWSLETTER = getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
   const MAILERLITE_GROUP_RECEIPTS = getEnvVar("MAILERLITE_GROUP_RECEIPTS");
-  return { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME, MAILERLITE_GROUP_NEWSLETTER, MAILERLITE_GROUP_RECEIPTS };
+  
+  return { 
+    MAILERLITE_API_KEY, 
+    MAIL_FROM, 
+    MAIL_FROM_NAME, 
+    MAILERLITE_GROUP_NEWSLETTER, 
+    MAILERLITE_GROUP_RECEIPTS,
+    // Sverige
+    MAIL_FROM_SE,
+    MAIL_FROM_NAME_SE,
+    MAILERLITE_GROUP_NEWSLETTER_SE,
+    MAILERLITE_GROUP_RECEIPTS_SE,
+    // Norge
+    MAIL_FROM_NO,
+    MAIL_FROM_NAME_NO,
+    MAILERLITE_GROUP_NEWSLETTER_NO,
+    MAILERLITE_GROUP_RECEIPTS_NO
+  };
+}
+
+/**
+ * Bestämmer vilken avsändaradress som ska användas baserat på Mailerlite grupp-ID
+ * 
+ * För separata projekt: Varje projekt sätter bara MAIL_FROM och MAILERLITE_GROUP_RECEIPTS
+ * för sitt eget land. Denna funktion används för att matcha rätt domän om samma Mailerlite-konto
+ * används för flera länder.
+ */
+function getEmailConfigForGroup(groupId?: string): EmailDomainConfig {
+  const config = getEmailConfig();
+  
+  // Om inget groupId anges, använd standard MAIL_FROM (konfigurerat per projekt)
+  if (!groupId) {
+    return {
+      from: config.MAIL_FROM,
+      fromName: config.MAIL_FROM_NAME,
+      newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER,
+      receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS
+    };
+  }
+  
+  // Om groupId matchar en specifik konfiguration, använd den
+  // Detta är användbart om samma Mailerlite-konto används för flera länder
+  
+  // Kontrollera om grupp-ID matchar Norge
+  if (config.MAILERLITE_GROUP_NEWSLETTER_NO && groupId === config.MAILERLITE_GROUP_NEWSLETTER_NO) {
+    return {
+      from: config.MAIL_FROM_NO,
+      fromName: config.MAIL_FROM_NAME_NO,
+      newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER_NO,
+      receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS_NO
+    };
+  }
+  
+  if (config.MAILERLITE_GROUP_RECEIPTS_NO && groupId === config.MAILERLITE_GROUP_RECEIPTS_NO) {
+    return {
+      from: config.MAIL_FROM_NO,
+      fromName: config.MAIL_FROM_NAME_NO,
+      newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER_NO,
+      receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS_NO
+    };
+  }
+  
+  // Kontrollera om grupp-ID matchar Sverige
+  if (config.MAILERLITE_GROUP_NEWSLETTER_SE && groupId === config.MAILERLITE_GROUP_NEWSLETTER_SE) {
+    return {
+      from: config.MAIL_FROM_SE,
+      fromName: config.MAIL_FROM_NAME_SE,
+      newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER_SE,
+      receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS_SE
+    };
+  }
+  
+  if (config.MAILERLITE_GROUP_RECEIPTS_SE && groupId === config.MAILERLITE_GROUP_RECEIPTS_SE) {
+    return {
+      from: config.MAIL_FROM_SE,
+      fromName: config.MAIL_FROM_NAME_SE,
+      newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER_SE,
+      receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS_SE
+    };
+  }
+  
+  // Fallback till standard (det som är konfigurerat i MAIL_FROM för detta projekt)
+  return {
+    from: config.MAIL_FROM,
+    fromName: config.MAIL_FROM_NAME,
+    newsletterGroupId: config.MAILERLITE_GROUP_NEWSLETTER,
+    receiptsGroupId: config.MAILERLITE_GROUP_RECEIPTS
+  };
 }
 
 interface EmailRecipient {
@@ -34,8 +142,11 @@ function isEmailConfigured(): boolean {
   return !!MAILERLITE_API_KEY;
 }
 
-export async function sendEmail(subject: string, html: string, to: EmailRecipient): Promise<void> {
-  const { MAILERLITE_API_KEY, MAIL_FROM, MAIL_FROM_NAME } = getEmailConfig();
+export async function sendEmail(subject: string, html: string, to: EmailRecipient, groupId?: string): Promise<void> {
+  const { MAILERLITE_API_KEY } = getEmailConfig();
+  const domainConfig = getEmailConfigForGroup(groupId);
+  const MAIL_FROM = domainConfig.from;
+  const MAIL_FROM_NAME = domainConfig.fromName;
   const RESEND_API_KEY = getEnvVar("RESEND_API_KEY");
   
   // Validera att vi har nödvändig konfiguration
@@ -155,11 +266,12 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         console.log("[email] Attempting MailerLite Campaign API fallback for:", to.email);
         
         // Skapa en temporär grupp för denna mottagare, eller använd receipts group
-        const receiptsGroup = getDefaultReceiptsGroupId();
+        // Använd rätt grupp baserat på groupId om det finns
+        const receiptsGroupToUse = groupId || getDefaultReceiptsGroupId();
         
         // Först, se till att mottagaren finns i MailerLite
         try {
-          await addToNewsletter(to, receiptsGroup);
+          await addToNewsletter(to, receiptsGroupToUse);
         } catch (addErr) {
           // Ignorera om användaren redan finns
           console.log("[email] Subscriber may already exist, continuing...");
@@ -167,6 +279,7 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
         
         // Skapa och skicka campaign direkt till denna mottagare
         // Note: MailerLite Campaigns API kräver att mottagaren finns i en grupp först
+        // receiptsGroupToUse är redan definierad ovan
         const campaignPayload = {
           name: `Orderbekräftelse - ${Date.now()}`,
           type: "regular",
@@ -174,10 +287,10 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
           from_name: MAIL_FROM_NAME,
           from: MAIL_FROM,
           content: html,
-          groups: receiptsGroup ? [receiptsGroup] : [],
+          groups: receiptsGroupToUse ? [receiptsGroupToUse] : [],
           filter: {
             segments: [],
-            groups: receiptsGroup ? [receiptsGroup] : []
+            groups: receiptsGroupToUse ? [receiptsGroupToUse] : []
           }
         };
         
@@ -208,10 +321,10 @@ export async function sendEmail(subject: string, html: string, to: EmailRecipien
               Authorization: `Bearer ${MAILERLITE_API_KEY}`
             },
             body: JSON.stringify({
-              groups: receiptsGroup ? [receiptsGroup] : [],
+              groups: receiptsGroupToUse ? [receiptsGroupToUse] : [],
               filter: {
                 segments: [],
-                groups: receiptsGroup ? [receiptsGroup] : []
+                groups: receiptsGroupToUse ? [receiptsGroupToUse] : []
               }
             })
           });
@@ -299,13 +412,14 @@ export async function sendOrderConfirmationEmail(params: {
   monthlyFeeKr?: number; // månadsavgift
   validityText?: string; // giltighet (t.ex. "12 månader")
   brand?: "Elchef.se" | string;
+  groupId?: string; // Mailerlite grupp-ID för att bestämma avsändaradress
 }): Promise<void> {
-  const { MAIL_FROM_NAME } = getEmailConfig();
-  const subject = `Bekräftelse på din beställning – ${params.brand ?? MAIL_FROM_NAME}`;
+  const domainConfig = getEmailConfigForGroup(params.groupId);
+  const subject = `Bekräftelse på din beställning – ${params.brand ?? domainConfig.fromName}`;
 
   const isMovable = (params.contractType ?? "").toLowerCase().startsWith("rör");
   const isFixed = (params.contractType ?? "").toLowerCase().startsWith("fast");
-  const brandName = params.brand ?? MAIL_FROM_NAME;
+  const brandName = params.brand ?? domainConfig.fromName;
 
   const detailedBlock = (() => {
     if (isMovable) {
@@ -349,27 +463,28 @@ export async function sendOrderConfirmationEmail(params: {
       <p><strong>Referensnummer:</strong> ${params.switchId}</p>
       ${params.estimatedSavings != null ? `<p>Beräknad besparing: <strong>${Math.round(params.estimatedSavings)} kr/mån</strong></p>` : ""}
       ${detailedBlock}
-      <p style=\"margin-top:16px\">Vänliga hälsningar,<br/>${MAIL_FROM_NAME}</p>
+      <p style=\"margin-top:16px\">Vänliga hälsningar,<br/>${domainConfig.fromName}</p>
     </div>
   `;
-  await sendEmail(subject, html, { email: params.toEmail, name: params.toName });
+  await sendEmail(subject, html, { email: params.toEmail, name: params.toName }, params.groupId);
 }
 
 export async function sendWelcomeEmail(params: {
   toEmail: string;
   toName?: string;
+  groupId?: string; // Mailerlite grupp-ID för att bestämma avsändaradress
 }): Promise<void> {
-  const { MAIL_FROM_NAME } = getEmailConfig();
+  const domainConfig = getEmailConfigForGroup(params.groupId);
   const subject = "Välkommen! Du får nu våra erbjudanden och energitips";
   const html = `
     <div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;color:#111;line-height:1.6">
-      <h2 style=\"margin:0 0 12px\">Välkommen till ${MAIL_FROM_NAME}!</h2>
+      <h2 style=\"margin:0 0 12px\">Välkommen till ${domainConfig.fromName}!</h2>
       <p>Du har valt att ta emot erbjudanden om elavtal och energitjänster via e‑post/SMS.</p>
       <p>Vi skickar bara relevanta tips och kampanjer – du kan när som helst avsluta prenumerationen.</p>
-      <p>Vänliga hälsningar,<br/>${MAIL_FROM_NAME}</p>
+      <p>Vänliga hälsningar,<br/>${domainConfig.fromName}</p>
     </div>
   `;
-  await sendEmail(subject, html, { email: params.toEmail, name: params.toName });
+  await sendEmail(subject, html, { email: params.toEmail, name: params.toName }, params.groupId);
 }
 
 

@@ -12,6 +12,7 @@ bucket_name = "elbespararen-bill-images"
 binding = "DB"
 database_name = "elbespararen-db"
 database_id = "a475e6e6-5228-4598-8751-634e7de05ec0"
+migrations_dir = "migrations"
 
 [env.production]
 r2_buckets = [

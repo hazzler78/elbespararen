@@ -9,18 +9,59 @@ import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
+import { isValidSwedishPostalCode } from "@/lib/price-areas";
 
 
 export default function ContractsPage() {
   const router = useRouter();
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
+  const [detectedArea, setDetectedArea] = useState<string | null>(null);
   const [showContracts, setShowContracts] = useState(false);
   const contactFormRef = useRef<HTMLDivElement>(null);
 
-  const handlePostalCodeChange = (code: string, area: string | null) => {
+  // Funktion för att spara postal code analytics
+  const savePostalCodeAnalytics = async (
+    postalCode: string,
+    detectedArea: string | null,
+    selectedArea: string,
+    wasManuallyChanged: boolean
+  ) => {
+    try {
+      await fetch('/api/postal-code-analytics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          postalCode,
+          detectedArea: detectedArea || undefined,
+          selectedArea,
+          wasManuallyChanged,
+          pageContext: 'contracts'
+        })
+      });
+    } catch (error) {
+      // Tyst fel - analytics ska inte påverka användarupplevelsen
+      console.warn('[ContractsPage] Failed to save postal code analytics:', error);
+    }
+  };
+
+  const handlePostalCodeChange = (code: string, area: string | null, wasManuallyChanged?: boolean, detected?: string | null) => {
     setPostalCode(code);
     setPriceArea(area);
+    if (detected !== undefined) {
+      setDetectedArea(detected);
+    }
+    // Spara analytics när både postnummer och område är valt
+    if (code && area && isValidSwedishPostalCode(code)) {
+      savePostalCodeAnalytics(
+        code,
+        detected || null,
+        area,
+        wasManuallyChanged || false
+      );
+    }
   };
 
   const handleViewContracts = () => {
