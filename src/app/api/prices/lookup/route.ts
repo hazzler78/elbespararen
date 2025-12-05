@@ -20,7 +20,7 @@ type Normalized = {
   total?: number;
   total_with_vat?: number;
   vat?: number;
-  source: 'live' | 'cache';
+  source: 'live' | 'cache' | 'unknown';
   updatedAt?: string;
 };
 
@@ -124,13 +124,14 @@ export async function POST(request: NextRequest) {
       // Return empty data instead of error for unknown providers
       // This prevents console errors when providers aren't in the lookup map
       console.warn(`[prices/lookup] Unknown provider: ${body.providerName}`);
+      const normalized: Normalized = {
+        area,
+        range: null,
+        source: 'unknown'
+      };
       return NextResponse.json({ 
         success: true, 
-        data: {
-          area,
-          range: null,
-          source: 'unknown'
-        } as Normalized
+        data: normalized
       });
     }
 
