@@ -184,7 +184,7 @@ export default function PostalCodeAnalyticsPage() {
               {(['se1', 'se2', 'se3', 'se4'] as const).map((area) => (
                 <div key={area} className="p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm text-gray-600 mb-1">
-                    {isPriceAreaCode(area) ? PRICE_AREAS[area].name : area.toUpperCase()}
+                    {isPriceAreaCode(area) ? PRICE_AREAS[area].name : String(area).toUpperCase()}
                   </p>
                   <p className="text-2xl font-bold text-gray-900">{stats.byArea[area]}</p>
                   <p className="text-xs text-gray-500 mt-1">
@@ -212,7 +212,7 @@ export default function PostalCodeAnalyticsPage() {
                   <option value="all">Alla områden</option>
                   {(['se1', 'se2', 'se3', 'se4'] as const).map((area) => (
                     <option key={area} value={area}>
-                      {isPriceAreaCode(area) ? PRICE_AREAS[area].name : area.toUpperCase()}
+                      {isPriceAreaCode(area) ? PRICE_AREAS[area].name : String(area).toUpperCase()}
                     </option>
                   ))}
                 </select>
