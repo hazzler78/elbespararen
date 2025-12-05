@@ -15,7 +15,8 @@ import {
   BarChart3,
   Lock,
   Newspaper,
-  MessageCircle
+  MessageCircle,
+  MapPin
 } from "lucide-react";
 
 const ADMIN_PASSWORD = "grodan2025";
@@ -56,6 +57,12 @@ const navigation = [
     href: "/admin/chat",
     icon: MessageCircle,
     description: "Visa och analysera AI-chattmeddelanden"
+  },
+  {
+    name: "Postnummer Analytics",
+    href: "/admin/postal-code-analytics",
+    icon: MapPin,
+    description: "Spåra postnummer och områdesval"
   }
 ];
 

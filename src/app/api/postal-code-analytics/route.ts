@@ -4,6 +4,52 @@ import { createDatabaseFromBinding } from "@/lib/database";
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
+export async function GET(req: NextRequest) {
+  try {
+    // Hämta D1-binding från Edge-runtime
+    let env: any = {};
+    
+    // Metod 1: getRequestContext (next-on-pages)
+    if ((globalThis as any).getRequestContext) {
+      env = (globalThis as any).getRequestContext()?.env ?? {};
+    }
+    
+    // Metod 2: process.env.DB (direkt access)
+    if (!env.DB && (process.env as any).DB) {
+      env.DB = (process.env as any).DB;
+    }
+    
+    // Metod 3: globalThis.env (Cloudflare Workers)
+    if (!env.DB && (globalThis as any).env?.DB) {
+      env.DB = (globalThis as any).env.DB;
+    }
+    
+    const db = createDatabaseFromBinding(env?.DB);
+
+    // Hämta limit från query params
+    const url = new URL(req.url);
+    const limit = url.searchParams.get('limit');
+    const limitNum = limit ? parseInt(limit, 10) : undefined;
+
+    // Hämta analytics data
+    const analytics = await db.getPostalCodeAnalytics(limitNum);
+
+    return NextResponse.json({
+      success: true,
+      data: analytics,
+      count: analytics.length
+    });
+  } catch (error) {
+    console.error("[postal-code-analytics] GET Error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    
+    return NextResponse.json(
+      { success: false, error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json() as {
