@@ -77,7 +77,7 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
             <p className="text-sm text-primary uppercase tracking-wide font-medium">Billigaste alternativ</p>
           </div>
           <p className="text-2xl font-bold text-primary">{formatCurrency(cheapestAlternative)}</p>
-          <p className="text-xs text-muted mt-1">med spotpris + minimal avgift</p>
+          <p className="text-xs text-muted mt-1">inkl. moms per månad</p>
         </div>
       </div>
 
