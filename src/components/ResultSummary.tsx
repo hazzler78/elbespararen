@@ -44,12 +44,15 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
       <div
         className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 mb-6 text-center border-2 border-primary/20"
       >
-        <p className="text-sm uppercase tracking-wide text-primary mb-2">Du kan spara upp till</p>
-        <div className="flex items-center justify-center gap-3 mb-2">
-          <TrendingDown className="w-8 h-8 text-primary" />
-          <p className="text-5xl font-bold text-primary">{formatCurrency(potentialSavings * 12)}</p>
+        <p className="text-lg font-semibold text-primary mb-4">Grattis!</p>
+        <div className="flex flex-col items-center gap-2 mb-3">
+          <p className="text-2xl md:text-3xl font-bold text-primary leading-tight">
+            Du kan spara upp till{" "}
+            <span className="text-4xl md:text-5xl">{formatCurrency(potentialSavings * 12)}</span>{" "}
+            kr – byt elavtal nu 💪
+          </p>
         </div>
-        <p className="text-lg text-muted">
+        <p className="text-base text-muted">
           per år ({savingsPercentage}% lägre) inkl. moms
         </p>
       </div>
