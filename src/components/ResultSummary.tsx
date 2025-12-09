@@ -47,7 +47,7 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         <p className="text-lg font-semibold text-primary mb-4">Grattis!</p>
         <div className="flex flex-col items-center gap-2 mb-3">
           <p className="text-2xl md:text-3xl font-bold text-primary leading-tight">
-            Du kan spara upp till{" "}
+            Du sparar upp till{" "}
             <span className="text-4xl md:text-5xl">{formatCurrency(potentialSavings * 12)}</span>{" "}
             kr – byt elavtal nu 💪
           </p>
