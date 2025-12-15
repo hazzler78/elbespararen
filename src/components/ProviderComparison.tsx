@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
-import { CheckCircle2, Star, ExternalLink, Phone, Zap, ChevronDown } from "lucide-react";
+import { CheckCircle2, Star, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
@@ -385,32 +385,19 @@ export default function ProviderComparison({
           </div>
         )}
 
-        <div className="space-y-2">
-          <div className="flex gap-2">
-            <button
-              onClick={() => handleSwitchClick(comparison)}
-              className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-            >
-              Välj
-            </button>
-            {comparison.provider.phoneNumber && (
-              <a
-                href={`tel:${comparison.provider.phoneNumber}`}
-                className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
-              >
-                <Phone className="w-4 h-4" />
-              </a>
-            )}
-          </div>
-          {comparison.provider.websiteUrl && comparison.provider.websiteUrl.trim() && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => handleSwitchClick(comparison)}
+            className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+          >
+            Välj
+          </button>
+          {comparison.provider.phoneNumber && (
             <a
-              href={comparison.provider.websiteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full flex items-center justify-center gap-2 text-primary border border-primary py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors"
+              href={`tel:${comparison.provider.phoneNumber}`}
+              className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
             >
-              <ExternalLink className="w-4 h-4" />
-              Besök hemsida
+              <Phone className="w-4 h-4" />
             </a>
           )}
         </div>
@@ -580,25 +567,12 @@ export default function ProviderComparison({
                 <p className="text-sm text-muted">per månad</p>
               </div>
               
-              <div className="space-y-2">
               <button 
                 onClick={() => handleSwitchClick(bestOption)}
                 className="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
               >
                 Byt till {bestOption.provider.name}
               </button>
-                {bestOption.provider.websiteUrl && bestOption.provider.websiteUrl.trim() && (
-                  <a
-                    href={bestOption.provider.websiteUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full flex items-center justify-center gap-2 text-primary border border-primary py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors"
-                  >
-                    <ExternalLink className="w-4 h-4" />
-                    Besök hemsida
-                  </a>
-                )}
-              </div>
             </div>
           </div>
         </div>
