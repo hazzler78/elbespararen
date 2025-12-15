@@ -20,7 +20,9 @@ export default function ProvidersAdminPage() {
     try {
       setIsLoading(true);
       // Hämta alla leverantörer (inklusive dolda) för admin-gränssnittet
-      const response = await fetch("/api/providers?includeHidden=true");
+      const response = await fetch(`/api/providers?includeHidden=true&t=${Date.now()}`, {
+        cache: "no-store",
+      });
       const result = await response.json() as ApiResponse<ElectricityProvider[]>;
       
       if (result.success && result.data) {

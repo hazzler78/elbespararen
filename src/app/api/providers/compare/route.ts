@@ -340,6 +340,12 @@ export async function POST(request: NextRequest) {
         totalProviders: comparisons.length,
         recommendedProviders: comparisons.filter(c => c.isRecommended).length
       }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error("[providers/compare] POST error:", error);

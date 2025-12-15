@@ -73,12 +73,15 @@ export default function ProviderComparison({
       try {
         setIsLoading(true);
         console.log('[ProviderComparison] Sending billData:', billData);
-        const response = await fetch("/api/providers/compare", {
+        // Lägg till timestamp för att förhindra caching
+        const response = await fetch(`/api/providers/compare?t=${Date.now()}`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            "Cache-Control": "no-cache",
           },
           body: JSON.stringify({ billData }),
+          cache: "no-store",
         });
 
         const result = await response.json() as ApiResponse<ComparisonData>;

@@ -56,7 +56,9 @@ export default function AdminPage() {
 
     const fetchProviders = async () => {
       try {
-        const response = await fetch('/api/providers?includeHidden=true');
+        const response = await fetch(`/api/providers?includeHidden=true&t=${Date.now()}`, {
+          cache: "no-store",
+        });
         const result = await response.json() as ApiResponse<ElectricityProvider[]>;
         if (result.success && result.data) {
           setProviders(result.data.filter(p => p.isActive));

@@ -43,6 +43,12 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: providers
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error("[providers] GET error:", error);
@@ -198,6 +204,12 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       data: updatedProvider
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0'
+      }
     });
   } catch (error) {
     console.error("[providers] PUT error:", error);
