@@ -399,7 +399,7 @@ export default function ProviderComparison({
               </a>
             )}
           </div>
-          {comparison.provider.websiteUrl && (
+          {comparison.provider.websiteUrl && comparison.provider.websiteUrl.trim() && (
             <a
               href={comparison.provider.websiteUrl}
               target="_blank"
@@ -584,7 +584,7 @@ export default function ProviderComparison({
               >
                 Byt till {bestOption.provider.name}
               </button>
-                {bestOption.provider.websiteUrl && (
+                {bestOption.provider.websiteUrl && bestOption.provider.websiteUrl.trim() && (
                   <a
                     href={bestOption.provider.websiteUrl}
                     target="_blank"

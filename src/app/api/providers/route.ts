@@ -114,10 +114,10 @@ export async function POST(request: NextRequest) {
       isActive: body.isActive !== false,
       customerType,
       features: (body.features as string[]) || [],
-      logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
-      websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
-      affiliateUrl: body.affiliateUrl ? String(body.affiliateUrl) : undefined,
-      phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
+      logoUrl: body.logoUrl && String(body.logoUrl).trim() ? String(body.logoUrl).trim() : undefined,
+      websiteUrl: body.websiteUrl && String(body.websiteUrl).trim() ? String(body.websiteUrl).trim() : undefined,
+      affiliateUrl: body.affiliateUrl && String(body.affiliateUrl).trim() ? String(body.affiliateUrl).trim() : undefined,
+      phoneNumber: body.phoneNumber && String(body.phoneNumber).trim() ? String(body.phoneNumber).trim() : undefined
     });
 
     return NextResponse.json({
@@ -187,10 +187,10 @@ export async function PUT(request: NextRequest) {
       userHidden: body.userHidden !== undefined ? Boolean(body.userHidden) : undefined,
       customerType: body.customerType ? (body.customerType === 'business' ? 'business' : 'private') : undefined,
       features: body.features ? (body.features as string[]) : undefined,
-      logoUrl: body.logoUrl ? String(body.logoUrl) : undefined,
-      websiteUrl: body.websiteUrl ? String(body.websiteUrl) : undefined,
-      affiliateUrl: body.affiliateUrl ? String(body.affiliateUrl) : undefined,
-      phoneNumber: body.phoneNumber ? String(body.phoneNumber) : undefined
+      logoUrl: body.logoUrl && String(body.logoUrl).trim() ? String(body.logoUrl).trim() : undefined,
+      websiteUrl: body.websiteUrl && String(body.websiteUrl).trim() ? String(body.websiteUrl).trim() : undefined,
+      affiliateUrl: body.affiliateUrl && String(body.affiliateUrl).trim() ? String(body.affiliateUrl).trim() : undefined,
+      phoneNumber: body.phoneNumber && String(body.phoneNumber).trim() ? String(body.phoneNumber).trim() : undefined
     });
 
     console.log('[providers] PUT - successfully updated provider:', updatedProvider);
