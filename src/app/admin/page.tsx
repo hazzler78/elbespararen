@@ -133,7 +133,7 @@ export default function AdminPage() {
         const data = await response.json() as ApiResponse<{ bestChoiceProviderId: string | null }>;
         if (data.success && data.data) {
           setBestChoiceProviderId(data.data.bestChoiceProviderId);
-          alert('✅ Bästa val uppdaterat!');
+          alert('✅ Mest populär uppdaterat!');
         }
       } else {
         alert('❌ Kunde inte spara inställning');
@@ -347,10 +347,10 @@ export default function AdminPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
             <div className="flex items-center gap-2 mb-4">
               <Star className="w-5 h-5 text-yellow-500" />
-              <h2 className="text-xl font-bold text-gray-900">Bästa val</h2>
+              <h2 className="text-xl font-bold text-gray-900">Mest populär</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Välj vilken leverantör som ska visas som "Bästa val" i jämförelsen. Om inget val görs används automatisk sortering.
+              Välj vilken leverantör som ska visas som "Mest populär" i jämförelsen. Om inget val görs används automatisk sortering.
             </p>
             
             {isLoadingSettings ? (

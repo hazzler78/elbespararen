@@ -382,19 +382,32 @@ export default function ProviderComparison({
           </div>
         )}
 
-        <div className="flex gap-2">
-          <button
-            onClick={() => handleSwitchClick(comparison)}
-            className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-          >
-            Välj
-          </button>
-          {comparison.provider.phoneNumber && (
-            <a
-              href={`tel:${comparison.provider.phoneNumber}`}
-              className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
+        <div className="space-y-2">
+          <div className="flex gap-2">
+            <button
+              onClick={() => handleSwitchClick(comparison)}
+              className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
             >
-              <Phone className="w-4 h-4" />
+              Välj
+            </button>
+            {comparison.provider.phoneNumber && (
+              <a
+                href={`tel:${comparison.provider.phoneNumber}`}
+                className="flex items-center justify-center gap-1 text-primary border border-primary py-2 px-3 rounded-lg hover:bg-primary/5 transition-colors"
+              >
+                <Phone className="w-4 h-4" />
+              </a>
+            )}
+          </div>
+          {comparison.provider.websiteUrl && (
+            <a
+              href={comparison.provider.websiteUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="w-full flex items-center justify-center gap-2 text-primary border border-primary py-2 px-4 rounded-lg hover:bg-primary/5 transition-colors"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Besök hemsida
             </a>
           )}
         </div>
@@ -468,7 +481,7 @@ export default function ProviderComparison({
           <div className="absolute top-4 right-4">
             <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
               <Star className="w-4 h-4" />
-              Bästa val
+              Mest populär
             </div>
           </div>
 

@@ -97,7 +97,7 @@ export function getOptimizedLogoProps(
 }
 
 /**
- * Gets optimized logo props for larger logos (like in "Bästa val" section)
+ * Gets optimized logo props for larger logos (like in "Mest populär" section)
  * @param logoUrl - The logo URL
  * @param alt - Alt text for the image
  * @param className - CSS classes
