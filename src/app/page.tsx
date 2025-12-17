@@ -6,6 +6,7 @@ import { Eye, TrendingDown, Shield, ArrowRight, Sparkles, ChevronDown, ChevronUp
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
+import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function Home() {
   const [isBannerOpen, setIsBannerOpen] = useState(false);
@@ -254,6 +255,33 @@ export default function Home() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Newsletter Signup */}
+      <section className="py-20 px-4 bg-gray-50">
+        <div className="max-w-2xl mx-auto">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-8"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+              Få energitips och erbjudanden
+            </h2>
+            <p className="text-lg text-muted">
+              Prenumerera på vårt nyhetsbrev och få tips om hur du kan spara pengar på din elräkning.
+            </p>
+          </motion.div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+          >
+            <NewsletterSignup />
+          </motion.div>
         </div>
       </section>
 

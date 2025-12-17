@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, ChevronUp } from "lucide-react";
+import NewsletterSignup from "./NewsletterSignup";
 
 interface FooterSection {
   title: string;
@@ -186,8 +187,25 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Divider */}
+        {/* Newsletter Signup */}
         <div className="border-t border-gray-700 mt-8 pt-8">
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            className="max-w-md mx-auto mb-8"
+          >
+            <h3 className="font-semibold text-lg mb-4 text-white text-center">Prenumerera på nyhetsbrev</h3>
+            <p className="text-gray-400 text-sm text-center mb-4">
+              Få erbjudanden och energitips direkt till din inkorg.
+            </p>
+            <NewsletterSignup variant="compact" />
+          </motion.div>
+        </div>
+
+        {/* Divider */}
+        <div className="border-t border-gray-700 pt-8">
           {/* Copyright */}
           <div className="text-center">
             <p className="text-gray-400 text-sm leading-relaxed">
