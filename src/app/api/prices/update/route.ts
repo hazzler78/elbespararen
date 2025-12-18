@@ -20,29 +20,35 @@ function computeEnergyPriceFromComponents(
   return Math.max(0, Number(totalKrInclVat.toFixed(6)));
 }
 
-function findAreaArray(obj: any, area: string): any[] | null {
+function findAreaArray(obj: any, area: string, providerName?: string): any[] | null {
   if (!obj || typeof obj !== 'object') return null;
   if (Array.isArray(obj)) return null;
   const direct = obj[area];
   if (Array.isArray(direct)) return direct as any[];
-  const preferredKeys = ['variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices'];
+  
+  // För Cheap Energy, prioritera variable_hourly_rate för rörliga priser
+  const isCheapEnergy = providerName && normalizeProviderName(providerName).toLowerCase() === 'cheap energy';
+  const preferredKeys = isCheapEnergy 
+    ? ['variable_hourly_rate', 'variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices', 'variable_monthly_rate']
+    : ['variable_prices', 'variable', 'no_commitment_prices', 'spot', 'prices', 'data', 'variable_fixed_prices', 'variable_monthly_rate', 'variable_hourly_rate'];
+  
   for (const key of preferredKeys) {
     if (obj[key]) {
-      const found = findAreaArray(obj[key], area);
+      const found = findAreaArray(obj[key], area, providerName);
       if (found) return found;
     }
   }
   for (const key of Object.keys(obj)) {
     const val = obj[key];
     if (val && typeof val === 'object') {
-      const found = findAreaArray(val, area);
+      const found = findAreaArray(val, area, providerName);
       if (found) return found;
     }
   }
   return null;
 }
 
-function extractVariableComponents(data: any): { surcharge: number; elCertificateFee: number; twelveMonthDiscount: number } | null {
+function extractVariableComponents(data: any, providerName?: string): { surcharge: number; elCertificateFee: number; twelveMonthDiscount: number } | null {
   if (!data || typeof data !== 'object') return null;
   const preferredAreas = ['se3', 'SE3', 'se2', 'SE2', 'se1', 'SE1', 'se4', 'SE4'];
   let pack: any = null;
@@ -50,7 +56,7 @@ function extractVariableComponents(data: any): { surcharge: number; elCertificat
   for (const area of preferredAreas) {
     const variants = Array.from(new Set([area, String(area).toLowerCase(), String(area).toUpperCase()]));
     for (const variant of variants) {
-      const buckets = findAreaArray(data, variant);
+      const buckets = findAreaArray(data, variant, providerName);
       if (Array.isArray(buckets) && buckets.length > 0) {
         const targetBucket = buckets.find((b: any) => b?.no_commitment || b?.standard) ?? buckets[0];
         pack = targetBucket?.no_commitment ?? targetBucket?.standard ?? targetBucket ?? null;
@@ -607,7 +613,7 @@ export async function POST(request: NextRequest) {
           const provider = existingProviders.find(p => p.contractType === 'rörligt' && normalizeProviderName(p.name).toLowerCase() === canonicalTarget.toLowerCase());
           if (provider) {
             const rawVariable = latestVariableData.get(canonicalTarget.toLowerCase());
-            const components = rawVariable ? extractVariableComponents(rawVariable) : null;
+            const components = rawVariable ? extractVariableComponents(rawVariable, canonicalTarget) : null;
             const updatePayload: Partial<ElectricityProvider> = { isActive: true };
             let action = 'kept_variable_active';
 

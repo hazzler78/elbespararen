@@ -77,27 +77,42 @@ async function writeCache(db: CloudflareD1Database, providerKey: string, area: s
   return now;
 }
 
-function findAreaArray(obj: any, area: string): any[] | null {
+function findAreaArray(obj: any, area: string, providerKey?: string): any[] | null {
   if (!obj || typeof obj !== 'object') return null;
   if (Array.isArray(obj)) return null;
   // Direct match
   const direct = obj[area];
   if (Array.isArray(direct)) return direct as any[];
-  // Search known containers first
-  const preferredKeys = [
-    'variable_monthly_rate',
-    'variable_prices',
-    'variable',
-    'no_commitment_prices',
-    'variable_hourly_rate',
-    'spot',
-    'prices',
-    'data',
-    'variable_fixed_prices'
-  ];
+  
+  // För Cheap Energy, prioritera variable_hourly_rate för rörliga priser
+  const isCheapEnergy = providerKey === 'cheap-energy';
+  const preferredKeys = isCheapEnergy
+    ? [
+        'variable_hourly_rate',
+        'variable_prices',
+        'variable',
+        'no_commitment_prices',
+        'spot',
+        'prices',
+        'data',
+        'variable_fixed_prices',
+        'variable_monthly_rate'
+      ]
+    : [
+        'variable_monthly_rate',
+        'variable_prices',
+        'variable',
+        'no_commitment_prices',
+        'variable_hourly_rate',
+        'spot',
+        'prices',
+        'data',
+        'variable_fixed_prices'
+      ];
+  
   for (const key of preferredKeys) {
     if (obj[key]) {
-      const found = findAreaArray(obj[key], area);
+      const found = findAreaArray(obj[key], area, providerKey);
       if (found) return found;
     }
   }
@@ -105,7 +120,7 @@ function findAreaArray(obj: any, area: string): any[] | null {
   for (const key of Object.keys(obj)) {
     const val = obj[key];
     if (val && typeof val === 'object') {
-      const found = findAreaArray(val, area);
+      const found = findAreaArray(val, area, providerKey);
       if (found) return found;
     }
   }
@@ -141,7 +156,7 @@ export async function POST(request: NextRequest) {
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = (await res.json()) as Record<string, unknown>;
-      const buckets = findAreaArray(json, area);
+      const buckets = findAreaArray(json, area, providerKey);
       if (!Array.isArray(buckets)) throw new Error('Bad JSON structure');
       let bucket = buckets.find(b => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption) || null;
       if (!bucket) {
