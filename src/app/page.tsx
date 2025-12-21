@@ -96,12 +96,12 @@ export default function Home() {
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              Se din elfaktura<br />
-              <span className="text-primary">med nya ögon</span>
+              Byt elavtal och<br />
+              <span className="text-primary">spara tusentals kronor</span>
             </h1>
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
-              AI-driven analys hittar onödiga extra avgifter och visar exakt hur mycket du kan spara. 
+              Vår AI hittar dina onödiga extra avgifter och visar exakt hur mycket du kan spara när du byter. 
               Elbespararen - en tjänst från Elchef. Enkelt, säkert och helt kostnadsfritt.
             </p>
 
@@ -120,7 +120,7 @@ export default function Home() {
                   transition-all duration-200 shadow-lg hover:shadow-xl
                 "
               >
-                Kom igång
+                Byt avtal nu
                 <ArrowRight className="w-5 h-5" />
               </Link>
             </motion.div>
@@ -149,9 +149,9 @@ export default function Home() {
             className="text-center mb-12"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4">
-              Så fungerar det
+              Så byter du avtal
             </h2>
-            <p className="text-muted text-lg">Tre enkla steg till bättre besparingar</p>
+            <p className="text-muted text-lg">Tre enkla steg till ett bättre elavtal</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -183,9 +183,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-secondary/10 rounded-full mb-4">
                 <Sparkles className="w-8 h-8 text-secondary" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">2. AI analyserar</h3>
+              <h3 className="text-xl font-semibold mb-2">2. AI hittar besparingar</h3>
               <p className="text-muted">
-                Vår AI läser och förstår fakturan – hittar alla onödiga extra avgifter.
+                Vår AI analyserar fakturan och visar exakt vad du betalar i onödiga avgifter.
               </p>
             </motion.div>
 
@@ -200,9 +200,9 @@ export default function Home() {
               <div className="inline-flex items-center justify-center w-16 h-16 bg-accent/10 rounded-full mb-4">
                 <TrendingDown className="w-8 h-8 text-accent" />
               </div>
-              <h3 className="text-xl font-semibold mb-2">3. Se dina besparingar</h3>
+              <h3 className="text-xl font-semibold mb-2">3. Byt avtal och spara</h3>
               <p className="text-muted">
-                Få en tydlig rapport med exakt hur mycket du kan spara per månad.
+                Få en tydlig rapport och jämför bästa alternativ för att byta avtal direkt.
               </p>
             </motion.div>
           </div>
@@ -297,10 +297,10 @@ export default function Home() {
           className="max-w-2xl mx-auto text-center"
         >
           <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Redo att spara pengar?
+            Redo att byta avtal?
           </h2>
           <p className="text-lg mb-8 opacity-90">
-            Det tar mindre än 30 sekunder att få din analys.
+            Se dina besparingar på 30 sekunder och byt avtal direkt.
           </p>
           <Link
             href="/upload"
@@ -311,7 +311,7 @@ export default function Home() {
               transition-all duration-200
             "
           >
-            Kom igång nu
+            Byt avtal nu
             <ArrowRight className="w-5 h-5" />
           </Link>
         </motion.div>
