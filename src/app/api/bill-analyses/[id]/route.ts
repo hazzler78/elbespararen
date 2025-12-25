@@ -7,9 +7,11 @@ export const runtime = 'edge';
 // GET - Hämta en specifik fakturaanalys
 export async function GET(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Hämta D1-binding från Edge-runtime
     let env: any = {};
     if ((globalThis as any).getRequestContext) {
@@ -23,7 +25,7 @@ export async function GET(
     }
 
     const db = createDatabaseFromBinding(env?.DB);
-    const analysis = await db.getBillAnalysis(params.id);
+    const analysis = await db.getBillAnalysis(id);
 
     if (!analysis) {
       return NextResponse.json(
@@ -48,9 +50,10 @@ export async function GET(
 // PUT - Uppdatera fakturaanalys (t.ex. valideringsstatus)
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const body = await req.json() as {
       validationStatus?: BillAnalysis['validationStatus'];
       validationNotes?: string;
@@ -88,7 +91,7 @@ export async function PUT(
       updateData.validatedAt = new Date();
     }
 
-    const updated = await db.updateBillAnalysis(params.id, updateData);
+    const updated = await db.updateBillAnalysis(id, updateData);
 
     return NextResponse.json({
       success: true,
@@ -106,9 +109,11 @@ export async function PUT(
 // DELETE - Ta bort fakturaanalys
 export async function DELETE(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
+    
     // Hämta D1-binding från Edge-runtime
     let env: any = {};
     if ((globalThis as any).getRequestContext) {
@@ -122,7 +127,7 @@ export async function DELETE(
     }
 
     const db = createDatabaseFromBinding(env?.DB);
-    const deleted = await db.deleteBillAnalysis(params.id);
+    const deleted = await db.deleteBillAnalysis(id);
 
     if (!deleted) {
       return NextResponse.json(
