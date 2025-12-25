@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics } from "@/lib/types";
+import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
@@ -98,6 +98,13 @@ export interface Database {
   // Postal Code Analytics
   createPostalCodeAnalytics(analytics: Omit<PostalCodeAnalytics, 'id' | 'createdAt'>): Promise<PostalCodeAnalytics>;
   getPostalCodeAnalytics(limit?: number): Promise<PostalCodeAnalytics[]>;
+
+  // Bill Analyses
+  getBillAnalyses(limit?: number, validationStatus?: BillAnalysis['validationStatus']): Promise<BillAnalysis[]>;
+  getBillAnalysis(id: string): Promise<BillAnalysis | null>;
+  createBillAnalysis(analysis: Omit<BillAnalysis, 'id' | 'createdAt'>): Promise<BillAnalysis>;
+  updateBillAnalysis(id: string, analysis: Partial<BillAnalysis>): Promise<BillAnalysis>;
+  deleteBillAnalysis(id: string): Promise<boolean>;
 }
 
 // Mock Database Implementation (för utveckling)
@@ -109,6 +116,7 @@ class MockDatabase implements Database {
   private newsPosts: NewsPost[] = [];
   private chatMessages: ChatMessage[] = [];
   private postalCodeAnalytics: PostalCodeAnalytics[] = [];
+  private billAnalyses: BillAnalysis[] = [];
   public bestChoiceProviderId: string | null = null; // För settings API
 
   // Singleton pattern för att behålla state mellan requests i utveckling
@@ -366,6 +374,62 @@ class MockDatabase implements Database {
     }
     
     return analytics;
+  }
+
+  // Bill Analyses methods
+  async getBillAnalyses(limit?: number, validationStatus?: BillAnalysis['validationStatus']): Promise<BillAnalysis[]> {
+    let analyses = [...this.billAnalyses];
+    
+    // Filtrera på validation status om angivet
+    if (validationStatus) {
+      analyses = analyses.filter(a => a.validationStatus === validationStatus);
+    }
+    
+    // Sortera efter datum (nyaste först)
+    analyses.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    if (limit) {
+      analyses = analyses.slice(0, limit);
+    }
+    
+    return analyses;
+  }
+
+  async getBillAnalysis(id: string): Promise<BillAnalysis | null> {
+    return this.billAnalyses.find(a => a.id === id) || null;
+  }
+
+  async createBillAnalysis(analysisData: Omit<BillAnalysis, 'id' | 'createdAt'>): Promise<BillAnalysis> {
+    const analysis: BillAnalysis = {
+      ...analysisData,
+      id: `bill-analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      createdAt: new Date()
+    };
+    this.billAnalyses.push(analysis);
+    return analysis;
+  }
+
+  async updateBillAnalysis(id: string, analysisData: Partial<BillAnalysis>): Promise<BillAnalysis> {
+    const index = this.billAnalyses.findIndex(a => a.id === id);
+    if (index === -1) {
+      throw new Error(`Bill analysis with id ${id} not found`);
+    }
+    
+    this.billAnalyses[index] = {
+      ...this.billAnalyses[index],
+      ...analysisData
+    };
+    
+    return this.billAnalyses[index];
+  }
+
+  async deleteBillAnalysis(id: string): Promise<boolean> {
+    const index = this.billAnalyses.findIndex(a => a.id === id);
+    if (index === -1) {
+      return false;
+    }
+    this.billAnalyses.splice(index, 1);
+    return true;
   }
 }
 
@@ -1254,6 +1318,225 @@ class CloudflareDatabase implements Database {
       if (errorMessage.includes('no such table') || errorMessage.includes('postal_code_analytics')) {
         console.warn('[Database] postal_code_analytics table does not exist.');
         return [];
+      }
+      throw error;
+    }
+  }
+
+  // Bill Analyses methods
+  async getBillAnalyses(limit?: number, validationStatus?: BillAnalysis['validationStatus']): Promise<BillAnalysis[]> {
+    try {
+      let query = `
+        SELECT * FROM bill_analyses
+      `;
+      
+      const bindings: unknown[] = [];
+      
+      if (validationStatus) {
+        query += ` WHERE validation_status = ?`;
+        bindings.push(validationStatus);
+      }
+      
+      query += ` ORDER BY created_at DESC`;
+      
+      if (limit) {
+        query += ` LIMIT ?`;
+        bindings.push(limit);
+      }
+
+      const result = bindings.length > 0
+        ? await this.db.prepare(query).bind(...bindings).all()
+        : await this.db.prepare(query).all();
+
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          billData: JSON.parse(String(row.bill_data)) as BillAnalysis['billData'],
+          savings: JSON.parse(String(row.savings_data)) as BillAnalysis['savings'],
+          imageKey: row.image_key ? String(row.image_key) : undefined,
+          imageUrl: row.image_url ? String(row.image_url) : undefined,
+          originalFileName: row.original_file_name ? String(row.original_file_name) : undefined,
+          postalCode: row.postal_code ? String(row.postal_code) : undefined,
+          priceArea: row.price_area ? String(row.price_area) : undefined,
+          aiConfidence: row.ai_confidence ? Number(row.ai_confidence) : undefined,
+          aiWarnings: row.ai_warnings ? JSON.parse(String(row.ai_warnings)) : undefined,
+          validationStatus: (row.validation_status as BillAnalysis['validationStatus']) || 'pending',
+          validationNotes: row.validation_notes ? String(row.validation_notes) : undefined,
+          validatedBy: row.validated_by ? String(row.validated_by) : undefined,
+          validatedAt: row.validated_at ? new Date(String(row.validated_at)) : undefined,
+          ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+          userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          createdAt: new Date(String(row.created_at))
+        };
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        console.warn('[Database] bill_analyses table does not exist.');
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  async getBillAnalysis(id: string): Promise<BillAnalysis | null> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM bill_analyses WHERE id = ?
+      `).bind(id).first();
+
+      if (!result) {
+        return null;
+      }
+
+      const row = result as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        billData: JSON.parse(String(row.bill_data)) as BillAnalysis['billData'],
+        savings: JSON.parse(String(row.savings_data)) as BillAnalysis['savings'],
+        imageKey: row.image_key ? String(row.image_key) : undefined,
+        imageUrl: row.image_url ? String(row.image_url) : undefined,
+        originalFileName: row.original_file_name ? String(row.original_file_name) : undefined,
+        postalCode: row.postal_code ? String(row.postal_code) : undefined,
+        priceArea: row.price_area ? String(row.price_area) : undefined,
+        aiConfidence: row.ai_confidence ? Number(row.ai_confidence) : undefined,
+        aiWarnings: row.ai_warnings ? JSON.parse(String(row.ai_warnings)) : undefined,
+        validationStatus: (row.validation_status as BillAnalysis['validationStatus']) || 'pending',
+        validationNotes: row.validation_notes ? String(row.validation_notes) : undefined,
+        validatedBy: row.validated_by ? String(row.validated_by) : undefined,
+        validatedAt: row.validated_at ? new Date(String(row.validated_at)) : undefined,
+        ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+        userAgent: row.user_agent ? String(row.user_agent) : undefined,
+        createdAt: new Date(String(row.created_at))
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        console.warn('[Database] bill_analyses table does not exist.');
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async createBillAnalysis(analysisData: Omit<BillAnalysis, 'id' | 'createdAt'>): Promise<BillAnalysis> {
+    try {
+      const id = `bill-analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      const now = new Date().toISOString();
+
+      await this.db.prepare(`
+        INSERT INTO bill_analyses (
+          id, bill_data, savings_data, image_key, image_url, original_file_name,
+          postal_code, price_area, ai_confidence, ai_warnings,
+          validation_status, validation_notes, validated_by, validated_at,
+          ip_address, user_agent, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        JSON.stringify(analysisData.billData),
+        JSON.stringify(analysisData.savings),
+        analysisData.imageKey || null,
+        analysisData.imageUrl || null,
+        analysisData.originalFileName || null,
+        analysisData.postalCode || null,
+        analysisData.priceArea || null,
+        analysisData.aiConfidence || null,
+        analysisData.aiWarnings ? JSON.stringify(analysisData.aiWarnings) : null,
+        analysisData.validationStatus || 'pending',
+        analysisData.validationNotes || null,
+        analysisData.validatedBy || null,
+        analysisData.validatedAt ? analysisData.validatedAt.toISOString() : null,
+        analysisData.ipAddress || null,
+        analysisData.userAgent || null,
+        now
+      ).run();
+
+      return {
+        ...analysisData,
+        id,
+        createdAt: new Date(now)
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        throw new Error('bill_analyses table does not exist. Please run the migration first.');
+      }
+      throw error;
+    }
+  }
+
+  async updateBillAnalysis(id: string, analysisData: Partial<BillAnalysis>): Promise<BillAnalysis> {
+    try {
+      const existing = await this.getBillAnalysis(id);
+      if (!existing) {
+        throw new Error(`Bill analysis with id ${id} not found`);
+      }
+
+      const updates: string[] = [];
+      const bindings: unknown[] = [];
+
+      if (analysisData.billData !== undefined) {
+        updates.push('bill_data = ?');
+        bindings.push(JSON.stringify(analysisData.billData));
+      }
+      if (analysisData.savings !== undefined) {
+        updates.push('savings_data = ?');
+        bindings.push(JSON.stringify(analysisData.savings));
+      }
+      if (analysisData.validationStatus !== undefined) {
+        updates.push('validation_status = ?');
+        bindings.push(analysisData.validationStatus);
+      }
+      if (analysisData.validationNotes !== undefined) {
+        updates.push('validation_notes = ?');
+        bindings.push(analysisData.validationNotes || null);
+      }
+      if (analysisData.validatedBy !== undefined) {
+        updates.push('validated_by = ?');
+        bindings.push(analysisData.validatedBy || null);
+      }
+      if (analysisData.validatedAt !== undefined) {
+        updates.push('validated_at = ?');
+        bindings.push(analysisData.validatedAt ? analysisData.validatedAt.toISOString() : null);
+      }
+
+      if (updates.length === 0) {
+        return existing;
+      }
+
+      bindings.push(id);
+
+      await this.db.prepare(`
+        UPDATE bill_analyses 
+        SET ${updates.join(', ')}
+        WHERE id = ?
+      `).bind(...bindings).run();
+
+      return await this.getBillAnalysis(id) as BillAnalysis;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        throw new Error('bill_analyses table does not exist. Please run the migration first.');
+      }
+      throw error;
+    }
+  }
+
+  async deleteBillAnalysis(id: string): Promise<boolean> {
+    try {
+      const result = await this.db.prepare(`
+        DELETE FROM bill_analyses WHERE id = ?
+      `).bind(id).run() as D1RunResult;
+
+      return (result.meta?.changes || 0) > 0;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        console.warn('[Database] bill_analyses table does not exist.');
+        return false;
       }
       throw error;
     }

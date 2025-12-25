@@ -219,6 +219,27 @@ export interface PostalCodeAnalytics {
   createdAt: Date;
 }
 
+// Bill Analysis types (för admin-granskning)
+export interface BillAnalysis {
+  id: string;
+  billData: BillData;
+  savings: SavingsCalculation;
+  imageKey?: string;
+  imageUrl?: string;
+  originalFileName?: string;
+  postalCode?: string;
+  priceArea?: string;
+  aiConfidence?: number;
+  aiWarnings?: string[];
+  validationStatus: 'pending' | 'correct' | 'incorrect' | 'needs_review';
+  validationNotes?: string;
+  validatedBy?: string;
+  validatedAt?: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt: Date;
+}
+
 // API Response types
 export interface ApiResponse<T = unknown> {
   success: boolean;

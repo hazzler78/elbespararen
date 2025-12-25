@@ -6,6 +6,8 @@ import { BillData } from "@/lib/types";
 import { applyCorrections, validateBillData } from "@/lib/ai-corrections";
 import { providerRouter } from "@/lib/ai-provider-routing";
 import { saveBillImage } from "@/lib/storage/bill-images";
+import { calculateSavings } from "@/lib/calculations";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -197,6 +199,52 @@ export async function POST(
       billData.imageUrl = savedImageResult.url;
       billData.originalFileName = file.name;
       billData.uploadedAt = savedImageResult.uploadedAt;
+    }
+
+    // Beräkna besparingar
+    const savings = calculateSavings(billData);
+
+    // Spara analys i databasen för admin-granskning
+    try {
+      // Hämta D1-binding från Edge-runtime
+      let env: any = {};
+      if ((globalThis as any).getRequestContext) {
+        env = (globalThis as any).getRequestContext()?.env ?? {};
+      }
+      if (!env.DB && (process.env as any).DB) {
+        env.DB = (process.env as any).DB;
+      }
+      if (!env.DB && (globalThis as any).env?.DB) {
+        env.DB = (globalThis as any).env.DB;
+      }
+
+      const db = createDatabaseFromBinding(env?.DB);
+      
+      // Hämta IP-adress och user agent från request headers
+      const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
+                        req.headers.get('x-real-ip') || 
+                        'unknown';
+      const userAgent = req.headers.get('user-agent') || undefined;
+
+      await db.createBillAnalysis({
+        billData,
+        savings,
+        imageKey: billData.imageKey,
+        imageUrl: billData.imageUrl,
+        originalFileName: billData.originalFileName,
+        postalCode: billData.postalCode,
+        priceArea: billData.priceArea,
+        aiConfidence: billData.confidence,
+        aiWarnings: billData.warnings,
+        validationStatus: 'pending',
+        ipAddress,
+        userAgent
+      });
+
+      console.log(`[parse-bill-v3] Analys sparad i databasen för admin-granskning`);
+    } catch (dbError) {
+      // Logga felet men fortsätt - analysen ska fortfarande returneras till användaren
+      console.error("[parse-bill-v3] Kunde inte spara analys i databasen:", dbError);
     }
 
     return NextResponse.json({

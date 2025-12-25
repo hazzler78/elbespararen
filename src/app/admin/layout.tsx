@@ -16,7 +16,8 @@ import {
   Lock,
   Newspaper,
   MessageCircle,
-  MapPin
+  MapPin,
+  FileText
 } from "lucide-react";
 
 const ADMIN_PASSWORD = "grodan2025";
@@ -63,6 +64,12 @@ const navigation = [
     href: "/admin/postal-code-analytics",
     icon: MapPin,
     description: "Spåra postnummer och områdesval"
+  },
+  {
+    name: "Fakturaanalyser",
+    href: "/admin/bill-analyses",
+    icon: FileText,
+    description: "Granska AI-analyser och besparingsuppskattningar"
   }
 ];
 
