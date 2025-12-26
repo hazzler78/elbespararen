@@ -128,10 +128,24 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         body: formData
       });
 
-      const result = await response.json() as ApiResponse<BillData>;
+      const result = await response.json() as ApiResponse<BillData> & {
+        meta?: {
+          dbSaved?: boolean;
+          dbError?: string;
+        };
+      };
 
       if (!response.ok || !result.success || !result.data) {
         throw new Error(result.error || "Kunde inte analysera fakturan");
+      }
+
+      // Varna om analysen inte sparades i databasen
+      if (result.meta?.dbSaved === false) {
+        console.warn("[UploadCard] ⚠️ Analysen kunde inte sparas i databasen för admin-granskning");
+        console.warn("[UploadCard] Fel:", result.meta.dbError);
+        console.warn("[UploadCard] Detta kan bero på att tabellen saknas eller databas-binding saknas");
+      } else if (result.meta?.dbSaved === true) {
+        console.log("[UploadCard] ✅ Analys sparad i databasen för admin-granskning");
       }
 
       // Lägg till postnummer och prisområde i resultatet

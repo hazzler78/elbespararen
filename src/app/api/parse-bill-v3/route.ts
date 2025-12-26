@@ -205,6 +205,9 @@ export async function POST(
     const savings = calculateSavings(billData);
 
     // Spara analys i databasen för admin-granskning
+    let dbSaveSuccess = false;
+    let dbSaveError: string | null = null;
+    
     try {
       // Hämta D1-binding från Edge-runtime
       let env: any = {};
@@ -218,7 +221,11 @@ export async function POST(
         env.DB = (globalThis as any).env.DB;
       }
 
+      console.log(`[parse-bill-v3] DB binding exists:`, !!env?.DB);
+      console.log(`[parse-bill-v3] DB binding type:`, env?.DB ? typeof env.DB : 'none');
+
       const db = createDatabaseFromBinding(env?.DB);
+      console.log(`[parse-bill-v3] Database type:`, db.constructor.name);
       
       // Hämta IP-adress och user agent från request headers
       const ipAddress = req.headers.get('x-forwarded-for')?.split(',')[0] || 
@@ -226,6 +233,7 @@ export async function POST(
                         'unknown';
       const userAgent = req.headers.get('user-agent') || undefined;
 
+      console.log(`[parse-bill-v3] Försöker spara analys i databasen...`);
       await db.createBillAnalysis({
         billData,
         savings,
@@ -241,11 +249,14 @@ export async function POST(
         userAgent
       });
 
-      console.log(`[parse-bill-v3] Analys sparad i databasen för admin-granskning`);
+      console.log(`[parse-bill-v3] ✅ Analys sparad i databasen för admin-granskning`);
+      dbSaveSuccess = true;
     } catch (dbError) {
       // Logga felet men fortsätt - analysen ska fortfarande returneras till användaren
       const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
-      console.error("[parse-bill-v3] Kunde inte spara analys i databasen:", errorMessage);
+      dbSaveError = errorMessage;
+      
+      console.error("[parse-bill-v3] ❌ Kunde inte spara analys i databasen:", errorMessage);
       console.error("[parse-bill-v3] Error details:", dbError);
       
       // Om tabellen saknas, logga tydligt
@@ -262,7 +273,9 @@ export async function POST(
         fileSize: file.size,
         timestamp: new Date().toISOString(),
         imageKey: savedImageResult?.key,
-        storage: savedImageResult?.storage ?? "unknown"
+        storage: savedImageResult?.storage ?? "unknown",
+        dbSaved: dbSaveSuccess,
+        dbError: dbSaveError || undefined
       }
     });
 
