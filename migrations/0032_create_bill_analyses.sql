@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS bill_analyses (
   validated_at TEXT, -- När analysen validerades
   ip_address TEXT, -- Användarens IP-adress
   user_agent TEXT, -- Browser user agent
-  created_at TEXT NOT NULL DEFAULT (CURRENT_TIMESTAMP::TEXT)
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
 -- Index för bättre prestanda och queries
