@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar, Image as ImageIcon } from "lucide-react";
 import { BillAnalysis, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
@@ -14,6 +14,8 @@ export default function BillAnalysesPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [validationNotes, setValidationNotes] = useState("");
   const [validationStatus, setValidationStatus] = useState<BillAnalysis['validationStatus']>('pending');
+  const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [isLoadingImage, setIsLoadingImage] = useState(false);
 
   useEffect(() => {
     fetchAnalyses();
@@ -71,10 +73,31 @@ export default function BillAnalysesPage() {
     }
   };
 
-  const handleSelectAnalysis = (analysis: BillAnalysis) => {
+  const handleSelectAnalysis = async (analysis: BillAnalysis) => {
     setSelectedAnalysis(analysis);
     setValidationStatus(analysis.validationStatus);
     setValidationNotes(analysis.validationNotes || "");
+    setImageUrl(null);
+    
+    // Hämta bild-URL om imageKey finns
+    if (analysis.imageKey) {
+      setIsLoadingImage(true);
+      try {
+        const response = await fetch(`/api/bill-images/${encodeURIComponent(analysis.imageKey)}`);
+        if (response.ok) {
+          const data = await response.json() as { success: boolean; url?: string };
+          if (data.success && data.url) {
+            setImageUrl(data.url);
+          }
+        } else {
+          console.error('Kunde inte hämta bild-URL:', response.statusText);
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av bild-URL:', error);
+      } finally {
+        setIsLoadingImage(false);
+      }
+    }
   };
 
   const filteredAnalyses = analyses.filter(analysis => {
@@ -211,6 +234,9 @@ export default function BillAnalysesPage() {
                         Filnamn
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Bild
+                      </th>
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Period
                       </th>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -242,6 +268,17 @@ export default function BillAnalysesPage() {
                           </div>
                           {analysis.postalCode && (
                             <div className="text-xs text-gray-500">{analysis.postalCode}</div>
+                          )}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          {analysis.imageKey ? (
+                            <div className="flex items-center text-green-600" title="Bild tillgänglig">
+                              <ImageIcon className="w-5 h-5" />
+                            </div>
+                          ) : (
+                            <div className="text-gray-400" title="Ingen bild">
+                              —
+                            </div>
                           )}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -313,6 +350,42 @@ export default function BillAnalysesPage() {
             </div>
 
             <div className="p-6 space-y-6">
+              {/* Bill Image */}
+              {selectedAnalysis.imageKey && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Fakturabild</h3>
+                  {isLoadingImage ? (
+                    <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <span className="ml-3 text-gray-600">Laddar bild...</span>
+                    </div>
+                  ) : imageUrl ? (
+                    <div className="bg-gray-50 rounded-lg p-4">
+                      <img 
+                        src={imageUrl} 
+                        alt={`Faktura: ${selectedAnalysis.originalFileName || 'Okänt'}`}
+                        className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+                        onError={() => {
+                          console.error('Kunde inte ladda bild');
+                          setImageUrl(null);
+                        }}
+                      />
+                      <p className="text-xs text-gray-500 mt-2">
+                        Bildnyckel: {selectedAnalysis.imageKey}
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
+                      <div className="text-center">
+                        <ImageIcon className="w-12 h-12 text-gray-400 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600">Kunde inte ladda bild</p>
+                        <p className="text-xs text-gray-500 mt-1">Bildnyckel: {selectedAnalysis.imageKey}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Bill Data */}
               <div>
                 <h3 className="text-lg font-semibold text-gray-900 mb-4">Fakturadata</h3>
