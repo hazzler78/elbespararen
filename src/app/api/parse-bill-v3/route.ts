@@ -244,7 +244,14 @@ export async function POST(
       console.log(`[parse-bill-v3] Analys sparad i databasen för admin-granskning`);
     } catch (dbError) {
       // Logga felet men fortsätt - analysen ska fortfarande returneras till användaren
-      console.error("[parse-bill-v3] Kunde inte spara analys i databasen:", dbError);
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+      console.error("[parse-bill-v3] Kunde inte spara analys i databasen:", errorMessage);
+      console.error("[parse-bill-v3] Error details:", dbError);
+      
+      // Om tabellen saknas, logga tydligt
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        console.error("[parse-bill-v3] ⚠️ bill_analyses tabellen saknas! Kör migration 0032_create_bill_analyses.sql");
+      }
     }
 
     return NextResponse.json({

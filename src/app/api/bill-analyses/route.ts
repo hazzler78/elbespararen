@@ -31,15 +31,36 @@ export async function GET(req: NextRequest) {
 
     const analyses = await db.getBillAnalyses(limit, validationStatus);
 
+    console.log(`[bill-analyses] GET - Found ${analyses.length} analyses (filter: ${validationStatus || 'all'})`);
+
     return NextResponse.json({
       success: true,
       data: analyses,
       count: analyses.length
     });
   } catch (error) {
-    console.error("[bill-analyses] GET error:", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error("[bill-analyses] GET error:", errorMessage);
+    console.error("[bill-analyses] Error details:", error);
+    
+    // Ge mer specifik felinformation
+    if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: "bill_analyses tabellen saknas. Kör migration 0032_create_bill_analyses.sql",
+          details: errorMessage
+        },
+        { status: 500 }
+      );
+    }
+    
     return NextResponse.json(
-      { success: false, error: "Kunde inte hämta fakturaanalyser" },
+      { 
+        success: false, 
+        error: "Kunde inte hämta fakturaanalyser",
+        details: errorMessage
+      },
       { status: 500 }
     );
   }

@@ -26,12 +26,16 @@ export default function BillAnalysesPage() {
       const response = await fetch(`/api/bill-analyses${statusParam}`);
       if (response.ok) {
         const data = await response.json() as { success: boolean; data: BillAnalysis[]; count: number };
+        console.log('[bill-analyses] Fetched analyses:', data.data?.length || 0);
         setAnalyses(data.data || []);
       } else {
-        console.error('Kunde inte hämta fakturaanalyser:', response.statusText);
+        const errorText = await response.text();
+        console.error('Kunde inte hämta fakturaanalyser:', response.status, response.statusText, errorText);
+        alert(`Kunde inte hämta fakturaanalyser: ${response.statusText}. Kontrollera browser console för detaljer.`);
       }
     } catch (error) {
       console.error('Fel vid hämtning av fakturaanalyser:', error);
+      alert(`Fel vid hämtning av fakturaanalyser: ${error instanceof Error ? error.message : String(error)}`);
     } finally {
       setIsLoading(false);
     }
