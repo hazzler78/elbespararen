@@ -10,6 +10,7 @@ export const runtime = 'edge';
  * Query params:
  * - sessionId: Filtrera på specifik session
  * - limit: Max antal meddelanden att hämta (default: 100)
+ * - search: Sök i meddelandetexten
  */
 export async function GET(req: NextRequest) {
   try {
@@ -17,6 +18,7 @@ export async function GET(req: NextRequest) {
     const sessionId = searchParams.get('sessionId') || undefined;
     const limitParam = searchParams.get('limit');
     const limit = limitParam ? parseInt(limitParam, 10) : 100;
+    const searchTerm = searchParams.get('search') || undefined;
 
     // Hämta D1-binding från Edge-runtime
     let env: any = {};
@@ -37,7 +39,7 @@ export async function GET(req: NextRequest) {
     }
     
     const db = createDatabaseFromBinding(env?.DB);
-    const messages = await db.getChatMessages(sessionId, limit);
+    const messages = await db.getChatMessages(sessionId, limit, searchTerm);
     
     return NextResponse.json({
       success: true,

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { 
   MessageCircle, 
   User, 
@@ -22,16 +22,15 @@ export default function ChatAdminPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedSessionId, setSelectedSessionId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetchMessages();
-  }, []);
-
-  const fetchMessages = async (sessionId?: string) => {
+  const fetchMessages = useCallback(async (sessionId?: string, search?: string) => {
     try {
       setIsLoading(true);
-      const url = sessionId 
-        ? `/api/chat/messages?sessionId=${sessionId}&limit=500`
-        : `/api/chat/messages?limit=500`;
+      const params = new URLSearchParams();
+      if (sessionId) params.append('sessionId', sessionId);
+      params.append('limit', '500');
+      if (search) params.append('search', search);
+      
+      const url = `/api/chat/messages?${params.toString()}`;
       
       const response = await fetch(url);
       const result = await response.json() as ApiResponse<ChatMessage[]>;
@@ -48,16 +47,19 @@ export default function ChatAdminPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      fetchMessages(selectedSessionId || undefined, searchTerm || undefined);
+    }, 300); // Debounce sökningen
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, selectedSessionId, fetchMessages]);
 
   const filteredMessages = messages.filter(msg => {
-    // Filtrera på roll
+    // Filtrera på roll (sökning görs redan på servern)
     if (filter !== "all" && msg.role !== filter) {
-      return false;
-    }
-    
-    // Sök i innehåll
-    if (searchTerm && !msg.content.toLowerCase().includes(searchTerm.toLowerCase())) {
       return false;
     }
     
@@ -98,7 +100,11 @@ export default function ChatAdminPage() {
               </div>
               <div className="flex gap-2">
                 <button
-                  onClick={() => fetchMessages()}
+                  onClick={() => {
+                    setSearchTerm("");
+                    setSelectedSessionId(null);
+                    fetchMessages();
+                  }}
                   className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   <RefreshCw className="w-4 h-4" />
@@ -147,7 +153,7 @@ export default function ChatAdminPage() {
                   <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
                   <input
                     type="text"
-                    placeholder="Sök i meddelanden..."
+                    placeholder="Sök i meddelanden (t.ex. 'Grodan')..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"

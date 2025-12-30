@@ -90,7 +90,7 @@ export interface Database {
   deleteNewsPost(id: string): Promise<boolean>;
 
   // Chat Messages
-  getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]>;
+  getChatMessages(sessionId?: string, limit?: number, searchTerm?: string): Promise<ChatMessage[]>;
   getChatMessage(id: string): Promise<ChatMessage | null>;
   createChatMessage(message: Omit<ChatMessage, 'id' | 'createdAt'>): Promise<ChatMessage>;
   deleteChatMessage(id: string): Promise<boolean>;
@@ -312,11 +312,19 @@ class MockDatabase implements Database {
   }
 
   // Chat Messages
-  async getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]> {
+  async getChatMessages(sessionId?: string, limit?: number, searchTerm?: string): Promise<ChatMessage[]> {
     let messages = [...this.chatMessages];
     
     if (sessionId) {
       messages = messages.filter(m => m.sessionId === sessionId);
+    }
+    
+    // Sök i innehåll om searchTerm finns
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      messages = messages.filter(m => 
+        m.content.toLowerCase().includes(searchLower)
+      );
     }
     
     // Sortera efter datum (nyaste först)
@@ -1106,14 +1114,24 @@ class CloudflareDatabase implements Database {
   }
 
   // Chat Messages
-  async getChatMessages(sessionId?: string, limit?: number): Promise<ChatMessage[]> {
+  async getChatMessages(sessionId?: string, limit?: number, searchTerm?: string): Promise<ChatMessage[]> {
     try {
       let query = 'SELECT * FROM chat_messages';
       const bindings: unknown[] = [];
+      const conditions: string[] = [];
 
       if (sessionId) {
-        query += ' WHERE session_id = ?';
+        conditions.push('session_id = ?');
         bindings.push(sessionId);
+      }
+
+      if (searchTerm) {
+        conditions.push('content LIKE ?');
+        bindings.push(`%${searchTerm}%`);
+      }
+
+      if (conditions.length > 0) {
+        query += ' WHERE ' + conditions.join(' AND ');
       }
 
       query += ' ORDER BY created_at DESC';
