@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar, Image as ImageIcon } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar, Image as ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
 import { BillAnalysis, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
@@ -16,6 +16,7 @@ export default function BillAnalysesPage() {
   const [validationStatus, setValidationStatus] = useState<BillAnalysis['validationStatus']>('pending');
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(false);
+  const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
 
   useEffect(() => {
     fetchAnalyses();
@@ -117,17 +118,23 @@ export default function BillAnalysesPage() {
     }
   };
 
-  const filteredAnalyses = analyses.filter(analysis => {
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
-      return (
-        analysis.originalFileName?.toLowerCase().includes(searchLower) ||
-        analysis.postalCode?.toLowerCase().includes(searchLower) ||
-        analysis.billData.period?.toLowerCase().includes(searchLower)
-      );
-    }
-    return true;
-  });
+  const filteredAnalyses = analyses
+    .filter(analysis => {
+      if (searchTerm) {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          analysis.originalFileName?.toLowerCase().includes(searchLower) ||
+          analysis.postalCode?.toLowerCase().includes(searchLower) ||
+          analysis.billData.period?.toLowerCase().includes(searchLower)
+        );
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      const dateA = new Date(a.createdAt).getTime();
+      const dateB = new Date(b.createdAt).getTime();
+      return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
+    });
 
   const getStatusColor = (status: BillAnalysis['validationStatus']) => {
     switch (status) {
@@ -212,7 +219,16 @@ export default function BillAnalysesPage() {
                   />
                 </div>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setSortOrder(sortOrder === 'newest' ? 'oldest' : 'newest')}
+                  className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors"
+                  title={`Sortera: ${sortOrder === 'newest' ? 'Nyast först' : 'Äldst först'}`}
+                >
+                  <Calendar className="w-4 h-4" />
+                  {sortOrder === 'newest' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
+                  <span className="hidden sm:inline">{sortOrder === 'newest' ? 'Nyast' : 'Äldst'}</span>
+                </button>
                 {(['all', 'pending', 'correct', 'incorrect', 'needs_review'] as const).map((status) => (
                   <button
                     key={status}
@@ -227,6 +243,9 @@ export default function BillAnalysesPage() {
                   </button>
                 ))}
               </div>
+            </div>
+            <div className="mt-3 text-sm text-gray-600">
+              Visar {filteredAnalyses.length} av {analyses.length} analyser
             </div>
           </div>
 
@@ -345,8 +364,9 @@ export default function BillAnalysesPage() {
       {/* Detail Modal */}
       {selectedAnalysis && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-200">
+          <div className="bg-white rounded-lg shadow-xl max-w-6xl w-full max-h-[90vh] flex flex-col">
+            {/* Header - Sticky */}
+            <div className="p-6 border-b border-gray-200 flex-shrink-0">
               <div className="flex justify-between items-start">
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900 mb-2">Fakturaanalys</h2>
@@ -366,7 +386,11 @@ export default function BillAnalysesPage() {
               </div>
             </div>
 
-            <div className="p-6 space-y-6">
+            {/* Content - Scrollable med två kolumner */}
+            <div className="flex-1 overflow-y-auto">
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 p-6">
+                {/* Vänster kolumn - Bild och data */}
+                <div className="lg:col-span-2 space-y-6">
               {/* Bill Image - Visas först */}
               {selectedAnalysis.imageKey && (
                 <div className="border-b border-gray-200 pb-6">
@@ -517,52 +541,73 @@ export default function BillAnalysesPage() {
                   )}
                 </div>
               </div>
+                </div>
 
-              {/* Validation */}
-              <div>
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Validering</h3>
-                <div className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Status
-                    </label>
-                    <select
-                      value={validationStatus}
-                      onChange={(e) => setValidationStatus(e.target.value as BillAnalysis['validationStatus'])}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    >
-                      <option value="pending">Väntar</option>
-                      <option value="correct">Korrekt</option>
-                      <option value="incorrect">Felaktig</option>
-                      <option value="needs_review">Behöver granskas</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Anteckningar
-                    </label>
-                    <textarea
-                      value={validationNotes}
-                      onChange={(e) => setValidationNotes(e.target.value)}
-                      rows={4}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Beskriv eventuella fel eller observationer..."
-                    />
-                  </div>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => handleUpdateStatus(selectedAnalysis.id, validationStatus, validationNotes)}
-                      disabled={isUpdating}
-                      className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {isUpdating ? 'Sparar...' : 'Spara validering'}
-                    </button>
-                    <button
-                      onClick={() => setSelectedAnalysis(null)}
-                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
-                    >
-                      Avbryt
-                    </button>
+                {/* Höger kolumn - Validering (Sticky) */}
+                <div className="lg:col-span-1">
+                  <div className="lg:sticky lg:top-6">
+                    <div className="bg-blue-50 border-2 border-blue-200 rounded-lg p-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Validering</h3>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Status
+                          </label>
+                          <select
+                            value={validationStatus}
+                            onChange={(e) => setValidationStatus(e.target.value as BillAnalysis['validationStatus'])}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                          >
+                            <option value="pending">Väntar</option>
+                            <option value="correct">Korrekt</option>
+                            <option value="incorrect">Felaktig</option>
+                            <option value="needs_review">Behöver granskas</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            Anteckningar
+                          </label>
+                          <textarea
+                            value={validationNotes}
+                            onChange={(e) => setValidationNotes(e.target.value)}
+                            rows={6}
+                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                            placeholder="Beskriv eventuella fel eller observationer..."
+                          />
+                        </div>
+                        <div className="flex flex-col gap-2">
+                          <button
+                            onClick={() => handleUpdateStatus(selectedAnalysis.id, validationStatus, validationNotes)}
+                            disabled={isUpdating}
+                            className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
+                          >
+                            {isUpdating ? 'Sparar...' : 'Spara validering'}
+                          </button>
+                          <button
+                            onClick={() => {
+                              setSelectedAnalysis(null);
+                              setValidationNotes("");
+                            }}
+                            className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white"
+                          >
+                            Avbryt
+                          </button>
+                        </div>
+                        {selectedAnalysis.validatedBy && (
+                          <div className="pt-4 border-t border-gray-200">
+                            <p className="text-xs text-gray-500">
+                              Validerad av: {selectedAnalysis.validatedBy}
+                            </p>
+                            {selectedAnalysis.validatedAt && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                {new Date(selectedAnalysis.validatedAt).toLocaleString('sv-SE')}
+                              </p>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
