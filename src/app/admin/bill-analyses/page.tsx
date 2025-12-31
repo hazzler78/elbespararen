@@ -459,67 +459,69 @@ export default function BillAnalysesPage() {
             </div>
 
             {/* Validering - Fixed/sticky högst upp */}
-            <div className="bg-blue-50 border-b-2 border-blue-200 px-6 py-4 flex-shrink-0">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Validering</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Status
-                  </label>
-                  <select
-                    value={validationStatus}
-                    onChange={(e) => setValidationStatus(e.target.value as BillAnalysis['validationStatus'])}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
-                  >
-                    <option value="pending">Väntar</option>
-                    <option value="correct">Korrekt</option>
-                    <option value="incorrect">Felaktig</option>
-                    <option value="needs_review">Behöver granskas</option>
-                  </select>
+            <div className="bg-blue-50 border-b-2 border-blue-200 px-4 sm:px-6 py-4 flex-shrink-0">
+              <h3 className="text-lg font-semibold text-gray-900 mb-3">Validering</h3>
+              <div className="space-y-3">
+                <div className="flex flex-col sm:flex-row gap-3">
+                  <div className="flex-1 min-w-0">
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Status
+                    </label>
+                    <select
+                      value={validationStatus}
+                      onChange={(e) => setValidationStatus(e.target.value as BillAnalysis['validationStatus'])}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                    >
+                      <option value="pending">Väntar</option>
+                      <option value="correct">Korrekt</option>
+                      <option value="incorrect">Felaktig</option>
+                      <option value="needs_review">Behöver granskas</option>
+                    </select>
+                  </div>
+                  <div className="flex flex-col sm:flex-row gap-2 sm:items-end">
+                    <button
+                      onClick={() => handleUpdateStatus(selectedAnalysis.id, validationStatus, validationNotes)}
+                      disabled={isUpdating}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-sm whitespace-nowrap"
+                    >
+                      {isUpdating ? 'Sparar...' : 'Spara'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setSelectedAnalysis(null);
+                        setValidationNotes("");
+                      }}
+                      className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white text-sm whitespace-nowrap"
+                    >
+                      Avbryt
+                    </button>
+                  </div>
                 </div>
-                <div className="md:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
                     Anteckningar
                   </label>
                   <textarea
                     value={validationNotes}
                     onChange={(e) => setValidationNotes(e.target.value)}
                     rows={2}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
                     placeholder="Beskriv eventuella fel eller observationer..."
                   />
                 </div>
-                <div className="flex flex-col gap-2 justify-end">
-                  <button
-                    onClick={() => handleUpdateStatus(selectedAnalysis.id, validationStatus, validationNotes)}
-                    disabled={isUpdating}
-                    className="w-full bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed font-medium"
-                  >
-                    {isUpdating ? 'Sparar...' : 'Spara validering'}
-                  </button>
-                  <button
-                    onClick={() => {
-                      setSelectedAnalysis(null);
-                      setValidationNotes("");
-                    }}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 bg-white text-sm"
-                  >
-                    Avbryt
-                  </button>
-                </div>
+                {selectedAnalysis.validatedBy && (
+                  <div className="pt-2 border-t border-gray-200">
+                    <p className="text-xs text-gray-500">
+                      Validerad av: {selectedAnalysis.validatedBy}
+                      {selectedAnalysis.validatedAt && (
+                        <span className="ml-2">
+                          {new Date(selectedAnalysis.validatedAt).toLocaleString('sv-SE')}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                )}
               </div>
-              {selectedAnalysis.validatedBy && (
-                <div className="mt-3 pt-3 border-t border-gray-200">
-                  <p className="text-xs text-gray-500">
-                    Validerad av: {selectedAnalysis.validatedBy}
-                    {selectedAnalysis.validatedAt && (
-                      <span className="ml-2">
-                        {new Date(selectedAnalysis.validatedAt).toLocaleString('sv-SE')}
-                      </span>
-                    )}
-                  </p>
-                </div>
-              )}
             </div>
 
             {/* Content - Scrollable */}
