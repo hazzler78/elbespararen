@@ -36,19 +36,13 @@ export async function GET(
           const arrayBuffer = await object.arrayBuffer();
           const contentType = object.httpMetadata?.contentType || 'image/jpeg';
           
-          // Konvertera till base64 data URL
-          // I Edge runtime kan vi inte använda Buffer direkt, så vi använder btoa
-          const uint8Array = new Uint8Array(arrayBuffer);
-          let binary = '';
-          for (let i = 0; i < uint8Array.length; i++) {
-            binary += String.fromCharCode(uint8Array[i]);
-          }
-          const base64 = btoa(binary);
-          const dataUrl = `data:${contentType};base64,${base64}`;
-
-          return NextResponse.json({
-            success: true,
-            url: dataUrl
+          // Returnera bilden direkt som Response istället för JSON
+          // Detta är mer effektivt än base64
+          return new NextResponse(arrayBuffer, {
+            headers: {
+              'Content-Type': contentType,
+              'Cache-Control': 'public, max-age=3600',
+            },
           });
         }
       } catch (r2Error) {

@@ -83,20 +83,37 @@ export default function BillAnalysesPage() {
     if (analysis.imageKey) {
       setIsLoadingImage(true);
       try {
-        const response = await fetch(`/api/bill-images/${encodeURIComponent(analysis.imageKey)}`);
-        if (response.ok) {
-          const data = await response.json() as { success: boolean; url?: string };
+        const encodedKey = encodeURIComponent(analysis.imageKey);
+        console.log('[bill-analyses] Hämtar bild för key:', analysis.imageKey);
+        
+        // Försök först hämta som direkt bild (för R2)
+        const imageResponse = await fetch(`/api/bill-images/${encodedKey}`);
+        
+        if (imageResponse.ok && imageResponse.headers.get('content-type')?.startsWith('image/')) {
+          // Om det är en bild direkt, skapa blob URL
+          const blob = await imageResponse.blob();
+          const blobUrl = URL.createObjectURL(blob);
+          setImageUrl(blobUrl);
+          console.log('[bill-analyses] Bild laddad från R2 som blob URL');
+        } else {
+          // Annars försök hämta som JSON (för Supabase signed URL)
+          const data = await imageResponse.json() as { success: boolean; url?: string; error?: string };
+          console.log('[bill-analyses] Bild-URL response:', data);
+          
           if (data.success && data.url) {
             setImageUrl(data.url);
+            console.log('[bill-analyses] Bild-URL satt från Supabase');
+          } else {
+            console.warn('[bill-analyses] Ingen bild-URL i response:', data);
           }
-        } else {
-          console.error('Kunde inte hämta bild-URL:', response.statusText);
         }
       } catch (error) {
         console.error('Fel vid hämtning av bild-URL:', error);
       } finally {
         setIsLoadingImage(false);
       }
+    } else {
+      console.log('[bill-analyses] Ingen imageKey för denna analys');
     }
   };
 
