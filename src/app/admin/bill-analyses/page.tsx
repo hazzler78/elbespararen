@@ -367,10 +367,13 @@ export default function BillAnalysesPage() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Bill Image */}
+              {/* Bill Image - Visas först */}
               {selectedAnalysis.imageKey && (
-                <div>
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Fakturabild</h3>
+                <div className="border-b border-gray-200 pb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                    <ImageIcon className="w-5 h-5" />
+                    Fakturabild
+                  </h3>
                   {isLoadingImage ? (
                     <div className="flex items-center justify-center p-8 bg-gray-50 rounded-lg">
                       <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -378,16 +381,18 @@ export default function BillAnalysesPage() {
                     </div>
                   ) : imageUrl ? (
                     <div className="bg-gray-50 rounded-lg p-4">
-                      <img 
-                        src={imageUrl} 
-                        alt={`Faktura: ${selectedAnalysis.originalFileName || 'Okänt'}`}
-                        className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
-                        onError={() => {
-                          console.error('Kunde inte ladda bild');
-                          setImageUrl(null);
-                        }}
-                      />
-                      <p className="text-xs text-gray-500 mt-2">
+                      <div className="max-h-[500px] overflow-y-auto mb-2">
+                        <img 
+                          src={imageUrl} 
+                          alt={`Faktura: ${selectedAnalysis.originalFileName || 'Okänt'}`}
+                          className="max-w-full h-auto rounded-lg shadow-md border border-gray-200"
+                          onError={() => {
+                            console.error('Kunde inte ladda bild');
+                            setImageUrl(null);
+                          }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500">
                         Bildnyckel: {selectedAnalysis.imageKey}
                       </p>
                     </div>
