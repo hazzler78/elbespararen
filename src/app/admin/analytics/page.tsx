@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { BarChart3, TrendingUp, Users, Eye, Monitor, Smartphone, Tablet, Globe, Calendar, ArrowLeft, FileText } from "lucide-react";
+import { BarChart3, TrendingUp, Users, Eye, Monitor, Smartphone, Tablet, Globe, Calendar, ArrowLeft, FileText, Zap } from "lucide-react";
 import Link from "next/link";
 import { ApiResponse } from "@/lib/types";
 
@@ -12,6 +12,7 @@ interface AnalyticsData {
     uniqueVisitors: number;
     pageViews: number;
     analyzedBills: number;
+    contractClicks: number;
     topPages: Array<{ path: string; views: number }>;
     visitsByDay: Array<{ date: string; visits: number }>;
     referrers: Array<{ source: string; visits: number }>;
@@ -128,7 +129,7 @@ export default function AnalyticsPage() {
           </div>
 
           {/* Main Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <div className="flex items-center gap-3 mb-2">
                 <Users className="w-5 h-5 text-blue-600" />
@@ -157,6 +158,21 @@ export default function AnalyticsPage() {
               <p className="text-3xl font-bold text-gray-900">
                 {analytics ? analytics.pageViews.toLocaleString('sv-SE') : '0'}
               </p>
+            </div>
+
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <div className="flex items-center gap-3 mb-2">
+                <Zap className="w-5 h-5 text-yellow-600" />
+                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Kontraktsklick</p>
+              </div>
+              <p className="text-3xl font-bold text-gray-900">
+                {analytics ? (analytics.contractClicks || 0).toLocaleString('sv-SE') : '0'}
+              </p>
+              {analytics && analytics.totalVisits > 0 && (
+                <p className="text-xs text-gray-500 mt-1">
+                  {((analytics.contractClicks || 0) / analytics.totalVisits * 100).toFixed(2)}% konvertering
+                </p>
+              )}
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">

@@ -7,6 +7,7 @@ import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, A
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 import SwitchProcess from "./SwitchProcess";
+import { trackCustomEvent } from "@/lib/analytics";
 
 interface ProviderComparisonProps {
   billData: BillData;
@@ -233,6 +234,16 @@ export default function ProviderComparison({
   const fixedComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType !== "rörligt");
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
+    // Track contract click event
+    trackCustomEvent('contract_click', {
+      provider_name: comparison.provider.name,
+      provider_id: comparison.provider.id,
+      contract_type: comparison.provider.contractType,
+      estimated_savings: comparison.estimatedSavings,
+      has_affiliate: !!(comparison.provider as any).affiliateUrl,
+      page_context: enableConsumptionEntry ? 'contracts' : 'result'
+    });
+
     const affiliate = (comparison.provider as any).affiliateUrl as string | undefined;
     if (affiliate && /^https?:\/\//i.test(affiliate)) {
       window.open(affiliate, '_blank', 'noopener');

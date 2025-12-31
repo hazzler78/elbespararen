@@ -12,6 +12,7 @@ interface AnalyticsData {
     totalVisits: number;
     uniqueVisitors: number;
     pageViews: number;
+    contractClicks: number;
     topPages: Array<{ path: string; views: number }>;
     visitsByDay: Array<{ date: string; visits: number }>;
     referrers: Array<{ source: string; visits: number }>;
@@ -273,7 +274,7 @@ export default function AdminPage() {
             ) : analyticsData && analyticsData.enabled ? (
               <div>
                 {analyticsData.analytics ? (
-                  <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Totalt besök</p>
                       <p className="text-2xl font-bold text-gray-900">{analyticsData.analytics.totalVisits.toLocaleString('sv-SE')}</p>
@@ -285,6 +286,15 @@ export default function AdminPage() {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Sidvisningar</p>
                       <p className="text-2xl font-bold text-gray-900">{analyticsData.analytics.pageViews.toLocaleString('sv-SE')}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Kontraktsklick</p>
+                      <p className="text-2xl font-bold text-gray-900">{(analyticsData.analytics.contractClicks || 0).toLocaleString('sv-SE')}</p>
+                      {analyticsData.analytics.totalVisits > 0 && (
+                        <p className="text-xs text-gray-500 mt-1">
+                          {((analyticsData.analytics.contractClicks || 0) / analyticsData.analytics.totalVisits * 100).toFixed(2)}% konvertering
+                        </p>
+                      )}
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Senast uppdaterad</p>

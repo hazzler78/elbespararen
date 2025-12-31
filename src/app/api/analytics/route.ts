@@ -23,6 +23,7 @@ interface AnalyticsData {
   uniqueVisitors: number;
   pageViews: number;
   analyzedBills: number;
+  contractClicks: number;
   topPages: Array<{ path: string; views: number }>;
   visitsByDay: Array<{ date: string; visits: number }>;
   referrers: Array<{ source: string; visits: number }>;
@@ -159,9 +160,20 @@ async function fetchGAData(
   accessToken: string,
   dimensions: string[],
   metrics: string[],
-  dateRanges: Array<{ startDate: string; endDate: string }>
+  dateRanges: Array<{ startDate: string; endDate: string }>,
+  options?: { dimensionFilter?: any }
 ): Promise<GAResponse> {
   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
+  
+  const body: any = {
+    dimensions: dimensions.map(d => ({ name: d })),
+    metrics: metrics.map(m => ({ name: m })),
+    dateRanges,
+  };
+
+  if (options?.dimensionFilter) {
+    body.dimensionFilter = options.dimensionFilter;
+  }
   
   const response = await fetch(url, {
     method: 'POST',
@@ -169,11 +181,7 @@ async function fetchGAData(
       'Authorization': `Bearer ${accessToken}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      dimensions: dimensions.map(d => ({ name: d })),
-      metrics: metrics.map(m => ({ name: m })),
-      dateRanges,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -424,6 +432,37 @@ export async function GET(request: NextRequest) {
         [dateRange]
       );
 
+      // Hämta contract click events
+      let contractClicksCount = 0;
+      try {
+        const contractClicksResponse = await fetchGAData(
+          gaPropertyId,
+          accessToken,
+          ['eventName'],
+          ['eventCount'],
+          [dateRange],
+          { 
+            dimensionFilter: {
+              filter: {
+                fieldName: 'eventName',
+                stringFilter: {
+                  matchType: 'EXACT',
+                  value: 'contract_click'
+                }
+              }
+            }
+          }
+        );
+        contractClicksCount = contractClicksResponse.totals?.[0]?.metricValues?.[0]?.value 
+          ? parseInt(contractClicksResponse.totals[0].metricValues[0].value, 10)
+          : (contractClicksResponse.rows || []).reduce((sum, row) => 
+              sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+            );
+      } catch (eventError) {
+        console.warn('[analytics] Could not fetch contract clicks:', eventError);
+        // Fortsätt utan contract clicks om det misslyckas
+      }
+
       // Räkna analyserade fakturor från Supabase
       const analyzedBillsCount = await countAnalyzedBills(finalPeriod);
 
@@ -455,6 +494,7 @@ export async function GET(request: NextRequest) {
         uniqueVisitors: totalStats[1]?.value ? parseInt(totalStats[1].value, 10) : totalDevices,
         pageViews: totalStats[2]?.value ? parseInt(totalStats[2].value, 10) : totalPageViews,
         analyzedBills: analyzedBillsCount,
+        contractClicks: contractClicksCount,
         topPages: (pagesResponse.rows || [])
           .slice(0, 10)
           .map(row => ({
