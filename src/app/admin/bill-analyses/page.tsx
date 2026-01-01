@@ -334,9 +334,9 @@ export default function BillAnalysesPage() {
             </div>
           ) : (
             <div className="bg-white rounded-lg shadow overflow-hidden">
-              <div className="overflow-x-auto">
+              <div className="overflow-x-auto max-h-[calc(100vh-400px)] overflow-y-auto">
                 <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                  <thead className="bg-gray-50 sticky top-0 z-10">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Filnamn
@@ -362,14 +362,14 @@ export default function BillAnalysesPage() {
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Status
                       </th>
-                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider sticky right-0 bg-gray-50 z-20 border-l border-gray-200">
                         Åtgärd
                       </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredAnalyses.map((analysis) => (
-                      <tr key={analysis.id} className="hover:bg-gray-50">
+                      <tr key={analysis.id} className="hover:bg-gray-50 group">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
                             {analysis.originalFileName || 'Okänt'}
@@ -414,7 +414,7 @@ export default function BillAnalysesPage() {
                              analysis.validationStatus === 'incorrect' ? 'Felaktig' : 'Granska'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium sticky right-0 bg-white group-hover:bg-gray-50 border-l border-gray-200">
                           <button
                             onClick={() => handleSelectAnalysis(analysis)}
                             className="text-blue-600 hover:text-blue-900 flex items-center gap-1"
