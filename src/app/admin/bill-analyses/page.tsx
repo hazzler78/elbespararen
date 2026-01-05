@@ -144,6 +144,8 @@ export default function BillAnalysesPage() {
         return 'bg-red-100 text-red-800 border-red-300';
       case 'needs_review':
         return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+      case 'fel_faktura':
+        return 'bg-orange-100 text-orange-800 border-orange-300';
       default:
         return 'bg-gray-100 text-gray-800 border-gray-300';
     }
@@ -157,6 +159,8 @@ export default function BillAnalysesPage() {
         return <XCircle className="w-4 h-4" />;
       case 'needs_review':
         return <AlertCircle className="w-4 h-4" />;
+      case 'fel_faktura':
+        return <XCircle className="w-4 h-4" />;
       default:
         return <FileText className="w-4 h-4" />;
     }
@@ -168,6 +172,7 @@ export default function BillAnalysesPage() {
     correct: analyses.filter(a => a.validationStatus === 'correct').length,
     incorrect: analyses.filter(a => a.validationStatus === 'incorrect').length,
     needs_review: analyses.filter(a => a.validationStatus === 'needs_review').length,
+    fel_faktura: analyses.filter(a => a.validationStatus === 'fel_faktura').length,
   };
 
   // Gruppera analyser per dag
@@ -188,6 +193,7 @@ export default function BillAnalysesPage() {
       correct: items.filter(a => a.validationStatus === 'correct').length,
       incorrect: items.filter(a => a.validationStatus === 'incorrect').length,
       needs_review: items.filter(a => a.validationStatus === 'needs_review').length,
+      fel_faktura: items.filter(a => a.validationStatus === 'fel_faktura').length,
     }))
     .sort((a, b) => {
       const dateA = new Date(a.date).getTime();
@@ -206,7 +212,7 @@ export default function BillAnalysesPage() {
           </div>
 
           {/* Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-5 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4 mb-6">
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm text-gray-600">Totalt</div>
               <div className="text-2xl font-bold text-gray-900">{statusCounts.all}</div>
@@ -226,6 +232,10 @@ export default function BillAnalysesPage() {
             <div className="bg-white rounded-lg shadow p-4">
               <div className="text-sm text-yellow-600">Granska</div>
               <div className="text-2xl font-bold text-yellow-600">{statusCounts.needs_review}</div>
+            </div>
+            <div className="bg-white rounded-lg shadow p-4">
+              <div className="text-sm text-orange-600">Fel faktura</div>
+              <div className="text-2xl font-bold text-orange-600">{statusCounts.fel_faktura}</div>
             </div>
           </div>
 
@@ -254,7 +264,7 @@ export default function BillAnalysesPage() {
                   {sortOrder === 'newest' ? <ArrowDown className="w-4 h-4" /> : <ArrowUp className="w-4 h-4" />}
                   <span className="hidden sm:inline">{sortOrder === 'newest' ? 'Nyast' : 'Äldst'}</span>
                 </button>
-                {(['all', 'pending', 'correct', 'incorrect', 'needs_review'] as const).map((status) => (
+                {(['all', 'pending', 'correct', 'incorrect', 'needs_review', 'fel_faktura'] as const).map((status) => (
                   <button
                     key={status}
                     onClick={() => setFilter(status)}
@@ -264,7 +274,7 @@ export default function BillAnalysesPage() {
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                   >
-                    {status === 'all' ? 'Alla' : status === 'pending' ? 'Väntar' : status === 'correct' ? 'Korrekt' : status === 'incorrect' ? 'Felaktig' : 'Granska'}
+                    {status === 'all' ? 'Alla' : status === 'pending' ? 'Väntar' : status === 'correct' ? 'Korrekt' : status === 'incorrect' ? 'Felaktig' : status === 'needs_review' ? 'Granska' : 'Fel faktura'}
                   </button>
                 ))}
               </div>
@@ -312,6 +322,12 @@ export default function BillAnalysesPage() {
                         <div className="flex justify-between">
                           <span>Granska:</span>
                           <span className="font-medium text-yellow-600">{stat.needs_review}</span>
+                        </div>
+                      )}
+                      {stat.fel_faktura > 0 && (
+                        <div className="flex justify-between">
+                          <span>Fel faktura:</span>
+                          <span className="font-medium text-orange-600">{stat.fel_faktura}</span>
                         </div>
                       )}
                     </div>
@@ -411,7 +427,9 @@ export default function BillAnalysesPage() {
                             {getStatusIcon(analysis.validationStatus)}
                             {analysis.validationStatus === 'pending' ? 'Väntar' : 
                              analysis.validationStatus === 'correct' ? 'Korrekt' : 
-                             analysis.validationStatus === 'incorrect' ? 'Felaktig' : 'Granska'}
+                             analysis.validationStatus === 'incorrect' ? 'Felaktig' : 
+                             analysis.validationStatus === 'needs_review' ? 'Granska' : 
+                             analysis.validationStatus === 'fel_faktura' ? 'Fel faktura' : 'Okänd'}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium sticky right-0 bg-white group-hover:bg-gray-50 border-l border-gray-200">
@@ -476,6 +494,7 @@ export default function BillAnalysesPage() {
                       <option value="correct">Korrekt</option>
                       <option value="incorrect">Felaktig</option>
                       <option value="needs_review">Behöver granskas</option>
+                      <option value="fel_faktura">Fel faktura</option>
                     </select>
                   </div>
                   <div className="flex flex-col sm:flex-row gap-2 sm:items-end">

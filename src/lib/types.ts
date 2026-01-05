@@ -231,7 +231,7 @@ export interface BillAnalysis {
   priceArea?: string;
   aiConfidence?: number;
   aiWarnings?: string[];
-  validationStatus: 'pending' | 'correct' | 'incorrect' | 'needs_review';
+  validationStatus: 'pending' | 'correct' | 'incorrect' | 'needs_review' | 'fel_faktura';
   validationNotes?: string;
   validatedBy?: string;
   validatedAt?: Date;
