@@ -262,47 +262,6 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     }
   },
   {
-    name: 'add-missing-eon-elna',
-    description: 'Lägger till saknad E.ON Elna avgift som AI:n ofta missar',
-    condition: (data) => {
-      // Kontrollera om det finns tecken på E.ON faktura men saknar E.ON Elna
-      const hasEonElna = data.extraFeesDetailed.some(fee => 
-        fee.label.toLowerCase().includes('eon elna') ||
-        fee.label.toLowerCase().includes('eon elna™')
-      );
-      
-      // Om det är en E.ON faktura men saknar E.ON Elna, lägg till den
-      const isEonInvoice = data.extraFeesDetailed.some(fee => 
-        fee.label.toLowerCase().includes('eon') ||
-        fee.label.toLowerCase().includes('rörliga kostnader')
-      );
-      
-      // Kontrollera att det INTE är en Vattenfall faktura (förhindra konflikt)
-      const isVattenfallInvoice = data.extraFeesDetailed.some(fee => 
-        fee.label.toLowerCase().includes('fast påslag spot') ||
-        fee.label.toLowerCase().includes('årsavgift') ||
-        fee.label.toLowerCase().includes('kampanjrabatt')
-      );
-      
-      return isEonInvoice && !hasEonElna && !isVattenfallInvoice;
-    },
-    correction: (data) => {
-      console.log('[AI Corrections] Lägger till saknad E.ON Elna avgift (49.00 kr)');
-      
-      const eonElnaFee = {
-        label: 'E.ON Elna™',
-        amount: 49.00,
-        confidence: 0.9
-      };
-      
-      return {
-        ...data,
-        extraFeesDetailed: [...data.extraFeesDetailed, eonElnaFee],
-        extraFeesTotal: data.extraFeesTotal + 49.00
-      };
-    }
-  },
-  {
     name: 'fix-eon-amounts',
     description: 'Korrigerar felaktiga belopp på E.ON fakturor',
     condition: (data) => {
@@ -496,30 +455,119 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     description: 'Tar bort avgifter från andra leverantörer (t.ex. E.ON Elna™ om fakturan inte är från E.ON)',
     condition: (data) => data.extraFeesDetailed.some(fee => {
       const label = fee.label.toLowerCase();
-      // Om fakturan inte innehåller leverantörens namn i totalAmount eller någonstans
-      // men avgiften innehåller ett specifikt leverantörsnamn, ta bort den
-      const providerNames = ['eon elna', 'eon', 'fortum', 'vattenfall'];
-      return providerNames.some(provider => 
-        label.includes(provider) && 
-        !data.totalAmount.toString().toLowerCase().includes(provider) &&
-        !data.period?.toLowerCase().includes(provider)
-      );
+      
+      // Kontrollera om avgiften är E.ON Elna
+      if (label.includes('eon elna')) {
+        // För E.ON Elna: kräv att fakturan har ALLA typiska E.ON-avgifter för att vara säker
+        const hasRoerligaKostnader = data.extraFeesDetailed.some(f => 
+          f.label.toLowerCase().includes('rörliga kostnader')
+        );
+        const hasFastPaaslag = data.extraFeesDetailed.some(f => 
+          f.label.toLowerCase().includes('fast påslag') && 
+          !f.label.toLowerCase().includes('spot') // Inte "Fast påslag spot" (Vattenfall)
+        );
+        const hasElavtalAarsavgift = data.extraFeesDetailed.some(f => 
+          f.label.toLowerCase().includes('elavtal årsavgift')
+        );
+        
+        // Om fakturan INTE har alla typiska E.ON-avgifter, är det troligen inte en E.ON-faktura
+        const isLikelyEonInvoice = hasRoerligaKostnader && hasFastPaaslag && hasElavtalAarsavgift;
+        
+        if (!isLikelyEonInvoice) {
+          return true; // Ta bort E.ON Elna om det inte är en E.ON-faktura
+        }
+      }
+      
+      // För andra leverantörsspecifika avgifter
+      const providerNames = ['eon', 'fortum', 'vattenfall'];
+      return providerNames.some(provider => {
+        if (label.includes(provider) && !label.includes('eon elna')) {
+          // Kontrollera om fakturan har andra avgifter från samma leverantör
+          const hasOtherProviderFees = data.extraFeesDetailed.some(f => {
+            const otherLabel = f.label.toLowerCase();
+            if (provider === 'eon') {
+              return otherLabel.includes('rörliga kostnader') || 
+                     (otherLabel.includes('fast påslag') && !otherLabel.includes('spot')) ||
+                     otherLabel.includes('elavtal årsavgift');
+            }
+            if (provider === 'fortum') {
+              return otherLabel.includes('elcertifikat') || 
+                     otherLabel.includes('månadsavgift') ||
+                     otherLabel.includes('fossilfri');
+            }
+            if (provider === 'vattenfall') {
+              return otherLabel.includes('fast påslag spot') ||
+                     otherLabel.includes('kampanjrabatt');
+            }
+            return false;
+          });
+          
+          // Om fakturan INTE har andra avgifter från samma leverantör, ta bort denna avgift
+          return !hasOtherProviderFees;
+        }
+        return false;
+      });
     }),
     correction: (data) => {
       const filtered = data.extraFeesDetailed.filter(fee => {
         const label = fee.label.toLowerCase();
-        const providerNames = ['eon elna', 'eon', 'fortum', 'vattenfall'];
-        // Hitta vilken provider som matchar (om någon)
-        const matchedProvider = providerNames.find(provider => label.includes(provider));
         
-        if (matchedProvider) {
-          // Om fakturan tydligt är från den leverantören, behåll avgiften
-          const contextIncludesProvider = 
-            data.totalAmount.toString().toLowerCase().includes(matchedProvider) ||
-            data.period?.toLowerCase().includes(matchedProvider);
-          return contextIncludesProvider;
+        // Specialhantering för E.ON Elna
+        if (label.includes('eon elna')) {
+          const hasRoerligaKostnader = data.extraFeesDetailed.some(f => 
+            f.label.toLowerCase().includes('rörliga kostnader')
+          );
+          const hasFastPaaslag = data.extraFeesDetailed.some(f => 
+            f.label.toLowerCase().includes('fast påslag') && 
+            !f.label.toLowerCase().includes('spot')
+          );
+          const hasElavtalAarsavgift = data.extraFeesDetailed.some(f => 
+            f.label.toLowerCase().includes('elavtal årsavgift')
+          );
+          
+          // Behåll E.ON Elna ENDAST om fakturan har alla typiska E.ON-avgifter
+          const isLikelyEonInvoice = hasRoerligaKostnader && hasFastPaaslag && hasElavtalAarsavgift;
+          
+          if (!isLikelyEonInvoice) {
+            console.log('[AI Corrections] Tar bort E.ON Elna från faktura som inte verkar vara från E.ON');
+            return false; // Ta bort
+          }
+          return true; // Behåll
         }
-        return true; // Behåll alla andra avgifter (som inte matchar någon specifik leverantör)
+        
+        // För andra leverantörsspecifika avgifter
+        const providerNames = ['eon', 'fortum', 'vattenfall'];
+        for (const provider of providerNames) {
+          if (label.includes(provider) && !label.includes('eon elna')) {
+            // Kontrollera om fakturan har andra avgifter från samma leverantör
+            const hasOtherProviderFees = data.extraFeesDetailed.some(f => {
+              const otherLabel = f.label.toLowerCase();
+              if (provider === 'eon') {
+                return otherLabel.includes('rörliga kostnader') || 
+                       (otherLabel.includes('fast påslag') && !otherLabel.includes('spot')) ||
+                       otherLabel.includes('elavtal årsavgift');
+              }
+              if (provider === 'fortum') {
+                return otherLabel.includes('elcertifikat') || 
+                       otherLabel.includes('månadsavgift') ||
+                       otherLabel.includes('fossilfri');
+              }
+              if (provider === 'vattenfall') {
+                return otherLabel.includes('fast påslag spot') ||
+                       otherLabel.includes('kampanjrabatt');
+              }
+              return false;
+            });
+            
+            // Om fakturan INTE har andra avgifter från samma leverantör, ta bort denna avgift
+            if (!hasOtherProviderFees) {
+              console.log(`[AI Corrections] Tar bort ${fee.label} från faktura som inte verkar vara från ${provider}`);
+              return false; // Ta bort
+            }
+          }
+        }
+        
+        return true; // Behåll alla andra avgifter
       });
       
       return {
