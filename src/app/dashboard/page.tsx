@@ -169,19 +169,24 @@ export default function DashboardPage() {
 
   // Wait for session to be loaded before fetching data
   useEffect(() => {
+    console.log("[Dashboard] Session status:", status, "Session:", session);
+    
     if (status === "loading") {
       // Still loading session, wait
+      console.log("[Dashboard] Waiting for session to load...");
       return;
     }
     
     if (status === "unauthenticated") {
       // Not authenticated, redirect to signin
+      console.log("[Dashboard] Not authenticated, redirecting to signin");
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
       return;
     }
     
     if (status === "authenticated" && session) {
       // Session is ready, fetch data
+      console.log("[Dashboard] Session authenticated, fetching data...");
       fetchDashboardData();
     }
   }, [status, session, fetchDashboardData, router]);

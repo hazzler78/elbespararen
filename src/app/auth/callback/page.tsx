@@ -12,23 +12,36 @@ function CallbackHandler() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
 
   useEffect(() => {
+    console.log("[Callback] Status:", status, "Session:", session);
+    
     // Wait for session to be loaded
     if (status === "loading") {
+      console.log("[Callback] Waiting for session to load...");
       return;
     }
 
     // If authenticated, update session and redirect
     if (status === "authenticated" && session) {
       console.log("[Callback] Session authenticated, updating and redirecting...");
-      // Manually update session to ensure it's fresh
-      update().then(() => {
-        console.log("[Callback] Session updated, redirecting to:", callbackUrl);
-        router.push(callbackUrl);
-      }).catch((error) => {
-        console.error("[Callback] Error updating session:", error);
-        // Still redirect even if update fails
-        router.push(callbackUrl);
-      });
+      console.log("[Callback] Session user:", session.user);
+      
+      // Wait a bit to ensure cookies are set
+      setTimeout(() => {
+        // Manually update session to ensure it's fresh
+        update().then(() => {
+          console.log("[Callback] Session updated, redirecting to:", callbackUrl);
+          // Wait a bit more before redirect to ensure cookies are persisted
+          setTimeout(() => {
+            router.push(callbackUrl);
+          }, 500);
+        }).catch((error) => {
+          console.error("[Callback] Error updating session:", error);
+          // Still redirect even if update fails
+          setTimeout(() => {
+            router.push(callbackUrl);
+          }, 500);
+        });
+      }, 1000);
       return;
     }
 
