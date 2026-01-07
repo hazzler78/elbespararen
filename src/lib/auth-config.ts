@@ -4,12 +4,41 @@ import { createDatabaseFromBinding } from "@/lib/database";
 import type { NextRequest } from "next/server";
 import { NextResponse } from "next/server";
 
-// Helper function to check for missing environment variables
+// Helper function to get environment variable (works in both Node and Edge runtime)
+function getEnvVar(key: string): string | undefined {
+  // Try process.env first (works in both Node and Edge runtime)
+  const fromProcess = (process.env as any)?.[key];
+  if (typeof fromProcess === "string" && fromProcess.length > 0) return fromProcess;
+  
+  // Try getRequestContext (next-on-pages for Cloudflare Pages)
+  try {
+    const ctxEnv = (globalThis as any).getRequestContext?.()?.env;
+    if (ctxEnv && typeof ctxEnv[key] === "string" && ctxEnv[key]) {
+      return ctxEnv[key] as string;
+    }
+  } catch (e) {
+    // getRequestContext might not be available or might throw
+  }
+  
+  // Try globalThis.env (Cloudflare Workers)
+  try {
+    const workerEnv = (globalThis as any).env;
+    if (workerEnv && typeof workerEnv[key] === "string" && workerEnv[key]) {
+      return workerEnv[key] as string;
+    }
+  } catch (e) {
+    // globalThis.env might not be available
+  }
+  
+  return undefined;
+}
+
+// Helper function to check for missing environment variables at request time
 function getMissingEnvVars(): string[] {
   const missing: string[] = [];
-  if (!process.env.GOOGLE_CLIENT_ID) missing.push("GOOGLE_CLIENT_ID");
-  if (!process.env.GOOGLE_CLIENT_SECRET) missing.push("GOOGLE_CLIENT_SECRET");
-  if (!process.env.NEXTAUTH_SECRET) missing.push("NEXTAUTH_SECRET");
+  if (!getEnvVar("GOOGLE_CLIENT_ID")) missing.push("GOOGLE_CLIENT_ID");
+  if (!getEnvVar("GOOGLE_CLIENT_SECRET")) missing.push("GOOGLE_CLIENT_SECRET");
+  if (!getEnvVar("NEXTAUTH_SECRET")) missing.push("NEXTAUTH_SECRET");
   return missing;
 }
 
@@ -42,18 +71,24 @@ function createConfigErrorResponse(req: NextRequest): Response {
   return NextResponse.redirect(errorUrl);
 }
 
-// Only create auth options if required env vars are present
-// Otherwise, we'll handle errors in the handlers
-const missingVars = getMissingEnvVars();
-const hasRequiredConfig = missingVars.length === 0;
-
-export const authOptions = hasRequiredConfig ? {
-  providers: [
-    GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-    }),
-  ],
+// Helper function to create auth options dynamically (checks env vars at runtime)
+function createAuthOptions() {
+  const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+  const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+  const secret = getEnvVar("NEXTAUTH_SECRET");
+  const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
+  
+  if (!clientId || !clientSecret || !secret) {
+    return null;
+  }
+  
+  return {
+    providers: [
+      GoogleProvider({
+        clientId,
+        clientSecret,
+      }),
+    ],
   callbacks: {
     async signIn({ user, account, profile }: { user: any; account?: any; profile?: any }) {
       // Create or update user in database
@@ -101,10 +136,10 @@ export const authOptions = hasRequiredConfig ? {
   pages: {
     signIn: '/auth/signin',
   },
-  secret: process.env.NEXTAUTH_SECRET,
-  // Explicitly set URL to ensure correct callback URL construction
-  // NextAuth will use this to construct callback URLs
-  url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://elbespararen.se',
+    secret,
+    // Explicitly set URL to ensure correct callback URL construction
+    // NextAuth will use this to construct callback URLs
+    url,
   // Trust host for Cloudflare Pages / Edge runtime
   // This is required for NextAuth.js v5 beta to work correctly in Edge runtime
   trustHost: true,
@@ -116,7 +151,7 @@ export const authOptions = hasRequiredConfig ? {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+        secure: process.env.NODE_ENV === 'production' || url.startsWith('https://'),
         domain: undefined, // Let browser set domain automatically
       },
     },
@@ -126,30 +161,54 @@ export const authOptions = hasRequiredConfig ? {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+        secure: process.env.NODE_ENV === 'production' || url.startsWith('https://'),
         domain: undefined, // Let browser set domain automatically
       },
     },
   },
-} : null;
+  };
+}
 
-// Create NextAuth instance only if config is valid
-let auth: any = null;
-let authHandlers: { GET?: any; POST?: any } | null = null;
+// Note: authOptions cannot be created at module load time in Edge runtime
+// because env vars are only available at request time via getRequestContext()
+// We'll create the auth instance dynamically in the handlers
 
-if (hasRequiredConfig && authOptions) {
+// Cache for auth instance and handlers (created per request if needed)
+let cachedAuth: any = null;
+let cachedAuthHandlers: { GET?: any; POST?: any } | null = null;
+let lastConfigHash: string | null = null;
+
+// Get or create auth handlers dynamically at request time
+function getAuthHandlers(): { GET?: any; POST?: any } | null {
+  const authOptions = createAuthOptions();
+  if (!authOptions) {
+    return null;
+  }
+  
+  // Create a hash of the config to detect changes
+  const configHash = `${authOptions.providers[0].clientId}-${authOptions.secret}`;
+  
+  // Return cached handlers if config hasn't changed
+  if (cachedAuthHandlers && lastConfigHash === configHash) {
+    return cachedAuthHandlers;
+  }
+  
   try {
     // Create NextAuth instance and export handlers
     // NextAuth.js v5 beta returns an object with handlers property
-    // Use type assertion to bypass strict type checking for callbacks
-    auth = NextAuth(authOptions as any);
-    authHandlers = auth.handlers;
+    cachedAuth = NextAuth(authOptions as any);
+    cachedAuthHandlers = cachedAuth.handlers;
+    lastConfigHash = configHash;
     
-    if (!authHandlers) {
+    if (!cachedAuthHandlers) {
       console.error("[auth-config] NextAuth handlers not found");
+      return null;
     }
+    
+    return cachedAuthHandlers;
   } catch (error) {
     console.error("[auth-config] Error initializing NextAuth:", error);
+    return null;
   }
 }
 
@@ -159,19 +218,15 @@ export const handlers = {
   GET: async (req: NextRequest, context?: any): Promise<Response> => {
     // Check if this is the error route - let it handle itself
     if (req.nextUrl.pathname.includes("/auth/error")) {
-      // If handlers are available, use them; otherwise return error response
-      if (authHandlers?.GET) {
-        try {
-          return await authHandlers.GET(req, context);
-        } catch (error) {
-          return createConfigErrorResponse(req);
-        }
-      }
+      // Let the custom error route handle it
       return createConfigErrorResponse(req);
     }
     
-    // For other routes, check if config is valid
-    if (!hasRequiredConfig || !authHandlers?.GET) {
+    // Get auth handlers (creates them if config is valid)
+    const authHandlers = getAuthHandlers();
+    
+    // If handlers are not available, return config error
+    if (!authHandlers?.GET) {
       return createConfigErrorResponse(req);
     }
     
@@ -185,19 +240,15 @@ export const handlers = {
   POST: async (req: NextRequest, context?: any): Promise<Response> => {
     // Check if this is the error route - let it handle itself
     if (req.nextUrl.pathname.includes("/auth/error")) {
-      // If handlers are available, use them; otherwise return error response
-      if (authHandlers?.POST) {
-        try {
-          return await authHandlers.POST(req, context);
-        } catch (error) {
-          return createConfigErrorResponse(req);
-        }
-      }
+      // Let the custom error route handle it
       return createConfigErrorResponse(req);
     }
     
-    // For other routes, check if config is valid
-    if (!hasRequiredConfig || !authHandlers?.POST) {
+    // Get auth handlers (creates them if config is valid)
+    const authHandlers = getAuthHandlers();
+    
+    // If handlers are not available, return config error
+    if (!authHandlers?.POST) {
       return createConfigErrorResponse(req);
     }
     
@@ -213,7 +264,7 @@ export const handlers = {
   POST: (req: NextRequest, context?: any) => Promise<Response>;
 };
 
-// Export other auth functions if they exist (only if auth is initialized)
-export const signIn = auth?.signIn;
-export const signOut = auth?.signOut;
-export const getServerSession = auth?.auth;
+// Export other auth functions (they'll be created dynamically when needed)
+export const signIn = cachedAuth?.signIn;
+export const signOut = cachedAuth?.signOut;
+export const getServerSession = cachedAuth?.auth;
