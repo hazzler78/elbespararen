@@ -1,6 +1,6 @@
-// Note: NextAuth.js v5 beta has issues with Edge runtime
-// Using Node.js runtime instead for auth routes
-// export const runtime = 'edge'; // Disabled due to compatibility issues
+// Cloudflare Pages requires Edge runtime for all routes
+// Note: NextAuth.js v5 beta may have issues with Edge runtime, but required for Cloudflare
+export const runtime = 'edge';
 
 import { handlers } from "@/lib/auth-config";
 

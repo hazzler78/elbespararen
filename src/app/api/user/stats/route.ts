@@ -2,9 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-// Note: Using Node.js runtime for auth-dependent routes
-// getToken from next-auth/jwt has compatibility issues with Edge runtime
-// export const runtime = 'edge';
+// Cloudflare Pages requires Edge runtime for all routes
+export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {
