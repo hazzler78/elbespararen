@@ -61,6 +61,9 @@ export const authOptions = {
   // Explicitly set URL to ensure correct callback URL construction
   // NextAuth will use this to construct callback URLs
   url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://elbespararen.se',
+  // Trust host for Cloudflare Pages / Edge runtime
+  // This is required for NextAuth.js v5 beta to work correctly in Edge runtime
+  trustHost: true,
   // Cookie configuration for Edge runtime compatibility
   cookies: {
     sessionToken: {
@@ -70,6 +73,7 @@ export const authOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+        domain: undefined, // Let browser set domain automatically
       },
     },
     callbackUrl: {
@@ -79,6 +83,7 @@ export const authOptions = {
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+        domain: undefined, // Let browser set domain automatically
       },
     },
   },
