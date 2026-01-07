@@ -2,7 +2,9 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-export const runtime = 'edge';
+// Note: Using Node.js runtime for auth-dependent routes
+// getToken from next-auth/jwt has compatibility issues with Edge runtime
+// export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
   try {

@@ -2,7 +2,9 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createDatabaseFromBinding } from "@/lib/database";
 
-export const runtime = 'edge';
+// Note: NextAuth.js v5 beta has issues with Edge runtime
+// Using Node.js runtime instead for auth routes
+// export const runtime = 'edge'; // Disabled due to compatibility issues
 
 const handler = NextAuth({
   providers: [

@@ -18,12 +18,18 @@ Denna guide visar hur du konfigurerar Google OAuth för användarautentisering i
 6. Skapa OAuth Client ID:
    - Application type: **Web application**
    - Name: Elbespararen (eller ditt val)
-   - Authorized JavaScript origins:
+   
+   **VIKTIGT - Skillnad mellan de två fälten:**
+   
+   - **Authorized JavaScript origins** (INGEN path, bara domän):
      - `http://localhost:3000` (för utveckling)
-     - `https://din-domän.se` (för produktion)
-   - Authorized redirect URIs:
+     - `https://elbespararen.se` (för produktion - INTE med /api/auth/callback/google!)
+   
+   - **Authorized redirect URIs** (MED full path):
      - `http://localhost:3000/api/auth/callback/google` (för utveckling)
-     - `https://din-domän.se/api/auth/callback/google` (för produktion)
+     - `https://elbespararen.se/api/auth/callback/google` (för produktion)
+   
+   **Vanligt fel:** Lägg INTE callback-URL:en i "JavaScript origins" - det fältet ska bara ha domänen!
 
 7. Kopiera **Client ID** och **Client Secret**
 

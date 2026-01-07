@@ -3,9 +3,12 @@ import { NextRequest } from "next/server";
 
 export async function getSessionUser(req: NextRequest) {
   try {
+    // getToken from next-auth/jwt works best in Node.js runtime
+    // For Edge runtime, we'd need to parse cookies manually, but for now
+    // we'll use Node.js runtime for auth routes
     const token = await getToken({ 
       req,
-      secret: process.env.NEXTAUTH_SECRET 
+      secret: process.env.NEXTAUTH_SECRET
     });
     
     if (!token || !token.email) {
@@ -13,13 +16,14 @@ export async function getSessionUser(req: NextRequest) {
     }
     
     return {
-      id: token.sub || token.id as string,
+      id: token.sub || (token.id as string) || '',
       email: token.email as string,
       name: token.name as string | undefined,
       image: token.picture as string | undefined,
     };
   } catch (error) {
     console.error("[auth] Error getting session user:", error);
+    // Return null instead of throwing - allows routes to continue without auth
     return null;
   }
 }
