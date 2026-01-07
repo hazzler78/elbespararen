@@ -1,0 +1,87 @@
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
+import { createDatabaseFromBinding } from "@/lib/database";
+import type { NextRequest } from "next/server";
+
+export const authOptions = {
+  providers: [
+    GoogleProvider({
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+    }),
+  ],
+  callbacks: {
+    async signIn({ user, account, profile }) {
+      // Create or update user in database
+      try {
+        let env: any = {};
+        if ((globalThis as any).getRequestContext) {
+          env = (globalThis as any).getRequestContext()?.env ?? {};
+        }
+        if (!env.DB && (process.env as any).DB) {
+          env.DB = (process.env as any).DB;
+        }
+        if (!env.DB && (globalThis as any).env?.DB) {
+          env.DB = (globalThis as any).env.DB;
+        }
+
+        const db = createDatabaseFromBinding(env?.DB);
+        await db.createOrUpdateUser({
+          email: user.email!,
+          name: user.name || undefined,
+          image: user.image || undefined,
+          googleId: account?.providerAccountId || undefined,
+        });
+      } catch (error) {
+        console.error("[NextAuth] Error creating/updating user:", error);
+        // Don't block sign-in if user creation fails
+      }
+      
+      return true;
+    },
+    async session({ session, token }) {
+      // Add user ID to session
+      if (session.user && token.sub) {
+        (session.user as any).id = token.sub;
+      }
+      return session;
+    },
+    async jwt({ token, account, user }) {
+      // Persist user ID in token
+      if (account && user) {
+        token.id = user.id;
+      }
+      return token;
+    },
+  },
+  pages: {
+    signIn: '/auth/signin',
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+// Create NextAuth instance and export handlers
+// NextAuth.js v5 beta returns an object with handlers property
+const auth = NextAuth(authOptions);
+
+// Export handlers - NextAuth v5 beta structure
+// Type handlers correctly for Next.js App Router
+// Ensure handlers exist and are properly typed
+const authHandlers = auth.handlers;
+if (!authHandlers) {
+  throw new Error("NextAuth handlers not found. Check NextAuth.js v5 beta configuration.");
+}
+
+// Export handlers with proper typing
+export const handlers = {
+  GET: authHandlers.GET,
+  POST: authHandlers.POST,
+} as {
+  GET: (req: NextRequest, context?: any) => Promise<Response>;
+  POST: (req: NextRequest, context?: any) => Promise<Response>;
+};
+
+// Export other auth functions if they exist
+export const signIn = auth.signIn;
+export const signOut = auth.signOut;
+export const getServerSession = auth.auth;
