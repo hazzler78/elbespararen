@@ -58,6 +58,9 @@ export const authOptions = {
     signIn: '/auth/signin',
   },
   secret: process.env.NEXTAUTH_SECRET,
+  // Explicitly set URL to ensure correct callback URL construction
+  // NextAuth will use this to construct callback URLs
+  url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://elbespararen.se',
 };
 
 // Create NextAuth instance and export handlers
