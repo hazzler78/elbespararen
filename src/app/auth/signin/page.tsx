@@ -11,38 +11,10 @@ function SignInForm() {
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleGoogleSignIn = async () => {
-    try {
-      setIsLoading(true);
-      console.log("[SignIn] Attempting to sign in with Google...");
-      console.log("[SignIn] Callback URL:", callbackUrl);
-      
-      // Try using signIn function first
-      try {
-        const result = await signIn("google", { 
-          callbackUrl,
-          redirect: true,
-        }) as any; // Type assertion for NextAuth v5 beta compatibility
-        
-        console.log("[SignIn] Sign in result:", result);
-        
-        // If signIn returns an error, try direct redirect
-        if (result && typeof result === 'object' && 'error' in result) {
-          console.warn("[SignIn] Sign in returned error, trying direct redirect:", result.error);
-          window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
-          return;
-        }
-      } catch (signInError) {
-        console.warn("[SignIn] signIn function failed, trying direct redirect:", signInError);
-        // Fallback: direct redirect to NextAuth signin endpoint
-        window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
-        return;
-      }
-    } catch (error) {
-      console.error("[SignIn] Sign in exception:", error);
-      alert(`Ett fel uppstod: ${error instanceof Error ? error.message : 'Okänt fel'}`);
-      setIsLoading(false);
-    }
+  const handleGoogleSignIn = () => {
+    setIsLoading(true);
+    // Simple redirect to NextAuth signin endpoint
+    window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
   };
 
   return (
