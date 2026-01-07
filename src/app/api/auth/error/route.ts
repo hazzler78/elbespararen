@@ -116,18 +116,20 @@ export async function GET(req: NextRequest) {
           diagnostics.initializationSuccess = true;
           
           // Try to call the handler with a test request to see if it works
-          try {
-            const testReq = new Request(`${url}/api/auth/signin`, {
-              method: 'GET',
-              headers: {
-                'host': new URL(url).host,
-              },
-            });
-            const testNextReq = new NextRequest(testReq);
-            // Don't actually call it, just verify it exists
-            diagnostics.handlerTest = "Handlers available and callable";
-          } catch (handlerError: any) {
-            diagnostics.handlerError = handlerError?.message || String(handlerError);
+          if (url) {
+            try {
+              const testReq = new Request(`${url}/api/auth/signin`, {
+                method: 'GET',
+                headers: {
+                  'host': new URL(url).host,
+                },
+              });
+              const testNextReq = new NextRequest(testReq);
+              // Don't actually call it, just verify it exists
+              diagnostics.handlerTest = "Handlers available and callable";
+            } catch (handlerError: any) {
+              diagnostics.handlerError = handlerError?.message || String(handlerError);
+            }
           }
         }
       } catch (initError: any) {
