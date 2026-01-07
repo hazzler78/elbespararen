@@ -14,9 +14,24 @@ function SignInForm() {
   const handleGoogleSignIn = async () => {
     try {
       setIsLoading(true);
-      await signIn("google", { callbackUrl });
+      console.log("[SignIn] Attempting to sign in with Google...");
+      console.log("[SignIn] Callback URL:", callbackUrl);
+      
+      const result = await signIn("google", { 
+        callbackUrl,
+        redirect: true, // Explicitly enable redirect
+      });
+      
+      console.log("[SignIn] Sign in result:", result);
+      
+      // If signIn doesn't redirect automatically, redirect manually
+      if (result?.error) {
+        console.error("[SignIn] Sign in error:", result.error);
+        alert(`Inloggningsfel: ${result.error}`);
+      }
     } catch (error) {
-      console.error("Sign in error:", error);
+      console.error("[SignIn] Sign in exception:", error);
+      alert(`Ett fel uppstod: ${error instanceof Error ? error.message : 'Okänt fel'}`);
     } finally {
       setIsLoading(false);
     }
