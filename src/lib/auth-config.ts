@@ -11,7 +11,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
+    async signIn({ user, account, profile }: { user: any; account?: any; profile?: any }) {
       // Create or update user in database
       try {
         let env: any = {};
@@ -62,7 +62,8 @@ export const authOptions = {
 
 // Create NextAuth instance and export handlers
 // NextAuth.js v5 beta returns an object with handlers property
-const auth = NextAuth(authOptions);
+// Use type assertion to bypass strict type checking for callbacks
+const auth = NextAuth(authOptions as any);
 
 // Export handlers - NextAuth v5 beta structure
 // Type handlers correctly for Next.js App Router
