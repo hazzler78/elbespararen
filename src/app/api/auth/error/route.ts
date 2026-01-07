@@ -3,6 +3,8 @@
 export const runtime = 'edge';
 
 import { NextRequest, NextResponse } from "next/server";
+import NextAuth from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
 // Helper function to get environment variable (works in both Node and Edge runtime)
 function getEnvVar(key: string): string | undefined {
@@ -85,6 +87,36 @@ export async function GET(req: NextRequest) {
     if (url) {
       diagnostics.envVarsPresent.NEXTAUTH_URL_VALUE = url;
       diagnostics.envVarsPresent.NEXTAUTH_URL_VALID = url.startsWith("https://") ? "valid (https)" : url.startsWith("http://") ? "http (use https in production)" : "invalid format";
+    }
+    
+    // Try to initialize NextAuth to capture the actual error
+    if (missingVars.length === 0 && clientId && clientSecret && secret) {
+      try {
+        const testAuthOptions = {
+          providers: [
+            GoogleProvider({
+              clientId,
+              clientSecret,
+            }),
+          ],
+          secret,
+          url,
+          trustHost: true,
+        };
+        
+        const testAuth = NextAuth(testAuthOptions as any);
+        const testHandlers = testAuth.handlers;
+        
+        if (!testHandlers) {
+          diagnostics.initializationError = "NextAuth handlers not found after initialization";
+        } else {
+          diagnostics.initializationSuccess = true;
+        }
+      } catch (initError: any) {
+        diagnostics.initializationError = initError?.message || String(initError);
+        diagnostics.initializationErrorStack = initError?.stack;
+        diagnostics.initializationErrorName = initError?.name;
+      }
     }
     
     // Return a helpful error response
