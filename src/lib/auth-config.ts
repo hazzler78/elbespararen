@@ -60,17 +60,6 @@ export const authOptions = {
       }
       return token;
     },
-    async redirect({ url, baseUrl }: { url: string; baseUrl: string }) {
-      // After OAuth callback, redirect to our callback handler
-      if (url.startsWith("/")) {
-        return `${baseUrl}/auth/callback?callbackUrl=${encodeURIComponent(url)}`;
-      }
-      // Allow external redirects if they match our domain
-      if (new URL(url).origin === baseUrl) {
-        return url;
-      }
-      return baseUrl;
-    },
   },
   pages: {
     signIn: '/auth/signin',
