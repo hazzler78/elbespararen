@@ -22,12 +22,12 @@ function SignInForm() {
         const result = await signIn("google", { 
           callbackUrl,
           redirect: true,
-        });
+        }) as any; // Type assertion for NextAuth v5 beta compatibility
         
         console.log("[SignIn] Sign in result:", result);
         
         // If signIn returns an error, try direct redirect
-        if (result?.error) {
+        if (result && typeof result === 'object' && 'error' in result) {
           console.warn("[SignIn] Sign in returned error, trying direct redirect:", result.error);
           window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
           return;
