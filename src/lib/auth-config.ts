@@ -252,9 +252,21 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
 // If config is missing or handlers failed to initialize, return configuration error
 export const handlers = {
   GET: async (req: NextRequest, context?: any): Promise<Response> => {
-    // Check if this is the error route - let it handle itself
-    if (req.nextUrl.pathname.includes("/auth/error")) {
-      // Let the custom error route handle it
+    const pathname = req.nextUrl.pathname;
+    
+    // For error route, let NextAuth handle it first, then fall back to custom handler
+    if (pathname.includes("/auth/error")) {
+      const authHandlers = getAuthHandlers();
+      // If NextAuth handlers exist, let NextAuth handle the error route
+      if (authHandlers?.GET) {
+        try {
+          return await authHandlers.GET(req, context);
+        } catch (error) {
+          console.error("[auth-config] NextAuth error handler failed:", error);
+          // Fall through to custom error handler
+        }
+      }
+      // Custom error handler as fallback
       return createConfigErrorResponse(req);
     }
     
@@ -263,20 +275,39 @@ export const handlers = {
     
     // If handlers are not available, return config error
     if (!authHandlers?.GET) {
+      console.error(`[auth-config] No auth handlers available for ${pathname}. Initialization error: ${initializationError || 'unknown'}`);
       return createConfigErrorResponse(req);
     }
     
     try {
       return await authHandlers.GET(req, context);
     } catch (error) {
-      console.error("[auth-config] Error in GET handler:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[auth-config] Error in GET handler for ${pathname}:`, errorMessage);
+      // If it's a configuration error, redirect to error route
+      if (errorMessage.includes("Configuration") || errorMessage.includes("NEXTAUTH")) {
+        const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
+        return NextResponse.redirect(errorUrl);
+      }
       return createConfigErrorResponse(req);
     }
   },
   POST: async (req: NextRequest, context?: any): Promise<Response> => {
-    // Check if this is the error route - let it handle itself
-    if (req.nextUrl.pathname.includes("/auth/error")) {
-      // Let the custom error route handle it
+    const pathname = req.nextUrl.pathname;
+    
+    // For error route, let NextAuth handle it first, then fall back to custom handler
+    if (pathname.includes("/auth/error")) {
+      const authHandlers = getAuthHandlers();
+      // If NextAuth handlers exist, let NextAuth handle the error route
+      if (authHandlers?.POST) {
+        try {
+          return await authHandlers.POST(req, context);
+        } catch (error) {
+          console.error("[auth-config] NextAuth error handler failed:", error);
+          // Fall through to custom error handler
+        }
+      }
+      // Custom error handler as fallback
       return createConfigErrorResponse(req);
     }
     
@@ -285,13 +316,20 @@ export const handlers = {
     
     // If handlers are not available, return config error
     if (!authHandlers?.POST) {
+      console.error(`[auth-config] No auth handlers available for ${pathname}. Initialization error: ${initializationError || 'unknown'}`);
       return createConfigErrorResponse(req);
     }
     
     try {
       return await authHandlers.POST(req, context);
     } catch (error) {
-      console.error("[auth-config] Error in POST handler:", error);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      console.error(`[auth-config] Error in POST handler for ${pathname}:`, errorMessage);
+      // If it's a configuration error, redirect to error route
+      if (errorMessage.includes("Configuration") || errorMessage.includes("NEXTAUTH")) {
+        const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
+        return NextResponse.redirect(errorUrl);
+      }
       return createConfigErrorResponse(req);
     }
   },

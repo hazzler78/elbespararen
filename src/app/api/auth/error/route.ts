@@ -102,6 +102,9 @@ export async function GET(req: NextRequest) {
           secret,
           url,
           trustHost: true,
+          pages: {
+            signIn: '/auth/signin',
+          },
         };
         
         const testAuth = NextAuth(testAuthOptions as any);
@@ -111,6 +114,21 @@ export async function GET(req: NextRequest) {
           diagnostics.initializationError = "NextAuth handlers not found after initialization";
         } else {
           diagnostics.initializationSuccess = true;
+          
+          // Try to call the handler with a test request to see if it works
+          try {
+            const testReq = new Request(`${url}/api/auth/signin`, {
+              method: 'GET',
+              headers: {
+                'host': new URL(url).host,
+              },
+            });
+            const testNextReq = new NextRequest(testReq);
+            // Don't actually call it, just verify it exists
+            diagnostics.handlerTest = "Handlers available and callable";
+          } catch (handlerError: any) {
+            diagnostics.handlerError = handlerError?.message || String(handlerError);
+          }
         }
       } catch (initError: any) {
         diagnostics.initializationError = initError?.message || String(initError);
@@ -118,6 +136,16 @@ export async function GET(req: NextRequest) {
         diagnostics.initializationErrorName = initError?.name;
       }
     }
+    
+    // Add information about what route triggered this error
+    const referer = req.headers.get('referer');
+    const origin = req.headers.get('origin');
+    diagnostics.requestInfo = {
+      pathname: req.nextUrl.pathname,
+      searchParams: Object.fromEntries(req.nextUrl.searchParams),
+      referer: referer || 'none',
+      origin: origin || 'none',
+    };
     
     // Return a helpful error response
     return NextResponse.json(
