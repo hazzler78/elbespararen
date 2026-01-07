@@ -11,7 +11,7 @@ export const authOptions = {
     }),
   ],
   callbacks: {
-    async signIn({ user, account, profile }) {
+    async signIn({ user, account, profile }: { user: any; account: any; profile?: any }) {
       // Create or update user in database
       try {
         let env: any = {};
@@ -39,14 +39,14 @@ export const authOptions = {
       
       return true;
     },
-    async session({ session, token }) {
+    async session({ session, token }: { session: any; token: any }) {
       // Add user ID to session
       if (session.user && token.sub) {
         (session.user as any).id = token.sub;
       }
       return session;
     },
-    async jwt({ token, account, user }) {
+    async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
       // Persist user ID in token
       if (account && user) {
         token.id = user.id;
