@@ -8,12 +8,21 @@ Denna guide visar hur du konfigurerar Google OAuth för användarautentisering i
 2. Välj eller skapa ett projekt
 3. Gå till **APIs & Services** > **Credentials**
 4. Klicka på **Create Credentials** > **OAuth client ID**
-5. Om du inte har konfigurerat OAuth consent screen först:
+5. **VIKTIGT - Konfigurera OAuth consent screen först:**
    - Gå till **OAuth consent screen**
    - Välj **External** (eller Internal om du har Google Workspace)
-   - Fyll i app-informationen
-   - Lägg till scopes: `email`, `profile`
-   - Lägg till test users om nödvändigt
+   - Fyll i app-informationen:
+     - App name: Elbespararen
+     - User support email: din email
+     - Developer contact information: din email
+   - Lägg till scopes: `email`, `profile`, `openid`
+   - **För produktion:** Du måste antingen:
+     - **Lägga till test users** (om appen är i "Testing" läge)
+     - **Eller skicka in för verifiering** (för att göra appen tillgänglig för alla)
+   - **Om du får "403: disallowed_useragent":**
+     - Gå tillbaka till OAuth consent screen
+     - Lägg till din email i "Test users" om appen är i Testing-läge
+     - Eller skicka in appen för verifiering till Google
 
 6. Skapa OAuth Client ID:
    - Application type: **Web application**
