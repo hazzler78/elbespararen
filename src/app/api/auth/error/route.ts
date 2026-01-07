@@ -149,6 +149,11 @@ export async function GET(req: NextRequest) {
       origin: origin || 'none',
     };
     
+    // If all vars are present and initialization succeeds, this might be a NextAuth v5 beta issue
+    if (missingVars.length === 0 && diagnostics.initializationSuccess) {
+      diagnostics.note = "All configuration appears valid. This might be a NextAuth v5 beta Edge runtime compatibility issue. Try accessing /api/auth/signin/google directly to see if authentication works despite the error message.";
+    }
+    
     // Return a helpful error response
     return NextResponse.json(
       {

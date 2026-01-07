@@ -280,10 +280,27 @@ export const handlers = {
     }
     
     try {
-      return await authHandlers.GET(req, context);
+      const response = await authHandlers.GET(req, context);
+      
+      // Check if NextAuth redirected to error route
+      if (response.status === 302 || response.status === 307) {
+        const location = response.headers.get('location');
+        if (location?.includes('/auth/error')) {
+          console.error(`[auth-config] NextAuth redirected to error route from ${pathname}. Location: ${location}`);
+          // Log the response to understand what NextAuth is complaining about
+          const responseText = await response.text().catch(() => '');
+          console.error(`[auth-config] Response body: ${responseText.substring(0, 500)}`);
+        }
+      }
+      
+      return response;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorStack = error instanceof Error ? error.stack : undefined;
       console.error(`[auth-config] Error in GET handler for ${pathname}:`, errorMessage);
+      if (errorStack) {
+        console.error(`[auth-config] Error stack:`, errorStack);
+      }
       // If it's a configuration error, redirect to error route
       if (errorMessage.includes("Configuration") || errorMessage.includes("NEXTAUTH")) {
         const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
