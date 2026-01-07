@@ -17,22 +17,30 @@ function SignInForm() {
       console.log("[SignIn] Attempting to sign in with Google...");
       console.log("[SignIn] Callback URL:", callbackUrl);
       
-      const result = await signIn("google", { 
-        callbackUrl,
-        redirect: true, // Explicitly enable redirect
-      });
-      
-      console.log("[SignIn] Sign in result:", result);
-      
-      // If signIn doesn't redirect automatically, redirect manually
-      if (result?.error) {
-        console.error("[SignIn] Sign in error:", result.error);
-        alert(`Inloggningsfel: ${result.error}`);
+      // Try using signIn function first
+      try {
+        const result = await signIn("google", { 
+          callbackUrl,
+          redirect: true,
+        });
+        
+        console.log("[SignIn] Sign in result:", result);
+        
+        // If signIn returns an error, try direct redirect
+        if (result?.error) {
+          console.warn("[SignIn] Sign in returned error, trying direct redirect:", result.error);
+          window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+          return;
+        }
+      } catch (signInError) {
+        console.warn("[SignIn] signIn function failed, trying direct redirect:", signInError);
+        // Fallback: direct redirect to NextAuth signin endpoint
+        window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+        return;
       }
     } catch (error) {
       console.error("[SignIn] Sign in exception:", error);
       alert(`Ett fel uppstod: ${error instanceof Error ? error.message : 'Okänt fel'}`);
-    } finally {
       setIsLoading(false);
     }
   };
