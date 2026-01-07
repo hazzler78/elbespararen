@@ -234,6 +234,25 @@ export async function POST(
       const userAgent = req.headers.get('user-agent') || undefined;
 
       console.log(`[parse-bill-v3] Försöker spara analys i databasen...`);
+      
+      // Hämta användare om inloggad
+      let userId: string | undefined = undefined;
+      try {
+        const { getSessionUser } = await import("@/lib/auth");
+        const user = await getSessionUser(req);
+        if (user?.email) {
+          const dbUser = await db.createOrUpdateUser({
+            email: user.email,
+            name: user.name,
+            image: user.image,
+          });
+          userId = dbUser.id;
+        }
+      } catch (authError) {
+        // Ignore auth errors - user might not be logged in
+        console.log('[parse-bill-v3] User not authenticated, saving without user_id');
+      }
+      
       await db.createBillAnalysis({
         billData,
         savings,
@@ -246,7 +265,8 @@ export async function POST(
         aiWarnings: billData.warnings,
         validationStatus: 'pending',
         ipAddress,
-        userAgent
+        userAgent,
+        userId
       });
 
       console.log(`[parse-bill-v3] ✅ Analys sparad i databasen för admin-granskning`);

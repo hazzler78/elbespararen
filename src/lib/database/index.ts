@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis } from "@/lib/types";
+import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis, User, UserStats } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
@@ -105,6 +105,13 @@ export interface Database {
   createBillAnalysis(analysis: Omit<BillAnalysis, 'id' | 'createdAt'>): Promise<BillAnalysis>;
   updateBillAnalysis(id: string, analysis: Partial<BillAnalysis>): Promise<BillAnalysis>;
   deleteBillAnalysis(id: string): Promise<boolean>;
+  getBillAnalysesByUserId(userId: string, range?: string): Promise<BillAnalysis[]>;
+
+  // Users
+  getUserByEmail(email: string): Promise<User | null>;
+  getUserById(id: string): Promise<User | null>;
+  createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User>;
+  getUserStats(userId: string): Promise<UserStats>;
 }
 
 // Mock Database Implementation (för utveckling)
@@ -438,6 +445,120 @@ class MockDatabase implements Database {
     }
     this.billAnalyses.splice(index, 1);
     return true;
+  }
+
+  async getBillAnalysesByUserId(userId: string, range: string = 'year'): Promise<BillAnalysis[]> {
+    // Filter by user_id and date range
+    const now = new Date();
+    let cutoffDate = new Date();
+    
+    switch (range) {
+      case 'month':
+        cutoffDate.setMonth(now.getMonth() - 1);
+        break;
+      case '3months':
+        cutoffDate.setMonth(now.getMonth() - 3);
+        break;
+      case 'year':
+        cutoffDate.setFullYear(now.getFullYear() - 1);
+        break;
+      default:
+        cutoffDate = new Date(0); // All time
+    }
+    
+    return this.billAnalyses
+      .filter(a => {
+        // In mock, we'll just return all for now
+        // In real implementation, filter by user_id
+        return a.createdAt >= cutoffDate;
+      })
+      .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  }
+
+  // Users
+  private users: User[] = [];
+
+  async getUserByEmail(email: string): Promise<User | null> {
+    return this.users.find(u => u.email === email) || null;
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    return this.users.find(u => u.id === id) || null;
+  }
+
+  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User> {
+    const existing = this.users.find(u => u.email === userData.email);
+    const now = new Date();
+    
+    if (existing) {
+      // Update existing user
+      existing.name = userData.name || existing.name;
+      existing.image = userData.image || existing.image;
+      existing.googleId = userData.googleId || existing.googleId;
+      existing.updatedAt = now;
+      return existing;
+    } else {
+      // Create new user
+      const newUser: User = {
+        id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        email: userData.email,
+        name: userData.name,
+        image: userData.image,
+        googleId: userData.googleId,
+        createdAt: now,
+        updatedAt: now
+      };
+      this.users.push(newUser);
+      return newUser;
+    }
+  }
+
+  async getUserStats(userId: string): Promise<UserStats> {
+    const userAnalyses = this.billAnalyses; // In mock, use all analyses
+    
+    if (userAnalyses.length === 0) {
+      return {
+        totalAnalyses: 0,
+        totalSavings: 0,
+        averageSavings: 0,
+        currentMonthlyCost: 0,
+        lastAnalysisDate: null,
+        trend: 'stable',
+        benchmarkComparison: {
+          percentile: 50,
+          averageInArea: 0,
+          yourCost: 0
+        }
+      };
+    }
+
+    const totalSavings = userAnalyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
+    const avgSavings = totalSavings / userAnalyses.length;
+    const latestCost = userAnalyses[0]?.billData.totalAmount || 0;
+    const lastDate = userAnalyses[0]?.createdAt.toISOString() || null;
+
+    // Simple trend calculation
+    let trend: 'up' | 'down' | 'stable' = 'stable';
+    if (userAnalyses.length >= 2) {
+      const recent = userAnalyses[0].billData.totalAmount;
+      const previous = userAnalyses[1].billData.totalAmount;
+      if (recent > previous) trend = 'up';
+      else if (recent < previous) trend = 'down';
+    }
+
+    return {
+      totalAnalyses: userAnalyses.length,
+      totalSavings,
+      averageSavings: avgSavings,
+      currentMonthlyCost: latestCost,
+      lastAnalysisDate: lastDate,
+      trend,
+      benchmarkComparison: {
+        percentile: 65, // Mock value
+        averageInArea: latestCost * 0.87, // Mock: 13% below user
+        yourCost: latestCost
+      }
+    };
   }
 }
 
@@ -1387,6 +1508,7 @@ class CloudflareDatabase implements Database {
           validatedAt: row.validated_at ? new Date(String(row.validated_at)) : undefined,
           ipAddress: row.ip_address ? String(row.ip_address) : undefined,
           userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          userId: row.user_id ? String(row.user_id) : undefined,
           createdAt: new Date(String(row.created_at))
         };
       });
@@ -1426,9 +1548,10 @@ class CloudflareDatabase implements Database {
         validationNotes: row.validation_notes ? String(row.validation_notes) : undefined,
         validatedBy: row.validated_by ? String(row.validated_by) : undefined,
         validatedAt: row.validated_at ? new Date(String(row.validated_at)) : undefined,
-        ipAddress: row.ip_address ? String(row.ip_address) : undefined,
-        userAgent: row.user_agent ? String(row.user_agent) : undefined,
-        createdAt: new Date(String(row.created_at))
+          ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+          userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          userId: row.user_id ? String(row.user_id) : undefined,
+          createdAt: new Date(String(row.created_at))
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
@@ -1450,8 +1573,8 @@ class CloudflareDatabase implements Database {
           id, bill_data, savings_data, image_key, image_url, original_file_name,
           postal_code, price_area, ai_confidence, ai_warnings,
           validation_status, validation_notes, validated_by, validated_at,
-          ip_address, user_agent, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ip_address, user_agent, user_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `).bind(
         id,
         JSON.stringify(analysisData.billData),
@@ -1469,6 +1592,7 @@ class CloudflareDatabase implements Database {
         analysisData.validatedAt ? analysisData.validatedAt.toISOString() : null,
         analysisData.ipAddress || null,
         analysisData.userAgent || null,
+        analysisData.userId || null,
         now
       ).run();
 
@@ -1556,6 +1680,227 @@ class CloudflareDatabase implements Database {
         console.warn('[Database] bill_analyses table does not exist.');
         return false;
       }
+      throw error;
+    }
+  }
+
+  async getBillAnalysesByUserId(userId: string, range: string = 'year'): Promise<BillAnalysis[]> {
+    try {
+      const now = new Date();
+      let cutoffDate = new Date();
+      
+      switch (range) {
+        case 'month':
+          cutoffDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          cutoffDate.setMonth(now.getMonth() - 3);
+          break;
+        case 'year':
+          cutoffDate.setFullYear(now.getFullYear() - 1);
+          break;
+        default:
+          cutoffDate = new Date(0);
+      }
+
+      const result = await this.db.prepare(`
+        SELECT * FROM bill_analyses
+        WHERE user_id = ? AND created_at >= ?
+        ORDER BY created_at DESC
+      `).bind(userId, cutoffDate.toISOString()).all();
+
+      const rows = Array.isArray(result.results) ? result.results : [];
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          billData: JSON.parse(String(row.bill_data)) as BillAnalysis['billData'],
+          savings: JSON.parse(String(row.savings_data)) as BillAnalysis['savings'],
+          imageKey: row.image_key ? String(row.image_key) : undefined,
+          imageUrl: row.image_url ? String(row.image_url) : undefined,
+          originalFileName: row.original_file_name ? String(row.original_file_name) : undefined,
+          postalCode: row.postal_code ? String(row.postal_code) : undefined,
+          priceArea: row.price_area ? String(row.price_area) : undefined,
+          aiConfidence: row.ai_confidence ? Number(row.ai_confidence) : undefined,
+          aiWarnings: row.ai_warnings ? JSON.parse(String(row.ai_warnings)) : undefined,
+          validationStatus: (row.validation_status as BillAnalysis['validationStatus']) || 'pending',
+          validationNotes: row.validation_notes ? String(row.validation_notes) : undefined,
+          validatedBy: row.validated_by ? String(row.validated_by) : undefined,
+          validatedAt: row.validated_at ? new Date(String(row.validated_at)) : undefined,
+          ipAddress: row.ip_address ? String(row.ip_address) : undefined,
+          userAgent: row.user_agent ? String(row.user_agent) : undefined,
+          userId: row.user_id ? String(row.user_id) : undefined,
+          createdAt: new Date(String(row.created_at))
+        };
+      });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table')) {
+        return [];
+      }
+      throw error;
+    }
+  }
+
+  // Users
+  async getUserByEmail(email: string): Promise<User | null> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM users WHERE email = ?
+      `).bind(email).first();
+
+      if (!result) return null;
+
+      const row = result as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        email: String(row.email),
+        name: row.name ? String(row.name) : undefined,
+        image: row.image ? String(row.image) : undefined,
+        googleId: row.google_id ? String(row.google_id) : undefined,
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at))
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table')) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async getUserById(id: string): Promise<User | null> {
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM users WHERE id = ?
+      `).bind(id).first();
+
+      if (!result) return null;
+
+      const row = result as Record<string, unknown>;
+      return {
+        id: String(row.id),
+        email: String(row.email),
+        name: row.name ? String(row.name) : undefined,
+        image: row.image ? String(row.image) : undefined,
+        googleId: row.google_id ? String(row.google_id) : undefined,
+        createdAt: new Date(String(row.created_at)),
+        updatedAt: new Date(String(row.updated_at))
+      };
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table')) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
+  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User> {
+    try {
+      const now = new Date().toISOString();
+      
+      // Try to get existing user
+      const existing = await this.getUserByEmail(userData.email);
+      
+      if (existing) {
+        // Update existing user
+        await this.db.prepare(`
+          UPDATE users 
+          SET name = ?, image = ?, google_id = ?, updated_at = ?
+          WHERE email = ?
+        `).bind(
+          userData.name || existing.name || null,
+          userData.image || existing.image || null,
+          userData.googleId || existing.googleId || null,
+          now,
+          userData.email
+        ).run();
+
+        return await this.getUserByEmail(userData.email) as User;
+      } else {
+        // Create new user
+        const id = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        
+        await this.db.prepare(`
+          INSERT INTO users (id, email, name, image, google_id, created_at, updated_at)
+          VALUES (?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          id,
+          userData.email,
+          userData.name || null,
+          userData.image || null,
+          userData.googleId || null,
+          now,
+          now
+        ).run();
+
+        return await this.getUserById(id) as User;
+      }
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table')) {
+        throw new Error('users table does not exist. Please run migration 0034_create_users_table.sql');
+      }
+      throw error;
+    }
+  }
+
+  async getUserStats(userId: string): Promise<UserStats> {
+    try {
+      const analyses = await this.getBillAnalysesByUserId(userId, 'all');
+      
+      if (analyses.length === 0) {
+        return {
+          totalAnalyses: 0,
+          totalSavings: 0,
+          averageSavings: 0,
+          currentMonthlyCost: 0,
+          lastAnalysisDate: null,
+          trend: 'stable',
+          benchmarkComparison: {
+            percentile: 50,
+            averageInArea: 0,
+            yourCost: 0
+          }
+        };
+      }
+
+      const totalSavings = analyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
+      const avgSavings = totalSavings / analyses.length;
+      const latestCost = analyses[0]?.billData.totalAmount || 0;
+      const lastDate = analyses[0]?.createdAt.toISOString() || null;
+
+      // Calculate trend
+      let trend: 'up' | 'down' | 'stable' = 'stable';
+      if (analyses.length >= 2) {
+        const recent = analyses[0].billData.totalAmount;
+        const previous = analyses[1].billData.totalAmount;
+        if (recent > previous * 1.05) trend = 'up';
+        else if (recent < previous * 0.95) trend = 'down';
+      }
+
+      // Calculate benchmark (simplified - in production, query aggregated data)
+      const priceArea = analyses[0]?.billData.priceArea;
+      const avgInArea = latestCost * 0.87; // Mock calculation
+      const percentile = latestCost > avgInArea ? 65 : 35;
+
+      return {
+        totalAnalyses: analyses.length,
+        totalSavings,
+        averageSavings: avgSavings,
+        currentMonthlyCost: latestCost,
+        lastAnalysisDate: lastDate,
+        trend,
+        benchmarkComparison: {
+          percentile,
+          averageInArea: avgInArea,
+          yourCost: latestCost
+        }
+      };
+    } catch (error) {
+      console.error('[Database] Error getting user stats:', error);
       throw error;
     }
   }

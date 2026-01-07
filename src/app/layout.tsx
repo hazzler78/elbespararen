@@ -5,6 +5,7 @@ import Hotjar from "@/components/Hotjar";
 import TikTokPixel from "@/components/TikTokPixel";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import ChatWidget from "@/components/ChatWidget";
+import Providers from "@/components/Providers";
 
 export const metadata: Metadata = {
   title: "Elbespararen – Se din faktura med nya ögon",
@@ -19,12 +20,14 @@ export default function RootLayout({
   return (
     <html lang="sv">
       <body className="antialiased">
-        <GoogleAnalytics />
-        <Hotjar />
-        <TikTokPixel />
-        <CookieConsentBanner />
-        {children}
-        <ChatWidget />
+        <Providers>
+          <GoogleAnalytics />
+          <Hotjar />
+          <TikTokPixel />
+          <CookieConsentBanner />
+          {children}
+          <ChatWidget />
+        </Providers>
       </body>
     </html>
   );

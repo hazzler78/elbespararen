@@ -237,7 +237,33 @@ export interface BillAnalysis {
   validatedAt?: Date;
   ipAddress?: string;
   userAgent?: string;
+  userId?: string; // Koppling till användare
   createdAt: Date;
+}
+
+// User types
+export interface User {
+  id: string;
+  email: string;
+  name?: string;
+  image?: string;
+  googleId?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface UserStats {
+  totalAnalyses: number;
+  totalSavings: number;
+  averageSavings: number;
+  currentMonthlyCost: number;
+  lastAnalysisDate: string | null;
+  trend: 'up' | 'down' | 'stable';
+  benchmarkComparison: {
+    percentile: number;
+    averageInArea: number;
+    yourCost: number;
+  };
 }
 
 // API Response types

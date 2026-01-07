@@ -49,11 +49,31 @@ export default function DashboardPage() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
-      // TODO: Implementera API endpoint för att hämta användarens fakturaanalyser
-      // const response = await fetch(`/api/user/bill-analyses?range=${timeRange}`);
-      // const data = await response.json();
       
-      // Mock data för demonstration
+      // Hämta fakturaanalyser från API
+      const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`);
+      if (!analysesResponse.ok) {
+        if (analysesResponse.status === 401) {
+          // Not authenticated, redirect to login
+          window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+          return;
+        }
+        throw new Error('Kunde inte hämta analyser');
+      }
+      
+      const analysesData = await analysesResponse.json();
+      const analyses = analysesData.success ? analysesData.data : [];
+      
+      // Hämta statistik
+      const statsResponse = await fetch('/api/user/stats');
+      if (!statsResponse.ok) {
+        throw new Error('Kunde inte hämta statistik');
+      }
+      
+      const statsData = await statsResponse.json();
+      const stats = statsData.success ? statsData.data : null;
+      
+      // Mock data för demonstration om ingen data finns
       const mockAnalyses: BillAnalysis[] = [
         {
           id: "1",
@@ -112,26 +132,33 @@ export default function DashboardPage() {
         }
       ];
 
-      setAnalyses(mockAnalyses);
+      // Använd riktig data om den finns, annars mock
+      const finalAnalyses = analyses.length > 0 ? analyses : mockAnalyses;
+      setAnalyses(finalAnalyses);
       
-      // Beräkna statistik
-      const totalSavings = mockAnalyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
-      const avgSavings = mockAnalyses.length > 0 ? totalSavings / mockAnalyses.length : 0;
-      const latestCost = mockAnalyses[0]?.billData.totalAmount || 0;
-      
-      setStats({
-        totalAnalyses: mockAnalyses.length,
-        totalSavings,
-        averageSavings: avgSavings,
-        currentMonthlyCost: latestCost,
-        lastAnalysisDate: mockAnalyses[0]?.createdAt.toISOString() || null,
-        trend: 'down', // Mock: kostnad går ner
-        benchmarkComparison: {
-          percentile: 65, // Du betalar mer än 65% av andra i ditt område
-          averageInArea: 920,
-          yourCost: latestCost
-        }
-      });
+      // Använd riktig statistik om den finns
+      if (stats) {
+        setStats(stats);
+      } else {
+        // Beräkna statistik från mock data
+        const totalSavings = mockAnalyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
+        const avgSavings = mockAnalyses.length > 0 ? totalSavings / mockAnalyses.length : 0;
+        const latestCost = mockAnalyses[0]?.billData.totalAmount || 0;
+        
+        setStats({
+          totalAnalyses: mockAnalyses.length,
+          totalSavings,
+          averageSavings: avgSavings,
+          currentMonthlyCost: latestCost,
+          lastAnalysisDate: mockAnalyses[0]?.createdAt.toISOString() || null,
+          trend: 'down',
+          benchmarkComparison: {
+            percentile: 65,
+            averageInArea: 920,
+            yourCost: latestCost
+          }
+        });
+      }
     } catch (error) {
       console.error('Fel vid hämtning av dashboard data:', error);
     } finally {
