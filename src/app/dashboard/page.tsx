@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useSession } from "next-auth/react";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -19,6 +20,7 @@ import {
   Sparkles
 } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BillAnalysis } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
@@ -37,16 +39,14 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [analyses, setAnalyses] = useState<BillAnalysis[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("year");
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, [timeRange]);
-
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
       
@@ -54,8 +54,9 @@ export default function DashboardPage() {
       const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`);
       if (!analysesResponse.ok) {
         if (analysesResponse.status === 401) {
-          // Not authenticated, redirect to login
-          window.location.href = `/auth/signin?callbackUrl=${encodeURIComponent(window.location.pathname)}`;
+          // Not authenticated - session check should handle this, but log for debugging
+          console.warn("[Dashboard] 401 Unauthorized - session may have expired");
+          router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
           return;
         }
         throw new Error('Kunde inte hämta analyser');
@@ -164,7 +165,26 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [timeRange, router]);
+
+  // Wait for session to be loaded before fetching data
+  useEffect(() => {
+    if (status === "loading") {
+      // Still loading session, wait
+      return;
+    }
+    
+    if (status === "unauthenticated") {
+      // Not authenticated, redirect to signin
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
+      return;
+    }
+    
+    if (status === "authenticated" && session) {
+      // Session is ready, fetch data
+      fetchDashboardData();
+    }
+  }, [status, session, fetchDashboardData, router]);
 
   if (isLoading) {
     return (
