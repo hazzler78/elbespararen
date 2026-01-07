@@ -2,23 +2,56 @@ import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createDatabaseFromBinding } from "@/lib/database";
 import type { NextRequest } from "next/server";
+import { NextResponse } from "next/server";
 
-// Validate required environment variables
-if (!process.env.GOOGLE_CLIENT_ID) {
-  throw new Error("GOOGLE_CLIENT_ID is not set in environment variables");
-}
-if (!process.env.GOOGLE_CLIENT_SECRET) {
-  throw new Error("GOOGLE_CLIENT_SECRET is not set in environment variables");
-}
-if (!process.env.NEXTAUTH_SECRET) {
-  throw new Error("NEXTAUTH_SECRET is not set in environment variables");
+// Helper function to check for missing environment variables
+function getMissingEnvVars(): string[] {
+  const missing: string[] = [];
+  if (!process.env.GOOGLE_CLIENT_ID) missing.push("GOOGLE_CLIENT_ID");
+  if (!process.env.GOOGLE_CLIENT_SECRET) missing.push("GOOGLE_CLIENT_SECRET");
+  if (!process.env.NEXTAUTH_SECRET) missing.push("NEXTAUTH_SECRET");
+  return missing;
 }
 
-export const authOptions = {
+// Helper function to create configuration error response
+function createConfigErrorResponse(req: NextRequest): Response {
+  const missingVars = getMissingEnvVars();
+  const isErrorRoute = req.nextUrl.pathname.includes("/auth/error");
+  
+  if (isErrorRoute) {
+    // Return JSON for API error route
+    return NextResponse.json(
+      {
+        error: "Configuration Error",
+        message: "NextAuth is missing required environment variables",
+        missingVariables: missingVars,
+        help: "Please check your Cloudflare Pages environment variables and ensure all required variables are set for the Production environment.",
+        requiredVariables: [
+          "GOOGLE_CLIENT_ID",
+          "GOOGLE_CLIENT_SECRET", 
+          "NEXTAUTH_SECRET",
+          "NEXTAUTH_URL"
+        ]
+      },
+      { status: 500 }
+    );
+  }
+  
+  // Redirect to error page for other routes
+  const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
+  return NextResponse.redirect(errorUrl);
+}
+
+// Only create auth options if required env vars are present
+// Otherwise, we'll handle errors in the handlers
+const missingVars = getMissingEnvVars();
+const hasRequiredConfig = missingVars.length === 0;
+
+export const authOptions = hasRequiredConfig ? {
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
   ],
   callbacks: {
@@ -98,31 +131,89 @@ export const authOptions = {
       },
     },
   },
-};
+} : null;
 
-// Create NextAuth instance and export handlers
-// NextAuth.js v5 beta returns an object with handlers property
-// Use type assertion to bypass strict type checking for callbacks
-const auth = NextAuth(authOptions as any);
+// Create NextAuth instance only if config is valid
+let auth: any = null;
+let authHandlers: { GET?: any; POST?: any } | null = null;
 
-// Export handlers - NextAuth v5 beta structure
-// Type handlers correctly for Next.js App Router
-// Ensure handlers exist and are properly typed
-const authHandlers = auth.handlers;
-if (!authHandlers) {
-  throw new Error("NextAuth handlers not found. Check NextAuth.js v5 beta configuration.");
+if (hasRequiredConfig && authOptions) {
+  try {
+    // Create NextAuth instance and export handlers
+    // NextAuth.js v5 beta returns an object with handlers property
+    // Use type assertion to bypass strict type checking for callbacks
+    auth = NextAuth(authOptions as any);
+    authHandlers = auth.handlers;
+    
+    if (!authHandlers) {
+      console.error("[auth-config] NextAuth handlers not found");
+    }
+  } catch (error) {
+    console.error("[auth-config] Error initializing NextAuth:", error);
+  }
 }
 
-// Export handlers with proper typing
+// Export handlers with error handling wrapper
+// If config is missing or handlers failed to initialize, return configuration error
 export const handlers = {
-  GET: authHandlers.GET,
-  POST: authHandlers.POST,
+  GET: async (req: NextRequest, context?: any): Promise<Response> => {
+    // Check if this is the error route - let it handle itself
+    if (req.nextUrl.pathname.includes("/auth/error")) {
+      // If handlers are available, use them; otherwise return error response
+      if (authHandlers?.GET) {
+        try {
+          return await authHandlers.GET(req, context);
+        } catch (error) {
+          return createConfigErrorResponse(req);
+        }
+      }
+      return createConfigErrorResponse(req);
+    }
+    
+    // For other routes, check if config is valid
+    if (!hasRequiredConfig || !authHandlers?.GET) {
+      return createConfigErrorResponse(req);
+    }
+    
+    try {
+      return await authHandlers.GET(req, context);
+    } catch (error) {
+      console.error("[auth-config] Error in GET handler:", error);
+      return createConfigErrorResponse(req);
+    }
+  },
+  POST: async (req: NextRequest, context?: any): Promise<Response> => {
+    // Check if this is the error route - let it handle itself
+    if (req.nextUrl.pathname.includes("/auth/error")) {
+      // If handlers are available, use them; otherwise return error response
+      if (authHandlers?.POST) {
+        try {
+          return await authHandlers.POST(req, context);
+        } catch (error) {
+          return createConfigErrorResponse(req);
+        }
+      }
+      return createConfigErrorResponse(req);
+    }
+    
+    // For other routes, check if config is valid
+    if (!hasRequiredConfig || !authHandlers?.POST) {
+      return createConfigErrorResponse(req);
+    }
+    
+    try {
+      return await authHandlers.POST(req, context);
+    } catch (error) {
+      console.error("[auth-config] Error in POST handler:", error);
+      return createConfigErrorResponse(req);
+    }
+  },
 } as {
   GET: (req: NextRequest, context?: any) => Promise<Response>;
   POST: (req: NextRequest, context?: any) => Promise<Response>;
 };
 
-// Export other auth functions if they exist
-export const signIn = auth.signIn;
-export const signOut = auth.signOut;
-export const getServerSession = auth.auth;
+// Export other auth functions if they exist (only if auth is initialized)
+export const signIn = auth?.signIn;
+export const signOut = auth?.signOut;
+export const getServerSession = auth?.auth;
