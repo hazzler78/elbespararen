@@ -42,25 +42,60 @@ export async function GET(req: NextRequest) {
     // Check which environment variables are missing (check at request time for Edge runtime)
     const missingVars: string[] = [];
     
-    if (!getEnvVar("GOOGLE_CLIENT_ID")) {
+    const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+    const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+    const secret = getEnvVar("NEXTAUTH_SECRET");
+    const url = getEnvVar("NEXTAUTH_URL");
+    
+    if (!clientId) {
       missingVars.push("GOOGLE_CLIENT_ID");
     }
-    if (!getEnvVar("GOOGLE_CLIENT_SECRET")) {
+    if (!clientSecret) {
       missingVars.push("GOOGLE_CLIENT_SECRET");
     }
-    if (!getEnvVar("NEXTAUTH_SECRET")) {
+    if (!secret) {
       missingVars.push("NEXTAUTH_SECRET");
     }
-    if (!getEnvVar("NEXTAUTH_URL")) {
+    if (!url) {
       missingVars.push("NEXTAUTH_URL");
+    }
+    
+    // Build diagnostic information
+    const diagnostics: any = {
+      envVarsPresent: {
+        GOOGLE_CLIENT_ID: !!clientId,
+        GOOGLE_CLIENT_SECRET: !!clientSecret,
+        NEXTAUTH_SECRET: !!secret,
+        NEXTAUTH_URL: !!url,
+      },
+    };
+    
+    // Add value lengths and formats for debugging (without exposing secrets)
+    if (clientId) {
+      diagnostics.envVarsPresent.GOOGLE_CLIENT_ID_LENGTH = clientId.length;
+      diagnostics.envVarsPresent.GOOGLE_CLIENT_ID_FORMAT = clientId.includes(".apps.googleusercontent.com") ? "valid" : "unexpected format";
+    }
+    if (clientSecret) {
+      diagnostics.envVarsPresent.GOOGLE_CLIENT_SECRET_LENGTH = clientSecret.length;
+    }
+    if (secret) {
+      diagnostics.envVarsPresent.NEXTAUTH_SECRET_LENGTH = secret.length;
+      diagnostics.envVarsPresent.NEXTAUTH_SECRET_VALID = secret.length >= 32 ? "valid (>=32 chars)" : "too short (<32 chars)";
+    }
+    if (url) {
+      diagnostics.envVarsPresent.NEXTAUTH_URL_VALUE = url;
+      diagnostics.envVarsPresent.NEXTAUTH_URL_VALID = url.startsWith("https://") ? "valid (https)" : url.startsWith("http://") ? "http (use https in production)" : "invalid format";
     }
     
     // Return a helpful error response
     return NextResponse.json(
       {
         error: "Configuration Error",
-        message: "NextAuth is missing required environment variables",
+        message: missingVars.length > 0 
+          ? "NextAuth is missing required environment variables"
+          : "NextAuth configuration error - variables are present but there may be a validation issue",
         missingVariables: missingVars,
+        diagnostics,
         help: "Please check your Cloudflare Pages environment variables and ensure all required variables are set for the Production environment.",
         requiredVariables: [
           "GOOGLE_CLIENT_ID",

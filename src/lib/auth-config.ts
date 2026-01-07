@@ -47,13 +47,39 @@ function createConfigErrorResponse(req: NextRequest): Response {
   const missingVars = getMissingEnvVars();
   const isErrorRoute = req.nextUrl.pathname.includes("/auth/error");
   
+  // Get diagnostic information
+  const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+  const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+  const secret = getEnvVar("NEXTAUTH_SECRET");
+  const url = getEnvVar("NEXTAUTH_URL");
+  
+  // Build diagnostic info
+  const diagnostics: any = {
+    envVarsPresent: {
+      GOOGLE_CLIENT_ID: !!clientId,
+      GOOGLE_CLIENT_SECRET: !!clientSecret,
+      NEXTAUTH_SECRET: !!secret,
+      NEXTAUTH_URL: !!url,
+    },
+    initializationError: initializationError || null,
+  };
+  
+  // Add value lengths (for debugging without exposing secrets)
+  if (clientId) diagnostics.envVarsPresent.GOOGLE_CLIENT_ID_LENGTH = clientId.length;
+  if (clientSecret) diagnostics.envVarsPresent.GOOGLE_CLIENT_SECRET_LENGTH = clientSecret.length;
+  if (secret) diagnostics.envVarsPresent.NEXTAUTH_SECRET_LENGTH = secret.length;
+  if (url) diagnostics.envVarsPresent.NEXTAUTH_URL_VALUE = url;
+  
   if (isErrorRoute) {
     // Return JSON for API error route
     return NextResponse.json(
       {
         error: "Configuration Error",
-        message: "NextAuth is missing required environment variables",
+        message: missingVars.length > 0 
+          ? "NextAuth is missing required environment variables"
+          : "NextAuth configuration error (variables present but initialization failed)",
         missingVariables: missingVars,
+        diagnostics,
         help: "Please check your Cloudflare Pages environment variables and ensure all required variables are set for the Production environment.",
         requiredVariables: [
           "GOOGLE_CLIENT_ID",
@@ -178,10 +204,14 @@ let cachedAuth: any = null;
 let cachedAuthHandlers: { GET?: any; POST?: any } | null = null;
 let lastConfigHash: string | null = null;
 
+// Store initialization error for debugging
+let initializationError: string | null = null;
+
 // Get or create auth handlers dynamically at request time
 function getAuthHandlers(): { GET?: any; POST?: any } | null {
   const authOptions = createAuthOptions();
   if (!authOptions) {
+    initializationError = "Auth options could not be created - missing required environment variables";
     return null;
   }
   
@@ -193,6 +223,9 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
     return cachedAuthHandlers;
   }
   
+  // Reset error
+  initializationError = null;
+  
   try {
     // Create NextAuth instance and export handlers
     // NextAuth.js v5 beta returns an object with handlers property
@@ -201,12 +234,15 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
     lastConfigHash = configHash;
     
     if (!cachedAuthHandlers) {
+      initializationError = "NextAuth handlers not found after initialization";
       console.error("[auth-config] NextAuth handlers not found");
       return null;
     }
     
     return cachedAuthHandlers;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    initializationError = `NextAuth initialization failed: ${errorMessage}`;
     console.error("[auth-config] Error initializing NextAuth:", error);
     return null;
   }
