@@ -61,6 +61,27 @@ export const authOptions = {
   // Explicitly set URL to ensure correct callback URL construction
   // NextAuth will use this to construct callback URLs
   url: process.env.NEXTAUTH_URL || process.env.NEXT_PUBLIC_APP_URL || 'https://elbespararen.se',
+  // Cookie configuration for Edge runtime compatibility
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+      },
+    },
+    callbackUrl: {
+      name: `next-auth.callback-url`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' || process.env.NEXTAUTH_URL?.startsWith('https://'),
+      },
+    },
+  },
 };
 
 // Create NextAuth instance and export handlers
