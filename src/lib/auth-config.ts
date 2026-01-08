@@ -215,6 +215,27 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
     return null;
   }
   
+  // CRITICAL FIX: Inject env vars into process.env for NextAuth validation
+  // NextAuth v5 beta checks process.env during request handling, which fails in Edge runtime
+  // We need to ensure process.env has the values when NextAuth validates
+  const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+  const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+  const secret = getEnvVar("NEXTAUTH_SECRET");
+  const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
+  
+  if (clientId && !(process.env as any).GOOGLE_CLIENT_ID) {
+    (process.env as any).GOOGLE_CLIENT_ID = clientId;
+  }
+  if (clientSecret && !(process.env as any).GOOGLE_CLIENT_SECRET) {
+    (process.env as any).GOOGLE_CLIENT_SECRET = clientSecret;
+  }
+  if (secret && !(process.env as any).NEXTAUTH_SECRET) {
+    (process.env as any).NEXTAUTH_SECRET = secret;
+  }
+  if (url && !(process.env as any).NEXTAUTH_URL) {
+    (process.env as any).NEXTAUTH_URL = url;
+  }
+  
   // Create a hash of the config to detect changes
   const configHash = `${authOptions.providers[0].clientId}-${authOptions.secret}`;
   
@@ -326,6 +347,26 @@ export const handlers = {
       }
       // Custom error handler as fallback
       return createConfigErrorResponse(req);
+    }
+    
+    // CRITICAL FIX: Ensure process.env has env vars before NextAuth validates
+    // NextAuth v5 beta checks process.env during request handling in Edge runtime
+    const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+    const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+    const secret = getEnvVar("NEXTAUTH_SECRET");
+    const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
+    
+    if (clientId && !(process.env as any).GOOGLE_CLIENT_ID) {
+      (process.env as any).GOOGLE_CLIENT_ID = clientId;
+    }
+    if (clientSecret && !(process.env as any).GOOGLE_CLIENT_SECRET) {
+      (process.env as any).GOOGLE_CLIENT_SECRET = clientSecret;
+    }
+    if (secret && !(process.env as any).NEXTAUTH_SECRET) {
+      (process.env as any).NEXTAUTH_SECRET = secret;
+    }
+    if (url && !(process.env as any).NEXTAUTH_URL) {
+      (process.env as any).NEXTAUTH_URL = url;
     }
     
     // Get auth handlers (creates them if config is valid)
