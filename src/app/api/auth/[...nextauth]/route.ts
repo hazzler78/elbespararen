@@ -7,16 +7,17 @@ import { handlers } from "@/lib/auth-config";
 
 // Export GET and POST handlers for Next.js App Router
 // NextAuth v5 beta expects route segments to be passed in context
+// Next.js App Router passes NextRequest, not Request
 export async function GET(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.GET(req as any, context);
+  return handlers.GET(req, context);
 }
 
 export async function POST(
-  req: Request,
+  req: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.POST(req as any, context);
+  return handlers.POST(req, context);
 }
