@@ -323,19 +323,18 @@ export const handlers = {
       return createConfigErrorResponse(req);
     }
     
-    // WORKAROUND: NextAuth v5 beta.30 has a bug parsing provider signin routes in Edge runtime
-    // Intercept /api/auth/signin/google and manually redirect to Google OAuth
-    if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
-      console.log(`[auth-config] WORKAROUND: Intercepted signin/google route: ${pathname}`);
-      
-    // Also log callback route to see if it's being hit
+    // Log callback route to debug OAuth callback handling
     if (pathname.includes('/api/auth/callback/google')) {
       console.log(`[auth-config] CALLBACK: Google OAuth callback route hit: ${pathname}`);
       console.log(`[auth-config] CALLBACK: Request URL: ${req.url}`);
       console.log(`[auth-config] CALLBACK: Query params: ${req.nextUrl.searchParams.toString()}`);
+      console.log(`[auth-config] CALLBACK: Context params: ${JSON.stringify(context?.params)}`);
     }
     
+    // WORKAROUND: NextAuth v5 beta.30 has a bug parsing provider signin routes in Edge runtime
+    // Intercept /api/auth/signin/google and manually redirect to Google OAuth
     if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
+      console.log(`[auth-config] WORKAROUND: Intercepted signin/google route: ${pathname}`);
       const clientId = getEnvVar("GOOGLE_CLIENT_ID");
       const baseUrl = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || req.nextUrl.origin;
       const callbackUrl = req.nextUrl.searchParams.get('callbackUrl') || '/dashboard';
