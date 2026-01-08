@@ -108,12 +108,12 @@ function createAuthOptions() {
   }
   
   return {
-    providers: [
-      GoogleProvider({
+  providers: [
+    GoogleProvider({
         clientId,
         clientSecret,
-      }),
-    ],
+    }),
+  ],
     // Set basePath to ensure NextAuth v5 beta can parse routes correctly in Edge runtime
     basePath: '/api/auth',
   callbacks: {
@@ -164,8 +164,8 @@ function createAuthOptions() {
     signIn: '/auth/signin',
   },
     secret,
-    // Explicitly set URL to ensure correct callback URL construction
-    // NextAuth will use this to construct callback URLs
+  // Explicitly set URL to ensure correct callback URL construction
+  // NextAuth will use this to construct callback URLs
     url,
   // Trust host for Cloudflare Pages / Edge runtime
   // This is required for NextAuth.js v5 beta to work correctly in Edge runtime
@@ -193,7 +193,7 @@ function createAuthOptions() {
       },
     },
   },
-  };
+};
 }
 
 // Note: authOptions cannot be created at module load time in Edge runtime
@@ -249,8 +249,8 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
   initializationError = null;
   
   try {
-    // Create NextAuth instance and export handlers
-    // NextAuth.js v5 beta returns an object with handlers property
+// Create NextAuth instance and export handlers
+// NextAuth.js v5 beta returns an object with handlers property
     cachedAuth = NextAuth(authOptions as any);
     cachedAuthHandlers = cachedAuth.handlers;
     lastConfigHash = configHash;
@@ -327,6 +327,15 @@ export const handlers = {
     // Intercept /api/auth/signin/google and manually redirect to Google OAuth
     if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
       console.log(`[auth-config] WORKAROUND: Intercepted signin/google route: ${pathname}`);
+      
+    // Also log callback route to see if it's being hit
+    if (pathname.includes('/api/auth/callback/google')) {
+      console.log(`[auth-config] CALLBACK: Google OAuth callback route hit: ${pathname}`);
+      console.log(`[auth-config] CALLBACK: Request URL: ${req.url}`);
+      console.log(`[auth-config] CALLBACK: Query params: ${req.nextUrl.searchParams.toString()}`);
+    }
+    
+    if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
       const clientId = getEnvVar("GOOGLE_CLIENT_ID");
       const baseUrl = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || req.nextUrl.origin;
       const callbackUrl = req.nextUrl.searchParams.get('callbackUrl') || '/dashboard';
