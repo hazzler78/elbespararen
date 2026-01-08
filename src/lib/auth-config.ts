@@ -339,16 +339,21 @@ export const handlers = {
       // Manually construct Google OAuth URL
       // CRITICAL: The redirect URI must EXACTLY match what's configured in Google Cloud Console
       // Format: {baseUrl}/api/auth/callback/google
-      const redirectUri = `${baseUrl}/api/auth/callback/google`;
+      // Ensure baseUrl doesn't have trailing slash
+      const cleanBaseUrl = baseUrl.replace(/\/$/, '');
+      const redirectUri = `${cleanBaseUrl}/api/auth/callback/google`;
       
       console.log(`[auth-config] WORKAROUND: Manual Google OAuth redirect`);
-      console.log(`[auth-config] Base URL: ${baseUrl}`);
+      console.log(`[auth-config] Request URL: ${req.url}`);
+      console.log(`[auth-config] Base URL: ${baseUrl} -> Clean: ${cleanBaseUrl}`);
       console.log(`[auth-config] Redirect URI: ${redirectUri}`);
-      console.log(`[auth-config] IMPORTANT: Make sure this redirect URI is EXACTLY configured in Google Cloud Console:`);
-      console.log(`[auth-config]   - Go to Google Cloud Console > APIs & Services > Credentials`);
-      console.log(`[auth-config]   - Edit your OAuth 2.0 Client ID`);
-      console.log(`[auth-config]   - Add to "Authorized redirect URIs": ${redirectUri}`);
-      console.log(`[auth-config]   - If app is in "Testing" mode, add your email to "Test users" in OAuth consent screen`);
+      console.log(`[auth-config] Callback URL param: ${callbackUrl}`);
+      console.log(`[auth-config] ⚠️  IMPORTANT: Make sure this redirect URI is EXACTLY configured in Google Cloud Console:`);
+      console.log(`[auth-config]   1. Go to Google Cloud Console > APIs & Services > Credentials`);
+      console.log(`[auth-config]   2. Edit your OAuth 2.0 Client ID`);
+      console.log(`[auth-config]   3. Add to "Authorized redirect URIs": ${redirectUri}`);
+      console.log(`[auth-config]   4. If app is in "Testing" mode, add your email to "Test users" in OAuth consent screen`);
+      console.log(`[auth-config]   5. Wait a few minutes for changes to propagate`);
       
       const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
       googleAuthUrl.searchParams.set('client_id', clientId);
