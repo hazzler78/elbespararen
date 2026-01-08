@@ -28,7 +28,7 @@ describe('Footer Component', () => {
   it('renders copyright text', () => {
     render(<Footer />);
     
-    expect(screen.getByText(/© 2025 Elbespararen/)).toBeInTheDocument();
+    expect(screen.getByText(/© 2026 Elbespararen/)).toBeInTheDocument();
     expect(screen.getByText(/Byggd med ❤️ för att göra elmarknaden mer transparent/)).toBeInTheDocument();
   });
 

@@ -209,7 +209,7 @@ export default function Footer() {
           {/* Copyright */}
           <div className="text-center">
             <p className="text-gray-400 text-sm leading-relaxed">
-              © 2025 Elbespararen. En AI-driven elfaktura-analys. Byggd med ❤️ för att göra elmarknaden mer transparent.
+              © 2026 Elbespararen. En AI-driven elfaktura-analys. Byggd med ❤️ för att göra elmarknaden mer transparent.
             </p>
           </div>
         </div>
