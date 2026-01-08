@@ -333,29 +333,35 @@ export const handlers = {
     }
     
     try {
-      // Create a new request with mutable headers to avoid immutable error
-      // NextAuth may try to modify headers, which fails with immutable headers in Edge runtime
-      // Copy headers manually to create new mutable Headers object
-      const mutableHeaders = new Headers();
-      req.headers.forEach((value, key) => {
-        mutableHeaders.set(key, value);
-      });
-      // CRITICAL: NextAuth v5 beta parses routes from the request URL pathname
-      // It expects the pathname to be relative to basePath (/api/auth)
-      // So /api/auth/signin/google should be passed as /signin/google
-      // But we're using basePath: '/api/auth', so NextAuth should handle this
-      // However, let's ensure the URL structure is correct
-      const mutableReq = new NextRequest(req.url, {
-        method: req.method,
-        headers: mutableHeaders,
-        body: req.body,
-      });
-      
-      // Log what we're passing to NextAuth for debugging
-      console.log(`[auth-config] Calling NextAuth GET handler with pathname: ${pathname}, mutableReq.pathname: ${mutableReq.nextUrl.pathname}, context params: ${JSON.stringify(context?.params)}`);
-      console.log(`[auth-config] NextAuth basePath: /api/auth, Full URL: ${mutableReq.url}`);
-      
-      const response = await authHandlers.GET(mutableReq, context);
+      // CRITICAL: NextAuth v5 beta might parse routes from the original request object
+      // Try passing the original request first to see if that helps with route parsing
+      // If we get immutable error, fall back to creating a mutable request
+      let response: Response;
+      try {
+        // Try with original request first - NextAuth might need the original request object
+        console.log(`[auth-config] Attempting with original request: ${req.url}, pathname: ${pathname}`);
+        response = await authHandlers.GET(req, context);
+        console.log(`[auth-config] Success with original request! Status: ${response.status}`);
+      } catch (immutableError: any) {
+        // If we get immutable error, create a new request with mutable headers
+        if (immutableError?.message?.includes('immutable') || immutableError?.name === 'TypeError') {
+          console.log(`[auth-config] Got immutable error (${immutableError?.message}), creating mutable request`);
+          const mutableHeaders = new Headers();
+          req.headers.forEach((value, key) => {
+            mutableHeaders.set(key, value);
+          });
+          const mutableReq = new NextRequest(req.url, {
+            method: req.method,
+            headers: mutableHeaders,
+            body: req.body,
+          });
+          console.log(`[auth-config] Calling NextAuth GET handler with mutableReq.pathname: ${mutableReq.nextUrl.pathname}, context params: ${JSON.stringify(context?.params)}`);
+          response = await authHandlers.GET(mutableReq, context);
+        } else {
+          // Re-throw if it's not an immutable error
+          throw immutableError;
+        }
+      }
       
       // Check if NextAuth redirected to error route
       if (response.status === 302 || response.status === 307) {
