@@ -300,7 +300,18 @@ export const handlers = {
       // If NextAuth handlers exist, let NextAuth handle the error route
       if (authHandlers?.GET) {
         try {
-          return await authHandlers.GET(req, context);
+          // Create a new request with mutable headers to avoid immutable error
+          // Copy headers manually to create new mutable Headers object
+          const mutableHeaders = new Headers();
+          req.headers.forEach((value, key) => {
+            mutableHeaders.set(key, value);
+          });
+          const mutableReq = new NextRequest(req.url, {
+            method: req.method,
+            headers: mutableHeaders,
+            body: req.body,
+          });
+          return await authHandlers.GET(mutableReq, context);
         } catch (error) {
           console.error("[auth-config] NextAuth error handler failed:", error);
           // Fall through to custom error handler
@@ -320,7 +331,19 @@ export const handlers = {
     }
     
     try {
-      const response = await authHandlers.GET(req, context);
+      // Create a new request with mutable headers to avoid immutable error
+      // NextAuth may try to modify headers, which fails with immutable headers in Edge runtime
+      // Copy headers manually to create new mutable Headers object
+      const mutableHeaders = new Headers();
+      req.headers.forEach((value, key) => {
+        mutableHeaders.set(key, value);
+      });
+      const mutableReq = new NextRequest(req.url, {
+        method: req.method,
+        headers: mutableHeaders,
+        body: req.body,
+      });
+      const response = await authHandlers.GET(mutableReq, context);
       
       // Check if NextAuth redirected to error route
       if (response.status === 302 || response.status === 307) {
@@ -357,7 +380,18 @@ export const handlers = {
       // If NextAuth handlers exist, let NextAuth handle the error route
       if (authHandlers?.POST) {
         try {
-          return await authHandlers.POST(req, context);
+          // Create a new request with mutable headers to avoid immutable error
+          // Copy headers manually to create new mutable Headers object
+          const mutableHeaders = new Headers();
+          req.headers.forEach((value, key) => {
+            mutableHeaders.set(key, value);
+          });
+          const mutableReq = new NextRequest(req.url, {
+            method: req.method,
+            headers: mutableHeaders,
+            body: req.body,
+          });
+          return await authHandlers.POST(mutableReq, context);
         } catch (error) {
           console.error("[auth-config] NextAuth error handler failed:", error);
           // Fall through to custom error handler
@@ -397,7 +431,19 @@ export const handlers = {
     }
     
     try {
-      return await authHandlers.POST(req, context);
+      // Create a new request with mutable headers to avoid immutable error
+      // NextAuth may try to modify headers, which fails with immutable headers in Edge runtime
+      // Copy headers manually to create new mutable Headers object
+      const mutableHeaders = new Headers();
+      req.headers.forEach((value, key) => {
+        mutableHeaders.set(key, value);
+      });
+      const mutableReq = new NextRequest(req.url, {
+        method: req.method,
+        headers: mutableHeaders,
+        body: req.body,
+      });
+      return await authHandlers.POST(mutableReq, context);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`[auth-config] Error in POST handler for ${pathname}:`, errorMessage);
