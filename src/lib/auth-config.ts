@@ -272,8 +272,30 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
 // Export handlers with error handling wrapper
 // If config is missing or handlers failed to initialize, return configuration error
 export const handlers = {
-  GET: async (req: NextRequest, context?: any): Promise<Response> => {
-    const pathname = req.nextUrl.pathname;
+  GET: async (req: NextRequest | Request, context?: any): Promise<Response> => {
+    // Convert Request to NextRequest if needed
+    const nextReq = req instanceof NextRequest ? req : new NextRequest(req);
+    const pathname = nextReq.nextUrl.pathname;
+    
+    // CRITICAL FIX: Ensure process.env has env vars before NextAuth validates
+    // NextAuth v5 beta checks process.env during request handling in Edge runtime
+    const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+    const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+    const secret = getEnvVar("NEXTAUTH_SECRET");
+    const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
+    
+    if (clientId && !(process.env as any).GOOGLE_CLIENT_ID) {
+      (process.env as any).GOOGLE_CLIENT_ID = clientId;
+    }
+    if (clientSecret && !(process.env as any).GOOGLE_CLIENT_SECRET) {
+      (process.env as any).GOOGLE_CLIENT_SECRET = clientSecret;
+    }
+    if (secret && !(process.env as any).NEXTAUTH_SECRET) {
+      (process.env as any).NEXTAUTH_SECRET = secret;
+    }
+    if (url && !(process.env as any).NEXTAUTH_URL) {
+      (process.env as any).NEXTAUTH_URL = url;
+    }
     
     // For error route, let NextAuth handle it first, then fall back to custom handler
     if (pathname.includes("/auth/error")) {
@@ -281,7 +303,7 @@ export const handlers = {
       // If NextAuth handlers exist, let NextAuth handle the error route
       if (authHandlers?.GET) {
         try {
-          return await authHandlers.GET(req, context);
+          return await authHandlers.GET(nextReq, context);
         } catch (error) {
           console.error("[auth-config] NextAuth error handler failed:", error);
           // Fall through to custom error handler
@@ -297,11 +319,11 @@ export const handlers = {
     // If handlers are not available, return config error
     if (!authHandlers?.GET) {
       console.error(`[auth-config] No auth handlers available for ${pathname}. Initialization error: ${initializationError || 'unknown'}`);
-      return createConfigErrorResponse(req);
+      return createConfigErrorResponse(nextReq);
     }
     
     try {
-      const response = await authHandlers.GET(req, context);
+      const response = await authHandlers.GET(nextReq, context);
       
       // Check if NextAuth redirected to error route
       if (response.status === 302 || response.status === 307) {
@@ -323,14 +345,16 @@ export const handlers = {
       }
       // If it's a configuration error, redirect to error route
       if (errorMessage.includes("Configuration") || errorMessage.includes("NEXTAUTH")) {
-        const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
+        const errorUrl = new URL("/api/auth/error?error=Configuration", nextReq.url);
         return NextResponse.redirect(errorUrl);
       }
-      return createConfigErrorResponse(req);
+      return createConfigErrorResponse(nextReq);
     }
   },
-  POST: async (req: NextRequest, context?: any): Promise<Response> => {
-    const pathname = req.nextUrl.pathname;
+  POST: async (req: NextRequest | Request, context?: any): Promise<Response> => {
+    // Convert Request to NextRequest if needed
+    const nextReq = req instanceof NextRequest ? req : new NextRequest(req);
+    const pathname = nextReq.nextUrl.pathname;
     
     // For error route, let NextAuth handle it first, then fall back to custom handler
     if (pathname.includes("/auth/error")) {
@@ -338,14 +362,14 @@ export const handlers = {
       // If NextAuth handlers exist, let NextAuth handle the error route
       if (authHandlers?.POST) {
         try {
-          return await authHandlers.POST(req, context);
+          return await authHandlers.POST(nextReq, context);
         } catch (error) {
           console.error("[auth-config] NextAuth error handler failed:", error);
           // Fall through to custom error handler
         }
       }
       // Custom error handler as fallback
-      return createConfigErrorResponse(req);
+      return createConfigErrorResponse(nextReq);
     }
     
     // CRITICAL FIX: Ensure process.env has env vars before NextAuth validates
@@ -374,25 +398,25 @@ export const handlers = {
     // If handlers are not available, return config error
     if (!authHandlers?.POST) {
       console.error(`[auth-config] No auth handlers available for ${pathname}. Initialization error: ${initializationError || 'unknown'}`);
-      return createConfigErrorResponse(req);
+      return createConfigErrorResponse(nextReq);
     }
     
     try {
-      return await authHandlers.POST(req, context);
+      return await authHandlers.POST(nextReq, context);
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`[auth-config] Error in POST handler for ${pathname}:`, errorMessage);
       // If it's a configuration error, redirect to error route
       if (errorMessage.includes("Configuration") || errorMessage.includes("NEXTAUTH")) {
-        const errorUrl = new URL("/api/auth/error?error=Configuration", req.url);
+        const errorUrl = new URL("/api/auth/error?error=Configuration", nextReq.url);
         return NextResponse.redirect(errorUrl);
       }
-      return createConfigErrorResponse(req);
+      return createConfigErrorResponse(nextReq);
     }
   },
 } as {
-  GET: (req: NextRequest, context?: any) => Promise<Response>;
-  POST: (req: NextRequest, context?: any) => Promise<Response>;
+  GET: (req: NextRequest | Request, context?: any) => Promise<Response>;
+  POST: (req: NextRequest | Request, context?: any) => Promise<Response>;
 };
 
 // Export other auth functions (they'll be created dynamically when needed)

@@ -5,6 +5,17 @@ export const runtime = 'edge';
 import { handlers } from "@/lib/auth-config";
 
 // Export GET and POST handlers for Next.js App Router
-// TypeScript requires explicit function exports for route handlers
-export const GET = handlers.GET;
-export const POST = handlers.POST;
+// NextAuth v5 beta expects route segments to be passed in context
+export async function GET(
+  req: Request,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return handlers.GET(req as any, context);
+}
+
+export async function POST(
+  req: Request,
+  context: { params: Promise<{ nextauth: string[] }> }
+) {
+  return handlers.POST(req as any, context);
+}
