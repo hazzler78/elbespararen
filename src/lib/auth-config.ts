@@ -336,7 +336,19 @@ export const handlers = {
       }
       
       // Manually construct Google OAuth URL
+      // CRITICAL: The redirect URI must EXACTLY match what's configured in Google Cloud Console
+      // Format: {baseUrl}/api/auth/callback/google
       const redirectUri = `${baseUrl}/api/auth/callback/google`;
+      
+      console.log(`[auth-config] WORKAROUND: Manual Google OAuth redirect`);
+      console.log(`[auth-config] Base URL: ${baseUrl}`);
+      console.log(`[auth-config] Redirect URI: ${redirectUri}`);
+      console.log(`[auth-config] IMPORTANT: Make sure this redirect URI is EXACTLY configured in Google Cloud Console:`);
+      console.log(`[auth-config]   - Go to Google Cloud Console > APIs & Services > Credentials`);
+      console.log(`[auth-config]   - Edit your OAuth 2.0 Client ID`);
+      console.log(`[auth-config]   - Add to "Authorized redirect URIs": ${redirectUri}`);
+      console.log(`[auth-config]   - If app is in "Testing" mode, add your email to "Test users" in OAuth consent screen`);
+      
       const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
       googleAuthUrl.searchParams.set('client_id', clientId);
       googleAuthUrl.searchParams.set('redirect_uri', redirectUri);
@@ -350,7 +362,6 @@ export const handlers = {
       const state = btoa(unescape(encodeURIComponent(stateData))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       googleAuthUrl.searchParams.set('state', state);
       
-      console.log(`[auth-config] WORKAROUND: Manually redirecting to Google OAuth (bypassing NextAuth route parsing)`);
       return NextResponse.redirect(googleAuthUrl.toString());
     }
     
