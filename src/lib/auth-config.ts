@@ -1,8 +1,7 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
 import { createDatabaseFromBinding } from "@/lib/database";
-import type { NextRequest } from "next/server";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
 // Helper function to get environment variable (works in both Node and Edge runtime)
 function getEnvVar(key: string): string | undefined {

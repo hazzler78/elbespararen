@@ -2,6 +2,7 @@
 // Note: NextAuth.js v5 beta may have issues with Edge runtime, but required for Cloudflare
 export const runtime = 'edge';
 
+import { NextRequest } from "next/server";
 import { handlers } from "@/lib/auth-config";
 
 // Export GET and POST handlers for Next.js App Router
