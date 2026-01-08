@@ -338,10 +338,22 @@ export const handlers = {
       // If we get immutable error, fall back to creating a mutable request
       let response: Response;
       try {
-        // Try with original request first - NextAuth might need the original request object
-        console.log(`[auth-config] Attempting with original request: ${req.url}, pathname: ${pathname}`);
-        response = await authHandlers.GET(req, context);
-        console.log(`[auth-config] Success with original request! Status: ${response.status}`);
+        // CRITICAL FIX: NextAuth v5 beta parses routes from the request URL pathname
+        // The URL should NOT have nextauth query params - those break route parsing
+        // Ensure we're using a clean URL without any nextauth query params
+        const cleanUrl = new URL(req.url);
+        // Remove any nextauth query params that might have been added
+        cleanUrl.searchParams.delete('nextauth');
+        const cleanReq = new NextRequest(cleanUrl, {
+          method: req.method,
+          headers: req.headers,
+          body: req.body,
+        });
+        
+        console.log(`[auth-config] Attempting with clean request: ${cleanReq.url}, pathname: ${cleanReq.nextUrl.pathname}`);
+        console.log(`[auth-config] Context params: ${JSON.stringify(context?.params)}`);
+        response = await authHandlers.GET(cleanReq, context);
+        console.log(`[auth-config] Success with clean request! Status: ${response.status}`);
       } catch (immutableError: any) {
         // If we get immutable error, create a new request with mutable headers
         if (immutableError?.message?.includes('immutable') || immutableError?.name === 'TypeError') {
