@@ -114,6 +114,8 @@ function createAuthOptions() {
         clientSecret,
       }),
     ],
+    // Set basePath to ensure NextAuth v5 beta can parse routes correctly in Edge runtime
+    basePath: '/api/auth',
   callbacks: {
     async signIn({ user, account, profile }: { user: any; account?: any; profile?: any }) {
       // Create or update user in database
