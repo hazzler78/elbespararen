@@ -345,7 +345,9 @@ export const handlers = {
       googleAuthUrl.searchParams.set('access_type', 'offline');
       googleAuthUrl.searchParams.set('prompt', 'consent');
       // Store callbackUrl in state for later retrieval
-      const state = Buffer.from(JSON.stringify({ callbackUrl })).toString('base64url');
+      // Use btoa for Edge runtime compatibility (Buffer might not be available)
+      const stateData = JSON.stringify({ callbackUrl });
+      const state = btoa(unescape(encodeURIComponent(stateData))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
       googleAuthUrl.searchParams.set('state', state);
       
       console.log(`[auth-config] WORKAROUND: Manually redirecting to Google OAuth (bypassing NextAuth route parsing)`);
