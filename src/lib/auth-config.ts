@@ -340,6 +340,11 @@ export const handlers = {
       req.headers.forEach((value, key) => {
         mutableHeaders.set(key, value);
       });
+      // CRITICAL: NextAuth v5 beta parses routes from the request URL pathname
+      // It expects the pathname to be relative to basePath (/api/auth)
+      // So /api/auth/signin/google should be passed as /signin/google
+      // But we're using basePath: '/api/auth', so NextAuth should handle this
+      // However, let's ensure the URL structure is correct
       const mutableReq = new NextRequest(req.url, {
         method: req.method,
         headers: mutableHeaders,
@@ -347,7 +352,8 @@ export const handlers = {
       });
       
       // Log what we're passing to NextAuth for debugging
-      console.log(`[auth-config] Calling NextAuth GET handler with pathname: ${pathname}, context params: ${JSON.stringify(context?.params)}`);
+      console.log(`[auth-config] Calling NextAuth GET handler with pathname: ${pathname}, mutableReq.pathname: ${mutableReq.nextUrl.pathname}, context params: ${JSON.stringify(context?.params)}`);
+      console.log(`[auth-config] NextAuth basePath: /api/auth, Full URL: ${mutableReq.url}`);
       
       const response = await authHandlers.GET(mutableReq, context);
       
