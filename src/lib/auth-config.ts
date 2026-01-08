@@ -308,9 +308,14 @@ export const handlers = {
         const location = response.headers.get('location');
         if (location?.includes('/auth/error')) {
           console.error(`[auth-config] NextAuth redirected to error route from ${pathname}. Location: ${location}`);
+          // Clone response before reading body (Edge runtime responses are immutable)
+          const responseClone = response.clone();
           // Log the response to understand what NextAuth is complaining about
-          const responseText = await response.text().catch(() => '');
-          console.error(`[auth-config] Response body: ${responseText.substring(0, 500)}`);
+          responseClone.text().then((text) => {
+            console.error(`[auth-config] Response body: ${text.substring(0, 500)}`);
+          }).catch(() => {
+            // Ignore errors reading body
+          });
         }
       }
       
