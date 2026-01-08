@@ -345,6 +345,10 @@ export const handlers = {
         headers: mutableHeaders,
         body: req.body,
       });
+      
+      // Log what we're passing to NextAuth for debugging
+      console.log(`[auth-config] Calling NextAuth GET handler with pathname: ${pathname}, context params: ${JSON.stringify(context?.params)}`);
+      
       const response = await authHandlers.GET(mutableReq, context);
       
       // Check if NextAuth redirected to error route

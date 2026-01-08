@@ -18,8 +18,15 @@ export async function GET(
   // Pathname: /api/auth/signin/google -> segments: ['signin', 'google']
   const pathname = req.nextUrl.pathname;
   const segments = pathname.replace('/api/auth/', '').split('/').filter(Boolean);
-  console.log(`[nextauth-route] Pathname: ${pathname}, Segments: ${segments.join(',')}, Params: ${JSON.stringify(params)}`);
-  return handlers.GET(req, { ...context, params: { nextauth: segments } });
+  console.log(`[nextauth-route] GET Pathname: ${pathname}, Segments: [${segments.join(',')}], Original params: ${JSON.stringify(params)}`);
+  
+  // Create context with route segments - NextAuth v5 beta expects params.nextauth array
+  const nextAuthContext = {
+    params: { nextauth: segments },
+  };
+  
+  console.log(`[nextauth-route] Passing context to handlers: ${JSON.stringify(nextAuthContext)}`);
+  return handlers.GET(req, nextAuthContext);
 }
 
 export async function POST(
