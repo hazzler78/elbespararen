@@ -350,12 +350,42 @@ export const handlers = {
         const location = response.headers.get('location');
         if (location?.includes('/auth/error')) {
           console.error(`[auth-config] NextAuth redirected to error route from ${pathname}. Location: ${location}`);
-          // Don't read response body in Edge runtime - it causes immutable headers error
-          // Just log the redirect location
+        }
+        // For redirects, recreate response with mutable headers
+        const redirectHeaders = new Headers();
+        response.headers.forEach((value: string, key: string) => {
+          redirectHeaders.set(key, value);
+        });
+        return new Response(null, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: redirectHeaders,
+        });
+      }
+      
+      // Recreate response with mutable headers to avoid immutable error
+      // NextAuth may return a response with immutable headers
+      const responseHeaders = new Headers();
+      response.headers.forEach((value: string, key: string) => {
+        responseHeaders.set(key, value);
+      });
+      
+      // Get response body if it exists - clone before reading to avoid consuming original
+      let body: ArrayBuffer | null = null;
+      if (response.body) {
+        try {
+          body = await response.clone().arrayBuffer();
+        } catch (e) {
+          // If cloning fails, try reading directly (may fail if already consumed)
+          console.warn(`[auth-config] Could not clone response body: ${e}`);
         }
       }
       
-      return response;
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       const errorStack = error instanceof Error ? error.stack : undefined;
@@ -443,7 +473,23 @@ export const handlers = {
         headers: mutableHeaders,
         body: req.body,
       });
-      return await authHandlers.POST(mutableReq, context);
+      const response = await authHandlers.POST(mutableReq, context);
+      
+      // Recreate response with mutable headers to avoid immutable error
+      // NextAuth may return a response with immutable headers
+      const responseHeaders = new Headers();
+      response.headers.forEach((value: string, key: string) => {
+        responseHeaders.set(key, value);
+      });
+      
+      // Get response body if it exists
+      const body = response.body ? await response.clone().arrayBuffer() : null;
+      
+      return new Response(body, {
+        status: response.status,
+        statusText: response.statusText,
+        headers: responseHeaders,
+      });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       console.error(`[auth-config] Error in POST handler for ${pathname}:`, errorMessage);
