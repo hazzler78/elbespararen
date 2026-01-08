@@ -323,6 +323,35 @@ export const handlers = {
       return createConfigErrorResponse(req);
     }
     
+    // WORKAROUND: NextAuth v5 beta.30 has a bug parsing provider signin routes in Edge runtime
+    // Intercept /api/auth/signin/google and manually redirect to Google OAuth
+    if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
+      const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+      const baseUrl = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || req.nextUrl.origin;
+      const callbackUrl = req.nextUrl.searchParams.get('callbackUrl') || '/dashboard';
+      
+      if (!clientId) {
+        console.error(`[auth-config] Google Client ID missing for manual signin redirect`);
+        return createConfigErrorResponse(req);
+      }
+      
+      // Manually construct Google OAuth URL
+      const redirectUri = `${baseUrl}/api/auth/callback/google`;
+      const googleAuthUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
+      googleAuthUrl.searchParams.set('client_id', clientId);
+      googleAuthUrl.searchParams.set('redirect_uri', redirectUri);
+      googleAuthUrl.searchParams.set('response_type', 'code');
+      googleAuthUrl.searchParams.set('scope', 'openid email profile');
+      googleAuthUrl.searchParams.set('access_type', 'offline');
+      googleAuthUrl.searchParams.set('prompt', 'consent');
+      // Store callbackUrl in state for later retrieval
+      const state = Buffer.from(JSON.stringify({ callbackUrl })).toString('base64url');
+      googleAuthUrl.searchParams.set('state', state);
+      
+      console.log(`[auth-config] WORKAROUND: Manually redirecting to Google OAuth (bypassing NextAuth route parsing)`);
+      return NextResponse.redirect(googleAuthUrl.toString());
+    }
+    
     // Get auth handlers (creates them if config is valid)
     const authHandlers = getAuthHandlers();
     
