@@ -308,14 +308,8 @@ export const handlers = {
         const location = response.headers.get('location');
         if (location?.includes('/auth/error')) {
           console.error(`[auth-config] NextAuth redirected to error route from ${pathname}. Location: ${location}`);
-          // Clone response before reading body (Edge runtime responses are immutable)
-          const responseClone = response.clone();
-          // Log the response to understand what NextAuth is complaining about
-          responseClone.text().then((text) => {
-            console.error(`[auth-config] Response body: ${text.substring(0, 500)}`);
-          }).catch(() => {
-            // Ignore errors reading body
-          });
+          // Don't read response body in Edge runtime - it causes immutable headers error
+          // Just log the redirect location
         }
       }
       
