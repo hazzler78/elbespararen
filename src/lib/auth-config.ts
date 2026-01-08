@@ -344,16 +344,30 @@ export const handlers = {
         const cleanUrl = new URL(req.url);
         // Remove any nextauth query params that might have been added
         cleanUrl.searchParams.delete('nextauth');
+        
+        // NextAuth v5 beta with basePath expects the pathname to include the basePath
+        // But it might parse routes differently - let's ensure the URL structure is correct
         const cleanReq = new NextRequest(cleanUrl, {
           method: req.method,
           headers: req.headers,
           body: req.body,
         });
         
-        console.log(`[auth-config] Attempting with clean request: ${cleanReq.url}, pathname: ${cleanReq.nextUrl.pathname}`);
+        console.log(`[auth-config] Attempting with clean request: ${cleanReq.url}`);
+        console.log(`[auth-config] Pathname: ${cleanReq.nextUrl.pathname}, basePath: /api/auth`);
         console.log(`[auth-config] Context params: ${JSON.stringify(context?.params)}`);
-        response = await authHandlers.GET(cleanReq, context);
-        console.log(`[auth-config] Success with clean request! Status: ${response.status}`);
+        
+        // NextAuth v5 beta might parse routes from URL pathname automatically
+        // Try with empty context first - NextAuth should parse from URL
+        try {
+          response = await authHandlers.GET(cleanReq, {});
+          console.log(`[auth-config] Success with empty context! Status: ${response.status}`);
+        } catch (noContextError: any) {
+          // If that fails, try with context params
+          console.log(`[auth-config] Empty context failed, trying with params: ${noContextError?.message}`);
+          response = await authHandlers.GET(cleanReq, context);
+          console.log(`[auth-config] Success with context params! Status: ${response.status}`);
+        }
       } catch (immutableError: any) {
         // If we get immutable error, create a new request with mutable headers
         if (immutableError?.message?.includes('immutable') || immutableError?.name === 'TypeError') {
