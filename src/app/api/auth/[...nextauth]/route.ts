@@ -12,12 +12,26 @@ export async function GET(
   req: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.GET(req, context);
+  // Await params and pass to handlers
+  const params = await context.params;
+  // Extract route segments from pathname for NextAuth v5 beta
+  // Pathname: /api/auth/signin/google -> segments: ['signin', 'google']
+  const pathname = req.nextUrl.pathname;
+  const segments = pathname.replace('/api/auth/', '').split('/').filter(Boolean);
+  console.log(`[nextauth-route] Pathname: ${pathname}, Segments: ${segments.join(',')}, Params: ${JSON.stringify(params)}`);
+  return handlers.GET(req, { ...context, params: { nextauth: segments } });
 }
 
 export async function POST(
   req: NextRequest,
   context: { params: Promise<{ nextauth: string[] }> }
 ) {
-  return handlers.POST(req, context);
+  // Await params and pass to handlers
+  const params = await context.params;
+  // Extract route segments from pathname for NextAuth v5 beta
+  // Pathname: /api/auth/signin/google -> segments: ['signin', 'google']
+  const pathname = req.nextUrl.pathname;
+  const segments = pathname.replace('/api/auth/', '').split('/').filter(Boolean);
+  console.log(`[nextauth-route] POST Pathname: ${pathname}, Segments: ${segments.join(',')}, Params: ${JSON.stringify(params)}`);
+  return handlers.POST(req, { ...context, params: { nextauth: segments } });
 }
