@@ -151,8 +151,16 @@ export async function GET(req: NextRequest) {
     
     // If all vars are present and initialization succeeds, this might be a NextAuth v5 beta issue
     if (missingVars.length === 0 && diagnostics.initializationSuccess) {
-      diagnostics.note = "All configuration appears valid. This might be a NextAuth v5 beta Edge runtime compatibility issue. Try accessing /api/auth/signin/google directly to see if authentication works despite the error message.";
+      diagnostics.note = "All configuration appears valid. This might be a NextAuth v5 beta Edge runtime compatibility issue.";
+      diagnostics.testSteps = [
+        "Try accessing: https://elbespararen.se/api/auth/signin/google",
+        "If it redirects to Google OAuth, authentication is working",
+        "The error message might be a false positive from NextAuth v5 beta"
+      ];
     }
+    
+    // Log detailed information (should appear in Cloudflare Pages logs)
+    console.log(`[auth-error] Configuration error - Missing vars: ${missingVars.length}, Init success: ${diagnostics.initializationSuccess}, Path: ${req.nextUrl.pathname}, Referer: ${req.headers.get('referer') || 'none'}`);
     
     // Return a helpful error response
     return NextResponse.json(
