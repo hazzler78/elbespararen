@@ -160,12 +160,14 @@ export default function ProviderComparison({
               // Debug: logga värden för att felsöka (särskilt för Cheap Energy)
               const isCheapEnergy = c.provider.name.toLowerCase().includes('cheap');
               if (isCheapEnergy || process.env.NODE_ENV === 'development') {
+                const debugInfo = (json as any).debug;
                 console.log(`[ProviderComparison] Lookup for ${c.provider.name} (${kwh} kWh):`, {
                   surcharge,
                   cert,
                   discount,
                   range: (data as any).range,
-                  total_with_vat: (data as any).total_with_vat
+                  total_with_vat: (data as any).total_with_vat,
+                  ...(debugInfo ? { debug: debugInfo } : {})
                 });
               }
               

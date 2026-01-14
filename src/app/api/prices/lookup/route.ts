@@ -254,8 +254,39 @@ export async function POST(request: NextRequest) {
         vat: pack.vat,
         source: 'live'
       };
+      
+      // Lägg till debug-info för Cheap Energy i utvecklingsläge
+      const response: any = { success: true, data: normalized };
+      if (providerKey === 'cheap-energy') {
+        response.debug = {
+          kwh,
+          selectedBucket: bucket ? {
+            minConsumption: bucket.minConsumption,
+            maxConsumption: bucket.maxConsumption
+          } : null,
+          totalBuckets: buckets.length,
+          allBuckets: sortedBuckets.map((b: any) => {
+            const bPack = b?.no_commitment ?? b?.standard ?? {};
+            return {
+              min: b.minConsumption,
+              max: b.maxConsumption,
+              surcharge: bPack.surcharge,
+              cert: bPack.el_certificate_fee,
+              discount: bPack['12_month_discount'],
+              total: (bPack.surcharge || 0) + (bPack.el_certificate_fee || 0) + (bPack['12_month_discount'] || 0)
+            };
+          }),
+          extractedValues: {
+            surcharge: pack.surcharge,
+            cert: pack.el_certificate_fee,
+            discount: pack['12_month_discount'],
+            calculated_total: (pack.surcharge || 0) + (pack.el_certificate_fee || 0) + (pack['12_month_discount'] || 0)
+          }
+        };
+      }
+      
       if (db) await writeCache(db, providerKey, area, normalized);
-      return NextResponse.json({ success: true, data: normalized });
+      return NextResponse.json(response);
     } catch (e) {
       // Fallback to cache
       if (db) {
