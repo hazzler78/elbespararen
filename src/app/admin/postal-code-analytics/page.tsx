@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { MapPin, AlertCircle, CheckCircle2, Download, Filter, RefreshCw } from "lucide-react";
+import { MapPin, AlertCircle, CheckCircle2, Download, Filter, RefreshCw, ChevronLeft, ChevronRight } from "lucide-react";
 import { PostalCodeAnalytics, ApiResponse } from "@/lib/types";
 import { PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
 
@@ -13,6 +13,8 @@ export default function PostalCodeAnalyticsPage() {
   const [filterPageContext, setFilterPageContext] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"date" | "postalCode" | "area">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   useEffect(() => {
     fetchAnalytics();
@@ -21,7 +23,7 @@ export default function PostalCodeAnalyticsPage() {
   const fetchAnalytics = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch("/api/postal-code-analytics?limit=1000");
+      const response = await fetch("/api/postal-code-analytics");
       const result = await response.json() as ApiResponse<PostalCodeAnalytics[]>;
       
       if (result.success && result.data) {
@@ -63,6 +65,17 @@ export default function PostalCodeAnalyticsPage() {
       
       return sortOrder === "asc" ? comparison : -comparison;
     });
+
+  // Paginering
+  const totalPages = Math.ceil(filteredAnalytics.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAnalytics = filteredAnalytics.slice(startIndex, endIndex);
+
+  // Återställ till sida 1 när filter ändras
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterArea, filterChanged, filterPageContext, sortBy, sortOrder]);
 
   // Beräkna statistik
   const stats = {
@@ -312,7 +325,7 @@ export default function PostalCodeAnalyticsPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredAnalytics.map((item) => (
+                    {paginatedAnalytics.map((item) => (
                       <tr key={item.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                           {item.postalCode}
@@ -360,6 +373,88 @@ export default function PostalCodeAnalyticsPage() {
                     ))}
                   </tbody>
                 </table>
+              </div>
+            )}
+
+            {/* Paginering */}
+            {!isLoading && filteredAnalytics.length > 0 && (
+              <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                  {/* Items per page selector */}
+                  <div className="flex items-center gap-2">
+                    <label className="text-sm text-gray-700">Visa:</label>
+                    <select
+                      value={itemsPerPage}
+                      onChange={(e) => {
+                        setItemsPerPage(Number(e.target.value));
+                        setCurrentPage(1);
+                      }}
+                      className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                    >
+                      <option value={25}>25</option>
+                      <option value={50}>50</option>
+                      <option value={100}>100</option>
+                      <option value={200}>200</option>
+                    </select>
+                    <span className="text-sm text-gray-700">per sida</span>
+                  </div>
+
+                  {/* Page info */}
+                  <div className="text-sm text-gray-700">
+                    Visar {startIndex + 1} - {Math.min(endIndex, filteredAnalytics.length)} av {filteredAnalytics.length} resultat
+                  </div>
+
+                  {/* Pagination controls */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                      Föregående
+                    </button>
+
+                    {/* Page numbers */}
+                    <div className="flex items-center gap-1">
+                      {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                        let pageNum;
+                        if (totalPages <= 5) {
+                          pageNum = i + 1;
+                        } else if (currentPage <= 3) {
+                          pageNum = i + 1;
+                        } else if (currentPage >= totalPages - 2) {
+                          pageNum = totalPages - 4 + i;
+                        } else {
+                          pageNum = currentPage - 2 + i;
+                        }
+
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() => setCurrentPage(pageNum)}
+                            className={`px-3 py-1 rounded-lg text-sm ${
+                              currentPage === pageNum
+                                ? 'bg-blue-600 text-white'
+                                : 'border border-gray-300 hover:bg-gray-100'
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                      disabled={currentPage === totalPages}
+                      className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                    >
+                      Nästa
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
           </div>
