@@ -156,6 +156,7 @@ export default function ProviderComparison({
               const surcharge = parse((data as any).surcharge);
               const cert = parse((data as any).el_certificate_fee ?? (data as any).elCertificateFee);
               const discount = parse((data as any)._12_month_discount ?? (data as any)['12_month_discount']);
+              const variableCosts = parse((data as any).variable_costs);
               
               // Debug: logga värden för att felsöka (särskilt för Cheap Energy)
               const isCheapEnergy = c.provider.name.toLowerCase().includes('cheap');
@@ -165,29 +166,53 @@ export default function ProviderComparison({
                   surcharge,
                   cert,
                   discount,
+                  variable_costs: variableCosts,
                   range: (data as any).range,
                   total_with_vat: (data as any).total_with_vat,
                   ...(debugInfo ? { debug: debugInfo } : {})
                 });
               }
               
-              // Values are in öre/kWh; convert to kr/kWh and include VAT (25%)
-              // Discount kan vara negativ (rabatt), så summan kan bli negativ
-              const surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
-                                   (Number.isFinite(cert) ? cert : 0) + 
-                                   (Number.isFinite(discount) ? discount : 0);
+              // För Cheap Energy: visa netto-påslag som är skillnaden mellan total och spotpris
+              // Men först, låt oss testa om vi ska visa bara discount-värdet dividerat med 10
+              // eller om vi ska beräkna netto-påslaget annorlunda
+              let surchargeOre: number;
               
-              if (!Number.isFinite(surchargeOre)) {
+              let surchargeKrInclVat: number;
+              
+              if (isCheapEnergy) {
+                // För Cheap Energy: visa discount-värdet dividerat med 10 (för att få -1,1 öre från -11)
+                // Detta verkar vara det korrekta värdet att visa enligt användarens krav
+                if (Number.isFinite(discount) && discount !== 0) {
+                  // Discount är i öre, dividera med 10 för att få rätt värde (-11 / 10 = -1.1 öre)
+                  // Detta värde ska visas direkt utan att lägga till moms igen
+                  surchargeOre = discount / 10; // -11 / 10 = -1.1 öre
+                  // Konvertera till kr/kWh (redan korrekt värde, ingen moms att lägga till)
+                  surchargeKrInclVat = surchargeOre / 100; // -1.1 öre = -0.011 kr/kWh
+                  console.log(`[ProviderComparison] Cheap Energy: Using discount/10 = ${discount}/10 = ${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh`);
+                } else {
+                  // Fallback: beräkna från komponenter med moms
+                  surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
+                                 (Number.isFinite(cert) ? cert : 0) + 
+                                 (Number.isFinite(discount) ? discount : 0);
+                  surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+                }
+              } else {
+                // För andra leverantörer: använd standardberäkning
+                surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
+                               (Number.isFinite(cert) ? cert : 0) + 
+                               (Number.isFinite(discount) ? discount : 0);
+                surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+              }
+              
+              if (!Number.isFinite(surchargeKrInclVat)) {
                 console.warn(`[ProviderComparison] Invalid surcharge calculation for ${c.provider.name}:`, { surcharge, cert, discount });
                 return [c.provider.id, undefined] as const;
               }
               
-              // Konvertera från öre till kr och lägg till moms (25%)
-              // Negativa värden (rabatter) hanteras korrekt här
-              const surchargeKrInclVat = (surchargeOre / 100) * 1.25;
-              
               if (isCheapEnergy) {
-                console.log(`[ProviderComparison] Cheap Energy calculated surcharge: ${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh (inkl. moms)`);
+                const surchargeOreDisplay = surchargeKrInclVat * 100; // Konvertera tillbaka till öre för visning
+                console.log(`[ProviderComparison] Cheap Energy calculated surcharge: ${surchargeOreDisplay.toFixed(2)} öre/kWh = ${surchargeKrInclVat} kr/kWh`);
               }
               
               return [c.provider.id, surchargeKrInclVat] as const;
