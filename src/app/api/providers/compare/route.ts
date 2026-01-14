@@ -87,13 +87,17 @@ async function resolveVariableMarkup(
       const json = await res.json() as ApiResponse<PriceLookupResponse>;
       if (json.success && json.data) {
         const surcharge = parseNumber(json.data.surcharge ?? (json.data as any).surcharge);
+        const variableCosts = parseNumber(json.data.variable_costs ?? (json.data as any).variable_costs);
         const elCert = parseNumber(json.data.el_certificate_fee ?? (json.data as any).elCertificateFee);
         const discount = parseNumber(json.data._12_month_discount ?? (json.data as any)['12_month_discount']);
-        const totalOre = surcharge + elCert + discount;
+        // Beräkna påslag = surcharge + variable_costs (om det finns) + cert, sedan lägg till discount
+        const markup = surcharge + (variableCosts || 0) + elCert;
+        const totalOre = markup + discount;
         if (Number.isFinite(totalOre)) {
           const totalKr = totalOre / 100;
           const totalKrInclVat = totalKr * 1.25;
-          const rounded = Math.max(0, Number(totalKrInclVat.toFixed(6)));
+          // Ta bort Math.max(0, ...) för att tillåta negativa värden (rabatter)
+          const rounded = Number(totalKrInclVat.toFixed(6));
           lookupCache.set(cacheKey, rounded);
           return rounded;
         }

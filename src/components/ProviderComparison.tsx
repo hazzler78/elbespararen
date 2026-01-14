@@ -191,10 +191,11 @@ export default function ProviderComparison({
                 surchargeKrInclVat = (surchargeOre / 100) * 1.25;
                 console.log(`[ProviderComparison] Cheap Energy: markup=${markup} öre, discount=${discount} öre, total=${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh (inkl. moms)`);
               } else {
-                // För andra leverantörer: använd standardberäkning
-                surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
-                               (Number.isFinite(cert) ? cert : 0) + 
-                               (Number.isFinite(discount) ? discount : 0);
+                // För andra leverantörer: använd standardberäkning (inkludera variable_costs om det finns)
+                const markup = (Number.isFinite(surcharge) ? surcharge : 0) + 
+                               (Number.isFinite(variableCosts) ? variableCosts : 0) + 
+                               (Number.isFinite(cert) ? cert : 0);
+                surchargeOre = markup + (Number.isFinite(discount) ? discount : 0);
                 surchargeKrInclVat = (surchargeOre / 100) * 1.25;
               }
               

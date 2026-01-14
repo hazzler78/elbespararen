@@ -68,6 +68,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
     area: string;
     range: { min: number; max: number };
     surcharge?: number;
+    variable_costs?: number;
     el_certificate_fee?: number;
     _12_month_discount?: number;
     price?: number;
@@ -109,13 +110,14 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
           const d = (json as any).data as {
             area: string;
             range: { min: number; max: number } | null;
-            surcharge?: number; el_certificate_fee?: number; _12_month_discount?: number;
+            surcharge?: number; variable_costs?: number; el_certificate_fee?: number; _12_month_discount?: number;
             price?: number; monthly_fee?: number; total?: number; total_with_vat?: number; vat?: number;
           };
           setProviderPriceInfo({
             area: d.area,
             range: d.range || { min: 0, max: billData.totalKWh },
             surcharge: d.surcharge,
+            variable_costs: d.variable_costs,
             el_certificate_fee: d.el_certificate_fee,
             _12_month_discount: d._12_month_discount,
             price: d.price,
@@ -130,6 +132,7 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
             area: area.toUpperCase(),
             range: { min: 0, max: billData.totalKWh },
             surcharge: undefined,
+            variable_costs: undefined,
             el_certificate_fee: undefined,
             _12_month_discount: undefined,
             price: undefined,
@@ -908,10 +911,13 @@ export default function SwitchProcess({ provider, billData, savings, selectedCon
                             }
                             // rörligt: visa påslag inkl. moms baserat på lookup
                             const s = Number(providerPriceInfo?.surcharge || 0);
+                            const v = Number(providerPriceInfo?.variable_costs || 0);
                             const e = Number(providerPriceInfo?.el_certificate_fee || 0);
                             const d = Number(providerPriceInfo?._12_month_discount || 0);
-                            if (!isNaN(s + e + d) && (s !== 0 || e !== 0 || d !== 0)) {
-                              const surchargeKrInclVat = ((s + e + d) / 100) * 1.25; // öre→kr, +25% moms
+                            const markup = s + v + e;
+                            const total = markup + d;
+                            if (!isNaN(total) && (s !== 0 || v !== 0 || e !== 0 || d !== 0)) {
+                              const surchargeKrInclVat = (total / 100) * 1.25; // öre→kr, +25% moms
                               return formatPricePerKwh(surchargeKrInclVat);
                             }
                             // fallback till provider.energyPrice (antagen kr/kWh)
