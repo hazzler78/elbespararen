@@ -13,6 +13,7 @@ type Normalized = {
   area: string;
   range: { min: number; max: number } | null;
   surcharge?: number;
+  variable_costs?: number;
   el_certificate_fee?: number;
   _12_month_discount?: number;
   price?: number;
@@ -223,21 +224,26 @@ export async function POST(request: NextRequest) {
           totalBuckets: buckets.length,
           allBuckets: sortedBuckets.map((b: any) => {
             const bPack = b?.no_commitment ?? b?.standard ?? {};
+            const markup = (bPack.surcharge || 0) + (bPack.variable_costs || 0) + (bPack.el_certificate_fee || 0);
             return {
               min: b.minConsumption,
               max: b.maxConsumption,
               surcharge: bPack.surcharge,
+              variable_costs: bPack.variable_costs,
               cert: bPack.el_certificate_fee,
               discount: bPack['12_month_discount'],
-              total: bPack.surcharge + bPack.el_certificate_fee + (bPack['12_month_discount'] || 0)
+              markup: markup,
+              total: markup + (bPack['12_month_discount'] || 0)
             };
           }),
           extractedPack: {
             surcharge: pack.surcharge,
+            variable_costs: pack.variable_costs,
             el_certificate_fee: pack.el_certificate_fee,
             _12_month_discount: pack['12_month_discount'],
             total_with_vat: pack.total_with_vat,
-            calculated_total: (pack.surcharge || 0) + (pack.el_certificate_fee || 0) + (pack['12_month_discount'] || 0)
+            markup: (pack.surcharge || 0) + (pack.variable_costs || 0) + (pack.el_certificate_fee || 0),
+            calculated_total: (pack.surcharge || 0) + (pack.variable_costs || 0) + (pack.el_certificate_fee || 0) + (pack['12_month_discount'] || 0)
           }
         });
       }
@@ -245,6 +251,7 @@ export async function POST(request: NextRequest) {
         area,
         range: bucket ? { min: bucket.minConsumption ?? 0, max: bucket.maxConsumption ?? (bucket.minConsumption ?? 0) } : null,
         surcharge: pack.surcharge,
+        variable_costs: pack.variable_costs,
         el_certificate_fee: pack.el_certificate_fee,
         _12_month_discount: pack['12_month_discount'],
         price: pack.price,

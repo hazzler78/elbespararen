@@ -181,22 +181,15 @@ export default function ProviderComparison({
               let surchargeKrInclVat: number;
               
               if (isCheapEnergy) {
-                // För Cheap Energy: visa discount-värdet dividerat med 10 (för att få -1,1 öre från -11)
-                // Detta verkar vara det korrekta värdet att visa enligt användarens krav
-                if (Number.isFinite(discount) && discount !== 0) {
-                  // Discount är i öre, dividera med 10 för att få rätt värde (-11 / 10 = -1.1 öre)
-                  // Detta värde ska visas direkt utan att lägga till moms igen
-                  surchargeOre = discount / 10; // -11 / 10 = -1.1 öre
-                  // Konvertera till kr/kWh (redan korrekt värde, ingen moms att lägga till)
-                  surchargeKrInclVat = surchargeOre / 100; // -1.1 öre = -0.011 kr/kWh
-                  console.log(`[ProviderComparison] Cheap Energy: Using discount/10 = ${discount}/10 = ${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh`);
-                } else {
-                  // Fallback: beräkna från komponenter med moms
-                  surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
-                                 (Number.isFinite(cert) ? cert : 0) + 
-                                 (Number.isFinite(discount) ? discount : 0);
-                  surchargeKrInclVat = (surchargeOre / 100) * 1.25;
-                }
+                // För Cheap Energy: Beräkna påslag = surcharge + variable_costs + cert, sedan subtrahera rabatt
+                // Exempel: 4,9 + 4 + 1 = 9,9 öre (påslag), sedan -11 öre (rabatt) = -1,1 öre/kWh
+                const markup = (Number.isFinite(surcharge) ? surcharge : 0) + 
+                               (Number.isFinite(variableCosts) ? variableCosts : 0) + 
+                               (Number.isFinite(cert) ? cert : 0);
+                surchargeOre = markup + (Number.isFinite(discount) ? discount : 0); // 9,9 - 11 = -1,1 öre
+                // Konvertera till kr/kWh och lägg till moms (25%)
+                surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+                console.log(`[ProviderComparison] Cheap Energy: markup=${markup} öre, discount=${discount} öre, total=${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh (inkl. moms)`);
               } else {
                 // För andra leverantörer: använd standardberäkning
                 surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
