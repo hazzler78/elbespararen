@@ -138,10 +138,12 @@ export function formatCurrency(amount: number): string {
  */
 export function formatPricePerKwh(price: number): string {
   // price i kr/kWh → visa i öre/kWh med exakt två decimaler (exakt från JSON)
+  // Hantera negativa värden korrekt (rabatter)
   const oreVal = Number((Number(price) * 100).toFixed(2));
   const formatted = new Intl.NumberFormat("sv-SE", {
     minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    maximumFractionDigits: 2,
+    signDisplay: oreVal < 0 ? "always" : "auto" // Visa minus-tecken för negativa värden
   }).format(oreVal);
   return `${formatted} öre/kWh`;
 }

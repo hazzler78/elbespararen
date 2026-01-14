@@ -156,9 +156,38 @@ export default function ProviderComparison({
               const surcharge = parse((data as any).surcharge);
               const cert = parse((data as any).el_certificate_fee ?? (data as any).elCertificateFee);
               const discount = parse((data as any)._12_month_discount ?? (data as any)['12_month_discount']);
+              
+              // Debug: logga värden för att felsöka (särskilt för Cheap Energy)
+              const isCheapEnergy = c.provider.name.toLowerCase().includes('cheap');
+              if (isCheapEnergy || process.env.NODE_ENV === 'development') {
+                console.log(`[ProviderComparison] Lookup for ${c.provider.name} (${kwh} kWh):`, {
+                  surcharge,
+                  cert,
+                  discount,
+                  range: (data as any).range,
+                  total_with_vat: (data as any).total_with_vat
+                });
+              }
+              
               // Values are in öre/kWh; convert to kr/kWh and include VAT (25%)
-              const surchargeOre = surcharge + cert + discount; // discount may be negative
+              // Discount kan vara negativ (rabatt), så summan kan bli negativ
+              const surchargeOre = (Number.isFinite(surcharge) ? surcharge : 0) + 
+                                   (Number.isFinite(cert) ? cert : 0) + 
+                                   (Number.isFinite(discount) ? discount : 0);
+              
+              if (!Number.isFinite(surchargeOre)) {
+                console.warn(`[ProviderComparison] Invalid surcharge calculation for ${c.provider.name}:`, { surcharge, cert, discount });
+                return [c.provider.id, undefined] as const;
+              }
+              
+              // Konvertera från öre till kr och lägg till moms (25%)
+              // Negativa värden (rabatter) hanteras korrekt här
               const surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+              
+              if (isCheapEnergy) {
+                console.log(`[ProviderComparison] Cheap Energy calculated surcharge: ${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh (inkl. moms)`);
+              }
+              
               return [c.provider.id, surchargeKrInclVat] as const;
             } catch {
               return [c.provider.id, undefined] as const;

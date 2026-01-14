@@ -158,23 +158,63 @@ export async function POST(request: NextRequest) {
       const json = (await res.json()) as Record<string, unknown>;
       const buckets = findAreaArray(json, area, providerKey);
       if (!Array.isArray(buckets)) throw new Error('Bad JSON structure');
-      let bucket = buckets.find(b => typeof b?.minConsumption === 'number' && typeof b?.maxConsumption === 'number' && kwh >= b.minConsumption && kwh <= b.maxConsumption) || null;
+      
+      // Förbättrad bucket-val: försök hitta exakt match först
+      let bucket = buckets.find(b => {
+        const min = typeof b?.minConsumption === 'number' ? b.minConsumption : null;
+        const max = typeof b?.maxConsumption === 'number' ? b.maxConsumption : null;
+        if (min === null || max === null) return false;
+        // Inkludera både min och max i intervallet (inklusive gränser)
+        return kwh >= min && kwh <= max;
+      }) || null;
+      
       if (!bucket) {
-        // Fallback: choose closest by minConsumption <= kwh
-        const candidates = buckets.filter(b => typeof b?.minConsumption === 'number');
+        // Fallback 1: hitta bucket där kwh >= minConsumption (första bucket som passar)
+        const candidates = buckets.filter(b => {
+          const min = typeof b?.minConsumption === 'number' ? b.minConsumption : null;
+          const max = typeof b?.maxConsumption === 'number' ? b.maxConsumption : null;
+          if (min === null) return false;
+          // Om max saknas, använd min som max
+          const effectiveMax = max ?? min;
+          return kwh >= min && kwh <= effectiveMax;
+        });
+        
         if (candidates.length > 0) {
+          // Välj den bucket som har minConsumption <= kwh och är närmast
           bucket = candidates.reduce((best: any, b: any) => {
             if (!best) return b;
-            const bd = Math.abs(kwh - (b.minConsumption ?? 0));
-            const ad = Math.abs(kwh - (best.minConsumption ?? 0));
-            return bd < ad ? b : best;
+            const bestMin = best.minConsumption ?? 0;
+            const bMin = b.minConsumption ?? 0;
+            // Prioritera bucket där kwh är närmare minConsumption
+            const bestDist = Math.abs(kwh - bestMin);
+            const bDist = Math.abs(kwh - bMin);
+            return bDist < bestDist ? b : best;
           }, null as any);
         }
-        // If still no bucket, pick the first band
+        
+        // Fallback 2: om fortfarande ingen bucket, välj första
         if (!bucket && buckets.length > 0) {
           bucket = buckets[0];
         }
       }
+      
+      // Debug logging för Cheap Energy
+      if (providerKey === 'cheap-energy') {
+        console.log(`[prices/lookup] Cheap Energy bucket selection for ${kwh} kWh:`, {
+          selectedBucket: bucket ? {
+            minConsumption: bucket.minConsumption,
+            maxConsumption: bucket.maxConsumption,
+            no_commitment: bucket.no_commitment,
+            standard: bucket.standard
+          } : null,
+          totalBuckets: buckets.length,
+          buckets: buckets.map((b: any) => ({
+            min: b.minConsumption,
+            max: b.maxConsumption
+          }))
+        });
+      }
+      
       const pack = bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {};
       const normalized: Normalized = {
         area,
