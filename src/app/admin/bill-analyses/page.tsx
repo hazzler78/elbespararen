@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar, Image as ImageIcon, ArrowUpDown, ArrowUp, ArrowDown } from "lucide-react";
+import { FileText, CheckCircle2, XCircle, AlertCircle, Eye, Filter, Search, Calendar, Image as ImageIcon, ArrowUpDown, ArrowUp, ArrowDown, ChevronLeft, ChevronRight } from "lucide-react";
 import { BillAnalysis, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 
@@ -17,6 +17,8 @@ export default function BillAnalysesPage() {
   const [imageUrl, setImageUrl] = useState<string | null>(null);
   const [isLoadingImage, setIsLoadingImage] = useState(false);
   const [sortOrder, setSortOrder] = useState<'newest' | 'oldest'>('newest');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(50);
 
   useEffect(() => {
     fetchAnalyses();
@@ -29,8 +31,19 @@ export default function BillAnalysesPage() {
       const response = await fetch(`/api/bill-analyses${statusParam}`);
       if (response.ok) {
         const data = await response.json() as { success: boolean; data: BillAnalysis[]; count: number };
-        console.log('[bill-analyses] Fetched analyses:', data.data?.length || 0);
-        setAnalyses(data.data || []);
+        const analysesData = data.data || [];
+        console.log('[bill-analyses] Fetched analyses:', analysesData.length);
+        if (analysesData.length > 0) {
+          const dates = analysesData.map(a => new Date(a.createdAt));
+          const oldestDate = new Date(Math.min(...dates.map(d => d.getTime())));
+          const newestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+          console.log('[bill-analyses] Date range:', {
+            oldest: oldestDate.toLocaleDateString('sv-SE'),
+            newest: newestDate.toLocaleDateString('sv-SE'),
+            total: analysesData.length
+          });
+        }
+        setAnalyses(analysesData);
       } else {
         const errorText = await response.text();
         console.error('Kunde inte hämta fakturaanalyser:', response.status, response.statusText, errorText);
@@ -135,6 +148,17 @@ export default function BillAnalysesPage() {
       const dateB = new Date(b.createdAt).getTime();
       return sortOrder === 'newest' ? dateB - dateA : dateA - dateB;
     });
+
+  // Paginering
+  const totalPages = Math.ceil(filteredAnalyses.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedAnalyses = filteredAnalyses.slice(startIndex, endIndex);
+
+  // Återställ till sida 1 när filter ändras
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filter, searchTerm, sortOrder]);
 
   const getStatusColor = (status: BillAnalysis['validationStatus']) => {
     switch (status) {
@@ -384,7 +408,7 @@ export default function BillAnalysesPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {filteredAnalyses.map((analysis) => (
+                    {paginatedAnalyses.map((analysis) => (
                       <tr key={analysis.id} className="hover:bg-gray-50 group">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">
@@ -446,6 +470,88 @@ export default function BillAnalysesPage() {
                   </tbody>
                 </table>
               </div>
+
+              {/* Paginering */}
+              {filteredAnalyses.length > 0 && (
+                <div className="bg-gray-50 px-6 py-4 border-t border-gray-200">
+                  <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+                    {/* Items per page selector */}
+                    <div className="flex items-center gap-2">
+                      <label className="text-sm text-gray-700">Visa:</label>
+                      <select
+                        value={itemsPerPage}
+                        onChange={(e) => {
+                          setItemsPerPage(Number(e.target.value));
+                          setCurrentPage(1);
+                        }}
+                        className="px-3 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      >
+                        <option value={25}>25</option>
+                        <option value={50}>50</option>
+                        <option value={100}>100</option>
+                        <option value={200}>200</option>
+                      </select>
+                      <span className="text-sm text-gray-700">per sida</span>
+                    </div>
+
+                    {/* Page info */}
+                    <div className="text-sm text-gray-700">
+                      Visar {startIndex + 1} - {Math.min(endIndex, filteredAnalyses.length)} av {filteredAnalyses.length} analyser
+                    </div>
+
+                    {/* Pagination controls */}
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                        disabled={currentPage === 1}
+                        className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                        Föregående
+                      </button>
+
+                      {/* Page numbers */}
+                      <div className="flex items-center gap-1">
+                        {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                          let pageNum;
+                          if (totalPages <= 5) {
+                            pageNum = i + 1;
+                          } else if (currentPage <= 3) {
+                            pageNum = i + 1;
+                          } else if (currentPage >= totalPages - 2) {
+                            pageNum = totalPages - 4 + i;
+                          } else {
+                            pageNum = currentPage - 2 + i;
+                          }
+
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => setCurrentPage(pageNum)}
+                              className={`px-3 py-1 rounded-lg text-sm ${
+                                currentPage === pageNum
+                                  ? 'bg-blue-600 text-white'
+                                  : 'border border-gray-300 hover:bg-gray-100'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          );
+                        })}
+                      </div>
+
+                      <button
+                        onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                        disabled={currentPage === totalPages}
+                        className="px-3 py-1 border border-gray-300 rounded-lg hover:bg-gray-100 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-1 text-sm"
+                      >
+                        Nästa
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

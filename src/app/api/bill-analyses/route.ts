@@ -31,7 +31,15 @@ export async function GET(req: NextRequest) {
 
     const analyses = await db.getBillAnalyses(limit, validationStatus);
 
-    console.log(`[bill-analyses] GET - Found ${analyses.length} analyses (filter: ${validationStatus || 'all'})`);
+    console.log(`[bill-analyses] GET - Found ${analyses.length} analyses (filter: ${validationStatus || 'all'}, limit: ${limit || 'none'})`);
+    
+    // Logga datumintervall för debugging
+    if (analyses.length > 0) {
+      const dates = analyses.map(a => new Date(a.createdAt));
+      const oldestDate = new Date(Math.min(...dates.map(d => d.getTime())));
+      const newestDate = new Date(Math.max(...dates.map(d => d.getTime())));
+      console.log(`[bill-analyses] Date range: ${oldestDate.toISOString()} to ${newestDate.toISOString()}`);
+    }
 
     return NextResponse.json({
       success: true,
