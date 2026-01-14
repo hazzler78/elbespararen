@@ -160,46 +160,59 @@ export async function POST(request: NextRequest) {
       if (!Array.isArray(buckets)) throw new Error('Bad JSON structure');
       
       // Förbättrad bucket-val: försök hitta exakt match först
-      let bucket = buckets.find(b => {
+      // Sortera buckets för att prioritera de med störst intervall först (för att hitta rätt bucket)
+      const sortedBuckets = [...buckets].sort((a: any, b: any) => {
+        const aMin = typeof a?.minConsumption === 'number' ? a.minConsumption : 0;
+        const bMin = typeof b?.minConsumption === 'number' ? b.minConsumption : 0;
+        return aMin - bMin; // Sortera efter minConsumption (lägsta först)
+      });
+      
+      let bucket = sortedBuckets.find(b => {
         const min = typeof b?.minConsumption === 'number' ? b.minConsumption : null;
         const max = typeof b?.maxConsumption === 'number' ? b.maxConsumption : null;
-        if (min === null || max === null) return false;
+        if (min === null) return false;
+        // Om max saknas, anta att det är oändligt eller använd ett stort värde
+        const effectiveMax = max ?? Infinity;
         // Inkludera både min och max i intervallet (inklusive gränser)
-        return kwh >= min && kwh <= max;
+        return kwh >= min && kwh <= effectiveMax;
       }) || null;
       
       if (!bucket) {
         // Fallback 1: hitta bucket där kwh >= minConsumption (första bucket som passar)
-        const candidates = buckets.filter(b => {
+        const candidates = sortedBuckets.filter(b => {
           const min = typeof b?.minConsumption === 'number' ? b.minConsumption : null;
-          const max = typeof b?.maxConsumption === 'number' ? b.maxConsumption : null;
           if (min === null) return false;
-          // Om max saknas, använd min som max
-          const effectiveMax = max ?? min;
-          return kwh >= min && kwh <= effectiveMax;
+          return kwh >= min;
         });
         
         if (candidates.length > 0) {
-          // Välj den bucket som har minConsumption <= kwh och är närmast
+          // Välj den bucket som har högst minConsumption men fortfarande <= kwh
+          // Detta ger oss den mest specifika bucketen för detta kWh-värde
           bucket = candidates.reduce((best: any, b: any) => {
             if (!best) return b;
             const bestMin = best.minConsumption ?? 0;
             const bMin = b.minConsumption ?? 0;
-            // Prioritera bucket där kwh är närmare minConsumption
-            const bestDist = Math.abs(kwh - bestMin);
-            const bDist = Math.abs(kwh - bMin);
-            return bDist < bestDist ? b : best;
+            // Välj den bucket med högst minConsumption som fortfarande är <= kwh
+            if (bMin > bestMin && bMin <= kwh) return b;
+            if (bestMin > bMin && bestMin <= kwh) return best;
+            // Om båda är lika, välj den med lägst maxConsumption (mer specifik)
+            const bestMax = best.maxConsumption ?? Infinity;
+            const bMax = b.maxConsumption ?? Infinity;
+            return bMax < bestMax ? b : best;
           }, null as any);
         }
         
         // Fallback 2: om fortfarande ingen bucket, välj första
-        if (!bucket && buckets.length > 0) {
-          bucket = buckets[0];
+        if (!bucket && sortedBuckets.length > 0) {
+          bucket = sortedBuckets[0];
         }
       }
       
+      const pack = bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {};
+      
       // Debug logging för Cheap Energy
       if (providerKey === 'cheap-energy') {
+        const packDetails = bucket?.no_commitment ?? bucket?.standard ?? {};
         console.log(`[prices/lookup] Cheap Energy bucket selection for ${kwh} kWh:`, {
           selectedBucket: bucket ? {
             minConsumption: bucket.minConsumption,
@@ -208,14 +221,26 @@ export async function POST(request: NextRequest) {
             standard: bucket.standard
           } : null,
           totalBuckets: buckets.length,
-          buckets: buckets.map((b: any) => ({
-            min: b.minConsumption,
-            max: b.maxConsumption
-          }))
+          allBuckets: sortedBuckets.map((b: any) => {
+            const bPack = b?.no_commitment ?? b?.standard ?? {};
+            return {
+              min: b.minConsumption,
+              max: b.maxConsumption,
+              surcharge: bPack.surcharge,
+              cert: bPack.el_certificate_fee,
+              discount: bPack['12_month_discount'],
+              total: bPack.surcharge + bPack.el_certificate_fee + (bPack['12_month_discount'] || 0)
+            };
+          }),
+          extractedPack: {
+            surcharge: pack.surcharge,
+            el_certificate_fee: pack.el_certificate_fee,
+            _12_month_discount: pack['12_month_discount'],
+            total_with_vat: pack.total_with_vat,
+            calculated_total: (pack.surcharge || 0) + (pack.el_certificate_fee || 0) + (pack['12_month_discount'] || 0)
+          }
         });
       }
-      
-      const pack = bucket?.no_commitment ?? bucket?.standard ?? bucket ?? {};
       const normalized: Normalized = {
         area,
         range: bucket ? { min: bucket.minConsumption ?? 0, max: bucket.maxConsumption ?? (bucket.minConsumption ?? 0) } : null,
