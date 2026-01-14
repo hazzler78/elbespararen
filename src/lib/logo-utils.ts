@@ -14,9 +14,46 @@ export function providerNameToSlug(value: string): string {
 }
 
 /**
+ * Mapping of provider names to their logo filenames.
+ * This ensures correct logo mapping even when names don't match slug conversion.
+ */
+const PROVIDER_LOGO_MAP: Record<string, string> = {
+  'Cheap Energy': 'cheap-energy',
+  'Svekraft': 'svekraft',
+  'Bixia': 'bixia',
+  'Dalakraft': 'dalakraft',
+  'Ellevio': 'ellevio',
+  'Energi2': 'energi2',
+  'Eon': 'eon',
+  'Fortum': 'fortum',
+  'Green Power': 'green_power', // Note: underscore, not hyphen
+  'Greenely': 'greenely',
+  'Motala Energi': 'motala-el', // Note: "el" not "energi"
+  'Skellefteå Kraft': 'skelleftea', // Note: no "-kraft"
+  'Stockholms Elbolag': 'stockholms-elbolag',
+  'Svealands Elbolag': 'svealands-elbolag',
+  'Telinet Energi': 'telinet', // Note: no "-energi"
+  'Tibber': 'tibber',
+  'Vattenfall': 'vattenfall',
+};
+
+/**
  * Returns the default fallback logo path for a given provider name.
+ * Uses explicit mapping if available, otherwise falls back to slug conversion.
  */
 export function getFallbackProviderLogo(name: string): string {
+  const normalizedName = name.trim();
+  
+  // Case-insensitive lookup in the mapping
+  const mappingKey = Object.keys(PROVIDER_LOGO_MAP).find(
+    key => key.toLowerCase() === normalizedName.toLowerCase()
+  );
+  
+  if (mappingKey) {
+    return `/logos/${PROVIDER_LOGO_MAP[mappingKey]}.svg`;
+  }
+  
+  // Fallback to slug conversion
   return `/logos/${providerNameToSlug(name)}.svg`;
 }
 
