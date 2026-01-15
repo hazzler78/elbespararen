@@ -242,19 +242,40 @@ export async function POST(request: NextRequest) {
     const origin = new URL(request.url).origin;
     const markupCache = new Map<string, number>();
 
-    // Hämta best choice provider från inställningar direkt från databasen
-    let bestChoiceProviderId: string | null = null;
+    // Hämta best choice providers från inställningar direkt från databasen
+    let bestChoiceProviderIdVariable: string | null = null;
+    let bestChoiceProviderIdFixed: string | null = null;
     try {
       const dbAny = db as any;
       if (dbAny.db && typeof dbAny.db.prepare === 'function') {
         // CloudflareDatabase - läs direkt från app_settings tabell
         try {
-          const result = await dbAny.db.prepare(`
+          const variableResult = await dbAny.db.prepare(`
+            SELECT value FROM app_settings WHERE key = 'best_choice_provider_id_variable'
+          `).first();
+          if (variableResult) {
+            bestChoiceProviderIdVariable = String(variableResult.value);
+            console.log('[providers/compare] Best choice provider ID (variable) from DB:', bestChoiceProviderIdVariable);
+          }
+          
+          const fixedResult = await dbAny.db.prepare(`
+            SELECT value FROM app_settings WHERE key = 'best_choice_provider_id_fixed'
+          `).first();
+          if (fixedResult) {
+            bestChoiceProviderIdFixed = String(fixedResult.value);
+            console.log('[providers/compare] Best choice provider ID (fixed) from DB:', bestChoiceProviderIdFixed);
+          }
+          
+          // Backward compatibility: kolla om det finns ett gammalt best_choice_provider_id
+          const legacyResult = await dbAny.db.prepare(`
             SELECT value FROM app_settings WHERE key = 'best_choice_provider_id'
           `).first();
-          if (result) {
-            bestChoiceProviderId = String(result.value);
-            console.log('[providers/compare] Best choice provider ID from DB:', bestChoiceProviderId);
+          if (legacyResult && !bestChoiceProviderIdVariable && !bestChoiceProviderIdFixed) {
+            const legacyId = String(legacyResult.value);
+            // Om inget nytt värde finns, använd legacy för båda (för migration)
+            bestChoiceProviderIdVariable = legacyId;
+            bestChoiceProviderIdFixed = legacyId;
+            console.log('[providers/compare] Using legacy best choice provider ID for both:', legacyId);
           }
         } catch (sqlError) {
           // Tabellen kanske inte finns ännu, det är okej
@@ -262,9 +283,18 @@ export async function POST(request: NextRequest) {
         }
       } else {
         // MockDatabase - läs från property
-        if (dbAny.bestChoiceProviderId) {
-          bestChoiceProviderId = dbAny.bestChoiceProviderId;
-          console.log('[providers/compare] Best choice provider ID from mock:', bestChoiceProviderId);
+        if (dbAny.bestChoiceProviderIdVariable) {
+          bestChoiceProviderIdVariable = dbAny.bestChoiceProviderIdVariable;
+          console.log('[providers/compare] Best choice provider ID (variable) from mock:', bestChoiceProviderIdVariable);
+        }
+        if (dbAny.bestChoiceProviderIdFixed) {
+          bestChoiceProviderIdFixed = dbAny.bestChoiceProviderIdFixed;
+          console.log('[providers/compare] Best choice provider ID (fixed) from mock:', bestChoiceProviderIdFixed);
+        }
+        // Backward compatibility
+        if (!bestChoiceProviderIdVariable && !bestChoiceProviderIdFixed && dbAny.bestChoiceProviderId) {
+          bestChoiceProviderIdVariable = dbAny.bestChoiceProviderId;
+          bestChoiceProviderIdFixed = dbAny.bestChoiceProviderId;
         }
       }
     } catch (error) {
@@ -287,17 +317,25 @@ export async function POST(request: NextRequest) {
       })
     ))
       .sort((a, b) => {
-        // Prioritera manuellt vald best choice provider först (om den finns och är aktiv)
-        if (bestChoiceProviderId) {
-          const aIsBestChoice = a.provider.id === bestChoiceProviderId;
-          const bIsBestChoice = b.provider.id === bestChoiceProviderId;
+        const aType = a.provider.contractType;
+        const bType = b.provider.contractType;
+        
+        // Prioritera manuellt vald best choice provider först inom varje kategori
+        if (aType === "rörligt" && bType === "rörligt" && bestChoiceProviderIdVariable) {
+          const aIsBestChoice = a.provider.id === bestChoiceProviderIdVariable;
+          const bIsBestChoice = b.provider.id === bestChoiceProviderIdVariable;
+          if (aIsBestChoice && !bIsBestChoice) return -1;
+          if (!aIsBestChoice && bIsBestChoice) return 1;
+        }
+        
+        if (aType === "fastpris" && bType === "fastpris" && bestChoiceProviderIdFixed) {
+          const aIsBestChoice = a.provider.id === bestChoiceProviderIdFixed;
+          const bIsBestChoice = b.provider.id === bestChoiceProviderIdFixed;
           if (aIsBestChoice && !bIsBestChoice) return -1;
           if (!aIsBestChoice && bIsBestChoice) return 1;
         }
 
         // Grupp 1: Rörligt alltid före Fastpris
-        const aType = a.provider.contractType;
-        const bType = b.provider.contractType;
         if (aType !== bType) {
           return aType === "rörligt" ? -1 : 1;
         }
@@ -324,7 +362,7 @@ export async function POST(request: NextRequest) {
           ? getCheapestFixedPrice(b.provider, bill.priceArea)
           : (b.provider.energyPrice || 0);
         return aPrice - bPrice;
-      }); // Best choice först (om vald), sedan rörligt, sedan sortering inom grupp
+      }); // Best choice först inom varje kategori (om vald), sedan rörligt, sedan sortering inom grupp
     
     // Sätt isRecommended för de bästa alternativen (top 3 som ger besparingar)
     const recommendedCount = Math.min(3, comparisons.filter(c => c.estimatedSavings > 0).length);

@@ -31,7 +31,8 @@ export default function AdminPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<"all" | "new" | "contacted" | "converted" | "rejected">("all");
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
-  const [bestChoiceProviderId, setBestChoiceProviderId] = useState<string | null>(null);
+  const [bestChoiceProviderIdVariable, setBestChoiceProviderIdVariable] = useState<string | null>(null);
+  const [bestChoiceProviderIdFixed, setBestChoiceProviderIdFixed] = useState<string | null>(null);
   const [isLoadingSettings, setIsLoadingSettings] = useState(true);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
@@ -74,9 +75,19 @@ export default function AdminPage() {
         setIsLoadingSettings(true);
         const response = await fetch('/api/settings');
         if (response.ok) {
-          const data = await response.json() as ApiResponse<{ bestChoiceProviderId: string | null }>;
+          const data = await response.json() as ApiResponse<{ 
+            bestChoiceProviderIdVariable: string | null;
+            bestChoiceProviderIdFixed: string | null;
+            bestChoiceProviderId?: string | null;
+          }>;
           if (data.success && data.data) {
-            setBestChoiceProviderId(data.data.bestChoiceProviderId);
+            // Använd nya värden om de finns, annars fallback till legacy
+            setBestChoiceProviderIdVariable(data.data.bestChoiceProviderIdVariable ?? null);
+            setBestChoiceProviderIdFixed(data.data.bestChoiceProviderIdFixed ?? null);
+            // Backward compatibility: om inga separata värden finns, använd legacy
+            if (!data.data.bestChoiceProviderIdVariable && !data.data.bestChoiceProviderIdFixed && data.data.bestChoiceProviderId) {
+              // Om legacy finns men inga separata, behåll dem som null (användaren kan välja separat)
+            }
           }
         }
       } catch (error) {
@@ -121,22 +132,37 @@ export default function AdminPage() {
     totalSavings: leads.reduce((sum, l) => sum + l.savings.potentialSavings, 0)
   };
 
-  const handleBestChoiceChange = async (providerId: string | null) => {
+  const handleBestChoiceChange = async (type: 'variable' | 'fixed', providerId: string | null) => {
     try {
       setIsSavingSettings(true);
+      const payload: { bestChoiceProviderIdVariable?: string | null; bestChoiceProviderIdFixed?: string | null } = {};
+      
+      if (type === 'variable') {
+        payload.bestChoiceProviderIdVariable = providerId;
+      } else {
+        payload.bestChoiceProviderIdFixed = providerId;
+      }
+      
       const response = await fetch('/api/settings', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ bestChoiceProviderId: providerId }),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
-        const data = await response.json() as ApiResponse<{ bestChoiceProviderId: string | null }>;
+        const data = await response.json() as ApiResponse<{ 
+          bestChoiceProviderIdVariable: string | null;
+          bestChoiceProviderIdFixed: string | null;
+        }>;
         if (data.success && data.data) {
-          setBestChoiceProviderId(data.data.bestChoiceProviderId);
-          alert('✅ Mest populär uppdaterat!');
+          if (type === 'variable') {
+            setBestChoiceProviderIdVariable(data.data.bestChoiceProviderIdVariable);
+          } else {
+            setBestChoiceProviderIdFixed(data.data.bestChoiceProviderIdFixed);
+          }
+          alert(`✅ Mest populär ${type === 'variable' ? 'rörligt' : 'fastpris'} uppdaterat!`);
         }
       } else {
         alert('❌ Kunde inte spara inställning');
@@ -204,7 +230,11 @@ export default function AdminPage() {
     }
   };
 
-  const selectedProvider = providers.find(p => p.id === bestChoiceProviderId);
+  const selectedProviderVariable = providers.find(p => p.id === bestChoiceProviderIdVariable);
+  const selectedProviderFixed = providers.find(p => p.id === bestChoiceProviderIdFixed);
+  
+  const variableProviders = providers.filter(p => p.contractType === 'rörligt');
+  const fixedProviders = providers.filter(p => p.contractType === 'fastpris');
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -362,46 +392,88 @@ export default function AdminPage() {
               <h2 className="text-xl font-bold text-gray-900">Mest populär</h2>
             </div>
             <p className="text-sm text-gray-600 mb-4">
-              Välj vilken leverantör som ska visas som "Mest populär" i jämförelsen. Om inget val görs används automatisk sortering.
+              Välj vilken leverantör som ska visas som "Mest populär" i jämförelsen för varje kategori. Om inget val görs används automatisk sortering.
             </p>
             
             {isLoadingSettings ? (
               <p className="text-gray-500">Laddar inställningar...</p>
             ) : (
-              <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row gap-3">
-                  <select
-                    value={bestChoiceProviderId || ""}
-                    onChange={(e) => handleBestChoiceChange(e.target.value || null)}
-                    disabled={isSavingSettings}
-                    className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <option value="">Ingen (använd automatisk sortering)</option>
-                    {providers.map((provider) => (
-                      <option key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </option>
-                    ))}
-                  </select>
-                  {bestChoiceProviderId && (
-                    <button
-                      onClick={() => handleBestChoiceChange(null)}
+              <div className="space-y-6">
+                {/* Rörligt */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Rörligt</h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={bestChoiceProviderIdVariable || ""}
+                      onChange={(e) => handleBestChoiceChange('variable', e.target.value || null)}
                       disabled={isSavingSettings}
-                      className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <X className="w-4 h-4" />
-                      Rensa val
-                    </button>
+                      <option value="">Ingen (använd automatisk sortering)</option>
+                      {variableProviders.map((provider) => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </option>
+                      ))}
+                    </select>
+                    {bestChoiceProviderIdVariable && (
+                      <button
+                        onClick={() => handleBestChoiceChange('variable', null)}
+                        disabled={isSavingSettings}
+                        className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Rensa val
+                      </button>
+                    )}
+                  </div>
+                  
+                  {selectedProviderVariable && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-medium text-blue-900 mb-1">Vald leverantör (rörligt):</p>
+                      <p className="text-lg font-bold text-blue-700">{selectedProviderVariable.name}</p>
+                      <p className="text-sm text-blue-600 mt-1">{selectedProviderVariable.description}</p>
+                    </div>
                   )}
                 </div>
-                
-                {selectedProvider && (
-                  <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <p className="text-sm font-medium text-blue-900 mb-1">Vald leverantör:</p>
-                    <p className="text-lg font-bold text-blue-700">{selectedProvider.name}</p>
-                    <p className="text-sm text-blue-600 mt-1">{selectedProvider.description}</p>
+
+                {/* Fastpris */}
+                <div className="space-y-3">
+                  <h3 className="text-lg font-semibold text-gray-900">Fastpris</h3>
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <select
+                      value={bestChoiceProviderIdFixed || ""}
+                      onChange={(e) => handleBestChoiceChange('fixed', e.target.value || null)}
+                      disabled={isSavingSettings}
+                      className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <option value="">Ingen (använd automatisk sortering)</option>
+                      {fixedProviders.map((provider) => (
+                        <option key={provider.id} value={provider.id}>
+                          {provider.name}
+                        </option>
+                      ))}
+                    </select>
+                    {bestChoiceProviderIdFixed && (
+                      <button
+                        onClick={() => handleBestChoiceChange('fixed', null)}
+                        disabled={isSavingSettings}
+                        className="px-4 py-2 bg-red-50 text-red-700 rounded-lg hover:bg-red-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <X className="w-4 h-4" />
+                        Rensa val
+                      </button>
+                    )}
                   </div>
-                )}
+                  
+                  {selectedProviderFixed && (
+                    <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                      <p className="text-sm font-medium text-blue-900 mb-1">Vald leverantör (fastpris):</p>
+                      <p className="text-lg font-bold text-blue-700">{selectedProviderFixed.name}</p>
+                      <p className="text-sm text-blue-600 mt-1">{selectedProviderFixed.description}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             )}
           </div>

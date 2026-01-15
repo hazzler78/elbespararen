@@ -23,7 +23,7 @@ async function getBinding() {
   return { db: createDatabaseFromBinding(env?.DB) };
 }
 
-// GET - Hämta best choice provider ID
+// GET - Hämta best choice provider IDs
 export async function GET() {
   try {
     const { db } = await getBinding();
@@ -42,33 +42,67 @@ export async function GET() {
           )
         `).run();
         
-        const result = await dbAny.db.prepare(`
+        // Hämta både variable och fixed best choice IDs
+        const variableResult = await dbAny.db.prepare(`
+          SELECT value FROM app_settings WHERE key = 'best_choice_provider_id_variable'
+        `).first();
+        
+        const fixedResult = await dbAny.db.prepare(`
+          SELECT value FROM app_settings WHERE key = 'best_choice_provider_id_fixed'
+        `).first();
+        
+        // Backward compatibility: kolla om det finns ett gammalt best_choice_provider_id
+        const legacyResult = await dbAny.db.prepare(`
           SELECT value FROM app_settings WHERE key = 'best_choice_provider_id'
         `).first();
         
-        const providerId = result ? String(result.value) : null;
+        const variableId = variableResult ? String(variableResult.value) : null;
+        const fixedId = fixedResult ? String(fixedResult.value) : null;
+        
+        // Om inget nytt värde finns men det finns ett gammalt, använd det som fallback
+        const legacyId = legacyResult ? String(legacyResult.value) : null;
         
         return NextResponse.json({
           success: true,
-          data: { bestChoiceProviderId: providerId }
-        } as ApiResponse<{ bestChoiceProviderId: string | null }>);
+          data: { 
+            bestChoiceProviderIdVariable: variableId || null,
+            bestChoiceProviderIdFixed: fixedId || null,
+            // Backward compatibility
+            bestChoiceProviderId: legacyId || null
+          }
+        } as ApiResponse<{ 
+          bestChoiceProviderIdVariable: string | null;
+          bestChoiceProviderIdFixed: string | null;
+          bestChoiceProviderId?: string | null;
+        }>);
       } catch (sqlError) {
         console.warn("[settings] SQL error, falling back to mock:", sqlError);
       }
     }
     
     // För MockDatabase, använd in-memory storage
-    if (dbAny.bestChoiceProviderId !== undefined) {
-      return NextResponse.json({
-        success: true,
-        data: { bestChoiceProviderId: dbAny.bestChoiceProviderId || null }
-      } as ApiResponse<{ bestChoiceProviderId: string | null }>);
-    }
+    const variableId = dbAny.bestChoiceProviderIdVariable !== undefined 
+      ? dbAny.bestChoiceProviderIdVariable || null 
+      : null;
+    const fixedId = dbAny.bestChoiceProviderIdFixed !== undefined 
+      ? dbAny.bestChoiceProviderIdFixed || null 
+      : null;
+    const legacyId = dbAny.bestChoiceProviderId !== undefined 
+      ? dbAny.bestChoiceProviderId || null 
+      : null;
     
     return NextResponse.json({
       success: true,
-      data: { bestChoiceProviderId: null }
-    } as ApiResponse<{ bestChoiceProviderId: string | null }>);
+      data: { 
+        bestChoiceProviderIdVariable: variableId,
+        bestChoiceProviderIdFixed: fixedId,
+        bestChoiceProviderId: legacyId
+      }
+    } as ApiResponse<{ 
+      bestChoiceProviderIdVariable: string | null;
+      bestChoiceProviderIdFixed: string | null;
+      bestChoiceProviderId?: string | null;
+    }>);
   } catch (error) {
     console.error("[settings] GET error:", error);
     return NextResponse.json(
@@ -78,12 +112,21 @@ export async function GET() {
   }
 }
 
-// POST - Spara best choice provider ID
+// POST - Spara best choice provider IDs
 export async function POST(request: NextRequest) {
   try {
     const { db } = await getBinding();
-    const body = await request.json() as { bestChoiceProviderId: string | null };
-    const { bestChoiceProviderId } = body;
+    const body = await request.json() as { 
+      bestChoiceProviderIdVariable?: string | null;
+      bestChoiceProviderIdFixed?: string | null;
+      bestChoiceProviderId?: string | null; // Backward compatibility
+    };
+    
+    const { 
+      bestChoiceProviderIdVariable, 
+      bestChoiceProviderIdFixed,
+      bestChoiceProviderId // Legacy support
+    } = body;
     
     // För CloudflareDatabase, använd direkt SQL via type assertion
     const dbAny = db as any;
@@ -98,32 +141,83 @@ export async function POST(request: NextRequest) {
           )
         `).run();
         
-        // Spara eller uppdatera värdet
-        if (bestChoiceProviderId) {
-          await dbAny.db.prepare(`
-            INSERT OR REPLACE INTO app_settings (key, value, updated_at)
-            VALUES ('best_choice_provider_id', ?, CURRENT_TIMESTAMP)
-          `).bind(bestChoiceProviderId).run();
-        } else {
-          // Ta bort om null
-          await dbAny.db.prepare(`
-            DELETE FROM app_settings WHERE key = 'best_choice_provider_id'
-          `).run();
+        // Spara eller uppdatera variable best choice
+        if (bestChoiceProviderIdVariable !== undefined) {
+          if (bestChoiceProviderIdVariable) {
+            await dbAny.db.prepare(`
+              INSERT OR REPLACE INTO app_settings (key, value, updated_at)
+              VALUES ('best_choice_provider_id_variable', ?, CURRENT_TIMESTAMP)
+            `).bind(bestChoiceProviderIdVariable).run();
+          } else {
+            await dbAny.db.prepare(`
+              DELETE FROM app_settings WHERE key = 'best_choice_provider_id_variable'
+            `).run();
+          }
+        }
+        
+        // Spara eller uppdatera fixed best choice
+        if (bestChoiceProviderIdFixed !== undefined) {
+          if (bestChoiceProviderIdFixed) {
+            await dbAny.db.prepare(`
+              INSERT OR REPLACE INTO app_settings (key, value, updated_at)
+              VALUES ('best_choice_provider_id_fixed', ?, CURRENT_TIMESTAMP)
+            `).bind(bestChoiceProviderIdFixed).run();
+          } else {
+            await dbAny.db.prepare(`
+              DELETE FROM app_settings WHERE key = 'best_choice_provider_id_fixed'
+            `).run();
+          }
+        }
+        
+        // Backward compatibility: om bestChoiceProviderId skickas, spara som både variable och fixed
+        if (bestChoiceProviderId !== undefined) {
+          if (bestChoiceProviderId) {
+            await dbAny.db.prepare(`
+              INSERT OR REPLACE INTO app_settings (key, value, updated_at)
+              VALUES ('best_choice_provider_id', ?, CURRENT_TIMESTAMP)
+            `).bind(bestChoiceProviderId).run();
+          } else {
+            await dbAny.db.prepare(`
+              DELETE FROM app_settings WHERE key = 'best_choice_provider_id'
+            `).run();
+          }
         }
       } catch (sqlError) {
         console.warn("[settings] SQL error, falling back to mock:", sqlError);
         // Fallback till mock database
-        dbAny.bestChoiceProviderId = bestChoiceProviderId || null;
+        if (bestChoiceProviderIdVariable !== undefined) {
+          dbAny.bestChoiceProviderIdVariable = bestChoiceProviderIdVariable || null;
+        }
+        if (bestChoiceProviderIdFixed !== undefined) {
+          dbAny.bestChoiceProviderIdFixed = bestChoiceProviderIdFixed || null;
+        }
+        if (bestChoiceProviderId !== undefined) {
+          dbAny.bestChoiceProviderId = bestChoiceProviderId || null;
+        }
       }
     } else {
       // För MockDatabase, spara i minnet
-      dbAny.bestChoiceProviderId = bestChoiceProviderId || null;
+      if (bestChoiceProviderIdVariable !== undefined) {
+        dbAny.bestChoiceProviderIdVariable = bestChoiceProviderIdVariable || null;
+      }
+      if (bestChoiceProviderIdFixed !== undefined) {
+        dbAny.bestChoiceProviderIdFixed = bestChoiceProviderIdFixed || null;
+      }
+      if (bestChoiceProviderId !== undefined) {
+        dbAny.bestChoiceProviderId = bestChoiceProviderId || null;
+      }
     }
     
     return NextResponse.json({
       success: true,
-      data: { bestChoiceProviderId }
-    } as ApiResponse<{ bestChoiceProviderId: string | null }>);
+      data: { 
+        bestChoiceProviderIdVariable: bestChoiceProviderIdVariable !== undefined ? bestChoiceProviderIdVariable : null,
+        bestChoiceProviderIdFixed: bestChoiceProviderIdFixed !== undefined ? bestChoiceProviderIdFixed : null
+      }
+    } as ApiResponse<{ 
+      bestChoiceProviderIdVariable: string | null;
+      bestChoiceProviderIdFixed: string | null;
+    }>);
   } catch (error) {
     console.error("[settings] POST error:", error);
     return NextResponse.json(

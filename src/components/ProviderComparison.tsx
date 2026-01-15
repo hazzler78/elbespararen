@@ -275,13 +275,13 @@ export default function ProviderComparison({
     const options = getAreaOptions(c.provider);
     return hasAreaCodes ? options.length > 0 : true;
   });
-  const bestOption = filteredComparisons[0];
-  const remainingComparisons = filteredComparisons.slice(bestOption ? 1 : 0);
-  const bestOptionAreaOptions = bestOption ? getAreaOptions(bestOption.provider) : [];
-  const bestOptionHasMultipleAreaOptions =
-    !!bestOption && bestOption.provider.contractType === "fastpris" && bestOptionAreaOptions.length > 1;
-  const variableComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType === "rörligt");
-  const fixedComparisons = remainingComparisons.filter((comparison) => comparison.provider.contractType !== "rörligt");
+  
+  // Separera i variable och fixed från början
+  const variableComparisons = filteredComparisons.filter((comparison) => comparison.provider.contractType === "rörligt");
+  const fixedComparisons = filteredComparisons.filter((comparison) => comparison.provider.contractType !== "rörligt");
+  
+  // Best choice providers är redan sorterade först i varje kategori av API:et
+  // Vi markerar dem med "Mest populär" badge i renderComparisonCard
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
     // Track contract click event
@@ -337,7 +337,7 @@ export default function ProviderComparison({
   const effectiveKwh = enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh;
   const showPrices = !enableConsumptionEntry || (enteredKwh !== null && enteredKwh > 0);
 
-  const renderComparisonCard = (comparison: ProviderComparison) => {
+  const renderComparisonCard = (comparison: ProviderComparison, isFirstInCategory: boolean = false) => {
     const areaOptions = getAreaOptions(comparison.provider);
     const hasMultipleAreaOptions = comparison.provider.contractType === "fastpris" && areaOptions.length > 1;
     const selectedContract = getSelectedContract(comparison.provider);
@@ -349,8 +349,16 @@ export default function ProviderComparison({
     return (
       <div
         key={comparison.provider.id}
-        className="bg-white rounded-lg border border-border p-6 hover:shadow-md transition-shadow"
+        className={`bg-white rounded-lg border border-border p-6 hover:shadow-md transition-shadow ${isFirstInCategory ? 'relative' : ''}`}
       >
+        {isFirstInCategory && (
+          <div className="absolute top-4 right-4">
+            <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
+              <Star className="w-4 h-4" />
+              Mest populär
+            </div>
+          </div>
+        )}
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
@@ -524,128 +532,15 @@ export default function ProviderComparison({
         )}
       </div>
 
-      {/* Bästa alternativet */}
-      {bestOption && bestOption.estimatedSavings > 0 && (
-        <div
-          className="bg-gradient-to-r from-primary/10 to-secondary/10 rounded-lg shadow-lg border-2 border-primary/20 p-6 relative overflow-hidden"
-        >
-          <div className="absolute top-4 right-4">
-            <div className="flex items-center gap-1 bg-primary text-white px-3 py-1 rounded-full text-sm font-medium">
-              <Star className="w-4 h-4" />
-              Mest populär
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="md:col-span-2">
-              <div className="flex items-center gap-3 mb-2">
-                <img
-                  src={resolveProviderLogo(bestOption.provider.name, bestOption.provider.logoUrl)}
-                  alt={`${bestOption.provider.name} logo`}
-                  onError={createProviderLogoErrorHandler(bestOption.provider.name)}
-                  className="h-20 w-auto object-contain max-w-[160px]"
-                  style={{
-                    imageRendering: 'crisp-edges',
-                    WebkitImageRendering: 'crisp-edges'
-                  } as React.CSSProperties}
-                  loading="lazy"
-                />
-                <h3 className="text-xl font-bold">{bestOption.provider.name}</h3>
-              </div>
-              <p className="text-muted mb-4">{bestOption.provider.description}</p>
-
-              {/* Avtalslängd dropdown för fastpris */}
-              {bestOptionHasMultipleAreaOptions && (
-                <div className="mb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Välj avtalslängd
-                  </label>
-                  <div className="relative">
-                        <select
-                          value={selectedContracts[bestOption.provider.id] || 0}
-                          onChange={(e) => handleContractChange(bestOption.provider.id, parseInt(e.target.value))}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent appearance-none bg-white pr-8"
-                        >
-                          {bestOptionAreaOptions.map((contract, index) => (
-                            <option key={index} value={index}>
-                              {contract.namn} - {formatPricePerKwh(contract.fastpris || 0)}
-                            </option>
-                          ))}
-                        </select>
-                    <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div>
-                  <p className="text-sm text-muted">Månadskostnad</p>
-                  <p className="font-semibold">
-                    {(() => {
-                      const selectedContract = getSelectedContract(bestOption.provider);
-                      const monthlyFee = selectedContract?.månadskostnad || bestOption.provider.monthlyFee;
-                      return monthlyFee === 0 ? "0 kr" : `${monthlyFee} kr`;
-                    })()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-muted">
-                    {bestOption.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
-                  </p>
-                  <p className="font-semibold">
-                    {(() => {
-                      const selectedContract = getSelectedContract(bestOption.provider);
-                      const price = selectedContract?.fastpris || lookupSurcharges[bestOption.provider.id] || bestOption.provider.energyPrice;
-                      return formatPricePerKwh(price);
-                    })()}
-                  </p>
-                </div>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {getTags(bestOption.provider).map((feature, index) => (
-                  <span
-                    key={index}
-                    className="flex items-center gap-1 bg-white/50 px-3 py-1 rounded-full text-sm"
-                  >
-                    <CheckCircle2 className="w-3 h-3 text-success" />
-                    {feature}
-                  </span>
-                ))}
-              </div>
-            </div>
-
-            <div className="text-center">
-              <div className="bg-white rounded-lg p-4 mb-4">
-                <p className="text-sm text-muted mb-1">Nytt pris</p>
-                <p className="text-3xl font-bold text-success">
-                  {showPrices ? (
-                    formatCurrency(calculateProviderCost(bestOption, getSelectedContract(bestOption.provider)))
-                  ) : (
-                    '—'
-                  )}
-                </p>
-                <p className="text-sm text-muted">per månad</p>
-              </div>
-              
-              <button 
-                onClick={() => handleSwitchClick(bestOption)}
-                className="w-full bg-primary text-white py-3 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
-              >
-                Byt till {bestOption.provider.name}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Andra alternativ */}
+      {/* Leverantörer */}
       <div className="space-y-6">
         {variableComparisons.length > 0 && (
           <>
             <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">Rörligt</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {variableComparisons.map(renderComparisonCard)}
+              {variableComparisons.map((comparison, index) => 
+                renderComparisonCard(comparison, index === 0)
+              )}
             </div>
           </>
         )}
@@ -681,7 +576,9 @@ export default function ProviderComparison({
           <>
             <h3 className="text-xl font-bold text-gray-900 mt-6 mb-4">Fastpris</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {fixedComparisons.map(renderComparisonCard)}
+              {fixedComparisons.map((comparison, index) => 
+                renderComparisonCard(comparison, index === 0)
+              )}
             </div>
           </>
         )}
