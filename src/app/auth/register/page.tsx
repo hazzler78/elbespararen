@@ -62,14 +62,21 @@ function RegisterForm() {
         return;
       }
 
+      // Wait a bit to ensure user is saved in database before attempting login
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
       // Auto sign in after registration
+      console.log('[Register] Attempting auto-login for:', formData.email);
       const signInResult = await signIn('credentials', {
         email: formData.email,
         password: formData.password,
         redirect: false,
       });
 
+      console.log('[Register] SignIn result:', signInResult);
+
       if (signInResult?.error) {
+        console.error('[Register] Auto-login failed:', signInResult.error);
         setError('Konto skapat men kunde inte logga in. Försök logga in manuellt.');
         setIsLoading(false);
         return;
@@ -77,7 +84,7 @@ function RegisterForm() {
 
       // Redirect to callback URL or dashboard
       // Wait a bit for session to be set, then redirect
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 300));
       window.location.href = callbackUrl;
     } catch (err) {
       console.error('Registration error:', err);

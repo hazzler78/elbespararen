@@ -2004,8 +2004,11 @@ export function createDatabaseFromBinding(binding: unknown): Database {
     return new CloudflareDatabase(binding as CloudflareD1Database);
   }
   // Fallback till mock database i utveckling
+  // Use globalThis to ensure same instance across requests in Edge runtime
   console.log('[Database] No D1 binding, using MockDatabase in development');
-  return MockDatabase.getInstance();
+  const instance = MockDatabase.getInstance();
+  console.log(`[Database] MockDatabase instance ID: ${(instance as any)._instanceId}, users: ${(instance as any).users?.length || 0}`);
+  return instance;
 }
 
 // Exportera inte en global singleton för att undvika felaktig miljö i Edge-runtime
