@@ -242,12 +242,20 @@ export interface BillAnalysis {
 }
 
 // User types
+export type SubscriptionTier = 'free' | 'premium';
+export type SubscriptionStatus = 'active' | 'cancelled' | 'expired';
+
 export interface User {
   id: string;
   email: string;
   name?: string;
   image?: string;
   googleId?: string;
+  subscriptionTier?: SubscriptionTier;
+  subscriptionStatus?: SubscriptionStatus;
+  subscriptionStartedAt?: Date;
+  subscriptionExpiresAt?: Date;
+  subscriptionStripeId?: string; // Stripe subscription ID för framtida betalningsintegration
   createdAt: Date;
   updatedAt: Date;
 }

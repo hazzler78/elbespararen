@@ -505,6 +505,7 @@ class MockDatabase implements Database {
         name: userData.name,
         image: userData.image,
         googleId: userData.googleId,
+        subscriptionTier: 'free', // Default to free
         createdAt: now,
         updatedAt: now
       };
@@ -1758,6 +1759,11 @@ class CloudflareDatabase implements Database {
         name: row.name ? String(row.name) : undefined,
         image: row.image ? String(row.image) : undefined,
         googleId: row.google_id ? String(row.google_id) : undefined,
+        subscriptionTier: row.subscription_tier ? String(row.subscription_tier) as 'free' | 'premium' : 'free',
+        subscriptionStatus: row.subscription_status ? String(row.subscription_status) as 'active' | 'cancelled' | 'expired' : undefined,
+        subscriptionStartedAt: row.subscription_started_at ? new Date(String(row.subscription_started_at)) : undefined,
+        subscriptionExpiresAt: row.subscription_expires_at ? new Date(String(row.subscription_expires_at)) : undefined,
+        subscriptionStripeId: row.subscription_stripe_id ? String(row.subscription_stripe_id) : undefined,
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };
@@ -1785,6 +1791,11 @@ class CloudflareDatabase implements Database {
         name: row.name ? String(row.name) : undefined,
         image: row.image ? String(row.image) : undefined,
         googleId: row.google_id ? String(row.google_id) : undefined,
+        subscriptionTier: row.subscription_tier ? String(row.subscription_tier) as 'free' | 'premium' : 'free',
+        subscriptionStatus: row.subscription_status ? String(row.subscription_status) as 'active' | 'cancelled' | 'expired' : undefined,
+        subscriptionStartedAt: row.subscription_started_at ? new Date(String(row.subscription_started_at)) : undefined,
+        subscriptionExpiresAt: row.subscription_expires_at ? new Date(String(row.subscription_expires_at)) : undefined,
+        subscriptionStripeId: row.subscription_stripe_id ? String(row.subscription_stripe_id) : undefined,
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };

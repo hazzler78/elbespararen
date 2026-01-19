@@ -44,11 +44,21 @@ export default function DashboardPage() {
   const [analyses, setAnalyses] = useState<BillAnalysis[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isPremium, setIsPremium] = useState(false);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("year");
 
   const fetchDashboardData = useCallback(async () => {
     try {
       setIsLoading(true);
+      
+      // Hämta användarinfo (inkl. premium-status)
+      const userInfoResponse = await fetch('/api/user/info');
+      if (userInfoResponse.ok) {
+        const userInfoData = await userInfoResponse.json();
+        if (userInfoData.success) {
+          setIsPremium(userInfoData.data.isPremium || false);
+        }
+      }
       
       // Hämta fakturaanalyser från API
       const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`);
@@ -393,12 +403,28 @@ export default function DashboardPage() {
                   <div className="flex-1">
                     <h3 className="font-semibold text-gray-900 mb-1">Exportera data</h3>
                     <p className="text-sm text-gray-600 mb-3">
-                      Ladda ner alla dina analyser som PDF eller Excel.
+                      Ladda ner alla dina analyser som CSV, Excel eller PDF. Premium-funktion.
                     </p>
-                    <button className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1">
-                      Exportera
-                      <ArrowUpRight className="w-4 h-4" />
-                    </button>
+                    <div className="flex gap-2">
+                      <a
+                        href={`/api/user/export?format=csv&range=${timeRange}`}
+                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        CSV
+                      </a>
+                      <a
+                        href={`/api/user/export?format=excel&range=${timeRange}`}
+                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        Excel
+                      </a>
+                      <a
+                        href={`/api/user/export?format=pdf&range=${timeRange}`}
+                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
+                      >
+                        PDF
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
