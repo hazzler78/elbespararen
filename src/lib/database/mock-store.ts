@@ -1,7 +1,7 @@
 /**
  * Shared store for MockDatabase data in Edge runtime
- * Edge runtime creates isolated contexts per request, so we need a different approach
- * This uses a module-level variable that persists across requests in the same worker
+ * Edge runtime creates isolated contexts per request, so we need to use globalThis
+ * with a specific key that persists across requests in the same worker
  */
 
 interface MockUser {
@@ -19,8 +19,11 @@ interface MockUser {
   updatedAt: Date;
 }
 
-// Module-level store that persists across requests in the same worker
-// This works because Edge runtime reuses the same module instance within a worker
+// Declare global variable for Edge runtime compatibility
+declare global {
+  var __mockStoreInstance: MockStore | undefined;
+}
+
 class MockStore {
   private users: MockUser[] = [];
   private instanceId: string;
@@ -97,13 +100,15 @@ class MockStore {
   }
 }
 
-// Create a single store instance at module level
-// This should persist across requests in the same worker
-let storeInstance: MockStore | null = null;
-
+// Use globalThis to ensure same instance across requests in Edge runtime
+// Edge runtime can create new module instances, but globalThis persists within the same worker
 export function getMockStore(): MockStore {
-  if (!storeInstance) {
-    storeInstance = new MockStore();
+  // Use globalThis instead of module-level variable for Edge runtime compatibility
+  if (!globalThis.__mockStoreInstance) {
+    globalThis.__mockStoreInstance = new MockStore();
+    console.log(`[MockStore] Created new global store: ${globalThis.__mockStoreInstance.getInstanceId()}`);
+  } else {
+    console.log(`[MockStore] Reusing existing global store: ${globalThis.__mockStoreInstance.getInstanceId()}, users: ${globalThis.__mockStoreInstance.getUsers().length}`);
   }
-  return storeInstance;
+  return globalThis.__mockStoreInstance;
 }
