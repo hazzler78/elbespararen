@@ -13,7 +13,7 @@ export default function TestPremiumPage() {
 
   const fetchUserInfo = async () => {
     try {
-      const response = await fetchWithAuth('/api/user/info');
+      const response = await fetchWithAuth('/api/user/info', {}, session);
       const data = await response.json();
       if (data.success) {
         setUserInfo(data.data);
@@ -33,7 +33,7 @@ export default function TestPremiumPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tier }),
-      });
+      }, session);
       const data = await response.json();
       setResult(data);
       if (data.success) {

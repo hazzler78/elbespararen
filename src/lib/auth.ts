@@ -29,11 +29,58 @@ export async function getSessionUser(req: NextRequest) {
     // Get session token from Authorization header first (for Edge Tracking Prevention workaround)
     const authHeader = req.headers.get('authorization');
     let sessionToken: string | undefined;
+    let isAuthHeader = false;
     
     if (authHeader && authHeader.startsWith('Bearer ')) {
-      sessionToken = authHeader.substring(7);
-      console.log("[auth] Found session token in Authorization header");
-    } else {
+      const token = authHeader.substring(7);
+      
+      // Check if this is a simple auth token (workaround for Edge Tracking Prevention)
+      try {
+        const decoded = JSON.parse(atob(token));
+        if (decoded.email && decoded.timestamp) {
+          // This is a simple auth token created from session data
+          // Validate by checking if user exists in database
+          console.log("[auth] Found simple auth token in Authorization header, email:", decoded.email);
+          
+          // Get database to validate user
+          let env: any = {};
+          if ((globalThis as any).getRequestContext) {
+            env = (globalThis as any).getRequestContext()?.env ?? {};
+          }
+          if (!env.DB && (process.env as any).DB) {
+            env.DB = (process.env as any).DB;
+          }
+          if (!env.DB && (globalThis as any).env?.DB) {
+            env.DB = (globalThis as any).env.DB;
+          }
+          
+          const { createDatabaseFromBinding } = await import("@/lib/database");
+          const db = createDatabaseFromBinding(env?.DB);
+          const user = await db.getUserByEmail(decoded.email);
+          
+          if (user) {
+            // Token is valid, return user
+            console.log("[auth] Simple auth token validated, returning user:", decoded.email);
+            return {
+              id: user.id,
+              email: user.email,
+              name: user.name || undefined,
+              image: user.image || undefined,
+            };
+          } else {
+            console.log("[auth] Simple auth token validation failed - user not found:", decoded.email);
+            return null;
+          }
+        }
+      } catch (e) {
+        // Not a simple auth token, treat as session token
+        sessionToken = token;
+        isAuthHeader = true;
+        console.log("[auth] Found session token in Authorization header");
+      }
+    }
+    
+    if (!sessionToken) {
       // Fall back to cookies
       const allCookies = req.cookies.getAll();
       console.log("[auth] All cookies:", allCookies.map(c => c.name));
