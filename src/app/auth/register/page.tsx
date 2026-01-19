@@ -76,8 +76,9 @@ function RegisterForm() {
       }
 
       // Redirect to callback URL or dashboard
-      router.push(callbackUrl);
-      router.refresh();
+      // Wait a bit for session to be set, then redirect
+      await new Promise(resolve => setTimeout(resolve, 100));
+      window.location.href = callbackUrl;
     } catch (err) {
       console.error('Registration error:', err);
       setError('Ett oväntat fel uppstod. Försök igen.');
