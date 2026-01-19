@@ -1,6 +1,8 @@
 import NextAuth from "next-auth";
 import GoogleProvider from "next-auth/providers/google";
+import CredentialsProvider from "next-auth/providers/credentials";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { verifyPassword } from "@/lib/password";
 import { NextRequest, NextResponse } from "next/server";
 
 // Helper function to get environment variable (works in both Node and Edge runtime)
@@ -112,6 +114,64 @@ function createAuthOptions() {
     GoogleProvider({
         clientId,
         clientSecret,
+    }),
+    CredentialsProvider({
+      name: "Credentials",
+      credentials: {
+        email: { label: "Email", type: "email" },
+        password: { label: "Password", type: "password" }
+      },
+      async authorize(credentials) {
+        if (!credentials?.email || !credentials?.password) {
+          return null;
+        }
+
+        try {
+          // Get database
+          let env: any = {};
+          if ((globalThis as any).getRequestContext) {
+            env = (globalThis as any).getRequestContext()?.env ?? {};
+          }
+          if (!env.DB && (process.env as any).DB) {
+            env.DB = (process.env as any).DB;
+          }
+          if (!env.DB && (globalThis as any).env?.DB) {
+            env.DB = (globalThis as any).env.DB;
+          }
+
+          const db = createDatabaseFromBinding(env?.DB);
+
+          // Get user from database
+          const user = await db.getUserByEmail(credentials.email as string);
+          if (!user) {
+            return null;
+          }
+
+          // Check if user has password (email/password account)
+          const passwordHash = (user as any).passwordHash;
+          if (!passwordHash) {
+            // User exists but doesn't have password (Google account)
+            return null;
+          }
+
+          // Verify password
+          const isValid = await verifyPassword(credentials.password as string, passwordHash);
+          if (!isValid) {
+            return null;
+          }
+
+          // Return user object for NextAuth
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name || undefined,
+            image: user.image || undefined,
+          };
+        } catch (error) {
+          console.error("[NextAuth] Credentials authorize error:", error);
+          return null;
+        }
+      }
     }),
   ],
     // Set basePath to ensure NextAuth v5 beta can parse routes correctly in Edge runtime

@@ -1753,7 +1753,7 @@ class CloudflareDatabase implements Database {
       if (!result) return null;
 
       const row = result as Record<string, unknown>;
-      return {
+      const user: any = {
         id: String(row.id),
         email: String(row.email),
         name: row.name ? String(row.name) : undefined,
@@ -1767,6 +1767,11 @@ class CloudflareDatabase implements Database {
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };
+      // Include password hash for internal use (not exposed in API responses)
+      if (row.password_hash) {
+        (user as any).passwordHash = String(row.password_hash);
+      }
+      return user;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('no such table')) {
@@ -1785,7 +1790,7 @@ class CloudflareDatabase implements Database {
       if (!result) return null;
 
       const row = result as Record<string, unknown>;
-      return {
+      const user: any = {
         id: String(row.id),
         email: String(row.email),
         name: row.name ? String(row.name) : undefined,
@@ -1799,6 +1804,11 @@ class CloudflareDatabase implements Database {
         createdAt: new Date(String(row.created_at)),
         updatedAt: new Date(String(row.updated_at))
       };
+      // Include password hash for internal use (not exposed in API responses)
+      if (row.password_hash) {
+        (user as any).passwordHash = String(row.password_hash);
+      }
+      return user;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('no such table')) {
