@@ -140,13 +140,21 @@ function createAuthOptions() {
           }
 
           const db = createDatabaseFromBinding(env?.DB);
+          console.log("[NextAuth] Credentials authorize: Database type:", db.constructor.name);
 
           // Get user from database
+          console.log("[NextAuth] Credentials authorize: Looking for user:", credentials.email);
           const user = await db.getUserByEmail(credentials.email as string);
           if (!user) {
             console.log("[NextAuth] Credentials authorize: User not found:", credentials.email);
+            // Try to list all users in MockDatabase for debugging
+            if (db.constructor.name === 'MockDatabase') {
+              const allUsers = (db as any).users || [];
+              console.log("[NextAuth] Credentials authorize: All users in MockDatabase:", allUsers.map((u: any) => ({ id: u.id, email: u.email })));
+            }
             return null;
           }
+          console.log("[NextAuth] Credentials authorize: User found:", { id: user.id, email: user.email });
 
           // Check if user has password (email/password account)
           const passwordHash = (user as any).passwordHash;

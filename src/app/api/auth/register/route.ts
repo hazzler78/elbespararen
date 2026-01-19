@@ -71,11 +71,24 @@ export async function POST(req: NextRequest) {
     const passwordHash = await hashPassword(password);
 
     // Create or update user (if user exists from Google login, add password)
+    console.log("[auth/register] Creating user with email:", email);
     const newUser = await db.createOrUpdateUser({
       email,
       name,
       passwordHash,
     });
+    console.log("[auth/register] User created:", { id: newUser.id, email: newUser.email });
+
+    // Verify user was saved by fetching it back
+    const verifyUser = await db.getUserByEmail(email);
+    if (!verifyUser) {
+      console.error("[auth/register] ERROR: User was not saved! Could not fetch user after creation.");
+      return NextResponse.json(
+        { success: false, error: "Kunde inte spara användare i databasen" },
+        { status: 500 }
+      );
+    }
+    console.log("[auth/register] User verified in database:", { id: verifyUser.id, email: verifyUser.email });
 
     return NextResponse.json({
       success: true,
