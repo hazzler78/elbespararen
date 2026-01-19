@@ -1,10 +1,30 @@
 import { NextRequest } from "next/server";
+import { getServerSession } from "@/lib/auth-config";
 
 /**
  * Get session user from request cookies
  * Works in both Node.js and Edge runtime by manually decoding JWT token
+ * Falls back to NextAuth's getServerSession if available
  */
 export async function getSessionUser(req: NextRequest) {
+  // Try NextAuth's getServerSession first (if available and working)
+  try {
+    if (getServerSession) {
+      const session = await getServerSession();
+      if (session?.user?.email) {
+        console.log("[auth] Using NextAuth getServerSession, user:", session.user.email);
+        return {
+          id: (session.user as any).id || session.user.email,
+          email: session.user.email,
+          name: session.user.name || undefined,
+          image: session.user.image || undefined,
+        };
+      }
+    }
+  } catch (error) {
+    // Fall back to manual decoding if getServerSession fails
+    console.log("[auth] getServerSession failed, falling back to manual decoding:", error);
+  }
   try {
     // Get session token from cookies
     // NextAuth uses different cookie names in production vs development
