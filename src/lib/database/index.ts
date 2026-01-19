@@ -487,26 +487,35 @@ class MockDatabase implements Database {
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 
-  // Users
-  private users: User[] = [];
+  // Users - use shared store instead of instance variable
+  // Edge runtime creates isolated contexts per request, so we need a shared store
+  private get users(): User[] {
+    const { getMockStore } = require('./mock-store');
+    return getMockStore().getUsers() as User[];
+  }
 
   async getUserByEmail(email: string): Promise<User | null> {
-    console.log(`[MockDatabase] getUserByEmail: ${email}, total users: ${this.users.length}`);
-    console.log(`[MockDatabase] Instance ID: ${(this as any)._instanceId || 'unknown'}`);
-    const user = this.users.find(u => u.email === email) || null;
+    const { getMockStore } = await import('./mock-store');
+    const store = getMockStore();
+    console.log(`[MockDatabase] getUserByEmail: ${email}, store: ${store.getInstanceId()}, total users: ${store.getUsers().length}`);
+    const user = store.getUserByEmail(email) || null;
     if (!user) {
-      console.log(`[MockDatabase] User not found. All users:`, this.users.map(u => ({ id: u.id, email: u.email })));
+      console.log(`[MockDatabase] User not found. All users:`, store.getUsers().map((u: any) => ({ id: u.id, email: u.email })));
     }
-    return user;
+    return user as User | null;
   }
 
   async getUserById(id: string): Promise<User | null> {
-    return this.users.find(u => u.id === id) || null;
+    const { getMockStore } = await import('./mock-store');
+    const store = getMockStore();
+    return store.getUserById(id) as User | null;
   }
 
   async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string; passwordHash?: string }): Promise<User> {
-    console.log(`[MockDatabase] createOrUpdateUser: ${userData.email}, instance: ${(this as any)._instanceId || 'unknown'}, current users: ${this.users.length}`);
-    const existing = this.users.find(u => u.email === userData.email);
+    const { getMockStore } = await import('./mock-store');
+    const store = getMockStore();
+    console.log(`[MockDatabase] createOrUpdateUser: ${userData.email}, store: ${store.getInstanceId()}, current users: ${store.getUsers().length}`);
+    const existing = store.getUserByEmail(userData.email);
     const now = new Date();
     
     if (existing) {
@@ -522,29 +531,14 @@ class MockDatabase implements Database {
         (existing as any).passwordHash = userData.passwordHash;
         console.log(`[MockDatabase] Updated password hash for user: ${userData.email}`);
       }
-      console.log(`[MockDatabase] User updated. Total users: ${this.users.length}`);
-      return existing;
+      console.log(`[MockDatabase] User updated. Total users: ${store.getUsers().length}`);
+      return existing as User;
     } else {
       // Create new user
       console.log(`[MockDatabase] Creating new user: ${userData.email}`);
-      const newUser: any = {
-        id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        email: userData.email,
-        name: userData.name,
-        image: userData.image,
-        googleId: userData.googleId,
-        subscriptionTier: 'free', // Default to free
-        createdAt: now,
-        updatedAt: now
-      };
-      // Store password hash internally (not in User type)
-      if (userData.passwordHash) {
-        newUser.passwordHash = userData.passwordHash;
-        console.log(`[MockDatabase] Password hash set for new user: ${userData.email}`);
-      }
-      this.users.push(newUser);
-      console.log(`[MockDatabase] User created. Total users: ${this.users.length}, user ID: ${newUser.id}`);
-      return newUser;
+      const newUser = store.createOrUpdateUser(userData);
+      console.log(`[MockDatabase] User created. Total users: ${store.getUsers().length}, user ID: ${newUser.id}`);
+      return newUser as User;
     }
   }
 

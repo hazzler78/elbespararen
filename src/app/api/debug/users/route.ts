@@ -25,12 +25,15 @@ export async function GET(req: NextRequest) {
 
     const db = createDatabaseFromBinding(env?.DB);
     
-    // If MockDatabase, access users directly
+    // If MockDatabase, access users via shared store
     if (db.constructor.name === 'MockDatabase') {
-      const users = (db as any).users || [];
+      const { getMockStore } = await import('@/lib/database/mock-store');
+      const store = getMockStore();
+      const users = store.getUsers();
       return NextResponse.json({
         success: true,
         databaseType: 'MockDatabase',
+        storeId: store.getInstanceId(),
         userCount: users.length,
         users: users.map((u: any) => ({
           id: u.id,
@@ -77,31 +80,30 @@ export async function DELETE(req: NextRequest) {
 
     const db = createDatabaseFromBinding(env?.DB);
     
-    // If MockDatabase, delete users directly
+    // If MockDatabase, delete users via shared store
     if (db.constructor.name === 'MockDatabase') {
-      const users = (db as any).users || [];
+      const { getMockStore } = await import('@/lib/database/mock-store');
+      const store = getMockStore();
       
       if (clear === 'all') {
         // Clear all users
-        (db as any).users = [];
+        const deletedCount = store.clearAll();
         console.log(`[debug/users] Cleared all users from MockDatabase`);
         return NextResponse.json({
           success: true,
           message: 'All users cleared from MockDatabase',
-          deletedCount: users.length,
+          deletedCount,
         });
       } else if (email) {
         // Delete specific user by email
-        const initialCount = users.length;
-        (db as any).users = users.filter((u: any) => u.email !== email);
-        const deletedCount = initialCount - (db as any).users.length;
+        const deleted = store.deleteUser(email);
         
-        if (deletedCount > 0) {
+        if (deleted) {
           console.log(`[debug/users] Deleted user: ${email}`);
           return NextResponse.json({
             success: true,
             message: `User ${email} deleted from MockDatabase`,
-            deletedCount,
+            deletedCount: 1,
           });
         } else {
           return NextResponse.json({
