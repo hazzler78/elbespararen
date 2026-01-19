@@ -114,9 +114,15 @@ export interface Database {
   getUserStats(userId: string): Promise<UserStats>;
 }
 
+// Global variable for MockDatabase instance (works in Edge runtime)
+// Edge runtime can create new module instances per request, so singleton pattern doesn't work
+// Using global variable instead
+declare global {
+  var __mockDatabaseInstance: MockDatabase | undefined;
+}
+
 // Mock Database Implementation (för utveckling)
 class MockDatabase implements Database {
-  private static instance: MockDatabase | null = null;
   private providers: ElectricityProvider[] = [...mockProviders];
   private leads: Lead[] = [];
   private switchRequests: SwitchRequest[] = [];
@@ -126,17 +132,18 @@ class MockDatabase implements Database {
   private billAnalyses: BillAnalysis[] = [];
   public bestChoiceProviderId: string | null = null; // För settings API
 
-  // Singleton pattern för att behålla state mellan requests i utveckling
+  // Use global variable for Edge runtime compatibility
   static getInstance(): MockDatabase {
-    if (!MockDatabase.instance) {
-      MockDatabase.instance = new MockDatabase();
+    // In Edge runtime, globalThis persists across requests
+    if (!globalThis.__mockDatabaseInstance) {
+      globalThis.__mockDatabaseInstance = new MockDatabase();
       // Add instance ID for debugging
-      (MockDatabase.instance as any)._instanceId = `instance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      console.log(`[MockDatabase] Created new instance: ${(MockDatabase.instance as any)._instanceId}`);
+      (globalThis.__mockDatabaseInstance as any)._instanceId = `instance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`[MockDatabase] Created new instance: ${(globalThis.__mockDatabaseInstance as any)._instanceId}`);
     } else {
-      console.log(`[MockDatabase] Reusing existing instance: ${(MockDatabase.instance as any)._instanceId}, users: ${MockDatabase.instance.users.length}`);
+      console.log(`[MockDatabase] Reusing existing instance: ${(globalThis.__mockDatabaseInstance as any)._instanceId}, users: ${globalThis.__mockDatabaseInstance.users.length}`);
     }
-    return MockDatabase.instance;
+    return globalThis.__mockDatabaseInstance;
   }
 
   async getProviders(customerType: "private" | "business" = "private"): Promise<ElectricityProvider[]> {
