@@ -492,12 +492,13 @@ class MockDatabase implements Database {
     
     if (existing) {
       // Update existing user
-      existing.name = userData.name || existing.name;
-      existing.image = userData.image || existing.image;
-      existing.googleId = userData.googleId || existing.googleId;
+      existing.name = userData.name !== undefined ? userData.name : existing.name;
+      existing.image = userData.image !== undefined ? userData.image : existing.image;
+      existing.googleId = userData.googleId !== undefined ? userData.googleId : existing.googleId;
       existing.updatedAt = now;
       // Store password hash internally (not in User type)
-      if (userData.passwordHash) {
+      // Always update password hash if provided (even if it's undefined, to allow clearing it)
+      if (userData.passwordHash !== undefined) {
         (existing as any).passwordHash = userData.passwordHash;
       }
       return existing;
