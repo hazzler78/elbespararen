@@ -130,6 +130,11 @@ class MockDatabase implements Database {
   static getInstance(): MockDatabase {
     if (!MockDatabase.instance) {
       MockDatabase.instance = new MockDatabase();
+      // Add instance ID for debugging
+      (MockDatabase.instance as any)._instanceId = `instance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+      console.log(`[MockDatabase] Created new instance: ${(MockDatabase.instance as any)._instanceId}`);
+    } else {
+      console.log(`[MockDatabase] Reusing existing instance: ${(MockDatabase.instance as any)._instanceId}, users: ${MockDatabase.instance.users.length}`);
     }
     return MockDatabase.instance;
   }
@@ -479,7 +484,13 @@ class MockDatabase implements Database {
   private users: User[] = [];
 
   async getUserByEmail(email: string): Promise<User | null> {
-    return this.users.find(u => u.email === email) || null;
+    console.log(`[MockDatabase] getUserByEmail: ${email}, total users: ${this.users.length}`);
+    console.log(`[MockDatabase] Instance ID: ${(this as any)._instanceId || 'unknown'}`);
+    const user = this.users.find(u => u.email === email) || null;
+    if (!user) {
+      console.log(`[MockDatabase] User not found. All users:`, this.users.map(u => ({ id: u.id, email: u.email })));
+    }
+    return user;
   }
 
   async getUserById(id: string): Promise<User | null> {
@@ -487,11 +498,13 @@ class MockDatabase implements Database {
   }
 
   async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string; passwordHash?: string }): Promise<User> {
+    console.log(`[MockDatabase] createOrUpdateUser: ${userData.email}, instance: ${(this as any)._instanceId || 'unknown'}, current users: ${this.users.length}`);
     const existing = this.users.find(u => u.email === userData.email);
     const now = new Date();
     
     if (existing) {
       // Update existing user
+      console.log(`[MockDatabase] Updating existing user: ${userData.email}`);
       existing.name = userData.name !== undefined ? userData.name : existing.name;
       existing.image = userData.image !== undefined ? userData.image : existing.image;
       existing.googleId = userData.googleId !== undefined ? userData.googleId : existing.googleId;
@@ -500,10 +513,13 @@ class MockDatabase implements Database {
       // Always update password hash if provided (even if it's undefined, to allow clearing it)
       if (userData.passwordHash !== undefined) {
         (existing as any).passwordHash = userData.passwordHash;
+        console.log(`[MockDatabase] Updated password hash for user: ${userData.email}`);
       }
+      console.log(`[MockDatabase] User updated. Total users: ${this.users.length}`);
       return existing;
     } else {
       // Create new user
+      console.log(`[MockDatabase] Creating new user: ${userData.email}`);
       const newUser: any = {
         id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         email: userData.email,
@@ -517,8 +533,10 @@ class MockDatabase implements Database {
       // Store password hash internally (not in User type)
       if (userData.passwordHash) {
         newUser.passwordHash = userData.passwordHash;
+        console.log(`[MockDatabase] Password hash set for new user: ${userData.email}`);
       }
       this.users.push(newUser);
+      console.log(`[MockDatabase] User created. Total users: ${this.users.length}, user ID: ${newUser.id}`);
       return newUser;
     }
   }
