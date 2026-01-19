@@ -213,9 +213,10 @@ function createAuthOptions() {
     },
     async session({ session, token }: { session: any; token: any }) {
       // Add user ID and other info to session
-      if (session.user) {
-        (session.user as any).id = token.id || token.sub;
-        // Ensure email, name, and image are set from token
+      if (session.user && token) {
+        // Use token data to populate session
+        (session.user as any).id = token.id || token.sub || session.user.email;
+        // Ensure email, name, and image are set from token (prefer token over session)
         if (token.email) {
           session.user.email = token.email;
         }
@@ -237,6 +238,8 @@ function createAuthOptions() {
         token.email = user.email;
         token.name = user.name;
         token.picture = user.image;
+        // Set sub (subject) to user ID for NextAuth compatibility
+        token.sub = user.id;
       }
       return token;
     },

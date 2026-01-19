@@ -41,9 +41,12 @@ function SignInForm() {
         return;
       }
 
-      // Success - redirect
-      router.push(callbackUrl);
-      router.refresh();
+      // Success - wait a bit for session to be set, then redirect
+      // NextAuth needs a moment to set the session cookie
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Force a session refresh before redirecting
+      window.location.href = callbackUrl;
     } catch (err) {
       setError('Ett oväntat fel uppstod. Försök igen.');
       setIsLoading(false);
