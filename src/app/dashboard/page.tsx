@@ -17,7 +17,9 @@ import {
   Users,
   Download,
   Upload,
-  Sparkles
+  Sparkles,
+  Crown,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -219,7 +221,15 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
+              <div className="flex items-center gap-3 mb-1">
+                <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
+                {isPremium && (
+                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
+                    <Crown className="w-4 h-4" />
+                    <span>Premium</span>
+                  </div>
+                )}
+              </div>
               <p className="text-gray-600 mt-1">Översikt över dina fakturaanalyser och besparingar</p>
             </div>
             <div className="flex items-center gap-3">
@@ -231,7 +241,9 @@ export default function DashboardPage() {
                 <option value="month">Senaste månaden</option>
                 <option value="3months">Senaste 3 månaderna</option>
                 <option value="year">Senaste året</option>
-                <option value="all">All tid</option>
+                <option value="all" disabled={!isPremium}>
+                  All tid {!isPremium && '(Premium)'}
+                </option>
               </select>
               <Link
                 href="/upload"
@@ -287,19 +299,38 @@ export default function DashboardPage() {
           </div>
 
           {/* Benchmark */}
-          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div className={`rounded-xl p-6 border shadow-sm relative ${isPremium ? 'bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200' : 'bg-white border-gray-200'}`}>
+            {isPremium && (
+              <div className="absolute top-3 right-3">
+                <Sparkles className="w-4 h-4 text-orange-500" />
+              </div>
+            )}
             <div className="flex items-center justify-between mb-4">
-              <div className="p-3 bg-orange-500 rounded-lg">
+              <div className={`p-3 rounded-lg ${isPremium ? 'bg-orange-500' : 'bg-orange-500'}`}>
                 <Users className="w-6 h-6 text-white" />
               </div>
             </div>
-            <h3 className="text-sm font-medium text-gray-600 mb-1">Jämfört med andra</h3>
+            <h3 className="text-sm font-medium text-gray-600 mb-1">
+              Jämfört med andra
+              {isPremium && <span className="ml-2 text-xs text-orange-600 font-medium">(Premium)</span>}
+            </h3>
             <p className="text-3xl font-bold text-gray-900">{stats?.benchmarkComparison.percentile || 0}%</p>
             <p className="text-sm text-gray-600 mt-2">
               {stats && stats.benchmarkComparison.percentile > 50 
                 ? "Du betalar mer än genomsnittet" 
                 : "Du betalar mindre än genomsnittet"}
             </p>
+            {!isPremium && (
+              <div className="mt-3 pt-3 border-t border-gray-200">
+                <Link
+                  href="/premium"
+                  className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
+                >
+                  <Lock className="w-3 h-3" />
+                  Uppgradera för avancerad benchmarking
+                </Link>
+              </div>
+            )}
           </div>
         </div>
 
@@ -397,34 +428,51 @@ export default function DashboardPage() {
               </div>
 
               {/* Export Option */}
-              <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+              <div className={`p-4 rounded-lg border ${isPremium ? 'bg-gradient-to-br from-green-50 to-green-100 border-green-200' : 'bg-gray-50 border-gray-200'}`}>
                 <div className="flex items-start gap-3">
-                  <Download className="w-5 h-5 text-gray-600 mt-0.5 flex-shrink-0" />
+                  <Download className={`w-5 h-5 mt-0.5 flex-shrink-0 ${isPremium ? 'text-green-600' : 'text-gray-600'}`} />
                   <div className="flex-1">
-                    <h3 className="font-semibold text-gray-900 mb-1">Exportera data</h3>
-                    <p className="text-sm text-gray-600 mb-3">
-                      Ladda ner alla dina analyser som CSV, Excel eller PDF. Premium-funktion.
-                    </p>
-                    <div className="flex gap-2">
-                      <a
-                        href={`/api/user/export?format=csv&range=${timeRange}`}
-                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        CSV
-                      </a>
-                      <a
-                        href={`/api/user/export?format=excel&range=${timeRange}`}
-                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        Excel
-                      </a>
-                      <a
-                        href={`/api/user/export?format=pdf&range=${timeRange}`}
-                        className="text-sm font-medium text-gray-700 hover:text-gray-900 flex items-center gap-1 px-3 py-1.5 bg-white border border-gray-300 rounded hover:bg-gray-50"
-                      >
-                        PDF
-                      </a>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-semibold text-gray-900">Exportera data</h3>
+                      {isPremium && (
+                        <span className="text-xs px-2 py-0.5 bg-green-500 text-white rounded-full font-medium">Premium</span>
+                      )}
                     </div>
+                    <p className="text-sm text-gray-600 mb-3">
+                      {isPremium 
+                        ? "Ladda ner alla dina analyser som CSV, Excel eller PDF."
+                        : "Ladda ner alla dina analyser som CSV, Excel eller PDF. Premium-funktion."}
+                    </p>
+                    {isPremium ? (
+                      <div className="flex gap-2">
+                        <a
+                          href={`/api/user/export?format=csv&range=${timeRange}`}
+                          className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
+                        >
+                          CSV
+                        </a>
+                        <a
+                          href={`/api/user/export?format=excel&range=${timeRange}`}
+                          className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
+                        >
+                          Excel
+                        </a>
+                        <a
+                          href={`/api/user/export?format=pdf&range=${timeRange}`}
+                          className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
+                        >
+                          PDF
+                        </a>
+                      </div>
+                    ) : (
+                      <Link
+                        href="/premium"
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
+                      >
+                        Uppgradera till Premium
+                        <ArrowUpRight className="w-4 h-4" />
+                      </Link>
+                    )}
                   </div>
                 </div>
               </div>
