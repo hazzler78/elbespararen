@@ -9,7 +9,7 @@
  * Create a simple auth token from session data
  * This is a workaround for Edge Tracking Prevention blocking cookies
  */
-function createAuthToken(session: { user?: { email?: string; id?: string } } | null): string | null {
+function createAuthToken(session: { user?: { email?: string | null; id?: string } } | null): string | null {
   if (!session?.user?.email) {
     return null;
   }
@@ -42,7 +42,7 @@ export function clearAuthToken() {
 export async function fetchWithAuth(
   url: string,
   options: RequestInit = {},
-  session?: { user?: { email?: string; id?: string } } | null
+  session?: { user?: { email?: string | null; id?: string } } | null
 ): Promise<Response> {
   // Prepare headers
   const headers = new Headers(options.headers);
