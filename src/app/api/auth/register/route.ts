@@ -64,31 +64,20 @@ export async function POST(req: NextRequest) {
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user
-    const now = new Date().toISOString();
-    const id = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-
-    await (db as any).db.prepare(`
-      INSERT INTO users (id, email, name, password_hash, created_at, updated_at, subscription_tier, subscription_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(
-      id,
+    // Create user using database method (works with both MockDatabase and CloudflareDatabase)
+    const newUser = await db.createOrUpdateUser({
       email,
       name,
       passwordHash,
-      now,
-      now,
-      'free',
-      'active'
-    ).run();
+    });
 
     return NextResponse.json({
       success: true,
       message: "Konto skapat framgångsrikt",
       data: {
-        id,
-        email,
-        name,
+        id: newUser.id,
+        email: newUser.email,
+        name: newUser.name,
       }
     });
   } catch (error) {

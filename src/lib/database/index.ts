@@ -110,7 +110,7 @@ export interface Database {
   // Users
   getUserByEmail(email: string): Promise<User | null>;
   getUserById(id: string): Promise<User | null>;
-  createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User>;
+  createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string; passwordHash?: string }): Promise<User>;
   getUserStats(userId: string): Promise<UserStats>;
 }
 
@@ -486,7 +486,7 @@ class MockDatabase implements Database {
     return this.users.find(u => u.id === id) || null;
   }
 
-  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User> {
+  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string; passwordHash?: string }): Promise<User> {
     const existing = this.users.find(u => u.email === userData.email);
     const now = new Date();
     
@@ -496,10 +496,14 @@ class MockDatabase implements Database {
       existing.image = userData.image || existing.image;
       existing.googleId = userData.googleId || existing.googleId;
       existing.updatedAt = now;
+      // Store password hash internally (not in User type)
+      if (userData.passwordHash) {
+        (existing as any).passwordHash = userData.passwordHash;
+      }
       return existing;
     } else {
       // Create new user
-      const newUser: User = {
+      const newUser: any = {
         id: `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
         email: userData.email,
         name: userData.name,
@@ -509,6 +513,10 @@ class MockDatabase implements Database {
         createdAt: now,
         updatedAt: now
       };
+      // Store password hash internally (not in User type)
+      if (userData.passwordHash) {
+        newUser.passwordHash = userData.passwordHash;
+      }
       this.users.push(newUser);
       return newUser;
     }
@@ -1818,7 +1826,7 @@ class CloudflareDatabase implements Database {
     }
   }
 
-  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string }): Promise<User> {
+  async createOrUpdateUser(userData: { email: string; name?: string; image?: string; googleId?: string; passwordHash?: string }): Promise<User> {
     try {
       const now = new Date().toISOString();
       
@@ -1827,17 +1835,35 @@ class CloudflareDatabase implements Database {
       
       if (existing) {
         // Update existing user
+        const updateFields: string[] = [];
+        const bindings: any[] = [];
+        
+        if (userData.name !== undefined) {
+          updateFields.push('name = ?');
+          bindings.push(userData.name || existing.name || null);
+        }
+        if (userData.image !== undefined) {
+          updateFields.push('image = ?');
+          bindings.push(userData.image || existing.image || null);
+        }
+        if (userData.googleId !== undefined) {
+          updateFields.push('google_id = ?');
+          bindings.push(userData.googleId || existing.googleId || null);
+        }
+        if (userData.passwordHash !== undefined) {
+          updateFields.push('password_hash = ?');
+          bindings.push(userData.passwordHash);
+        }
+        
+        updateFields.push('updated_at = ?');
+        bindings.push(now);
+        bindings.push(userData.email);
+        
         await this.db.prepare(`
           UPDATE users 
-          SET name = ?, image = ?, google_id = ?, updated_at = ?
+          SET ${updateFields.join(', ')}
           WHERE email = ?
-        `).bind(
-          userData.name || existing.name || null,
-          userData.image || existing.image || null,
-          userData.googleId || existing.googleId || null,
-          now,
-          userData.email
-        ).run();
+        `).bind(...bindings).run();
 
         return await this.getUserByEmail(userData.email) as User;
       } else {
@@ -1845,16 +1871,19 @@ class CloudflareDatabase implements Database {
         const id = `user-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
         
         await this.db.prepare(`
-          INSERT INTO users (id, email, name, image, google_id, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?)
+          INSERT INTO users (id, email, name, image, google_id, password_hash, created_at, updated_at, subscription_tier, subscription_status)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `).bind(
           id,
           userData.email,
           userData.name || null,
           userData.image || null,
           userData.googleId || null,
+          userData.passwordHash || null,
           now,
-          now
+          now,
+          'free',
+          'active'
         ).run();
 
         return await this.getUserById(id) as User;
