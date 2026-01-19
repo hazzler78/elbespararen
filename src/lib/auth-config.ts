@@ -274,25 +274,28 @@ function createAuthOptions() {
   // This is required for NextAuth.js v5 beta to work correctly in Edge runtime
   trustHost: true,
   // Cookie configuration for Edge runtime compatibility
+  // Important: Cookies must work in both development and production
+  const isProduction = url.startsWith('https://');
   cookies: {
     sessionToken: {
-      name: `next-auth.session-token`,
+      name: isProduction ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
       options: {
         httpOnly: true,
-        sameSite: 'lax',
+        sameSite: 'lax', // 'lax' allows cookies to be sent with same-site requests
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || url.startsWith('https://'),
-        domain: undefined, // Let browser set domain automatically
+        secure: isProduction, // Secure cookies only in production (HTTPS required)
+        // Don't set domain - let browser handle it automatically for same-origin
+        maxAge: 30 * 24 * 60 * 60, // 30 days
       },
     },
     callbackUrl: {
-      name: `next-auth.callback-url`,
+      name: isProduction ? `__Secure-next-auth.callback-url` : `next-auth.callback-url`,
       options: {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production' || url.startsWith('https://'),
-        domain: undefined, // Let browser set domain automatically
+        secure: isProduction,
+        maxAge: 60 * 60, // 1 hour
       },
     },
   },
