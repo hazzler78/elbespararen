@@ -206,16 +206,31 @@ function createAuthOptions() {
       return true;
     },
     async session({ session, token }: { session: any; token: any }) {
-      // Add user ID to session
-      if (session.user && token.sub) {
-        (session.user as any).id = token.sub;
+      // Add user ID and other info to session
+      if (session.user) {
+        (session.user as any).id = token.id || token.sub;
+        // Ensure email, name, and image are set from token
+        if (token.email) {
+          session.user.email = token.email;
+        }
+        if (token.name) {
+          session.user.name = token.name;
+        }
+        if (token.picture) {
+          session.user.image = token.picture;
+        }
       }
       return session;
     },
     async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
       // Persist user ID in token
-      if (account && user) {
+      // For Credentials provider, account might be null/undefined, but user exists
+      // For OAuth providers, both account and user exist
+      if (user) {
         token.id = user.id;
+        token.email = user.email;
+        token.name = user.name;
+        token.picture = user.image;
       }
       return token;
     },
