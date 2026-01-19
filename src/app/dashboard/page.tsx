@@ -63,7 +63,9 @@ export default function DashboardPage() {
       }
       
       // Hämta fakturaanalyser från API
-      const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`);
+      const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`, {
+        credentials: 'include', // Ensure cookies are sent
+      });
       if (!analysesResponse.ok) {
         if (analysesResponse.status === 401) {
           // Not authenticated - session check should handle this, but log for debugging
@@ -78,7 +80,9 @@ export default function DashboardPage() {
       const analyses = analysesData.success ? analysesData.data : [];
       
       // Hämta statistik
-      const statsResponse = await fetch('/api/user/stats');
+      const statsResponse = await fetch('/api/user/stats', {
+        credentials: 'include', // Ensure cookies are sent
+      });
       if (!statsResponse.ok) {
         throw new Error('Kunde inte hämta statistik');
       }
