@@ -109,6 +109,9 @@ function createAuthOptions() {
     return null;
   }
   
+  // Determine if we're in production (HTTPS)
+  const isProduction = url.startsWith('https://');
+  
   return {
   providers: [
     GoogleProvider({
@@ -275,7 +278,6 @@ function createAuthOptions() {
   trustHost: true,
   // Cookie configuration for Edge runtime compatibility
   // Important: Cookies must work in both development and production
-  const isProduction = url.startsWith('https://');
   cookies: {
     sessionToken: {
       name: isProduction ? `__Secure-next-auth.session-token` : `next-auth.session-token`,
