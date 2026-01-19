@@ -46,16 +46,29 @@ export async function getSessionUser(req: NextRequest) {
 
       // Return user info from token
       // NextAuth stores email in the token
+      console.log("[auth] Decoded token payload:", { 
+        sub: decodedPayload.sub, 
+        id: decodedPayload.id, 
+        email: decodedPayload.email,
+        name: decodedPayload.name,
+        exp: decodedPayload.exp,
+        iat: decodedPayload.iat
+      });
+      
       if (!decodedPayload.email) {
+        console.error("[auth] Token missing email field!");
         return null;
       }
 
-      return {
+      const user = {
         id: decodedPayload.sub || decodedPayload.id || decodedPayload.email,
         email: decodedPayload.email as string,
         name: decodedPayload.name as string | undefined,
         image: decodedPayload.picture as string | undefined,
       };
+      
+      console.log("[auth] Returning user:", { id: user.id, email: user.email });
+      return user;
     } catch (decodeError) {
       console.error("[auth] Error decoding session token:", decodeError);
       return null;
