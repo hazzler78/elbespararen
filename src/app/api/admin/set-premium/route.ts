@@ -62,22 +62,35 @@ export async function POST(req: NextRequest) {
       ? new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // 1 year from now
       : null;
 
-    await (db as any).db.prepare(`
-      UPDATE users 
-      SET subscription_tier = ?,
-          subscription_status = ?,
-          subscription_started_at = ?,
-          subscription_expires_at = ?,
-          updated_at = ?
-      WHERE email = ?
-    `).bind(
-      tier,
-      tier === 'premium' ? 'active' : 'active',
-      tier === 'premium' ? now : null,
-      expiresAt,
-      now,
-      targetUser.email
-    ).run();
+    // Check if this is MockDatabase (for local development)
+    const isMockDatabase = db.constructor.name === 'MockDatabase';
+    
+    if (isMockDatabase) {
+      // For MockDatabase, update the user object directly
+      (targetUser as any).subscriptionTier = tier;
+      (targetUser as any).subscriptionStatus = 'active';
+      (targetUser as any).subscriptionStartedAt = tier === 'premium' ? new Date(now) : undefined;
+      (targetUser as any).subscriptionExpiresAt = expiresAt ? new Date(expiresAt) : undefined;
+      (targetUser as any).updatedAt = new Date(now);
+    } else {
+      // For CloudflareDatabase, use SQL
+      await (db as any).db.prepare(`
+        UPDATE users 
+        SET subscription_tier = ?,
+            subscription_status = ?,
+            subscription_started_at = ?,
+            subscription_expires_at = ?,
+            updated_at = ?
+        WHERE email = ?
+      `).bind(
+        tier,
+        tier === 'premium' ? 'active' : 'active',
+        tier === 'premium' ? now : null,
+        expiresAt,
+        now,
+        targetUser.email
+      ).run();
+    }
 
     return NextResponse.json({
       success: true,

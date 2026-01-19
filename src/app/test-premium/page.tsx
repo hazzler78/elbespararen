@@ -12,10 +12,14 @@ export default function TestPremiumPage() {
 
   const fetchUserInfo = async () => {
     try {
-      const response = await fetch('/api/user/info');
+      const response = await fetch('/api/user/info', {
+        credentials: 'include', // Important: include cookies
+      });
       const data = await response.json();
       if (data.success) {
         setUserInfo(data.data);
+      } else {
+        console.error("Failed to fetch user info:", data.error);
       }
     } catch (error) {
       console.error("Error fetching user info:", error);
@@ -29,6 +33,7 @@ export default function TestPremiumPage() {
       const response = await fetch('/api/admin/set-premium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        credentials: 'include', // Important: include cookies
         body: JSON.stringify({ tier }),
       });
       const data = await response.json();
@@ -38,6 +43,7 @@ export default function TestPremiumPage() {
         await fetchUserInfo();
       }
     } catch (error) {
+      console.error("Error setting premium:", error);
       setResult({ success: false, error: String(error) });
     } finally {
       setLoading(false);
