@@ -8,13 +8,21 @@ export async function getSessionUser(req: NextRequest) {
   try {
     // Get session token from cookies
     // NextAuth uses different cookie names in production vs development
+    const allCookies = req.cookies.getAll();
+    console.log("[auth] All cookies:", allCookies.map(c => c.name));
+    
     const sessionToken = req.cookies.get('next-auth.session-token')?.value || 
                         req.cookies.get('__Secure-next-auth.session-token')?.value ||
-                        req.cookies.get('__Host-next-auth.session-token')?.value;
+                        req.cookies.get('__Host-next-auth.session-token')?.value ||
+                        req.cookies.get('authjs.session-token')?.value ||
+                        req.cookies.get('__Secure-authjs.session-token')?.value;
     
     if (!sessionToken) {
+      console.log("[auth] No session token found in cookies");
       return null;
     }
+    
+    console.log("[auth] Found session token, length:", sessionToken.length);
 
     // Decode JWT token (base64url encoded)
     try {
