@@ -83,7 +83,7 @@ export default function TestPremiumPage() {
           </div>
 
           {/* Current User Info */}
-          {userInfo && (
+          {userInfo ? (
             <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
               <h2 className="font-semibold text-gray-900 mb-2">Din nuvarande status:</h2>
               <div className="space-y-1 text-sm">
@@ -112,6 +112,15 @@ export default function TestPremiumPage() {
                     {new Date(userInfo.subscriptionExpiresAt).toLocaleDateString('sv-SE')}
                   </p>
                 )}
+              </div>
+            </div>
+          ) : session && (
+            <div className="mb-6 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+              <h2 className="font-semibold text-yellow-900 mb-2">Session info:</h2>
+              <div className="space-y-1 text-sm text-yellow-800">
+                <p><span className="font-medium">Email:</span> {session.user?.email || 'N/A'}</p>
+                <p><span className="font-medium">Namn:</span> {session.user?.name || 'N/A'}</p>
+                <p className="mt-2 text-xs">Kunde inte hämta användarinfo från API. Försök ladda om sidan eller logga in igen.</p>
               </div>
             </div>
           )}
