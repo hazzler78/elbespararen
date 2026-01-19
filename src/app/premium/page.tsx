@@ -134,7 +134,9 @@ export default function PremiumPage() {
               POPULÄR
             </div>
             <h2 className="text-2xl font-bold mb-2">Premium</h2>
-            <p className="text-4xl font-bold mb-6">79 kr/månad</p>
+            <p className="text-4xl font-bold mb-2">99 kr/år</p>
+            <p className="text-sm text-white/80 mb-1">Cirka 8 kr/månad</p>
+            <p className="text-xs text-white/70 mb-6">Introduktionspris - kan höjas senare</p>
             <ul className="space-y-4 mb-8">
               <li className="flex items-start gap-3">
                 <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />

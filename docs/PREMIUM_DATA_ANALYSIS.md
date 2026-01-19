@@ -181,7 +181,7 @@
 - ❌ Ingen export
 - ❌ Ingen benchmarking
 
-### Tier 2: Premium (Föreslaget pris: 49-99 kr/månad)
+### Tier 2: Premium (Pris: 99 kr/år - kan höjas senare)
 
 **Funktioner:**
 1. **Obegränsad historik**
