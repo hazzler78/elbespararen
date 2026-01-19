@@ -25,6 +25,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { BillAnalysis } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 interface DashboardStats {
   totalAnalyses: number;
@@ -54,7 +55,7 @@ export default function DashboardPage() {
       setIsLoading(true);
       
       // Hämta användarinfo (inkl. premium-status)
-      const userInfoResponse = await fetch('/api/user/info');
+      const userInfoResponse = await fetchWithAuth('/api/user/info');
       if (userInfoResponse.ok) {
         const userInfoData = await userInfoResponse.json();
         if (userInfoData.success) {
@@ -63,9 +64,7 @@ export default function DashboardPage() {
       }
       
       // Hämta fakturaanalyser från API
-      const analysesResponse = await fetch(`/api/user/bill-analyses?range=${timeRange}`, {
-        credentials: 'include', // Ensure cookies are sent
-      });
+      const analysesResponse = await fetchWithAuth(`/api/user/bill-analyses?range=${timeRange}`);
       if (!analysesResponse.ok) {
         if (analysesResponse.status === 401) {
           // Not authenticated - session check should handle this, but log for debugging
@@ -80,9 +79,7 @@ export default function DashboardPage() {
       const analyses = analysesData.success ? analysesData.data : [];
       
       // Hämta statistik
-      const statsResponse = await fetch('/api/user/stats', {
-        credentials: 'include', // Ensure cookies are sent
-      });
+      const statsResponse = await fetchWithAuth('/api/user/stats');
       if (!statsResponse.ok) {
         throw new Error('Kunde inte hämta statistik');
       }

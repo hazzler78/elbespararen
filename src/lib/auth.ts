@@ -26,19 +26,27 @@ export async function getSessionUser(req: NextRequest) {
     console.log("[auth] getServerSession failed, falling back to manual decoding:", error);
   }
   try {
-    // Get session token from cookies
-    // NextAuth uses different cookie names in production vs development
-    const allCookies = req.cookies.getAll();
-    console.log("[auth] All cookies:", allCookies.map(c => c.name));
+    // Get session token from Authorization header first (for Edge Tracking Prevention workaround)
+    const authHeader = req.headers.get('authorization');
+    let sessionToken: string | undefined;
     
-    const sessionToken = req.cookies.get('next-auth.session-token')?.value || 
-                        req.cookies.get('__Secure-next-auth.session-token')?.value ||
-                        req.cookies.get('__Host-next-auth.session-token')?.value ||
-                        req.cookies.get('authjs.session-token')?.value ||
-                        req.cookies.get('__Secure-authjs.session-token')?.value;
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      sessionToken = authHeader.substring(7);
+      console.log("[auth] Found session token in Authorization header");
+    } else {
+      // Fall back to cookies
+      const allCookies = req.cookies.getAll();
+      console.log("[auth] All cookies:", allCookies.map(c => c.name));
+      
+      sessionToken = req.cookies.get('next-auth.session-token')?.value || 
+                      req.cookies.get('__Secure-next-auth.session-token')?.value ||
+                      req.cookies.get('__Host-next-auth.session-token')?.value ||
+                      req.cookies.get('authjs.session-token')?.value ||
+                      req.cookies.get('__Secure-authjs.session-token')?.value;
+    }
     
     if (!sessionToken) {
-      console.log("[auth] No session token found in cookies");
+      console.log("[auth] No session token found in cookies or Authorization header");
       return null;
     }
     

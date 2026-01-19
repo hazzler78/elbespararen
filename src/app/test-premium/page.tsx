@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
 import { Sparkles, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 export default function TestPremiumPage() {
   const { data: session } = useSession();
@@ -12,9 +13,7 @@ export default function TestPremiumPage() {
 
   const fetchUserInfo = async () => {
     try {
-      const response = await fetch('/api/user/info', {
-        credentials: 'include', // Important: include cookies
-      });
+      const response = await fetchWithAuth('/api/user/info');
       const data = await response.json();
       if (data.success) {
         setUserInfo(data.data);
@@ -30,10 +29,9 @@ export default function TestPremiumPage() {
     setLoading(true);
     setResult(null);
     try {
-      const response = await fetch('/api/admin/set-premium', {
+      const response = await fetchWithAuth('/api/admin/set-premium', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // Important: include cookies
         body: JSON.stringify({ tier }),
       });
       const data = await response.json();
