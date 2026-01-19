@@ -182,6 +182,7 @@ export default function DashboardPage() {
   // Wait for session to be loaded before fetching data
   useEffect(() => {
     console.log("[Dashboard] Session status:", status, "Session:", session);
+    console.log("[Dashboard] Session user:", session?.user);
     
     if (status === "loading") {
       // Still loading session, wait
@@ -197,6 +198,12 @@ export default function DashboardPage() {
     }
     
     if (status === "authenticated" && session) {
+      // Verify session has required data
+      if (!session.user?.email) {
+        console.error("[Dashboard] Session authenticated but missing email! Session:", session);
+        // Don't redirect immediately, let it try to fetch data first
+      }
+      
       // Session is ready, fetch data
       console.log("[Dashboard] Session authenticated, fetching data...");
       fetchDashboardData();

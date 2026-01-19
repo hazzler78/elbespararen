@@ -221,6 +221,9 @@ function createAuthOptions() {
     },
     async session({ session, token }: { session: any; token: any }) {
       // Add user ID and other info to session
+      console.log("[NextAuth] Session callback - token:", { id: token.id, sub: token.sub, email: token.email, name: token.name });
+      console.log("[NextAuth] Session callback - session.user:", session.user);
+      
       if (session.user && token) {
         // Use token data to populate session
         (session.user as any).id = token.id || token.sub || session.user.email;
@@ -235,6 +238,14 @@ function createAuthOptions() {
           session.user.image = token.picture;
         }
       }
+      
+      // Ensure session has required fields
+      if (!session.user?.email) {
+        console.error("[NextAuth] Session callback ERROR: Session missing email!");
+        return null; // Return null to invalidate session
+      }
+      
+      console.log("[NextAuth] Session callback - final session.user:", session.user);
       return session;
     },
     async jwt({ token, account, user }: { token: any; account?: any; user?: any }) {
