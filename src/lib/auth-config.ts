@@ -144,6 +144,7 @@ function createAuthOptions() {
           // Get user from database
           const user = await db.getUserByEmail(credentials.email as string);
           if (!user) {
+            console.log("[NextAuth] Credentials authorize: User not found:", credentials.email);
             return null;
           }
 
@@ -151,14 +152,19 @@ function createAuthOptions() {
           const passwordHash = (user as any).passwordHash;
           if (!passwordHash) {
             // User exists but doesn't have password (Google account)
+            console.log("[NextAuth] Credentials authorize: User has no password hash:", credentials.email);
             return null;
           }
 
           // Verify password
+          console.log("[NextAuth] Credentials authorize: Verifying password for:", credentials.email);
           const isValid = await verifyPassword(credentials.password as string, passwordHash);
           if (!isValid) {
+            console.log("[NextAuth] Credentials authorize: Password verification failed for:", credentials.email);
             return null;
           }
+          
+          console.log("[NextAuth] Credentials authorize: Password verified successfully for:", credentials.email);
 
           // Return user object for NextAuth
           return {

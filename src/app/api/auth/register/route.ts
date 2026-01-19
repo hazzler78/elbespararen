@@ -55,16 +55,22 @@ export async function POST(req: NextRequest) {
     // Check if user already exists
     const existingUser = await db.getUserByEmail(email);
     if (existingUser) {
-      return NextResponse.json(
-        { success: false, error: "En användare med denna e-postadress finns redan" },
-        { status: 409 }
-      );
+      // Check if user already has a password
+      const existingPasswordHash = (existingUser as any).passwordHash;
+      if (existingPasswordHash) {
+        return NextResponse.json(
+          { success: false, error: "En användare med denna e-postadress finns redan" },
+          { status: 409 }
+        );
+      }
+      // User exists but doesn't have password (e.g., Google account)
+      // Allow adding password to existing account
     }
 
     // Hash password
     const passwordHash = await hashPassword(password);
 
-    // Create user using database method (works with both MockDatabase and CloudflareDatabase)
+    // Create or update user (if user exists from Google login, add password)
     const newUser = await db.createOrUpdateUser({
       email,
       name,
