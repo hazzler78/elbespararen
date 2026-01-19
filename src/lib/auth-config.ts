@@ -298,7 +298,8 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
   }
   
   // Create a hash of the config to detect changes
-  const configHash = `${authOptions.providers[0].clientId}-${authOptions.secret}`;
+  // Use clientId from env vars instead of accessing from provider to avoid TypeScript union type issues
+  const configHash = `${clientId}-${authOptions.secret}`;
   
   // Return cached handlers if config hasn't changed
   if (cachedAuthHandlers && lastConfigHash === configHash) {
