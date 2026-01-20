@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
-export default function PremiumSuccessPage() {
+function PremiumSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
@@ -118,5 +118,20 @@ export default function PremiumSuccessPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PremiumSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Laddar...</p>
+        </div>
+      </div>
+    }>
+      <PremiumSuccessContent />
+    </Suspense>
   );
 }
