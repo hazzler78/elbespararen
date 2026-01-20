@@ -20,6 +20,7 @@ export default function PremiumPage() {
   const router = useRouter();
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -47,6 +48,46 @@ export default function PremiumPage() {
       setIsLoading(false);
     }
   };
+
+  const handleUpgrade = async () => {
+    if (!session?.user?.email) {
+      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`);
+      return;
+    }
+
+    setIsCreatingCheckout(true);
+    try {
+      const response = await fetch('/api/stripe/create-checkout-session', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        // Redirect to Stripe Checkout
+        window.location.href = data.url;
+      } else {
+        alert(data.error || 'Kunde inte skapa checkout-session. Försök igen senare.');
+        setIsCreatingCheckout(false);
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Ett fel uppstod. Försök igen senare.');
+      setIsCreatingCheckout(false);
+    }
+  };
+
+  // Check for canceled parameter in URL
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('canceled') === 'true') {
+      // User canceled checkout, could show a message here
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -164,14 +205,12 @@ export default function PremiumPage() {
               </li>
             </ul>
             <button
-              onClick={() => {
-                // TODO: Implement Stripe checkout
-                alert("Betalningsintegration kommer snart!");
-              }}
-              className="w-full bg-white text-primary font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2"
+              onClick={handleUpgrade}
+              disabled={isCreatingCheckout}
+              className="w-full bg-white text-primary font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Uppgradera nu
-              <ArrowRight className="w-5 h-5" />
+              {isCreatingCheckout ? 'Laddar...' : 'Uppgradera nu'}
+              {!isCreatingCheckout && <ArrowRight className="w-5 h-5" />}
             </button>
           </div>
         </div>
