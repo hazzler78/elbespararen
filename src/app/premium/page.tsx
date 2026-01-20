@@ -14,6 +14,7 @@ import {
   Zap
 } from "lucide-react";
 import Link from "next/link";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 export default function PremiumPage() {
   const { data: session, status } = useSession();
@@ -35,7 +36,7 @@ export default function PremiumPage() {
 
   const fetchUserInfo = async () => {
     try {
-      const response = await fetch('/api/user/info');
+      const response = await fetchWithAuth('/api/user/info', {}, session);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -57,13 +58,12 @@ export default function PremiumPage() {
 
     setIsCreatingCheckout(true);
     try {
-      const response = await fetch('/api/stripe/create-checkout-session', {
+      const response = await fetchWithAuth('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include',
-      });
+      }, session);
 
       const data = await response.json();
 
