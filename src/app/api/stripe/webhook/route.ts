@@ -2,9 +2,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { createDatabaseFromBinding } from '@/lib/database';
 
-// Note: Webhook endpoint must use Node.js runtime for Stripe webhook signature verification
-// Edge runtime doesn't support the crypto operations needed for webhook verification
-export const runtime = 'nodejs';
+// Cloudflare Pages requires Edge Runtime for all routes
+export const runtime = 'edge';
+
+// Helper function to get environment variable (works in Edge runtime)
+function getEnvVar(key: string): string | undefined {
+  // Try process.env first (works in both Node and Edge runtime)
+  const fromProcess = (process.env as any)?.[key];
+  if (typeof fromProcess === "string" && fromProcess.length > 0) return fromProcess;
+  
+  // Try getRequestContext (next-on-pages for Cloudflare Pages)
+  try {
+    const ctxEnv = (globalThis as any).getRequestContext?.()?.env;
+    if (ctxEnv && typeof ctxEnv[key] === "string" && ctxEnv[key]) {
+      return ctxEnv[key] as string;
+    }
+  } catch (e) {
+    // getRequestContext might not be available or might throw
+  }
+  
+  // Try globalThis.env (Cloudflare Workers)
+  try {
+    const workerEnv = (globalThis as any).env;
+    if (workerEnv && typeof workerEnv[key] === "string" && workerEnv[key]) {
+      return workerEnv[key] as string;
+    }
+  } catch (e) {
+    // globalThis.env might not be available
+  }
+  
+  return undefined;
+}
 
 /**
  * Stripe webhook handler
@@ -32,8 +60,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Get webhook secret from environment
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    // Get webhook secret from environment (Edge Runtime compatible)
+    const webhookSecret = getEnvVar('STRIPE_WEBHOOK_SECRET');
     if (!webhookSecret) {
       console.error('[Stripe Webhook] STRIPE_WEBHOOK_SECRET not configured');
       return NextResponse.json(
