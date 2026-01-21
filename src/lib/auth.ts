@@ -32,8 +32,9 @@ export async function getSessionUser(req: NextRequest) {
     let sessionToken: string | undefined;
     let isAuthHeader = false;
     
-    if (authHeaderValue && authHeaderValue.startsWith('Bearer ')) {
-      const token = authHeaderValue.substring(7);
+    if (authHeaderValue !== null) {
+      if (authHeaderValue.startsWith('Bearer ')) {
+        const token = authHeaderValue.substring(7);
       
       // Check if this is a simple auth token (workaround for Edge Tracking Prevention)
       try {
@@ -84,6 +85,7 @@ export async function getSessionUser(req: NextRequest) {
         sessionToken = token;
         isAuthHeader = true;
         console.log("[auth] Found session token in Authorization header (not simple token)");
+      }
       }
     }
     
