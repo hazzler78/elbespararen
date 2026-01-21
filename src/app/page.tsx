@@ -17,9 +17,10 @@ function OAuthRedirectHandler() {
   useEffect(() => {
     const code = searchParams.get('code');
     if (code) {
-      // Redirect to the callback handler with the code
+      // Immediately redirect to the callback handler with the code
       const next = searchParams.get('next') || '/dashboard';
-      router.replace(`/api/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
+      // Use window.location for immediate redirect (works before React hydration)
+      window.location.href = `/api/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`;
     }
   }, [searchParams, router]);
 
