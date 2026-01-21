@@ -300,7 +300,7 @@ export default function CookiesPage() {
               </p>
               <div className="flex flex-col sm:flex-row gap-4">
                 <a
-                  href="mailto:info@elchef.se"
+                  href="mailto:info@elbespararen.se"
                   className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold text-center"
                 >
                   Skicka e-post
