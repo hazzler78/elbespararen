@@ -55,6 +55,14 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       
+      // Create session-like object from user for fetchWithAuth
+      const session = user ? {
+        user: {
+          email: user.email || undefined,
+          id: user.id
+        }
+      } : null;
+      
       // Log session for debugging
       console.log("[Dashboard] fetchDashboardData called with session:", {
         hasSession: !!session,
