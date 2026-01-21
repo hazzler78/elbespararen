@@ -7,27 +7,45 @@ När du loggar in med Google visas Supabase-projektets URL (`tptwyuywgchxcjxybmy
 
 ## Lösning: Uppdatera OAuth Consent Screen i Google Cloud Console
 
-### Steg 1: Hitta OAuth Consent Screen (INTE Branding!)
+### Steg 1: Hitta OAuth Consent Screen (INTE Google Auth Platform!)
+
+**VIKTIGT:** Du är förmodligen i "Google Auth Platform" nu - det är FEL ställe!
 
 1. **Gå till Google Cloud Console**
    - Öppna [Google Cloud Console](https://console.cloud.google.com/)
    - Välj ditt projekt "Elbespararen"
 
 2. **Navigera till OAuth Consent Screen**
-   - I vänstermenyn, gå till **APIs & Services** (inte "Google Auth Platform")
-   - Klicka på **OAuth consent screen** i menyn
-   - **VIKTIGT:** Detta är INTE samma som "Branding" under "Google Auth Platform"!
+   - I vänstermenyn, leta efter **"APIs & Services"** (detta är en huvudmeny, INTE "Google Auth Platform")
+   - Om du inte ser "APIs & Services" i menyn, klicka på hamburger-menyn (tre streck) längst upp till vänster
+   - Under **"APIs & Services"**, klicka på **"OAuth consent screen"**
+   - **VIKTIGT:** 
+     - ❌ INTE "Google Auth Platform" > "Overview"
+     - ❌ INTE "Google Auth Platform" > "Branding"
+     - ✅ **"APIs & Services"** > **"OAuth consent screen"**
+
+3. **Alternativ väg om du inte hittar det:**
+   - I sökfältet högst upp, sök på: `OAuth consent screen`
+   - Eller gå direkt till: [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
 
 ### Steg 2: Redigera App Information
 
-Om du redan har konfigurerat OAuth Consent Screen:
-1. Du kommer se en sida med flera steg (tabs)
-2. Klicka på **"EDIT APP"** knappen (höger upp)
-3. Eller gå till första steget/tabben som heter **"App information"** eller **"OAuth consent screen"**
+**Direktlänk:** [OAuth consent screen](https://console.cloud.google.com/apis/credentials/consent)
 
-Om du inte har konfigurerat det tidigare:
-1. Välj **User Type**: **External** (eller **Internal** om du bara vill ha användare inom din organisation)
-2. Klicka på **CREATE**
+När du kommer till OAuth consent screen-sidan:
+
+**Om du redan har konfigurerat OAuth Consent Screen:**
+1. Du kommer se en översiktssida med app-information
+2. **Leta efter en blå knapp som heter "EDIT APP"** (vanligtvis högst upp till höger)
+3. Om du inte ser "EDIT APP", leta efter en knapp som heter "PUBLISH APP" eller "CONFIGURE CONSENT SCREEN"
+4. Klicka på den för att komma till redigeringsläge
+5. Du kommer då se flera steg/tabs - gå till första steget som heter **"App information"** eller **"OAuth consent screen"**
+
+**Om du inte har konfigurerat det tidigare:**
+1. Du kommer se en sida där du väljer **User Type**
+2. Välj **External** (eller **Internal** om du bara vill ha användare inom din organisation)
+3. Klicka på **CREATE** eller **CONTINUE**
+4. Du kommer då till första steget där du kan fylla i app-information
 
 ### Steg 3: Fyll i App Information
 
