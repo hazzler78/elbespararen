@@ -445,15 +445,45 @@ export const handlers = {
     if (pathname === '/api/auth/signin/google' || pathname.match(/^\/api\/auth\/signin\/google/)) {
       console.log(`[auth-config] WORKAROUND: Intercepted signin/google route: ${pathname}`);
       const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+      const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
       const baseUrl = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || req.nextUrl.origin;
       const callbackUrl = req.nextUrl.searchParams.get('callbackUrl') || '/dashboard';
       
-      if (!clientId) {
-        console.error(`[auth-config] Google Client ID missing for manual signin redirect`);
+      if (!clientId || !clientSecret) {
+        console.error(`[auth-config] Google credentials missing for manual signin redirect`);
         return createConfigErrorResponse(req);
       }
       
-      // Manually construct Google OAuth URL
+      // Try to use NextAuth handlers first - they might work now with env vars injected
+      const authHandlers = getAuthHandlers();
+      if (authHandlers?.GET) {
+        try {
+          console.log(`[auth-config] Attempting to use NextAuth handlers for signin/google`);
+          // Create a clean request for NextAuth
+          const cleanUrl = new URL(req.url);
+          cleanUrl.searchParams.delete('nextauth');
+          const cleanReq = new NextRequest(cleanUrl, {
+            method: req.method,
+            headers: req.headers,
+            body: req.body,
+          });
+          const response = await authHandlers.GET(cleanReq, { params: { nextauth: ['signin', 'google'] } });
+          
+          // If NextAuth returns a redirect (not an error), use it
+          if (response.status === 302 || response.status === 307) {
+            const location = response.headers.get('location');
+            if (location && !location.includes('/auth/error')) {
+              console.log(`[auth-config] NextAuth handler returned redirect: ${location}`);
+              return response;
+            }
+          }
+          console.log(`[auth-config] NextAuth handler did not return valid redirect, falling back to manual redirect`);
+        } catch (error) {
+          console.log(`[auth-config] NextAuth handler failed, using manual redirect: ${error}`);
+        }
+      }
+      
+      // Fallback: Manually construct Google OAuth URL
       // CRITICAL: The redirect URI must EXACTLY match what's configured in Google Cloud Console
       // Format: {baseUrl}/api/auth/callback/google
       // Ensure baseUrl doesn't have trailing slash
@@ -479,11 +509,8 @@ export const handlers = {
       googleAuthUrl.searchParams.set('scope', 'openid email profile');
       googleAuthUrl.searchParams.set('access_type', 'offline');
       googleAuthUrl.searchParams.set('prompt', 'consent');
-      // Store callbackUrl in state for later retrieval
-      // Use btoa for Edge runtime compatibility (Buffer might not be available)
-      const stateData = JSON.stringify({ callbackUrl });
-      const state = btoa(unescape(encodeURIComponent(stateData))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-      googleAuthUrl.searchParams.set('state', state);
+      // Don't set custom state - let NextAuth handle state management
+      // NextAuth will add its own state parameter when handling the callback
       
       return NextResponse.redirect(googleAuthUrl.toString());
     }
