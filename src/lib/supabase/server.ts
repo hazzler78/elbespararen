@@ -31,7 +31,7 @@ function getEnvVar(key: string): string | undefined {
   return undefined;
 }
 
-export function createClient() {
+export async function createClient() {
   const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL') || getEnvVar('SUPABASE_URL');
   const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY');
 
@@ -39,18 +39,20 @@ export function createClient() {
     throw new Error('Missing Supabase environment variables');
   }
 
+  const cookieStore = await cookies();
+
   return createServerClient(
     supabaseUrl,
     supabaseAnonKey,
     {
       cookies: {
         getAll() {
-          return cookies().getAll()
+          return cookieStore.getAll()
         },
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookies().set(name, value, options)
+              cookieStore.set(name, value, options)
             )
           } catch {
             // The `setAll` method was called from a Server Component.
