@@ -33,8 +33,9 @@ export async function getSessionUser(req: NextRequest) {
     let isAuthHeader = false;
     
     if (authHeaderValue !== null) {
-      if (authHeaderValue.startsWith('Bearer ')) {
-        const token = authHeaderValue.substring(7);
+      const headerValue: string = authHeaderValue; // Type assertion after null check
+      if (headerValue.startsWith('Bearer ')) {
+        const token = headerValue.substring(7);
       
       // Check if this is a simple auth token (workaround for Edge Tracking Prevention)
       try {
