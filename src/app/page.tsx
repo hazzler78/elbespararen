@@ -11,18 +11,21 @@ import NewsletterSignup from "@/components/NewsletterSignup";
 
 function OAuthRedirectHandler() {
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   // Handle OAuth callback redirects that land on root page
   useEffect(() => {
     const code = searchParams.get('code');
     if (code) {
+      console.log('[OAuthRedirectHandler] Detected OAuth code on root page, redirecting to callback');
       // Immediately redirect to the callback handler with the code
       const next = searchParams.get('next') || '/dashboard';
-      // Use window.location for immediate redirect (works before React hydration)
-      window.location.href = `/api/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`;
+      const callbackUrl = `/api/auth/callback?code=${encodeURIComponent(code)}&next=${encodeURIComponent(next)}`;
+      console.log('[OAuthRedirectHandler] Redirecting to:', callbackUrl);
+      // Use window.location.replace for immediate redirect (works before React hydration)
+      // replace() instead of href to avoid adding to history
+      window.location.replace(callbackUrl);
     }
-  }, [searchParams, router]);
+  }, [searchParams]);
 
   return null;
 }

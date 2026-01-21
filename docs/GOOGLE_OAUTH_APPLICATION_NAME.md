@@ -94,13 +94,39 @@ På första steget/tabben ("App information" eller "OAuth consent screen"):
 - Det kan ta några minuter (upp till 5-10 minuter) innan ändringarna syns i OAuth-dialogen
 - Om du ändrar från "Testing" till "In production", kan det ta längre tid (upp till några dagar för Google-granskning)
 
-## Viktigt om Supabase Redirect
+## Viktigt om Supabase Redirect och "to continue to"
 
-**OBS:** Google kommer fortfarande visa Supabase-URL:en (`tptwyuywgchxcjxybmya.supabase.co`) i dialogen eftersom det är den domain som används för OAuth redirect. Detta är normalt beteende och kan inte ändras helt.
+### Varför står det "to continue to tptwyuywgchxcjxybmya.supabase.co"?
 
-Men app-namnet "Elbespararen" kommer visas i:
-- OAuth consent screen (när användaren ger tillstånd)
+**Detta är normalt och förväntat beteende när du använder Supabase för OAuth!**
+
+Google visar den faktiska redirect-URL:en som används i OAuth-flödet. Eftersom flödet går så här:
+
+1. Din app → Supabase → Google
+2. Google redirectar tillbaka till Supabase: `https://tptwyuywgchxcjxybmya.supabase.co/auth/v1/callback`
+3. Supabase redirectar sedan till din app: `http://localhost:3000/api/auth/callback`
+
+Så Google ser att redirect-URL:en är Supabase's domain, och visar därför "to continue to tptwyuywgchxcjxybmya.supabase.co" i dialogen.
+
+**Detta kan INTE ändras helt** när du använder Supabase som OAuth-mellanhand, eftersom det är Supabase's domain som faktiskt används för OAuth redirect.
+
+### Vad kan ändras?
+
+App-namnet "Elbespararen" kommer visas i:
+- OAuth consent screen (när användaren ger tillstånd) - här kan du se "Elbespararen" istället för Supabase-URL:en
 - Google Account-sidan där användaren ser vilka appar de har gett tillstånd till
+
+### Vad visas i Google OAuth-dialogen?
+
+- **"Choose an account to continue to tptwyuywgchxcjxybmya.supabase.co"** - Detta kommer alltid visa Supabase's domain eftersom det är den faktiska redirect-URL:en
+- **App-namnet "Elbespararen"** - Detta visas i OAuth consent screen när användaren ger tillstånd
+
+### Kan jag ändra detta?
+
+För att visa din egen domän (`elbespararen.se`) i stället för Supabase's domain skulle du behöva:
+- Implementera OAuth direkt mot Google (utan Supabase)
+- Detta är mer komplext och kräver mer kod och konfiguration
+- De flesta appar accepterar att Supabase's domain visas i "to continue to"-delen
 
 ## Supabase Site URL Konfiguration
 
