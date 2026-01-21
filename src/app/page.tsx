@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
@@ -8,6 +10,19 @@ import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function Home() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+
+  // Handle OAuth callback redirects that land on root page
+  useEffect(() => {
+    const code = searchParams.get('code');
+    if (code) {
+      // Redirect to the callback handler with the code
+      const next = searchParams.get('next') || '/dashboard';
+      router.replace(`/api/auth/callback?code=${code}&next=${encodeURIComponent(next)}`);
+    }
+  }, [searchParams, router]);
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
