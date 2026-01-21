@@ -241,19 +241,23 @@ export async function POST(
         const { getSessionUser } = await import("@/lib/auth");
         const user = await getSessionUser(req);
         if (user?.email) {
+          console.log(`[parse-bill-v3] User authenticated: ${user.email}`);
           const dbUser = await db.createOrUpdateUser({
             email: user.email,
             name: user.name,
             image: user.image,
           });
           userId = dbUser.id;
+          console.log(`[parse-bill-v3] User ID set: ${userId}`);
+        } else {
+          console.log('[parse-bill-v3] No user found in session, saving without user_id');
         }
       } catch (authError) {
         // Ignore auth errors - user might not be logged in
-        console.log('[parse-bill-v3] User not authenticated, saving without user_id');
+        console.log('[parse-bill-v3] Auth error (user might not be logged in):', authError instanceof Error ? authError.message : String(authError));
       }
       
-      await db.createBillAnalysis({
+      const savedAnalysis = await db.createBillAnalysis({
         billData,
         savings,
         imageKey: billData.imageKey,
@@ -270,6 +274,7 @@ export async function POST(
       });
 
       console.log(`[parse-bill-v3] ✅ Analys sparad i databasen för admin-granskning`);
+      console.log(`[parse-bill-v3] Analysis ID: ${savedAnalysis.id}, User ID: ${userId || 'none (not logged in)'}`);
       dbSaveSuccess = true;
     } catch (dbError) {
       // Logga felet men fortsätt - analysen ska fortfarande returneras till användaren

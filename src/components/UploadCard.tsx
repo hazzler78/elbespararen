@@ -125,7 +125,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
 
       const response = await fetch("/api/parse-bill-v3", {
         method: "POST",
-        body: formData
+        body: formData,
+        credentials: 'include' // Include cookies for authentication
       });
 
       const result = await response.json() as ApiResponse<BillData> & {
