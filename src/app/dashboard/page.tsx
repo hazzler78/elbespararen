@@ -19,7 +19,8 @@ import {
   Upload,
   Sparkles,
   Crown,
-  Lock
+  Lock,
+  User
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -241,7 +242,7 @@ export default function DashboardPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <div className="flex items-center gap-3 mb-1">
+              <div className="flex items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
                 {isPremium && (
                   <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
@@ -250,6 +251,30 @@ export default function DashboardPage() {
                   </div>
                 )}
               </div>
+              {/* User welcome section */}
+              {session?.user && (
+                <div className="flex items-center gap-3 mb-1">
+                  {session.user.image ? (
+                    <img
+                      src={session.user.image}
+                      alt={session.user.name || session.user.email || "User"}
+                      className="w-8 h-8 rounded-full border-2 border-primary"
+                    />
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-primary">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
+                      Välkommen, {session.user.name || session.user.email?.split('@')[0] || 'Användare'}!
+                    </p>
+                    {session.user.email && session.user.name && (
+                      <p className="text-xs text-gray-500">{session.user.email}</p>
+                    )}
+                  </div>
+                </div>
+              )}
               <p className="text-gray-600 mt-1">Översikt över dina fakturaanalyser och besparingar</p>
             </div>
             <div className="flex items-center gap-3">
