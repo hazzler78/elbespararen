@@ -87,6 +87,16 @@ export default function DashboardPage() {
       const analysesData = await analysesResponse.json();
       const analyses = analysesData.success ? analysesData.data : [];
       
+      console.log(`[Dashboard] Fetched ${analyses.length} analyses from API`);
+      if (analyses.length > 0) {
+        console.log(`[Dashboard] First analysis:`, {
+          id: analyses[0].id,
+          createdAt: analyses[0].createdAt,
+          totalAmount: analyses[0].billData.totalAmount,
+          userId: analyses[0].userId || 'no userId'
+        });
+      }
+      
       // Hämta statistik
       const statsResponse = await fetchWithAuth('/api/user/stats', {}, session);
       if (!statsResponse.ok) {
@@ -157,6 +167,10 @@ export default function DashboardPage() {
 
       // Använd riktig data om den finns, annars mock
       const finalAnalyses = analyses.length > 0 ? analyses : mockAnalyses;
+      console.log(`[Dashboard] Setting analyses: ${finalAnalyses.length} total (${analyses.length} real, ${analyses.length === 0 ? mockAnalyses.length : 0} mock)`);
+      if (analyses.length === 0) {
+        console.warn(`[Dashboard] ⚠️ No real analyses found, using mock data. Check if bills are being saved with user_id.`);
+      }
       setAnalyses(finalAnalyses);
       
       // Använd riktig statistik om den finns
@@ -223,6 +237,31 @@ export default function DashboardPage() {
       fetchDashboardData();
     }
   }, [status, session, fetchDashboardData, router]);
+
+  // Refresh data when page becomes visible (e.g., when returning from result page)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && status === "authenticated" && session) {
+        console.log("[Dashboard] Page became visible, refreshing data...");
+        fetchDashboardData();
+      }
+    };
+
+    const handleFocus = () => {
+      if (status === "authenticated" && session) {
+        console.log("[Dashboard] Window focused, refreshing data...");
+        fetchDashboardData();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('focus', handleFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('focus', handleFocus);
+    };
+  }, [status, session, fetchDashboardData]);
 
   if (isLoading) {
     return (

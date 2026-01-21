@@ -478,13 +478,20 @@ class MockDatabase implements Database {
         cutoffDate = new Date(0); // All time
     }
     
-    return this.billAnalyses
+    console.log(`[MockDatabase] getBillAnalysesByUserId: userId=${userId}, range=${range}, cutoffDate=${cutoffDate.toISOString()}`);
+    console.log(`[MockDatabase] Total analyses in store: ${this.billAnalyses.length}`);
+    
+    const filtered = this.billAnalyses
       .filter(a => {
-        // In mock, we'll just return all for now
-        // In real implementation, filter by user_id
-        return a.createdAt >= cutoffDate;
+        // Filter by user_id if it exists, otherwise include all (for backward compatibility)
+        const matchesUser = !a.userId || a.userId === userId;
+        const matchesDate = a.createdAt >= cutoffDate;
+        return matchesUser && matchesDate;
       })
       .sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    
+    console.log(`[MockDatabase] Found ${filtered.length} analyses for user ${userId}`);
+    return filtered;
   }
 
   // Users - use shared store instead of instance variable
@@ -1732,6 +1739,8 @@ class CloudflareDatabase implements Database {
           cutoffDate = new Date(0);
       }
 
+      console.log(`[CloudflareDatabase] getBillAnalysesByUserId: userId=${userId}, range=${range}, cutoffDate=${cutoffDate.toISOString()}`);
+      
       const result = await this.db.prepare(`
         SELECT * FROM bill_analyses
         WHERE user_id = ? AND created_at >= ?
@@ -1739,6 +1748,7 @@ class CloudflareDatabase implements Database {
       `).bind(userId, cutoffDate.toISOString()).all();
 
       const rows = Array.isArray(result.results) ? result.results : [];
+      console.log(`[CloudflareDatabase] Found ${rows.length} analyses for user ${userId}`);
       return rows.map((value) => {
         const row = value as Record<string, unknown>;
         return {
