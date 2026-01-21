@@ -432,12 +432,87 @@ export const handlers = {
       return createConfigErrorResponse(req);
     }
     
-    // Log callback route to debug OAuth callback handling
+    // Handle callback route - ensure env vars are injected BEFORE NextAuth handles it
     if (pathname.includes('/api/auth/callback/google')) {
       console.log(`[auth-config] CALLBACK: Google OAuth callback route hit: ${pathname}`);
       console.log(`[auth-config] CALLBACK: Request URL: ${req.url}`);
       console.log(`[auth-config] CALLBACK: Query params: ${req.nextUrl.searchParams.toString()}`);
       console.log(`[auth-config] CALLBACK: Context params: ${JSON.stringify(context?.params)}`);
+      
+      // CRITICAL: Ensure env vars are injected BEFORE NextAuth handles callback
+      // NextAuth v5 beta validates config during callback handling in Edge runtime
+      // Force injection even if already set to ensure they're available
+      const clientId = getEnvVar("GOOGLE_CLIENT_ID");
+      const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
+      const secret = getEnvVar("NEXTAUTH_SECRET");
+      const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
+      
+      // Force set env vars for NextAuth validation
+      if (clientId) {
+        (process.env as any).GOOGLE_CLIENT_ID = clientId;
+      }
+      if (clientSecret) {
+        (process.env as any).GOOGLE_CLIENT_SECRET = clientSecret;
+      }
+      if (secret) {
+        (process.env as any).NEXTAUTH_SECRET = secret;
+      }
+      if (url) {
+        (process.env as any).NEXTAUTH_URL = url;
+      }
+      
+      console.log(`[auth-config] CALLBACK: Injected env vars for NextAuth validation`);
+      console.log(`[auth-config] CALLBACK: clientId present: ${!!clientId}, clientSecret present: ${!!clientSecret}, secret present: ${!!secret}, url: ${url}`);
+      
+      // Get fresh auth handlers with env vars injected
+      const authHandlers = getAuthHandlers();
+      if (!authHandlers?.GET) {
+        console.error(`[auth-config] CALLBACK: No auth handlers available`);
+        return createConfigErrorResponse(req);
+      }
+      
+      // Let NextAuth handle the callback
+      try {
+        // Extract callback segments: /api/auth/callback/google -> ['callback', 'google']
+        const segments = pathname.replace('/api/auth/', '').split('/').filter(Boolean);
+        console.log(`[auth-config] CALLBACK: Passing to NextAuth with segments: [${segments.join(',')}]`);
+        
+        // Create mutable request for NextAuth
+        const mutableHeaders = new Headers();
+        req.headers.forEach((value, key) => {
+          mutableHeaders.set(key, value);
+        });
+        const mutableReq = new NextRequest(req.url, {
+          method: req.method,
+          headers: mutableHeaders,
+          body: req.body,
+        });
+        
+        const response = await authHandlers.GET(mutableReq, { params: { nextauth: segments } });
+        
+        // Recreate response with mutable headers
+        const responseHeaders = new Headers();
+        response.headers.forEach((value: string, key: string) => {
+          responseHeaders.set(key, value);
+        });
+        
+        const body = response.body ? await response.clone().arrayBuffer() : null;
+        
+        console.log(`[auth-config] CALLBACK: NextAuth returned status: ${response.status}`);
+        if (response.status === 302 || response.status === 307) {
+          const location = responseHeaders.get('location');
+          console.log(`[auth-config] CALLBACK: Redirecting to: ${location}`);
+        }
+        
+        return new Response(body, {
+          status: response.status,
+          statusText: response.statusText,
+          headers: responseHeaders,
+        });
+      } catch (error) {
+        console.error(`[auth-config] CALLBACK: Error handling callback:`, error);
+        return createConfigErrorResponse(req);
+      }
     }
     
     // WORKAROUND: NextAuth v5 beta.30 has a bug parsing provider signin routes in Edge runtime
