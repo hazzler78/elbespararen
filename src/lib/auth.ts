@@ -28,12 +28,12 @@ export async function getSessionUser(req: NextRequest) {
   }
   try {
     // Get session token from Authorization header first (for Edge Tracking Prevention workaround)
-    const authHeader = req.headers.get('authorization');
+    const authHeaderValue = req.headers.get('authorization');
     let sessionToken: string | undefined;
     let isAuthHeader = false;
     
-    if (authHeader !== null && authHeader.startsWith('Bearer ')) {
-      const token = authHeader.substring(7);
+    if (authHeaderValue && authHeaderValue.startsWith('Bearer ')) {
+      const token = authHeaderValue.substring(7);
       
       // Check if this is a simple auth token (workaround for Edge Tracking Prevention)
       try {
