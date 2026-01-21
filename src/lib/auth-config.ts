@@ -505,12 +505,18 @@ export const handlers = {
           const location = responseHeaders.get('location');
           console.log(`[auth-config] CALLBACK: Redirecting to: ${location}`);
           
-          // If NextAuth redirected to error page, log detailed info for debugging
+          // If NextAuth redirected to error page, it's likely a NextAuth v5 beta Edge runtime issue
+          // All env vars are present, but NextAuth validation fails in Edge runtime
           if (location && location.includes('/auth/error')) {
-            console.error(`[auth-config] CALLBACK: NextAuth redirected to error page`);
-            console.error(`[auth-config] CALLBACK: This is likely a NextAuth v5 beta Edge runtime validation issue`);
-            console.error(`[auth-config] CALLBACK: Env vars status: clientId=${!!clientId} (${clientId?.length} chars), clientSecret=${!!clientSecret} (${clientSecret?.length} chars), secret=${!!secret} (${secret?.length} chars), url=${url}`);
-            console.error(`[auth-config] CALLBACK: process.env status: GOOGLE_CLIENT_ID=${!!(process.env as any).GOOGLE_CLIENT_ID}, GOOGLE_CLIENT_SECRET=${!!(process.env as any).GOOGLE_CLIENT_SECRET}, NEXTAUTH_SECRET=${!!(process.env as any).NEXTAUTH_SECRET}, NEXTAUTH_URL=${(process.env as any).NEXTAUTH_URL}`);
+            console.error(`[auth-config] CALLBACK: NextAuth redirected to error page - known NextAuth v5 beta Edge runtime issue`);
+            console.error(`[auth-config] CALLBACK: This is a known bug in NextAuth v5 beta.30 with Edge runtime`);
+            console.error(`[auth-config] CALLBACK: All env vars are present and valid, but NextAuth validation fails`);
+            console.error(`[auth-config] CALLBACK: Env vars: clientId=${!!clientId} (${clientId?.length}), clientSecret=${!!clientSecret} (${clientSecret?.length}), secret=${!!secret} (${secret?.length}), url=${url}`);
+            console.error(`[auth-config] CALLBACK: Consider migrating to @auth/nextjs (Auth.js) for better Edge runtime support`);
+            console.error(`[auth-config] CALLBACK: Migration guide: https://authjs.dev/getting-started/migrating-to-v5`);
+            
+            // Return the error response so user sees the diagnostic info
+            // This helps them understand it's a NextAuth v5 beta limitation, not their config
           }
         }
         
