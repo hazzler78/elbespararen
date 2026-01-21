@@ -1,86 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Eye, TrendingDown, Shield, ArrowRight, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { motion } from "framer-motion";
+import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 import NewsletterSignup from "@/components/NewsletterSignup";
 
 export default function Home() {
-  const [isBannerOpen, setIsBannerOpen] = useState(false);
-
   return (
     <main className="min-h-screen">
-      {/* Compact dropdown banner */}
-      <section className="relative bg-gradient-to-r from-primary/15 to-primary/8 border-b-2 border-primary/30 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto relative">
-          <button
-            onClick={() => setIsBannerOpen(!isBannerOpen)}
-            className="w-full px-4 py-3.5 flex items-center justify-between hover:bg-primary/15 active:bg-primary/20 transition-all cursor-pointer group"
-          >
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-sm font-bold text-primary group-hover:text-primary/90 transition-colors">
-                ⚡ Teckna elavtal direkt
-              </span>
-              <span className="text-xs text-gray-600 group-hover:text-gray-700 transition-colors hidden sm:inline">
-                Klicka för att visa alternativ
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              {!isBannerOpen && (
-                <span className="text-xs text-primary font-medium hidden md:inline">
-                  Visa alternativ
-                </span>
-              )}
-              {isBannerOpen ? (
-                <ChevronUp className="w-5 h-5 text-primary transition-colors" />
-              ) : (
-                <ChevronDown className="w-5 h-5 text-primary transition-colors animate-bounce" />
-              )}
-            </div>
-          </button>
-          
-          <AnimatePresence>
-            {isBannerOpen && (
-              <motion.div
-                initial={{ height: 0, opacity: 0 }}
-                animate={{ height: "auto", opacity: 1 }}
-                exit={{ height: 0, opacity: 0 }}
-                transition={{ duration: 0.3 }}
-                className="absolute top-full left-0 right-0 bg-gradient-to-r from-primary/10 to-primary/5 border-b border-primary/20 shadow-lg overflow-hidden"
-                style={{ position: 'absolute' }}
-              >
-                <div className="px-4 pb-4 pt-2">
-                  <p className="text-xs text-muted mb-3 text-center">
-                    Välj mellan rörligt pris eller fastpris med fastprisgarant
-                  </p>
-                  <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                    <a
-                      href="https://www.cheapenergy.se/teckna-elavtal-cheap-elchef/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-white border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-all duration-200 text-center"
-                    >
-                      Rörligt
-                    </a>
-                    <a
-                      href="https://www.svealandselbolag.se/elchef-fastpris/"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2 bg-white border border-primary text-primary text-sm font-medium rounded-lg hover:bg-primary hover:text-white transition-all duration-200 text-center"
-                    >
-                      Fastpris med prisgaranti
-                    </a>
-                  </div>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      </section>
-
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">
         <div className="max-w-4xl mx-auto text-center">
