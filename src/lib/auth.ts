@@ -32,7 +32,7 @@ export async function getSessionUser(req: NextRequest) {
     let sessionToken: string | undefined;
     let isAuthHeader = false;
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
+    if (authHeader !== null && authHeader.startsWith('Bearer ')) {
       const token = authHeader.substring(7);
       
       // Check if this is a simple auth token (workaround for Edge Tracking Prevention)
