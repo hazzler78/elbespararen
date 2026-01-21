@@ -171,7 +171,9 @@ export async function GET(req: NextRequest) {
           : "NextAuth configuration error - variables are present but there may be a validation issue",
         missingVariables: missingVars,
         diagnostics,
-        help: "Please check your Cloudflare Pages environment variables and ensure all required variables are set for the Production environment.",
+        help: missingVars.length === 0 && diagnostics.initializationSuccess 
+          ? "This is a known issue with NextAuth v5 beta.30 in Edge runtime. All configuration is correct, but NextAuth validation fails in Edge runtime. Consider migrating to @auth/nextjs (Auth.js) for better Edge runtime support. Migration guide: https://authjs.dev/getting-started/migrating-to-v5"
+          : "Please check your Cloudflare Pages environment variables and ensure all required variables are set for the Production environment.",
         requiredVariables: [
           "GOOGLE_CLIENT_ID",
           "GOOGLE_CLIENT_SECRET", 

@@ -193,6 +193,11 @@ function createAuthOptions() {
   ],
     // Set basePath to ensure NextAuth v5 beta can parse routes correctly in Edge runtime
     basePath: '/api/auth',
+    // Use JWT session strategy for Edge runtime compatibility
+    // Database sessions don't work well in Edge runtime
+    session: {
+      strategy: 'jwt',
+    },
   callbacks: {
     async signIn({ user, account, profile }: { user: any; account?: any; profile?: any }) {
       // Create or update user in database
