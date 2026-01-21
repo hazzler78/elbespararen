@@ -327,21 +327,23 @@ function getAuthHandlers(): { GET?: any; POST?: any } | null {
   // CRITICAL FIX: Inject env vars into process.env for NextAuth validation
   // NextAuth v5 beta checks process.env during request handling, which fails in Edge runtime
   // We need to ensure process.env has the values when NextAuth validates
+  // ALWAYS set them, even if they already exist, to ensure they're available for NextAuth validation
   const clientId = getEnvVar("GOOGLE_CLIENT_ID");
   const clientSecret = getEnvVar("GOOGLE_CLIENT_SECRET");
   const secret = getEnvVar("NEXTAUTH_SECRET");
   const url = getEnvVar("NEXTAUTH_URL") || getEnvVar("NEXT_PUBLIC_APP_URL") || 'https://elbespararen.se';
   
-  if (clientId && !(process.env as any).GOOGLE_CLIENT_ID) {
+  // Always set env vars, even if they already exist, to ensure NextAuth can access them
+  if (clientId) {
     (process.env as any).GOOGLE_CLIENT_ID = clientId;
   }
-  if (clientSecret && !(process.env as any).GOOGLE_CLIENT_SECRET) {
+  if (clientSecret) {
     (process.env as any).GOOGLE_CLIENT_SECRET = clientSecret;
   }
-  if (secret && !(process.env as any).NEXTAUTH_SECRET) {
+  if (secret) {
     (process.env as any).NEXTAUTH_SECRET = secret;
   }
-  if (url && !(process.env as any).NEXTAUTH_URL) {
+  if (url) {
     (process.env as any).NEXTAUTH_URL = url;
   }
   
@@ -502,6 +504,14 @@ export const handlers = {
         if (response.status === 302 || response.status === 307) {
           const location = responseHeaders.get('location');
           console.log(`[auth-config] CALLBACK: Redirecting to: ${location}`);
+          
+          // If NextAuth redirected to error page, log detailed info for debugging
+          if (location && location.includes('/auth/error')) {
+            console.error(`[auth-config] CALLBACK: NextAuth redirected to error page`);
+            console.error(`[auth-config] CALLBACK: This is likely a NextAuth v5 beta Edge runtime validation issue`);
+            console.error(`[auth-config] CALLBACK: Env vars status: clientId=${!!clientId} (${clientId?.length} chars), clientSecret=${!!clientSecret} (${clientSecret?.length} chars), secret=${!!secret} (${secret?.length} chars), url=${url}`);
+            console.error(`[auth-config] CALLBACK: process.env status: GOOGLE_CLIENT_ID=${!!(process.env as any).GOOGLE_CLIENT_ID}, GOOGLE_CLIENT_SECRET=${!!(process.env as any).GOOGLE_CLIENT_SECRET}, NEXTAUTH_SECRET=${!!(process.env as any).NEXTAUTH_SECRET}, NEXTAUTH_URL=${(process.env as any).NEXTAUTH_URL}`);
+          }
         }
         
         return new Response(body, {
@@ -511,6 +521,8 @@ export const handlers = {
         });
       } catch (error) {
         console.error(`[auth-config] CALLBACK: Error handling callback:`, error);
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        console.error(`[auth-config] CALLBACK: Error details: ${errorMessage}`);
         return createConfigErrorResponse(req);
       }
     }
