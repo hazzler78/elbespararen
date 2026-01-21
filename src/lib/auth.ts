@@ -6,26 +6,27 @@ import { createClientForRequest } from "@/lib/supabase/server";
  * Works in both Node.js and Edge runtime
  */
 export async function getSessionUser(req: NextRequest) {
+  // Try Supabase Auth first
   try {
     const supabase = createClientForRequest(req);
     const { data: { user }, error } = await supabase.auth.getUser();
     
-    if (error || !user) {
-      console.log("[auth] No Supabase user found:", error?.message);
-      return null;
+    if (!error && user) {
+      console.log("[auth] Using Supabase Auth, user:", user.email);
+      return {
+        id: user.id,
+        email: user.email!,
+        name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
+        image: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
+      };
     }
-
-    console.log("[auth] Using Supabase Auth, user:", user.email);
-    return {
-      id: user.id,
-      email: user.email!,
-      name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
-      image: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
-    };
+    
+    console.log("[auth] No Supabase user found:", error?.message);
   } catch (error) {
     console.log("[auth] Supabase Auth failed:", error);
-    return null;
   }
+  
+  // Fall back to legacy NextAuth token-based authentication
   try {
     // Get session token from Authorization header first (for Edge Tracking Prevention workaround)
     const authHeaderValue = req.headers.get('authorization');
@@ -33,7 +34,7 @@ export async function getSessionUser(req: NextRequest) {
     let isAuthHeader = false;
     
     if (authHeaderValue !== null) {
-      const headerValue: string = authHeaderValue; // Type assertion after null check
+      const headerValue = authHeaderValue; // TypeScript narrows to string after null check
       if (headerValue.startsWith('Bearer ')) {
         const token = headerValue.substring(7);
       
