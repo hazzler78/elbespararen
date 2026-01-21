@@ -1,29 +1,30 @@
 import { NextRequest } from "next/server";
-import { getServerSession } from "@/lib/auth-config";
+import { createClientForRequest } from "@/lib/supabase/server";
 
 /**
- * Get session user from request cookies
- * Works in both Node.js and Edge runtime by manually decoding JWT token
- * Falls back to NextAuth's getServerSession if available
+ * Get session user from request cookies using Supabase Auth
+ * Works in both Node.js and Edge runtime
  */
 export async function getSessionUser(req: NextRequest) {
-  // Try NextAuth's getServerSession first (if available and working)
   try {
-    if (getServerSession) {
-      const session = await getServerSession();
-      if (session?.user?.email) {
-        console.log("[auth] Using NextAuth getServerSession, user:", session.user.email);
-        return {
-          id: (session.user as any).id || session.user.email,
-          email: session.user.email,
-          name: session.user.name || undefined,
-          image: session.user.image || undefined,
-        };
-      }
+    const supabase = createClientForRequest(req);
+    const { data: { user }, error } = await supabase.auth.getUser();
+    
+    if (error || !user) {
+      console.log("[auth] No Supabase user found:", error?.message);
+      return null;
     }
+
+    console.log("[auth] Using Supabase Auth, user:", user.email);
+    return {
+      id: user.id,
+      email: user.email!,
+      name: user.user_metadata?.full_name || user.user_metadata?.name || undefined,
+      image: user.user_metadata?.avatar_url || user.user_metadata?.picture || undefined,
+    };
   } catch (error) {
-    // Fall back to manual decoding if getServerSession fails
-    console.log("[auth] getServerSession failed, falling back to manual decoding:", error);
+    console.log("[auth] Supabase Auth failed:", error);
+    return null;
   }
   try {
     // Get session token from Authorization header first (for Edge Tracking Prevention workaround)

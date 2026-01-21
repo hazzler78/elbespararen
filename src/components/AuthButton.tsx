@@ -1,19 +1,21 @@
 "use client";
 
-import { useSession, signOut } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { User, LogOut } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 export default function AuthButton() {
-  const { data: session, status } = useSession();
+  const { user, loading, signOut } = useAuth();
+  const router = useRouter();
 
-  if (status === "loading") {
+  if (loading) {
     return (
       <div className="animate-pulse bg-gray-200 rounded-full w-10 h-10"></div>
     );
   }
 
-  if (!session) {
+  if (!user) {
     return (
       <Link
         href="/auth/signin"
@@ -25,12 +27,18 @@ export default function AuthButton() {
     );
   }
 
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  };
+
   return (
     <div className="flex items-center gap-3">
-      {session.user?.image ? (
+      {user.user_metadata?.avatar_url ? (
         <img
-          src={session.user.image}
-          alt={session.user.name || "User"}
+          src={user.user_metadata.avatar_url}
+          alt={user.user_metadata?.full_name || user.email || "User"}
           className="w-10 h-10 rounded-full"
         />
       ) : (
@@ -40,11 +48,11 @@ export default function AuthButton() {
       )}
       <div className="hidden sm:block">
         <p className="text-sm font-medium text-gray-900">
-          {session.user?.name || session.user?.email}
+          {user.user_metadata?.full_name || user.email}
         </p>
       </div>
       <button
-        onClick={() => signOut({ callbackUrl: "/" })}
+        onClick={handleSignOut}
         className="p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
         title="Logga ut"
       >

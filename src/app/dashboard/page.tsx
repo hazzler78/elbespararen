@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -43,7 +43,7 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { data: session, status } = useSession();
+  const { user, loading } = useAuth();
   const router = useRouter();
   const [analyses, setAnalyses] = useState<BillAnalysis[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -58,9 +58,9 @@ export default function DashboardPage() {
       // Log session for debugging
       console.log("[Dashboard] fetchDashboardData called with session:", {
         hasSession: !!session,
-        hasUser: !!session?.user,
-        email: session?.user?.email,
-        id: session?.user?.id
+        hasUser: !!user,
+        email: user?.email,
+        id: user?.id
       });
       
       // Hämta användarinfo (inkl. premium-status)
@@ -201,54 +201,53 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [timeRange, router, session]);
+  }, [timeRange, router, user]);
 
   // Wait for session to be loaded before fetching data
   useEffect(() => {
-    console.log("[Dashboard] Session status:", status, "Session:", session);
-    console.log("[Dashboard] Session user:", session?.user);
+    console.log("[Dashboard] Auth status:", loading ? "loading" : user ? "authenticated" : "unauthenticated");
+    console.log("[Dashboard] User:", user);
     
-    if (status === "loading") {
+    if (loading) {
       // Still loading session, wait
-      console.log("[Dashboard] Waiting for session to load...");
+      console.log("[Dashboard] Waiting for auth to load...");
       return;
     }
     
-    if (status === "unauthenticated") {
+    if (!user) {
       // Not authenticated, redirect to signin
       console.log("[Dashboard] Not authenticated, redirecting to signin");
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
       return;
     }
     
-    if (status === "authenticated" && session) {
-      // Verify session has required data
-      if (!session.user?.email) {
-        console.error("[Dashboard] Session authenticated but missing email! Session:", session);
-        console.error("[Dashboard] Session structure:", JSON.stringify(session, null, 2));
+    if (user) {
+      // Verify user has required data
+      if (!user.email) {
+        console.error("[Dashboard] User authenticated but missing email! User:", user);
         // Redirect to signin if email is missing
         router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
         return;
       }
       
-      // Session is ready, fetch data
-      console.log("[Dashboard] Session authenticated, fetching data...");
-      console.log("[Dashboard] Session user email:", session.user.email);
+      // User is ready, fetch data
+      console.log("[Dashboard] User authenticated, fetching data...");
+      console.log("[Dashboard] User email:", user.email);
       fetchDashboardData();
     }
-  }, [status, session, fetchDashboardData, router]);
+  }, [loading, user, fetchDashboardData, router]);
 
   // Refresh data when page becomes visible (e.g., when returning from result page)
   useEffect(() => {
     const handleVisibilityChange = () => {
-      if (document.visibilityState === 'visible' && status === "authenticated" && session) {
+      if (document.visibilityState === 'visible' && user) {
         console.log("[Dashboard] Page became visible, refreshing data...");
         fetchDashboardData();
       }
     };
 
     const handleFocus = () => {
-      if (status === "authenticated" && session) {
+      if (user) {
         console.log("[Dashboard] Window focused, refreshing data...");
         fetchDashboardData();
       }
@@ -261,7 +260,7 @@ export default function DashboardPage() {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
       window.removeEventListener('focus', handleFocus);
     };
-  }, [status, session, fetchDashboardData]);
+  }, [user, fetchDashboardData]);
 
   if (isLoading) {
     return (
@@ -291,12 +290,12 @@ export default function DashboardPage() {
                 )}
               </div>
               {/* User welcome section */}
-              {session?.user && (
+              {user && (
                 <div className="flex items-center gap-3 mb-1">
-                  {session.user.image ? (
+                  {user.user_metadata?.avatar_url ? (
                     <img
-                      src={session.user.image}
-                      alt={session.user.name || session.user.email || "User"}
+                      src={user.user_metadata.avatar_url}
+                      alt={user.user_metadata?.full_name || user.email || "User"}
                       className="w-8 h-8 rounded-full border-2 border-primary"
                     />
                   ) : (
@@ -306,10 +305,10 @@ export default function DashboardPage() {
                   )}
                   <div>
                     <p className="text-sm font-medium text-gray-900">
-                      Välkommen, {session.user.name || session.user.email?.split('@')[0] || 'Användare'}!
+                      Välkommen, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'Användare'}!
                     </p>
-                    {session.user.email && session.user.name && (
-                      <p className="text-xs text-gray-500">{session.user.email}</p>
+                    {user.email && user.user_metadata?.full_name && (
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     )}
                   </div>
                 </div>

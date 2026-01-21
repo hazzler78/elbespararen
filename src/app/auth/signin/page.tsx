@@ -1,6 +1,6 @@
 "use client";
 
-import { signIn } from "next-auth/react";
+import { createClient } from "@/lib/supabase/client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
 import { Zap, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
@@ -17,10 +17,24 @@ function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [showEmailForm, setShowEmailForm] = useState(false);
 
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
-    // Simple redirect to NextAuth signin endpoint
-    window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    try {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(callbackUrl)}`,
+        },
+      });
+      if (error) {
+        setError(error.message);
+        setIsGoogleLoading(false);
+      }
+    } catch (err) {
+      setError('Ett oväntat fel uppstod. Försök igen.');
+      setIsGoogleLoading(false);
+    }
   };
 
   const handleEmailSignIn = async (e: React.FormEvent) => {
@@ -29,24 +43,21 @@ function SignInForm() {
     setIsLoading(true);
 
     try {
-      const result = await signIn('credentials', {
+      const supabase = createClient();
+      const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        redirect: false,
       });
 
-      if (result?.error) {
+      if (error) {
         setError('Fel e-postadress eller lösenord');
         setIsLoading(false);
         return;
       }
 
-      // Success - wait a bit for session to be set, then redirect
-      // NextAuth needs a moment to set the session cookie
-      await new Promise(resolve => setTimeout(resolve, 100));
-      
-      // Force a session refresh before redirecting
-      window.location.href = callbackUrl;
+      // Success - redirect to callback URL
+      router.push(callbackUrl);
+      router.refresh();
     } catch (err) {
       setError('Ett oväntat fel uppstod. Försök igen.');
       setIsLoading(false);
