@@ -4,7 +4,7 @@
 
 1. **Gå till Supabase Dashboard**
    - Öppna [Supabase Dashboard](https://app.supabase.com/)
-   - Välj ditt projekt
+   - Välj ditt projekt **ELbasen**
 
 2. **Aktivera Google Provider**
    - Gå till **Authentication** > **Providers**
@@ -39,7 +39,8 @@ Du behöver också uppdatera Google Cloud Console för att tillåta Supabase red
    - I **Authorized redirect URIs**, lägg till:
      - `https://[your-project-ref].supabase.co/auth/v1/callback`
      - Hittar du din project ref i Supabase Dashboard > Settings > API > Project URL
-     - Exempel: `https://abcdefghijklmnop.supabase.co/auth/v1/callback`
+     - Exempel: Om din Project URL är `https://abcdefghijklmnop.supabase.co`, lägg till:
+       - `https://abcdefghijklmnop.supabase.co/auth/v1/callback`
 
 3. **Spara ändringar**
    - Klicka på **Save**
