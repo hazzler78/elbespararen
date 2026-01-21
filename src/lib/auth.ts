@@ -56,6 +56,8 @@ export async function getSessionUser(req: NextRequest) {
           
           const { createDatabaseFromBinding } = await import("@/lib/database");
           const db = createDatabaseFromBinding(env?.DB);
+          console.log("[auth] Database type:", db.constructor.name);
+          
           const user = await db.getUserByEmail(decoded.email);
           
           if (user) {
@@ -68,15 +70,19 @@ export async function getSessionUser(req: NextRequest) {
               image: user.image || undefined,
             };
           } else {
-            console.log("[auth] Simple auth token validation failed - user not found:", decoded.email);
-            return null;
+            console.error("[auth] Simple auth token validation failed - user not found:", decoded.email);
+            console.error("[auth] Falling back to cookie-based authentication");
+            // Don't return null immediately - fall through to cookie check
+            // This allows cookie-based auth to work as fallback
+            // Clear the token so we don't try to decode it as a session token
+            sessionToken = undefined;
           }
         }
       } catch (e) {
         // Not a simple auth token, treat as session token
         sessionToken = token;
         isAuthHeader = true;
-        console.log("[auth] Found session token in Authorization header");
+        console.log("[auth] Found session token in Authorization header (not simple token)");
       }
     }
     

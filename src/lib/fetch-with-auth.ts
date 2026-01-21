@@ -11,6 +11,11 @@
  */
 function createAuthToken(session: { user?: { email?: string | null; id?: string } } | null): string | null {
   if (!session?.user?.email) {
+    console.warn("[fetchWithAuth] Cannot create token - session missing email:", {
+      hasSession: !!session,
+      hasUser: !!session?.user,
+      email: session?.user?.email
+    });
     return null;
   }
   
@@ -25,7 +30,9 @@ function createAuthToken(session: { user?: { email?: string | null; id?: string 
   // Base64 encode the token data
   // Note: This is not secure, but works as a workaround for Edge Tracking Prevention
   // Server will validate by checking if user exists in database
-  return btoa(JSON.stringify(tokenData));
+  const token = btoa(JSON.stringify(tokenData));
+  console.log("[fetchWithAuth] Created auth token for:", session.user.email);
+  return token;
 }
 
 /**
@@ -52,7 +59,12 @@ export async function fetchWithAuth(
     const token = createAuthToken(session);
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
+      console.log("[fetchWithAuth] Added Authorization header to request:", url);
+    } else {
+      console.warn("[fetchWithAuth] No token created, will rely on cookies for:", url);
     }
+  } else {
+    console.warn("[fetchWithAuth] No session provided for:", url);
   }
   
   // Always include credentials for cookie fallback
@@ -62,5 +74,16 @@ export async function fetchWithAuth(
     credentials: 'include',
   };
   
-  return fetch(url, fetchOptions);
+  const response = await fetch(url, fetchOptions);
+  
+  // Log auth failures for debugging
+  if (response.status === 401) {
+    console.error("[fetchWithAuth] 401 Unauthorized for:", url, {
+      hasSession: !!session,
+      hasEmail: !!session?.user?.email,
+      headersSent: headers.has('Authorization')
+    });
+  }
+  
+  return response;
 }

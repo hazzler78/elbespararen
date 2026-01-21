@@ -54,6 +54,14 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
       
+      // Log session for debugging
+      console.log("[Dashboard] fetchDashboardData called with session:", {
+        hasSession: !!session,
+        hasUser: !!session?.user,
+        email: session?.user?.email,
+        id: session?.user?.id
+      });
+      
       // Hämta användarinfo (inkl. premium-status)
       const userInfoResponse = await fetchWithAuth('/api/user/info', {}, session);
       if (userInfoResponse.ok) {
@@ -178,7 +186,7 @@ export default function DashboardPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [timeRange, router]);
+  }, [timeRange, router, session]);
 
   // Wait for session to be loaded before fetching data
   useEffect(() => {
@@ -202,11 +210,15 @@ export default function DashboardPage() {
       // Verify session has required data
       if (!session.user?.email) {
         console.error("[Dashboard] Session authenticated but missing email! Session:", session);
-        // Don't redirect immediately, let it try to fetch data first
+        console.error("[Dashboard] Session structure:", JSON.stringify(session, null, 2));
+        // Redirect to signin if email is missing
+        router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/dashboard")}`);
+        return;
       }
       
       // Session is ready, fetch data
       console.log("[Dashboard] Session authenticated, fetching data...");
+      console.log("[Dashboard] Session user email:", session.user.email);
       fetchDashboardData();
     }
   }, [status, session, fetchDashboardData, router]);
