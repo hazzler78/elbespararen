@@ -64,6 +64,7 @@ export function createClient() {
 }
 
 // For Edge runtime (Cloudflare Pages)
+// Note: This function doesn't handle cookie setting - that's done in the route handlers
 export function createClientForRequest(req: NextRequest) {
   const supabaseUrl = getEnvVar('NEXT_PUBLIC_SUPABASE_URL') || getEnvVar('SUPABASE_URL');
   const supabaseAnonKey = getEnvVar('NEXT_PUBLIC_SUPABASE_ANON_KEY') || getEnvVar('SUPABASE_ANON_KEY');
@@ -84,8 +85,8 @@ export function createClientForRequest(req: NextRequest) {
           }))
         },
         setAll(cookiesToSet) {
-          // In Edge runtime, we need to handle cookies differently
-          // This will be handled by middleware
+          // Cookies will be set manually in route handlers for Edge runtime
+          // This is a limitation of Edge runtime - we can't modify cookies here
         },
       },
     }
