@@ -17,7 +17,8 @@ import {
   Newspaper,
   MessageCircle,
   MapPin,
-  FileText
+  FileText,
+  Sparkles
 } from "lucide-react";
 
 const ADMIN_PASSWORD = "grodan2025";
@@ -70,6 +71,12 @@ const navigation = [
     href: "/admin/bill-analyses",
     icon: FileText,
     description: "Granska AI-analyser och besparingsuppskattningar"
+  },
+  {
+    name: "Sätt Premium",
+    href: "/admin/set-premium",
+    icon: Sparkles,
+    description: "Sätt premium-status för användare"
   }
 ];
 
