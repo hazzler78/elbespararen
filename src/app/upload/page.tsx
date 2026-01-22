@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
@@ -20,25 +20,31 @@ export default function UploadPage() {
   const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
 
-  const handleUploadSuccess = (data: BillData) => {
+  const handleUploadSuccess = useCallback((data: BillData) => {
     // Debug: logga vad som sparas
-    console.log('[upload] Sparar billData:', data);
-    console.log('[upload] totalAmount:', data.totalAmount);
+    console.log('[upload] handleUploadSuccess anropad med:', {
+      totalAmount: data.totalAmount,
+      confidence: data.confidence,
+      postalCode: data.postalCode
+    });
     
     // Spara i sessionStorage för att använda på result-sidan
     if (typeof window !== "undefined") {
       sessionStorage.setItem("billData", JSON.stringify(data));
       sessionStorage.removeItem("pendingAnalysis"); // Rensa pending flag
+      console.log('[upload] billData sparad i sessionStorage');
     }
 
     // Om confidence är hög, gå direkt till resultat
     // Annars, gå till confirm-sidan först
     if (data.confidence >= 0.7) {
+      console.log('[upload] Redirectar till /result');
       router.push("/result");
     } else {
+      console.log('[upload] Redirectar till /confirm');
       router.push("/confirm");
     }
-  };
+  }, [router]);
 
   const handleUploadError = (error: string) => {
     console.error("Upload error:", error);
@@ -47,14 +53,34 @@ export default function UploadPage() {
   // Kolla om det finns en pending analysis när sidan laddas (användaren kom tillbaka från registrering/premium)
   useEffect(() => {
     if (authLoading || typeof window === "undefined") {
+      console.log('[upload] useEffect: Väntar på auth eller window är undefined');
       return;
     }
+
+    console.log('[upload] useEffect: Kontrollerar pending analysis...');
+    console.log('[upload] authLoading:', authLoading);
+    console.log('[upload] user:', user ? `${user.email} (${user.id})` : 'null');
 
     const pendingAnalysis = sessionStorage.getItem("pendingAnalysis");
     const billData = sessionStorage.getItem("billData");
     
+    console.log('[upload] pendingAnalysis:', pendingAnalysis);
+    console.log('[upload] billData finns:', !!billData);
+    
     if (pendingAnalysis === "true" && billData) {
-      const data: BillData = JSON.parse(billData);
+      console.log('[upload] ✅ Hittade pending analysis och billData');
+      let data: BillData;
+      try {
+        data = JSON.parse(billData);
+        console.log('[upload] billData parsad:', {
+          totalAmount: data.totalAmount,
+          confidence: data.confidence,
+          postalCode: data.postalCode
+        });
+      } catch (error) {
+        console.error('[upload] ❌ Kunde inte parsa billData:', error);
+        return;
+      }
       
       // Om användaren är inloggad, spara fakturan med user_id
       if (user) {
@@ -70,7 +96,7 @@ export default function UploadPage() {
           .then(res => res.json())
           .then(result => {
             if (result.success) {
-              console.log('[upload] ✅ Faktura sparad med user_id');
+              console.log('[upload] ✅ Faktura sparad med user_id:', result.data?.userId);
             } else {
               console.error('[upload] ❌ Kunde inte spara faktura:', result.error);
             }
@@ -78,13 +104,27 @@ export default function UploadPage() {
           .catch(error => {
             console.error('[upload] ❌ Fel vid sparande av faktura:', error);
           });
+      } else {
+        console.log('[upload] ⚠️ Användare är inte inloggad ännu, väntar...');
+        // Om användaren inte är inloggad ännu, vänta lite och försök igen
+        // Detta kan hända om auth inte har laddats klart ännu
+        return;
       }
       
       // Visa resultatet direkt
+      console.log('[upload] Tar bort pendingAnalysis flagga och visar resultat');
       sessionStorage.removeItem("pendingAnalysis");
       handleUploadSuccess(data);
+    } else {
+      console.log('[upload] ⚠️ Ingen pending analysis hittades');
+      if (!pendingAnalysis) {
+        console.log('[upload] pendingAnalysis är inte "true"');
+      }
+      if (!billData) {
+        console.log('[upload] billData saknas i sessionStorage');
+      }
     }
-  }, [authLoading, user]);
+  }, [authLoading, user, handleUploadSuccess]);
 
   useEffect(() => {
     if (!selectedImage) {

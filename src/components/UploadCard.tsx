@@ -191,13 +191,32 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     
     // Om användaren väljer att skapa konto eller bli premium, redirecta
     if (choice === 'register') {
+      console.log('[UploadCard] Användaren valde att skapa konto');
       // Spara analysresultatet i sessionStorage så det finns kvar efter redirect
       if (analysisResult && typeof window !== "undefined") {
+        console.log('[UploadCard] Sparar analysisResult i sessionStorage:', {
+          totalAmount: analysisResult.totalAmount,
+          confidence: analysisResult.confidence,
+          postalCode: analysisResult.postalCode
+        });
         sessionStorage.setItem("billData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
+        console.log('[UploadCard] ✅ billData och pendingAnalysis sparade i sessionStorage');
+        
+        // Verifiera att det sparades korrekt
+        const savedBillData = sessionStorage.getItem("billData");
+        const savedPending = sessionStorage.getItem("pendingAnalysis");
+        console.log('[UploadCard] Verifiering - billData sparad:', !!savedBillData);
+        console.log('[UploadCard] Verifiering - pendingAnalysis:', savedPending);
+      } else {
+        console.error('[UploadCard] ❌ analysisResult saknas eller window är undefined!');
+        console.error('[UploadCard] analysisResult:', analysisResult);
+        console.error('[UploadCard] window:', typeof window);
       }
       // Redirect till register med callbackUrl tillbaka till upload
-      window.location.href = `/auth/register?callbackUrl=${encodeURIComponent('/upload')}`;
+      const redirectUrl = `/auth/register?callbackUrl=${encodeURIComponent('/upload')}`;
+      console.log('[UploadCard] Redirectar till:', redirectUrl);
+      window.location.href = redirectUrl;
       return;
     }
     
