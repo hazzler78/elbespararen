@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileText, ArrowRight, X, CheckCircle2 } from "lucide-react";
+import { FileText, ArrowRight, X, CheckCircle2, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import AppHeader from "@/components/AppHeader";
@@ -486,8 +486,9 @@ function UploadPageContent() {
             </motion.div>
           )}
         </AnimatePresence>
-      </div>
-    </main>
+        </div>
+      </main>
+    </>
   );
 }
 
