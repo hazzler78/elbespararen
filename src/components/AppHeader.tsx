@@ -107,8 +107,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
               </Link>
             )}
             <Link href="/" className="flex items-center gap-2">
-              <img src="/green_elchef.svg" alt="Elchef" className="w-6 h-6" />
-              <span className="text-xl font-bold text-primary">Elbespararen</span>
+              <img src="/logos/logo_elbespararen.png" alt="Elbespararen" className="h-8 w-auto" />
             </Link>
           </div>
 
