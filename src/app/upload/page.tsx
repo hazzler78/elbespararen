@@ -84,9 +84,14 @@ export default function UploadPage() {
       }
 
       // Om pendingAnalysis finns, betyder det att användaren kom tillbaka från registrering
-      // I så fall ska vi spara fakturan och visa resultatet
-      if (pendingAnalysis === "true") {
-        console.log('[upload] ✅ Hittade pending analysis - användaren kom tillbaka från registrering');
+      // Om pendingAnalysis saknas men användaren precis loggade in, kan det vara att flaggan inte sparades korrekt
+      // I båda fallen ska vi spara fakturan med user_id och visa resultatet
+      const shouldProcessPending = pendingAnalysis === "true" || 
+                                   (pendingAnalysis === null && user); // Fallback: om användaren är inloggad och billData finns
+      
+      if (shouldProcessPending) {
+        console.log('[upload] ✅ Processar pending analysis');
+        console.log('[upload] pendingAnalysis:', pendingAnalysis);
         console.log('[upload] Sparar faktura med user_id och visar resultat');
         
         fetch('/api/user/save-pending-analysis', {
@@ -115,9 +120,7 @@ export default function UploadPage() {
             handleUploadSuccess(data);
           });
       } else {
-        // Om pendingAnalysis saknas men användaren är inloggad och billData finns,
-        // kan det betyda att användaren redan har analyserat en faktura tidigare
-        // I så fall ska vi inte göra något automatiskt
+        // Om pendingAnalysis saknas och användaren är inloggad, kan det betyda att fakturan redan är sparad
         console.log('[upload] ⚠️ Ingen pending analysis hittades');
         console.log('[upload] Användaren är inloggad men pendingAnalysis saknas');
         console.log('[upload] Detta kan betyda att fakturan redan är sparad eller att användaren inte kom från registrering');
