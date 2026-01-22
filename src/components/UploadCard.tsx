@@ -8,7 +8,6 @@ import { BillData, ApiResponse } from "@/lib/types";
 import PostalCodeInput from "./PostalCodeInput";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
-import Link from "next/link";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -19,6 +18,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
+  const [analysisResult, setAnalysisResult] = useState<BillData | null>(null);
+  const [userChoiceMade, setUserChoiceMade] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
@@ -160,7 +162,10 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
       // Track successful bill upload
       AnalyticsEvents.billUploaded(true);
       
-      onUploadSuccess(enhancedData);
+      // Spara resultatet och vänta på användarens val
+      setAnalysisResult(enhancedData);
+      setIsAnalysisComplete(true);
+      setIsUploading(false); // Analysen är klar, men vi väntar på användarens val
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : "Något gick fel";
       setError(errorMessage);
@@ -170,8 +175,39 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
       AnalyticsEvents.errorOccurred('bill_upload_failed');
       
       onUploadError?.(errorMessage);
-    } finally {
       setIsUploading(false);
+    }
+  };
+
+  const handleUserChoice = (choice: 'register' | 'premium' | 'skip') => {
+    if (userChoiceMade) return; // Förhindra dubbelklick
+    
+    setUserChoiceMade(true);
+    
+    // Om användaren väljer att skapa konto eller bli premium, redirecta
+    if (choice === 'register') {
+      // Spara analysresultatet i sessionStorage så det finns kvar efter redirect
+      if (analysisResult && typeof window !== "undefined") {
+        sessionStorage.setItem("billData", JSON.stringify(analysisResult));
+        sessionStorage.setItem("pendingAnalysis", "true");
+      }
+      window.location.href = "/auth/register";
+      return;
+    }
+    
+    if (choice === 'premium') {
+      // Spara analysresultatet i sessionStorage så det finns kvar efter redirect
+      if (analysisResult && typeof window !== "undefined") {
+        sessionStorage.setItem("billData", JSON.stringify(analysisResult));
+        sessionStorage.setItem("pendingAnalysis", "true");
+      }
+      window.location.href = "/premium";
+      return;
+    }
+    
+    // Om användaren väljer att hoppa över, visa resultatet direkt
+    if (choice === 'skip' && analysisResult) {
+      onUploadSuccess(analysisResult);
     }
   };
 
@@ -343,9 +379,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
           </motion.button>
         )}
 
-        {/* Registration Options - Shown during analysis */}
+        {/* Registration Options - Shown during and after analysis until user makes a choice */}
         <AnimatePresence>
-          {isUploading && (
+          {(isUploading || (isAnalysisComplete && !userChoiceMade)) && (
             <motion.div
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
@@ -353,18 +389,24 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
               className="mt-6 pt-6 border-t border-border"
             >
               <p className="text-sm font-medium text-gray-900 mb-4 text-center">
-                Medan vi analyserar din faktura...
+                {isUploading ? (
+                  "Medan vi analyserar din faktura..."
+                ) : (
+                  "Välj ett alternativ för att fortsätta:"
+                )}
               </p>
               <div className="space-y-3">
                 {/* Skapa konto */}
-                <Link
-                  href="/auth/register"
+                <button
+                  onClick={() => handleUserChoice('register')}
+                  disabled={userChoiceMade}
                   className="
                     flex items-center justify-between gap-3
                     w-full p-4 bg-primary text-white rounded-lg
                     hover:bg-primary/90 transition-colors
                     font-medium
                     group
+                    disabled:opacity-50 disabled:cursor-not-allowed
                   "
                 >
                   <div className="flex items-center gap-3">
@@ -377,17 +419,19 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </button>
 
                 {/* Bli premium */}
-                <Link
-                  href="/premium"
+                <button
+                  onClick={() => handleUserChoice('premium')}
+                  disabled={userChoiceMade}
                   className="
                     flex items-center justify-between gap-3
                     w-full p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg
                     hover:from-yellow-500 hover:to-yellow-600 transition-colors
                     font-medium
                     group
+                    disabled:opacity-50 disabled:cursor-not-allowed
                   "
                 >
                   <div className="flex items-center gap-3">
@@ -400,17 +444,16 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </Link>
+                </button>
 
                 {/* Hoppa över */}
                 <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    // Do nothing - user can just wait for analysis
-                  }}
+                  onClick={() => handleUserChoice('skip')}
+                  disabled={userChoiceMade}
                   className="
                     w-full py-2 text-sm text-gray-400 hover:text-gray-500
                     transition-colors
+                    disabled:opacity-50 disabled:cursor-not-allowed
                   "
                 >
                   Hoppa över registrering

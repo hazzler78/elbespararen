@@ -26,6 +26,7 @@ export default function UploadPage() {
     // Spara i sessionStorage för att använda på result-sidan
     if (typeof window !== "undefined") {
       sessionStorage.setItem("billData", JSON.stringify(data));
+      sessionStorage.removeItem("pendingAnalysis"); // Rensa pending flag
     }
 
     // Om confidence är hög, gå direkt till resultat
@@ -40,6 +41,21 @@ export default function UploadPage() {
   const handleUploadError = (error: string) => {
     console.error("Upload error:", error);
   };
+
+  // Kolla om det finns en pending analysis när sidan laddas (användaren kom tillbaka från registrering/premium)
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const pendingAnalysis = sessionStorage.getItem("pendingAnalysis");
+      const billData = sessionStorage.getItem("billData");
+      
+      if (pendingAnalysis === "true" && billData) {
+        // Användaren kom tillbaka efter registrering/premium, visa resultatet direkt
+        const data: BillData = JSON.parse(billData);
+        sessionStorage.removeItem("pendingAnalysis");
+        handleUploadSuccess(data);
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!selectedImage) {
