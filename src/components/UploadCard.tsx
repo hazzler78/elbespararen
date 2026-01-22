@@ -203,21 +203,22 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     // Om användaren väljer att skapa konto eller bli premium, redirecta
     if (choice === 'register') {
       console.log('[UploadCard] Användaren valde att skapa konto');
-      // Spara analysresultatet i sessionStorage så det finns kvar efter redirect
+      // Spara analysresultatet i localStorage så det finns kvar efter OAuth-redirect
+      // localStorage överlever OAuth-redirects bättre än sessionStorage
       if (analysisResult && typeof window !== "undefined") {
-        console.log('[UploadCard] Sparar analysisResult i sessionStorage:', {
+        console.log('[UploadCard] Sparar analysisResult i localStorage:', {
           totalAmount: analysisResult.totalAmount,
           confidence: analysisResult.confidence,
           postalCode: analysisResult.postalCode
         });
-        sessionStorage.setItem("billData", JSON.stringify(analysisResult));
+        localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
-        console.log('[UploadCard] ✅ billData och pendingAnalysis sparade i sessionStorage');
+        console.log('[UploadCard] ✅ billData sparad i localStorage, pendingAnalysis i sessionStorage');
         
         // Verifiera att det sparades korrekt
-        const savedBillData = sessionStorage.getItem("billData");
+        const savedBillData = localStorage.getItem("pendingBillData");
         const savedPending = sessionStorage.getItem("pendingAnalysis");
-        console.log('[UploadCard] Verifiering - billData sparad:', !!savedBillData);
+        console.log('[UploadCard] Verifiering - pendingBillData sparad:', !!savedBillData);
         console.log('[UploadCard] Verifiering - pendingAnalysis:', savedPending);
       } else {
         console.error('[UploadCard] ❌ analysisResult saknas eller window är undefined!');
@@ -233,9 +234,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     }
     
     if (choice === 'premium') {
-      // Spara analysresultatet i sessionStorage så det finns kvar efter redirect
+      // Spara analysresultatet i localStorage så det finns kvar efter OAuth-redirect
       if (analysisResult && typeof window !== "undefined") {
-        sessionStorage.setItem("billData", JSON.stringify(analysisResult));
+        localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
       }
       // Redirect till premium med callbackUrl tillbaka till upload och pendingAnalysis flag
