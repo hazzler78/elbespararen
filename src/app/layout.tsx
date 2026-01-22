@@ -26,6 +26,16 @@ export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: "Elbespararen – Se din faktura med nya ögon",
   description: "AI-driven analys av din elräkning. Hitta onödiga extra avgifter och se hur mycket du kan spara på spotpris.",
+  icons: {
+    icon: [
+      { url: "/logos/logo_elbespararen.png", type: "image/png", sizes: "any" },
+      { url: "/logos/logo.png", type: "image/png", sizes: "32x32" },
+    ],
+    apple: [
+      { url: "/logos/logo_elbespararen.png", type: "image/png" },
+    ],
+    shortcut: "/logos/logo_elbespararen.png",
+  },
   openGraph: {
     url: baseUrl,
     title: "Elbespararen – Se din faktura med nya ögon",
