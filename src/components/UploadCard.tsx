@@ -191,7 +191,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         sessionStorage.setItem("billData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
       }
-      window.location.href = "/auth/register";
+      // Redirect till register med callbackUrl tillbaka till upload
+      window.location.href = `/auth/register?callbackUrl=${encodeURIComponent('/upload')}`;
       return;
     }
     
@@ -201,7 +202,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         sessionStorage.setItem("billData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
       }
-      window.location.href = "/premium";
+      // Redirect till premium med callbackUrl tillbaka till upload
+      window.location.href = `/premium?callbackUrl=${encodeURIComponent('/upload')}`;
       return;
     }
     
