@@ -38,6 +38,17 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     };
   }, []);
 
+  // Rensa state när komponenten mountas för att undvika att visa gammal data
+  useEffect(() => {
+    setIsAnalysisComplete(false);
+    setAnalysisResult(null);
+    setUserChoiceMade(false);
+    setError(null);
+    setIsUploading(false);
+    setFile(null);
+    setPreview(null);
+  }, []);
+
   // Funktion för att spara postal code analytics med debounce
   const savePostalCodeAnalytics = useCallback(async (
     postalCode: string,
