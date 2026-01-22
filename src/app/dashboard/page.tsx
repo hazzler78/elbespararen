@@ -21,7 +21,8 @@ import {
   Crown,
   Lock,
   User,
-  LogOut
+  LogOut,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -51,11 +52,50 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("year");
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   const handleSignOut = async () => {
     await signOut();
     router.push("/");
     router.refresh();
+  };
+
+  const handleDeleteAnalysis = async (id: string) => {
+    if (deletingId === id) return; // Förhindra dubbelklick
+    
+    setDeletingId(id);
+    try {
+      const session = user ? {
+        user: {
+          email: user.email || undefined,
+          id: user.id
+        }
+      } : null;
+
+      const response = await fetchWithAuth(`/api/user/bill-analyses/${id}`, {
+        method: 'DELETE',
+      }, session);
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Kunde inte ta bort faktura');
+      }
+
+      // Ta bort från listan
+      setAnalyses(prev => prev.filter(a => a.id !== id));
+      
+      // Uppdatera statistik
+      await fetchDashboardData();
+      
+      console.log(`[Dashboard] ✅ Faktura ${id} borttagen`);
+    } catch (error) {
+      console.error('[Dashboard] ❌ Fel vid borttagning av faktura:', error);
+      alert(error instanceof Error ? error.message : 'Kunde inte ta bort faktura');
+    } finally {
+      setDeletingId(null);
+      setConfirmDeleteId(null);
+    }
   };
 
   const fetchDashboardData = useCallback(async () => {
@@ -574,7 +614,7 @@ export default function DashboardPage() {
               analyses.map((analysis) => (
                 <div
                   key={analysis.id}
-                  className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all cursor-pointer"
+                  className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all"
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
@@ -615,8 +655,8 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="text-right">
-                      <div className="text-sm text-gray-500 mb-1">
+                    <div className="text-right flex flex-col items-end gap-2">
+                      <div className="text-sm text-gray-500">
                         {new Date(analysis.createdAt).toLocaleDateString('sv-SE')}
                       </div>
                       <div className={`text-xs px-2 py-1 rounded-full ${
@@ -628,6 +668,21 @@ export default function DashboardPage() {
                       }`}>
                         {analysis.aiConfidence ? `${Math.round(analysis.aiConfidence * 100)}% säker` : 'Okänt'}
                       </div>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmDeleteId(analysis.id);
+                        }}
+                        disabled={deletingId === analysis.id}
+                        className="mt-2 p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Ta bort faktura"
+                      >
+                        {deletingId === analysis.id ? (
+                          <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <Trash2 className="w-4 h-4" />
+                        )}
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -636,6 +691,46 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Bekräftelsedialog för borttagning */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6">
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Ta bort faktura?
+            </h3>
+            <p className="text-sm text-gray-600 mb-6">
+              Är du säker på att du vill ta bort denna faktura? Denna åtgärd kan inte ångras.
+            </p>
+            <div className="flex gap-3 justify-end">
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                disabled={deletingId === confirmDeleteId}
+                className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Avbryt
+              </button>
+              <button
+                onClick={() => confirmDeleteId && handleDeleteAnalysis(confirmDeleteId)}
+                disabled={deletingId === confirmDeleteId}
+                className="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                {deletingId === confirmDeleteId ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    Tar bort...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    Ta bort
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
