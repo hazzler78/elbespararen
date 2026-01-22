@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
@@ -19,6 +19,7 @@ export default function UploadPage() {
   const router = useRouter();
   const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
+  const hasProcessedPendingRef = useRef(false);
 
   const handleUploadSuccess = useCallback((data: BillData) => {
     // Debug: logga vad som sparas
@@ -52,6 +53,11 @@ export default function UploadPage() {
 
   // Kolla om det finns en pending analysis när sidan laddas (användaren kom tillbaka från registrering/premium)
   useEffect(() => {
+    // Förhindra dubbel körning
+    if (hasProcessedPendingRef.current) {
+      return;
+    }
+
     if (authLoading || typeof window === "undefined") {
       console.log('[upload] useEffect: Väntar på auth eller window är undefined');
       return;
@@ -70,6 +76,8 @@ export default function UploadPage() {
     // ENDAST om pendingAnalysis === "true" ska vi spara fakturan
     // Detta betyder att användaren kom tillbaka från registrering/premium
     if (pendingAnalysis === "true" && billData && user) {
+      hasProcessedPendingRef.current = true; // Markera som processad
+      
       let data: BillData;
       try {
         data = JSON.parse(billData);
@@ -121,6 +129,7 @@ export default function UploadPage() {
       if (billData && !pendingAnalysis) {
         console.log('[upload] Rensar gammal billData från sessionStorage (användaren navigerade hit, inte från registrering)');
         sessionStorage.removeItem("billData");
+        hasProcessedPendingRef.current = true; // Markera som processad efter rensning
       }
       console.log('[upload] ⚠️ Ingen pending analysis hittades');
       if (!pendingAnalysis) {
