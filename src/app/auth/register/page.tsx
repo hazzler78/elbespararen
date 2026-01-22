@@ -90,31 +90,14 @@ function RegisterForm() {
       });
 
       if (signUpError) {
-        setError(signUpError.message || 'Kunde inte skapa konto');
+        // Handle specific Supabase errors
+        if (signUpError.message.includes('already registered') || signUpError.message.includes('already exists')) {
+          setError('En användare med denna e-postadress finns redan. Försök logga in istället.');
+        } else {
+          setError(signUpError.message || 'Kunde inte skapa konto');
+        }
         setIsLoading(false);
         return;
-      }
-
-      // Also create user in our database for consistency
-      try {
-        const response = await fetch('/api/auth/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          }),
-        });
-
-        const data = await response.json();
-        if (!response.ok && !data.error?.includes('finns redan')) {
-          console.warn('[Register] Could not create user in database:', data.error);
-          // Don't fail registration if database save fails
-        }
-      } catch (dbError) {
-        console.warn('[Register] Database save error (non-critical):', dbError);
-        // Don't fail registration if database save fails
       }
 
       // Check if email confirmation is required
@@ -127,7 +110,7 @@ function RegisterForm() {
 
       // If we have a session, user is automatically logged in
       if (signUpData.session) {
-        // Redirect to callback URL
+        // User created and logged in successfully - redirect immediately
         router.push(callbackUrl);
         router.refresh();
       } else {
