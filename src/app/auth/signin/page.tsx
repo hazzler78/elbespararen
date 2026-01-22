@@ -44,21 +44,34 @@ function SignInForm() {
 
     try {
       const supabase = createClient();
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
 
       if (error) {
-        setError('Fel e-postadress eller lösenord');
+        // Check for specific error types
+        if (error.message.includes('Email not confirmed') || error.message.includes('email_not_confirmed')) {
+          setError('Du måste bekräfta din e-postadress innan du kan logga in. Kontrollera din inkorg för bekräftelselänken.');
+        } else if (error.message.includes('Invalid login credentials') || error.message.includes('invalid_credentials')) {
+          setError('Fel e-postadress eller lösenord');
+        } else {
+          setError(error.message || 'Fel e-postadress eller lösenord');
+        }
         setIsLoading(false);
         return;
       }
 
       // Success - redirect to callback URL
-      router.push(callbackUrl);
-      router.refresh();
+      if (data?.session) {
+        router.push(callbackUrl);
+        router.refresh();
+      } else {
+        setError('Inloggningen lyckades men ingen session skapades. Försök igen.');
+        setIsLoading(false);
+      }
     } catch (err) {
+      console.error('Sign in error:', err);
       setError('Ett oväntat fel uppstod. Försök igen.');
       setIsLoading(false);
     }

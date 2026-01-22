@@ -120,7 +120,7 @@ function RegisterForm() {
       // Check if email confirmation is required
       if (signUpData.user && !signUpData.session) {
         // Email confirmation required
-        setError('Kontrollera din e-post för att bekräfta ditt konto innan du loggar in.');
+        setError('Konto skapat! Kontrollera din e-post för att bekräfta ditt konto innan du kan logga in. Bekräftelselänken skickades till ' + formData.email);
         setIsLoading(false);
         return;
       }
@@ -132,7 +132,8 @@ function RegisterForm() {
         router.refresh();
       } else {
         // Should not happen, but handle it
-        setError('Konto skapat men kunde inte logga in. Kontrollera din e-post för bekräftelse.');
+        console.warn('[Register] No session after signup:', { user: signUpData.user, session: signUpData.session });
+        setError('Konto skapat men kunde inte logga in automatiskt. Kontrollera din e-post för bekräftelse eller försök logga in manuellt.');
         setIsLoading(false);
       }
     } catch (err) {
