@@ -1,10 +1,11 @@
 "use client";
 
-import { Suspense, useEffect } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 import AppHeader from "@/components/AppHeader";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
@@ -32,6 +33,8 @@ function OAuthRedirectHandler() {
 }
 
 export default function Home() {
+  const [logoError, setLogoError] = useState(false);
+
   return (
     <>
       <Suspense fallback={null}>
@@ -49,17 +52,15 @@ export default function Home() {
           >
             {/* Logo/Title */}
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <img 
-                src="/logos/logo_elbespararen.png" 
+              <Image 
+                src={logoError ? "/logos/logo.png" : "/logos/logo_elbespararen.png"} 
                 alt="Elbespararen" 
+                width={120}
+                height={24}
                 className="h-6 w-auto object-contain"
-                onError={(e) => {
-                  console.error('[Home] Logo failed to load:', e);
-                  // Fallback till logo.png om logo_elbespararen.png inte laddas
-                  const target = e.target as HTMLImageElement;
-                  if (target.src !== '/logos/logo.png') {
-                    target.src = '/logos/logo.png';
-                  }
+                onError={() => {
+                  console.error('[Home] Logo failed to load, using fallback');
+                  setLogoError(true);
                 }}
               />
             </div>

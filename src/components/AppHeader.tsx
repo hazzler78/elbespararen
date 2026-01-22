@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { usePathname, useRouter } from "next/navigation";
 import Link from "next/link";
+import Image from "next/image";
 import { 
   User, 
   LogOut, 
@@ -29,6 +30,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
   const [isPremium, setIsPremium] = useState(false);
   const [isLoadingPremium, setIsLoadingPremium] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [logoError, setLogoError] = useState(false);
 
   // Hämta premium-status om användaren är inloggad
   useEffect(() => {
@@ -107,17 +109,15 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
               </Link>
             )}
             <Link href="/" className="flex items-center gap-2">
-              <img 
-                src="/logos/logo_elbespararen.png" 
+              <Image 
+                src={logoError ? "/logos/logo.png" : "/logos/logo_elbespararen.png"} 
                 alt="Elbespararen" 
+                width={160}
+                height={32}
                 className="h-8 w-auto object-contain"
-                onError={(e) => {
-                  console.error('[AppHeader] Logo failed to load:', e);
-                  // Fallback till logo.png om logo_elbespararen.png inte laddas
-                  const target = e.target as HTMLImageElement;
-                  if (target.src !== '/logos/logo.png') {
-                    target.src = '/logos/logo.png';
-                  }
+                onError={() => {
+                  console.error('[AppHeader] Logo failed to load, using fallback');
+                  setLogoError(true);
                 }}
               />
             </Link>
