@@ -20,7 +20,8 @@ import {
   Sparkles,
   Crown,
   Lock,
-  User
+  User,
+  LogOut
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -43,13 +44,19 @@ interface DashboardStats {
 }
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, loading, signOut } = useAuth();
   const router = useRouter();
   const [analyses, setAnalyses] = useState<BillAnalysis[]>([]);
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("year");
+
+  const handleSignOut = async () => {
+    await signOut();
+    router.push("/");
+    router.refresh();
+  };
 
   const fetchDashboardData = useCallback(async () => {
     try {
@@ -343,6 +350,14 @@ export default function DashboardPage() {
                 <Upload className="w-4 h-4" />
                 Analysera ny faktura
               </Link>
+              <button
+                onClick={handleSignOut}
+                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                title="Logga ut"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="hidden sm:inline">Logga ut</span>
+              </button>
             </div>
           </div>
         </div>
