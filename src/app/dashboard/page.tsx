@@ -121,93 +121,48 @@ export default function DashboardPage() {
       const statsData = await statsResponse.json();
       const stats = statsData.success ? statsData.data : null;
       
-      // Mock data för demonstration om ingen data finns
-      const mockAnalyses: BillAnalysis[] = [
-        {
-          id: "1",
-          billData: {
-            elnatCost: 575,
-            elhandelCost: 270,
-            extraFeesTotal: 79,
-            extraFeesDetailed: [
-              { label: "Rörliga kostnader", amount: 17.53, confidence: 0.9 },
-              { label: "Fast påslag", amount: 17.02, confidence: 0.9 },
-              { label: "Elavtal årsavgift", amount: 44.84, confidence: 0.9 }
-            ],
-            totalKWh: 425,
-            period: "2025-01-01 till 2025-01-31",
-            contractType: "fast",
-            confidence: 0.95,
-            totalAmount: 1059,
-            postalCode: "12345",
-            priceArea: "se3"
-          },
-          savings: {
-            currentCost: 1059,
-            cheapestAlternative: 960,
-            potentialSavings: 99,
-            savingsPercentage: 9.4
-          },
-          createdAt: new Date("2025-01-15"),
-          validationStatus: "correct"
-        },
-        {
-          id: "2",
-          billData: {
-            elnatCost: 620,
-            elhandelCost: 310,
-            extraFeesTotal: 85,
-            extraFeesDetailed: [
-              { label: "Månadsavgift", amount: 39.20, confidence: 0.9 },
-              { label: "Påslag", amount: 45.80, confidence: 0.9 }
-            ],
-            totalKWh: 480,
-            period: "2024-12-01 till 2024-12-31",
-            contractType: "rörligt",
-            confidence: 0.92,
-            totalAmount: 1015,
-            postalCode: "12345",
-            priceArea: "se3"
-          },
-          savings: {
-            currentCost: 1015,
-            cheapestAlternative: 930,
-            potentialSavings: 85,
-            savingsPercentage: 8.4
-          },
-          createdAt: new Date("2024-12-20"),
-          validationStatus: "correct"
-        }
-      ];
-
-      // Använd riktig data om den finns, annars mock
-      const finalAnalyses = analyses.length > 0 ? analyses : mockAnalyses;
-      console.log(`[Dashboard] Setting analyses: ${finalAnalyses.length} total (${analyses.length} real, ${analyses.length === 0 ? mockAnalyses.length : 0} mock)`);
+      // Använd riktig data - inga mockdata
+      console.log(`[Dashboard] Setting analyses: ${analyses.length} real analyses`);
       if (analyses.length === 0) {
-        console.warn(`[Dashboard] ⚠️ No real analyses found, using mock data. Check if bills are being saved with user_id.`);
+        console.log(`[Dashboard] No analyses found for user. User should upload a bill to see data.`);
       }
-      setAnalyses(finalAnalyses);
+      setAnalyses(analyses);
       
-      // Använd riktig statistik om den finns
+      // Använd riktig statistik om den finns, annars visa tom statistik
       if (stats) {
         setStats(stats);
-      } else {
-        // Beräkna statistik från mock data
-        const totalSavings = mockAnalyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
-        const avgSavings = mockAnalyses.length > 0 ? totalSavings / mockAnalyses.length : 0;
-        const latestCost = mockAnalyses[0]?.billData.totalAmount || 0;
+      } else if (analyses.length > 0) {
+        // Om vi har analyser men ingen statistik, beräkna från analyserna
+        const totalSavings = analyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
+        const avgSavings = analyses.length > 0 ? totalSavings / analyses.length : 0;
+        const latestCost = analyses[0]?.billData.totalAmount || 0;
         
         setStats({
-          totalAnalyses: mockAnalyses.length,
+          totalAnalyses: analyses.length,
           totalSavings,
           averageSavings: avgSavings,
           currentMonthlyCost: latestCost,
-          lastAnalysisDate: mockAnalyses[0]?.createdAt.toISOString() || null,
-          trend: 'down',
+          lastAnalysisDate: analyses[0]?.createdAt.toISOString() || null,
+          trend: 'stable',
           benchmarkComparison: {
-            percentile: 65,
-            averageInArea: 920,
+            percentile: 50,
+            averageInArea: latestCost,
             yourCost: latestCost
+          }
+        });
+      } else {
+        // Ingen data alls - visa tom statistik
+        setStats({
+          totalAnalyses: 0,
+          totalSavings: 0,
+          averageSavings: 0,
+          currentMonthlyCost: 0,
+          lastAnalysisDate: null,
+          trend: 'stable',
+          benchmarkComparison: {
+            percentile: 50,
+            averageInArea: 0,
+            yourCost: 0
           }
         });
       }
