@@ -10,14 +10,18 @@
 console.log('🧪 Testskript för faktura-sparande');
 console.log('=====================================\n');
 
-// Test 1: Kontrollera sessionStorage
+// Test 1: Kontrollera sessionStorage och localStorage
 function testSessionStorage() {
-  console.log('📦 Test 1: Kontrollera sessionStorage');
-  const billData = sessionStorage.getItem('billData');
+  console.log('📦 Test 1: Kontrollera sessionStorage och localStorage');
+  const billDataFromSession = sessionStorage.getItem('billData');
+  const billDataFromLocal = localStorage.getItem('pendingBillData');
   const pendingAnalysis = sessionStorage.getItem('pendingAnalysis');
   
-  console.log('billData finns:', !!billData);
+  console.log('billData från sessionStorage:', !!billDataFromSession);
+  console.log('pendingBillData från localStorage:', !!billDataFromLocal);
   console.log('pendingAnalysis:', pendingAnalysis);
+  
+  const billData = billDataFromLocal || billDataFromSession;
   
   if (billData) {
     try {
@@ -26,9 +30,12 @@ function testSessionStorage() {
       console.log('   - totalAmount:', parsed.totalAmount);
       console.log('   - confidence:', parsed.confidence);
       console.log('   - postalCode:', parsed.postalCode);
+      console.log('   - Källa:', billDataFromLocal ? 'localStorage' : 'sessionStorage');
     } catch (e) {
       console.error('❌ billData är inte giltig JSON:', e);
     }
+  } else {
+    console.log('⚠️  Ingen billData hittades i varken localStorage eller sessionStorage');
   }
   console.log('');
 }
@@ -37,11 +44,16 @@ function testSessionStorage() {
 async function testSavePendingAnalysis() {
   console.log('🌐 Test 2: Testa API-endpoint /api/user/save-pending-analysis');
   
-  const billData = sessionStorage.getItem('billData');
+  const billDataFromLocal = localStorage.getItem('pendingBillData');
+  const billDataFromSession = sessionStorage.getItem('billData');
+  const billData = billDataFromLocal || billDataFromSession;
+  
   if (!billData) {
-    console.log('⚠️  Ingen billData i sessionStorage. Kör detta efter att ha analyserat en faktura.');
+    console.log('⚠️  Ingen billData i varken localStorage eller sessionStorage. Kör detta efter att ha analyserat en faktura.');
     return;
   }
+  
+  console.log('   - Använder billData från:', billDataFromLocal ? 'localStorage' : 'sessionStorage');
   
   try {
     const response = await fetch('/api/user/save-pending-analysis', {
