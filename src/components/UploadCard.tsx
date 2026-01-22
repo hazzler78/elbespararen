@@ -203,22 +203,31 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     // Om användaren väljer att skapa konto eller bli premium, redirecta
     if (choice === 'register') {
       console.log('[UploadCard] Användaren valde att skapa konto');
-      // Spara analysresultatet i localStorage så det finns kvar efter OAuth-redirect
-      // localStorage överlever OAuth-redirects bättre än sessionStorage
+      // Spara analysresultatet i cookie så det finns kvar efter OAuth-redirect
+      // Cookies överlever OAuth-redirects bättre än localStorage/sessionStorage
       if (analysisResult && typeof window !== "undefined") {
-        console.log('[UploadCard] Sparar analysisResult i localStorage:', {
+        console.log('[UploadCard] Sparar analysisResult i cookie:', {
           totalAmount: analysisResult.totalAmount,
           confidence: analysisResult.confidence,
           postalCode: analysisResult.postalCode
         });
+        
+        // Spara i cookie (giltig i 1 timme, säkert för OAuth-redirects)
+        const cookieValue = encodeURIComponent(JSON.stringify(analysisResult));
+        document.cookie = `pendingBillData=${cookieValue}; path=/; max-age=3600; SameSite=Lax`;
+        
+        // Spara också i localStorage och sessionStorage som backup
         localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
-        console.log('[UploadCard] ✅ billData sparad i localStorage, pendingAnalysis i sessionStorage');
+        
+        console.log('[UploadCard] ✅ billData sparad i cookie, localStorage och sessionStorage');
         
         // Verifiera att det sparades korrekt
         const savedBillData = localStorage.getItem("pendingBillData");
         const savedPending = sessionStorage.getItem("pendingAnalysis");
-        console.log('[UploadCard] Verifiering - pendingBillData sparad:', !!savedBillData);
+        const cookieExists = document.cookie.includes("pendingBillData");
+        console.log('[UploadCard] Verifiering - pendingBillData i cookie:', cookieExists);
+        console.log('[UploadCard] Verifiering - pendingBillData i localStorage:', !!savedBillData);
         console.log('[UploadCard] Verifiering - pendingAnalysis:', savedPending);
       } else {
         console.error('[UploadCard] ❌ analysisResult saknas eller window är undefined!');
@@ -234,8 +243,10 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     }
     
     if (choice === 'premium') {
-      // Spara analysresultatet i localStorage så det finns kvar efter OAuth-redirect
+      // Spara analysresultatet i cookie så det finns kvar efter OAuth-redirect
       if (analysisResult && typeof window !== "undefined") {
+        const cookieValue = encodeURIComponent(JSON.stringify(analysisResult));
+        document.cookie = `pendingBillData=${cookieValue}; path=/; max-age=3600; SameSite=Lax`;
         localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
       }

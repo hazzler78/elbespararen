@@ -73,14 +73,23 @@ function UploadPageContent() {
     const pendingAnalysisFromUrl = searchParams.get("pendingAnalysis");
     const pendingAnalysis = pendingAnalysisFromStorage === "true" || pendingAnalysisFromUrl === "1";
     
-    // Först kolla localStorage (för OAuth-redirects), sedan sessionStorage (för normala flöden)
+    // Kolla cookie först (överlever OAuth-redirects bäst), sedan localStorage, sedan sessionStorage
+    let billDataFromCookie: string | null = null;
+    if (typeof window !== "undefined") {
+      const cookies = document.cookie.split(';');
+      const pendingBillDataCookie = cookies.find(c => c.trim().startsWith('pendingBillData='));
+      if (pendingBillDataCookie) {
+        billDataFromCookie = decodeURIComponent(pendingBillDataCookie.split('=')[1]);
+      }
+    }
     const billDataFromLocalStorage = typeof window !== "undefined" ? localStorage.getItem("pendingBillData") : null;
     const billDataFromSessionStorage = typeof window !== "undefined" ? sessionStorage.getItem("billData") : null;
-    const billData = billDataFromLocalStorage || billDataFromSessionStorage;
+    const billData = billDataFromCookie || billDataFromLocalStorage || billDataFromSessionStorage;
     
     console.log('[upload] pendingAnalysis från sessionStorage:', pendingAnalysisFromStorage);
     console.log('[upload] pendingAnalysis från URL:', pendingAnalysisFromUrl);
     console.log('[upload] pendingAnalysis (kombinerad):', pendingAnalysis);
+    console.log('[upload] billData från cookie:', !!billDataFromCookie);
     console.log('[upload] billData från localStorage:', !!billDataFromLocalStorage);
     console.log('[upload] billData från sessionStorage:', !!billDataFromSessionStorage);
     console.log('[upload] billData (kombinerad):', !!billData);
@@ -128,8 +137,10 @@ function UploadPageContent() {
             console.error('[upload] ❌ Kunde inte spara faktura:', result.error);
           }
           // Visa resultatet oavsett om sparandet lyckades eller inte
-          // Rensa både localStorage och sessionStorage
+          // Rensa cookie, localStorage och sessionStorage
           if (typeof window !== "undefined") {
+            // Rensa cookie
+            document.cookie = "pendingBillData=; path=/; max-age=0";
             sessionStorage.removeItem("pendingAnalysis");
             localStorage.removeItem("pendingBillData");
             sessionStorage.removeItem("billData");
@@ -139,8 +150,10 @@ function UploadPageContent() {
         .catch(error => {
           console.error('[upload] ❌ Fel vid sparande av faktura:', error);
           // Visa resultatet ändå
-          // Rensa både localStorage och sessionStorage
+          // Rensa cookie, localStorage och sessionStorage
           if (typeof window !== "undefined") {
+            // Rensa cookie
+            document.cookie = "pendingBillData=; path=/; max-age=0";
             sessionStorage.removeItem("pendingAnalysis");
             localStorage.removeItem("pendingBillData");
             sessionStorage.removeItem("billData");
@@ -153,9 +166,10 @@ function UploadPageContent() {
       return;
     } else {
       // Om användaren bara navigerar till upload-sidan (inte från registrering),
-      // rensa gammal billData från både localStorage och sessionStorage för att undvika förvirring
+      // rensa gammal billData från cookie, localStorage och sessionStorage för att undvika förvirring
       if (billData && !pendingAnalysis && typeof window !== "undefined") {
-        console.log('[upload] Rensar gammal billData från localStorage och sessionStorage (användaren navigerade hit, inte från registrering)');
+        console.log('[upload] Rensar gammal billData från cookie, localStorage och sessionStorage (användaren navigerade hit, inte från registrering)');
+        document.cookie = "pendingBillData=; path=/; max-age=0";
         localStorage.removeItem("pendingBillData");
         sessionStorage.removeItem("billData");
         hasProcessedPendingRef.current = true; // Markera som processad efter rensning
