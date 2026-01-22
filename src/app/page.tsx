@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { Eye, TrendingDown, Shield, ArrowRight, Sparkles } from "lucide-react";
 import Link from "next/link";
+import AppHeader from "@/components/AppHeader";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 import NewsletterSignup from "@/components/NewsletterSignup";
@@ -36,6 +37,7 @@ export default function Home() {
       <Suspense fallback={null}>
         <OAuthRedirectHandler />
       </Suspense>
+      <AppHeader />
     <main className="min-h-screen">
       {/* Hero Section */}
       <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">

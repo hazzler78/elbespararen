@@ -2,10 +2,11 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Share2, LayoutDashboard } from "lucide-react";
+import { Download, Share2, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
+import AppHeader from "@/components/AppHeader";
 import ResultSummary from "@/components/ResultSummary";
 import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
@@ -76,34 +77,10 @@ export default function ResultPage() {
 
   return (
     <>
+      <AppHeader showBackButton={true} backHref="/" />
       <main className="min-h-screen bg-background py-12 px-4 pb-24">
         <div className="max-w-4xl mx-auto">
-          {/* Header */}
-          <div
-            className="mb-8 flex items-center justify-between"
-          >
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Tillbaka
-            </Link>
-
-            <div className="flex items-center gap-2">
-              {/* Dashboard knapp om användaren är inloggad */}
-              {!authLoading && user && (
-                <Link
-                  href="/dashboard"
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  <span className="hidden sm:inline">Mitt Dashboard</span>
-                  <span className="sm:hidden">Dashboard</span>
-                </Link>
-              )}
-              
-              <div className="flex gap-2">
+          <div className="flex items-center justify-end gap-2 mb-8">
                 <button
                   onClick={() => {
                     if (typeof window !== "undefined") {
@@ -131,8 +108,6 @@ export default function ResultPage() {
                   <Share2 className="w-5 h-5" />
                 </button>
               </div>
-            </div>
-          </div>
 
           {/* Result Summary */}
           <div className="mb-8">

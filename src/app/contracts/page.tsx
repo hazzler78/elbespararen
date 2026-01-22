@@ -2,8 +2,9 @@
 
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, MapPin, CheckCircle2, AlertCircle } from "lucide-react";
+import { MapPin, CheckCircle2, AlertCircle } from "lucide-react";
 import Link from "next/link";
+import AppHeader from "@/components/AppHeader";
 import PostalCodeInput from "@/components/PostalCodeInput";
 import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
