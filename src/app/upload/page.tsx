@@ -293,6 +293,7 @@ function UploadPageContent() {
         <UploadCard
           onUploadSuccess={handleUploadSuccess}
           onUploadError={handleUploadError}
+          isUserLoggedIn={!!user}
         />
 
         {/* Info */}

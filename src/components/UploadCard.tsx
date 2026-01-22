@@ -12,9 +12,10 @@ import { isValidSwedishPostalCode } from "@/lib/price-areas";
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
   onUploadError?: (error: string) => void;
+  isUserLoggedIn?: boolean; // Om användaren redan är inloggad, hoppa över registreringsalternativen
 }
 
-export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCardProps) {
+export default function UploadCard({ onUploadSuccess, onUploadError, isUserLoggedIn = false }: UploadCardProps) {
   const [file, setFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -173,7 +174,15 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
       // Track successful bill upload
       AnalyticsEvents.billUploaded(true);
       
-      // Spara resultatet och vänta på användarens val
+      // Om användaren redan är inloggad, fakturan är redan sparad med user_id
+      // Gå direkt till resultat utan att visa registreringsalternativen
+      if (isUserLoggedIn) {
+        console.log('[UploadCard] Användaren är redan inloggad, fakturan är redan sparad. Går direkt till resultat.');
+        onUploadSuccess(enhancedData);
+        return;
+      }
+      
+      // Spara resultatet och vänta på användarens val (endast om inte inloggad)
       setAnalysisResult(enhancedData);
       setIsAnalysisComplete(true);
       setIsUploading(false); // Analysen är klar, men vi väntar på användarens val
