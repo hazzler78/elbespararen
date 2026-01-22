@@ -96,7 +96,6 @@ export default function ResultPage() {
                 <Link
                   href="/dashboard"
                   className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                  onClick={() => AnalyticsEvents.dashboardAccessed('result_page')}
                 >
                   <LayoutDashboard className="w-4 h-4" />
                   <span className="hidden sm:inline">Mitt Dashboard</span>
@@ -247,7 +246,6 @@ export default function ResultPage() {
               <Link
                 href="/dashboard"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
-                onClick={() => AnalyticsEvents.dashboardAccessed('result_page_cta')}
               >
                 <LayoutDashboard className="w-5 h-5" />
                 Gå till Mitt Dashboard
