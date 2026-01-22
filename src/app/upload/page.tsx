@@ -68,15 +68,26 @@ function UploadPageContent() {
     console.log('[upload] authLoading:', authLoading);
     console.log('[upload] user:', user ? `${user.email} (${user.id})` : 'null');
 
-    const pendingAnalysis = sessionStorage.getItem("pendingAnalysis");
-    const billData = sessionStorage.getItem("billData");
+    // Kolla både sessionStorage och URL-parametrar för pendingAnalysis
+    const pendingAnalysisFromStorage = typeof window !== "undefined" ? sessionStorage.getItem("pendingAnalysis") : null;
+    const pendingAnalysisFromUrl = searchParams.get("pendingAnalysis");
+    const pendingAnalysis = pendingAnalysisFromStorage === "true" || pendingAnalysisFromUrl === "1";
+    const billData = typeof window !== "undefined" ? sessionStorage.getItem("billData") : null;
     
-    console.log('[upload] pendingAnalysis:', pendingAnalysis);
+    console.log('[upload] pendingAnalysis från sessionStorage:', pendingAnalysisFromStorage);
+    console.log('[upload] pendingAnalysis från URL:', pendingAnalysisFromUrl);
+    console.log('[upload] pendingAnalysis (kombinerad):', pendingAnalysis);
     console.log('[upload] billData finns:', !!billData);
     
-    // ENDAST om pendingAnalysis === "true" ska vi spara fakturan
+    // Om pendingAnalysis finns i URL men inte i sessionStorage, sätt den i sessionStorage
+    if (pendingAnalysisFromUrl === "1" && pendingAnalysisFromStorage !== "true" && typeof window !== "undefined") {
+      console.log('[upload] Sätter pendingAnalysis i sessionStorage från URL-parameter');
+      sessionStorage.setItem("pendingAnalysis", "true");
+    }
+    
+    // ENDAST om pendingAnalysis är true ska vi spara fakturan
     // Detta betyder att användaren kom tillbaka från registrering/premium
-    if (pendingAnalysis === "true" && billData && user) {
+    if (pendingAnalysis && billData && user) {
       hasProcessedPendingRef.current = true; // Markera som processad
       
       let data: BillData;
@@ -127,7 +138,7 @@ function UploadPageContent() {
     } else {
       // Om användaren bara navigerar till upload-sidan (inte från registrering),
       // rensa gammal billData från sessionStorage för att undvika förvirring
-      if (billData && !pendingAnalysis) {
+      if (billData && !pendingAnalysis && typeof window !== "undefined") {
         console.log('[upload] Rensar gammal billData från sessionStorage (användaren navigerade hit, inte från registrering)');
         sessionStorage.removeItem("billData");
         hasProcessedPendingRef.current = true; // Markera som processad efter rensning
