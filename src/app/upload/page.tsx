@@ -7,6 +7,7 @@ import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import { BillData } from "@/lib/types";
+import { useAuth } from "@/hooks/useAuth";
 
 type ExampleImage = {
   src: string;
@@ -16,6 +17,7 @@ type ExampleImage = {
 
 export default function UploadPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
 
   const handleUploadSuccess = (data: BillData) => {
@@ -44,18 +46,45 @@ export default function UploadPage() {
 
   // Kolla om det finns en pending analysis när sidan laddas (användaren kom tillbaka från registrering/premium)
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const pendingAnalysis = sessionStorage.getItem("pendingAnalysis");
-      const billData = sessionStorage.getItem("billData");
-      
-      if (pendingAnalysis === "true" && billData) {
-        // Användaren kom tillbaka efter registrering/premium, visa resultatet direkt
-        const data: BillData = JSON.parse(billData);
-        sessionStorage.removeItem("pendingAnalysis");
-        handleUploadSuccess(data);
-      }
+    if (authLoading || typeof window === "undefined") {
+      return;
     }
-  }, []);
+
+    const pendingAnalysis = sessionStorage.getItem("pendingAnalysis");
+    const billData = sessionStorage.getItem("billData");
+    
+    if (pendingAnalysis === "true" && billData) {
+      const data: BillData = JSON.parse(billData);
+      
+      // Om användaren är inloggad, spara fakturan med user_id
+      if (user) {
+        console.log('[upload] Användare är inloggad, sparar faktura med user_id');
+        fetch('/api/user/save-pending-analysis', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          credentials: 'include',
+          body: JSON.stringify({ billData: data }),
+        })
+          .then(res => res.json())
+          .then(result => {
+            if (result.success) {
+              console.log('[upload] ✅ Faktura sparad med user_id');
+            } else {
+              console.error('[upload] ❌ Kunde inte spara faktura:', result.error);
+            }
+          })
+          .catch(error => {
+            console.error('[upload] ❌ Fel vid sparande av faktura:', error);
+          });
+      }
+      
+      // Visa resultatet direkt
+      sessionStorage.removeItem("pendingAnalysis");
+      handleUploadSuccess(data);
+    }
+  }, [authLoading, user]);
 
   useEffect(() => {
     if (!selectedImage) {
