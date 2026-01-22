@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
+import { ArrowLeft, FileText, ArrowRight, X, LayoutDashboard, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import { BillData } from "@/lib/types";
@@ -20,6 +20,7 @@ function UploadPageContent() {
   const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
+  const [showBillAlreadySaved, setShowBillAlreadySaved] = useState(false);
   const hasProcessedPendingRef = useRef(false);
 
   const handleUploadSuccess = useCallback((data: BillData) => {
@@ -182,6 +183,8 @@ function UploadPageContent() {
         if (user) {
           console.log('[upload] ✅ Användaren är inloggad - fakturan är redan sparad i databasen');
           console.log('[upload] 💡 Tips: Kolla ditt dashboard för att se fakturan');
+          // Visa meddelande att fakturan är sparad
+          setShowBillAlreadySaved(true);
         }
       }
       
@@ -268,6 +271,42 @@ function UploadPageContent() {
             Ta en skärmbild eller ett foto av din elräkning. Vår AI analyserar den på några sekunder.
           </p>
         </motion.div>
+
+        {/* Bill Already Saved Message */}
+        <AnimatePresence>
+          {showBillAlreadySaved && user && (
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="mb-8"
+            >
+              <div className="bg-green-50 border-2 border-green-200 rounded-lg p-6">
+                <div className="flex items-start gap-4">
+                  <div className="flex-shrink-0">
+                    <CheckCircle2 className="w-6 h-6 text-green-600" />
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-green-900 mb-2">
+                      Din faktura är redan sparad!
+                    </h3>
+                    <p className="text-green-800 mb-4">
+                      Eftersom du redan är inloggad sparades fakturan automatiskt när den analyserades. 
+                      Du kan se den på ditt dashboard.
+                    </p>
+                    <Link
+                      href="/dashboard"
+                      className="inline-flex items-center gap-2 px-6 py-3 bg-green-600 text-white font-semibold rounded-lg hover:bg-green-700 transition-colors"
+                    >
+                      <LayoutDashboard className="w-5 h-5" />
+                      Gå till Mitt Dashboard
+                    </Link>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Alternative: View contracts without invoice - Moved up */}
         <motion.div
