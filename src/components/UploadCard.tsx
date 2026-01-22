@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, User, Sparkles, ArrowRight } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
 import PostalCodeInput from "./PostalCodeInput";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
+import Link from "next/link";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -341,6 +342,83 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
             )}
           </motion.button>
         )}
+
+        {/* Registration Options - Shown during analysis */}
+        <AnimatePresence>
+          {isUploading && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="mt-6 pt-6 border-t border-border"
+            >
+              <p className="text-sm font-medium text-gray-900 mb-4 text-center">
+                Medan vi analyserar din faktura...
+              </p>
+              <div className="space-y-3">
+                {/* Skapa konto */}
+                <Link
+                  href="/auth/register"
+                  className="
+                    flex items-center justify-between gap-3
+                    w-full p-4 bg-primary text-white rounded-lg
+                    hover:bg-primary/90 transition-colors
+                    font-medium
+                    group
+                  "
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-white/20 rounded-lg">
+                      <User className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold">Skapa konto</div>
+                      <div className="text-xs text-white/80">Spara din faktura - helt gratis</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+
+                {/* Bli premium */}
+                <Link
+                  href="/premium"
+                  className="
+                    flex items-center justify-between gap-3
+                    w-full p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg
+                    hover:from-yellow-500 hover:to-yellow-600 transition-colors
+                    font-medium
+                    group
+                  "
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-yellow-900/20 rounded-lg">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <div className="font-semibold">Bli Premium</div>
+                      <div className="text-xs text-yellow-900/80">Alla fördelar och obegränsad historik</div>
+                    </div>
+                  </div>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                </Link>
+
+                {/* Hoppa över */}
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    // Do nothing - user can just wait for analysis
+                  }}
+                  className="
+                    w-full py-2 text-sm text-gray-400 hover:text-gray-500
+                    transition-colors
+                  "
+                >
+                  Hoppa över registrering
+                </button>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Info Text */}
         <div className="mt-6 pt-6 border-t border-border">
