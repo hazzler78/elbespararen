@@ -67,8 +67,9 @@ export default function UploadPage() {
     console.log('[upload] pendingAnalysis:', pendingAnalysis);
     console.log('[upload] billData finns:', !!billData);
     
-    if (pendingAnalysis === "true" && billData) {
-      console.log('[upload] ✅ Hittade pending analysis och billData');
+    // Om användaren är inloggad och det finns billData, spara fakturan med user_id
+    // Detta hanterar både fallet där pendingAnalysis finns och fallet där den saknas
+    if (user && billData) {
       let data: BillData;
       try {
         data = JSON.parse(billData);
@@ -81,10 +82,13 @@ export default function UploadPage() {
         console.error('[upload] ❌ Kunde inte parsa billData:', error);
         return;
       }
-      
-      // Om användaren är inloggad, spara fakturan med user_id
-      if (user) {
-        console.log('[upload] Användare är inloggad, sparar faktura med user_id');
+
+      // Om pendingAnalysis finns, betyder det att användaren kom tillbaka från registrering
+      // I så fall ska vi spara fakturan och visa resultatet
+      if (pendingAnalysis === "true") {
+        console.log('[upload] ✅ Hittade pending analysis - användaren kom tillbaka från registrering');
+        console.log('[upload] Sparar faktura med user_id och visar resultat');
+        
         fetch('/api/user/save-pending-analysis', {
           method: 'POST',
           headers: {
@@ -100,28 +104,38 @@ export default function UploadPage() {
             } else {
               console.error('[upload] ❌ Kunde inte spara faktura:', result.error);
             }
+            // Visa resultatet oavsett om sparandet lyckades eller inte
+            sessionStorage.removeItem("pendingAnalysis");
+            handleUploadSuccess(data);
           })
           .catch(error => {
             console.error('[upload] ❌ Fel vid sparande av faktura:', error);
+            // Visa resultatet ändå
+            sessionStorage.removeItem("pendingAnalysis");
+            handleUploadSuccess(data);
           });
       } else {
-        console.log('[upload] ⚠️ Användare är inte inloggad ännu, väntar...');
-        // Om användaren inte är inloggad ännu, vänta lite och försök igen
-        // Detta kan hända om auth inte har laddats klart ännu
-        return;
+        // Om pendingAnalysis saknas men användaren är inloggad och billData finns,
+        // kan det betyda att användaren redan har analyserat en faktura tidigare
+        // I så fall ska vi inte göra något automatiskt
+        console.log('[upload] ⚠️ Ingen pending analysis hittades');
+        console.log('[upload] Användaren är inloggad men pendingAnalysis saknas');
+        console.log('[upload] Detta kan betyda att fakturan redan är sparad eller att användaren inte kom från registrering');
       }
-      
-      // Visa resultatet direkt
-      console.log('[upload] Tar bort pendingAnalysis flagga och visar resultat');
-      sessionStorage.removeItem("pendingAnalysis");
-      handleUploadSuccess(data);
+    } else if (pendingAnalysis === "true" && billData) {
+      // Om användaren inte är inloggad ännu men pendingAnalysis finns, vänta
+      console.log('[upload] ⚠️ Användare är inte inloggad ännu, väntar...');
+      return;
     } else {
-      console.log('[upload] ⚠️ Ingen pending analysis hittades');
+      console.log('[upload] ⚠️ Ingen pending analysis hittades eller användare är inte inloggad');
       if (!pendingAnalysis) {
         console.log('[upload] pendingAnalysis är inte "true"');
       }
       if (!billData) {
         console.log('[upload] billData saknas i sessionStorage');
+      }
+      if (!user) {
+        console.log('[upload] Användare är inte inloggad');
       }
     }
   }, [authLoading, user, handleUploadSuccess]);
