@@ -180,7 +180,12 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
   };
 
   const handleUserChoice = (choice: 'register' | 'premium' | 'skip') => {
-    if (userChoiceMade) return; // Förhindra dubbelklick
+    if (userChoiceMade) {
+      console.log('[UploadCard] handleUserChoice: Användaren har redan gjort ett val');
+      return; // Förhindra dubbelklick
+    }
+    
+    console.log('[UploadCard] handleUserChoice:', choice, 'analysisResult:', !!analysisResult);
     
     setUserChoiceMade(true);
     
@@ -208,8 +213,18 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
     }
     
     // Om användaren väljer att hoppa över, visa resultatet direkt
-    if (choice === 'skip' && analysisResult) {
-      onUploadSuccess(analysisResult);
+    if (choice === 'skip') {
+      console.log('[UploadCard] Användaren valde att hoppa över registrering');
+      if (analysisResult) {
+        console.log('[UploadCard] Anropar onUploadSuccess med analysisResult');
+        onUploadSuccess(analysisResult);
+      } else {
+        console.error('[UploadCard] ❌ analysisResult saknas när användaren valde att hoppa över!');
+        console.error('[UploadCard] isAnalysisComplete:', isAnalysisComplete);
+        console.error('[UploadCard] isUploading:', isUploading);
+        // Om analysisResult saknas av någon anledning, visa felmeddelande
+        setError("Kunde inte hitta analysresultatet. Vänligen försök igen.");
+      }
     }
   };
 
@@ -450,13 +465,19 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
 
                 {/* Hoppa över */}
                 <button
-                  onClick={() => handleUserChoice('skip')}
-                  disabled={userChoiceMade}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('[UploadCard] "Hoppa över" knapp klickad');
+                    handleUserChoice('skip');
+                  }}
+                  disabled={userChoiceMade || !analysisResult}
                   className="
                     w-full py-2 text-sm text-gray-400 hover:text-gray-500
                     transition-colors
                     disabled:opacity-50 disabled:cursor-not-allowed
                   "
+                  type="button"
                 >
                   Hoppa över registrering
                 </button>
