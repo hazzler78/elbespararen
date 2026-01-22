@@ -107,7 +107,19 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
               </Link>
             )}
             <Link href="/" className="flex items-center gap-2">
-              <img src="/logos/logo_elbespararen.png" alt="Elbespararen" className="h-8 w-auto" />
+              <img 
+                src="/logos/logo_elbespararen.png" 
+                alt="Elbespararen" 
+                className="h-8 w-auto object-contain"
+                onError={(e) => {
+                  console.error('[AppHeader] Logo failed to load:', e);
+                  // Fallback till logo.png om logo_elbespararen.png inte laddas
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== '/logos/logo.png') {
+                    target.src = '/logos/logo.png';
+                  }
+                }}
+              />
             </Link>
           </div>
 

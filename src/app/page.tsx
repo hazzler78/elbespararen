@@ -47,7 +47,19 @@ export default function Home() {
           >
             {/* Logo/Title */}
             <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <img src="/logos/logo_elbespararen.png" alt="Elbespararen" className="h-6 w-auto" />
+              <img 
+                src="/logos/logo_elbespararen.png" 
+                alt="Elbespararen" 
+                className="h-6 w-auto object-contain"
+                onError={(e) => {
+                  console.error('[Home] Logo failed to load:', e);
+                  // Fallback till logo.png om logo_elbespararen.png inte laddas
+                  const target = e.target as HTMLImageElement;
+                  if (target.src !== '/logos/logo.png') {
+                    target.src = '/logos/logo.png';
+                  }
+                }}
+              />
             </div>
 
             <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
