@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Download, Share2 } from "lucide-react";
+import { ArrowLeft, Download, Share2, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
 import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
@@ -12,9 +12,11 @@ import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import ProviderComparison from "@/components/ProviderComparison";
 import { AnalyticsEvents, trackPageView } from "@/lib/analytics";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function ResultPage() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
   const [billData, setBillData] = useState<BillData | null>(null);
   const [savings, setSavings] = useState<SavingsCalculation | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
@@ -88,33 +90,48 @@ export default function ResultPage() {
               Tillbaka
             </Link>
 
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  if (typeof window !== "undefined") {
-                    window.print();
-                  }
-                }}
-                className="p-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
-                title="Skriv ut"
-              >
-                <Download className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => {
-                  if (typeof window !== "undefined" && navigator.share) {
-                    navigator.share({
-                      title: "Elbespararen",
-                      text: `Jag kan spara ${savings.potentialSavings} kr/mån på min elräkning!`,
-                      url: window.location.href
-                    });
-                  }
-                }}
-                className="p-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
-                title="Dela"
-              >
-                <Share2 className="w-5 h-5" />
-              </button>
+            <div className="flex items-center gap-2">
+              {/* Dashboard knapp om användaren är inloggad */}
+              {!authLoading && user && (
+                <Link
+                  href="/dashboard"
+                  className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                  onClick={() => AnalyticsEvents.dashboardAccessed('result_page')}
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  <span className="hidden sm:inline">Mitt Dashboard</span>
+                  <span className="sm:hidden">Dashboard</span>
+                </Link>
+              )}
+              
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    if (typeof window !== "undefined") {
+                      window.print();
+                    }
+                  }}
+                  className="p-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                  title="Skriv ut"
+                >
+                  <Download className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => {
+                    if (typeof window !== "undefined" && navigator.share) {
+                      navigator.share({
+                        title: "Elbespararen",
+                        text: `Jag kan spara ${savings.potentialSavings} kr/mån på min elräkning!`,
+                        url: window.location.href
+                      });
+                    }
+                  }}
+                  className="p-2 border border-border rounded-lg hover:bg-gray-50 transition-colors"
+                  title="Dela"
+                >
+                  <Share2 className="w-5 h-5" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -217,6 +234,24 @@ export default function ResultPage() {
                   }
                 }}
               />
+            </div>
+          )}
+
+          {/* Dashboard CTA - Om användaren är inloggad */}
+          {!authLoading && user && (
+            <div className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20 p-6 text-center">
+              <h3 className="font-semibold text-lg mb-2">Se alla dina fakturor</h3>
+              <p className="text-sm text-muted mb-4">
+                Din faktura är sparad. Gå till ditt dashboard för att se alla analyser och följa dina besparingar över tid.
+              </p>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
+                onClick={() => AnalyticsEvents.dashboardAccessed('result_page_cta')}
+              >
+                <LayoutDashboard className="w-5 h-5" />
+                Gå till Mitt Dashboard
+              </Link>
             </div>
           )}
 
