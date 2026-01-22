@@ -1,7 +1,7 @@
 "use client";
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useState, useCallback, useRef, Suspense } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import { ArrowLeft, FileText, ArrowRight, X } from "lucide-react";
 import Link from "next/link";
@@ -15,8 +15,9 @@ type ExampleImage = {
   caption: string;
 };
 
-export default function UploadPage() {
+function UploadPageContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
   const hasProcessedPendingRef = useRef(false);
@@ -119,7 +120,7 @@ export default function UploadPage() {
           sessionStorage.removeItem("pendingAnalysis");
           handleUploadSuccess(data);
         });
-    } else if (pendingAnalysis === "true" && billData && !user) {
+    } else if (pendingAnalysis && billData && !user) {
       // Om användaren inte är inloggad ännu men pendingAnalysis finns, vänta
       console.log('[upload] ⚠️ Användare är inte inloggad ännu, väntar...');
       return;
@@ -131,9 +132,18 @@ export default function UploadPage() {
         sessionStorage.removeItem("billData");
         hasProcessedPendingRef.current = true; // Markera som processad efter rensning
       }
+      
+      // Rensa pendingAnalysis från URL om den finns där
+      if (pendingAnalysisFromUrl === "1" && typeof window !== "undefined") {
+        console.log('[upload] Rensar pendingAnalysis från URL');
+        const newUrl = new URL(window.location.href);
+        newUrl.searchParams.delete("pendingAnalysis");
+        window.history.replaceState({}, "", newUrl.toString());
+      }
+      
       console.log('[upload] ⚠️ Ingen pending analysis hittades');
       if (!pendingAnalysis) {
-        console.log('[upload] pendingAnalysis är inte "true"');
+        console.log('[upload] pendingAnalysis är inte true');
       }
       if (!billData) {
         console.log('[upload] billData saknas i sessionStorage');
@@ -142,7 +152,7 @@ export default function UploadPage() {
         console.log('[upload] Användare är inte inloggad');
       }
     }
-  }, [authLoading, user, handleUploadSuccess]);
+  }, [authLoading, user, handleUploadSuccess, searchParams]);
 
   useEffect(() => {
     if (!selectedImage) {
@@ -387,6 +397,18 @@ export default function UploadPage() {
         </AnimatePresence>
       </div>
     </main>
+  );
+}
+
+export default function UploadPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <UploadPageContent />
+    </Suspense>
   );
 }
 

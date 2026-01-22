@@ -26,10 +26,15 @@ function RegisterForm() {
   const handleGoogleSignUp = async () => {
     setIsGoogleLoading(true);
     try {
+      // Behåll pendingAnalysis i callbackUrl om den finns
+      const finalCallbackUrl = callbackUrl.includes('pendingAnalysis') 
+        ? callbackUrl 
+        : `${callbackUrl}${callbackUrl.includes('?') ? '&' : '?'}pendingAnalysis=1`;
+      
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(callbackUrl)}`,
+          redirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(finalCallbackUrl)}`,
         },
       });
       if (error) {
@@ -67,6 +72,11 @@ function RegisterForm() {
 
     try {
       // Register user with Supabase
+      // Behåll pendingAnalysis i callbackUrl om den finns
+      const finalCallbackUrl = callbackUrl.includes('pendingAnalysis') 
+        ? callbackUrl 
+        : `${callbackUrl}${callbackUrl.includes('?') ? '&' : '?'}pendingAnalysis=1`;
+      
       const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
         email: formData.email,
         password: formData.password,
@@ -75,7 +85,7 @@ function RegisterForm() {
             full_name: formData.name,
             name: formData.name,
           },
-          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(callbackUrl)}`,
+          emailRedirectTo: `${window.location.origin}/api/auth/callback?next=${encodeURIComponent(finalCallbackUrl)}`,
         },
       });
 

@@ -224,8 +224,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         console.error('[UploadCard] analysisResult:', analysisResult);
         console.error('[UploadCard] window:', typeof window);
       }
-      // Redirect till register med callbackUrl tillbaka till upload
-      const redirectUrl = `/auth/register?callbackUrl=${encodeURIComponent('/upload')}`;
+      // Redirect till register med callbackUrl tillbaka till upload och pendingAnalysis flag
+      // Vi lägger till pendingAnalysis=1 i URL:en också som backup om sessionStorage försvinner
+      const redirectUrl = `/auth/register?callbackUrl=${encodeURIComponent('/upload?pendingAnalysis=1')}`;
       console.log('[UploadCard] Redirectar till:', redirectUrl);
       window.location.href = redirectUrl;
       return;
@@ -237,8 +238,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCar
         sessionStorage.setItem("billData", JSON.stringify(analysisResult));
         sessionStorage.setItem("pendingAnalysis", "true");
       }
-      // Redirect till premium med callbackUrl tillbaka till upload
-      window.location.href = `/premium?callbackUrl=${encodeURIComponent('/upload')}`;
+      // Redirect till premium med callbackUrl tillbaka till upload och pendingAnalysis flag
+      window.location.href = `/premium?callbackUrl=${encodeURIComponent('/upload?pendingAnalysis=1')}`;
       return;
     }
     
