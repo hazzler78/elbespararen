@@ -3,13 +3,14 @@
 import { createClient } from "@/lib/supabase/client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, Suspense } from "react";
-import { Zap, Mail, Lock, AlertCircle, Loader2 } from "lucide-react";
+import { Zap, Mail, Lock, AlertCircle, Loader2, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 
 function SignInForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const passwordReset = searchParams.get("passwordReset");
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [email, setEmail] = useState("");
@@ -156,6 +157,12 @@ function SignInForm() {
             <>
               {/* Email/Password Form */}
               <form onSubmit={handleEmailSignIn} className="space-y-4">
+                {passwordReset === 'success' && (
+                  <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg flex items-start gap-2">
+                    <CheckCircle2 className="w-5 h-5 flex-shrink-0 mt-0.5" />
+                    <span>Ditt lösenord har återställts! Du kan nu logga in med ditt nya lösenord.</span>
+                  </div>
+                )}
                 {error && (
                   <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-start gap-2">
                     <AlertCircle className="w-5 h-5 flex-shrink-0 mt-0.5" />
