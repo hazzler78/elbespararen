@@ -3,9 +3,10 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { ArrowLeft, FileText, ArrowRight, X, LayoutDashboard, CheckCircle2 } from "lucide-react";
+import { FileText, ArrowRight, X, CheckCircle2 } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
+import AppHeader from "@/components/AppHeader";
 import { BillData } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -241,22 +242,10 @@ function UploadPageContent() {
   }, [selectedImage]);
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Back button */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="mb-8"
-        >
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Tillbaka
-          </Link>
-        </motion.div>
+    <>
+      <AppHeader showBackButton={true} backHref="/" />
+      <main className="min-h-screen bg-background py-12 px-4">
+        <div className="max-w-4xl mx-auto">
 
         {/* Header */}
         <motion.div
