@@ -133,7 +133,7 @@ export default function DashboardPage() {
         setStats(stats);
       } else if (analyses.length > 0) {
         // Om vi har analyser men ingen statistik, beräkna från analyserna
-        const totalSavings = analyses.reduce((sum, a) => sum + a.savings.potentialSavings, 0);
+        const totalSavings = analyses.reduce((sum: number, a) => sum + a.savings.potentialSavings, 0);
         const avgSavings = analyses.length > 0 ? totalSavings / analyses.length : 0;
         const latestCost = analyses[0]?.billData.totalAmount || 0;
         
