@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, CheckCircle2, AlertCircle } from "lucide-react";
-import Link from "next/link";
 import AppHeader from "@/components/AppHeader";
 import PostalCodeInput from "@/components/PostalCodeInput";
 import ProviderComparison from "@/components/ProviderComparison";
@@ -138,22 +137,11 @@ export default function ContractsPage() {
   const savings = mockBillData ? calculateSavings(mockBillData) : null;
 
   return (
-    <main className="min-h-screen bg-background py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        {/* Back button */}
-        <div
-          className="mb-8"
-        >
-          <Link
-            href="/upload"
-            className="inline-flex items-center gap-2 text-muted hover:text-foreground transition-colors"
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Tillbaka
-          </Link>
-        </div>
-
-        {/* Header */}
+    <>
+      <AppHeader showBackButton={true} backHref="/upload" />
+      <main className="min-h-screen bg-background py-12 px-4">
+        <div className="max-w-4xl mx-auto">
+          {/* Header */}
         <div
           className="text-center mb-12"
         >
@@ -300,5 +288,6 @@ export default function ContractsPage() {
         </div>
       </div>
       </main>
+    </>
   );
 }
