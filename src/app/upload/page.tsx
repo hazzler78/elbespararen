@@ -165,6 +165,26 @@ function UploadPageContent() {
       console.log('[upload] ⚠️ Användare är inte inloggad ännu, väntar...');
       return;
     } else {
+      // Om pendingAnalysis finns men billData saknas, betyder det att:
+      // 1. Fakturan redan är sparad (användaren kom tillbaka efter OAuth-redirect)
+      // 2. Eller det är gammal data som ska rensas
+      if (pendingAnalysis && !billData && typeof window !== "undefined") {
+        console.log('[upload] ⚠️ pendingAnalysis finns men billData saknas - fakturan är redan sparad eller gammal data');
+        console.log('[upload] Rensar pendingAnalysis flagga och alla storage-locations');
+        // Rensa alla pending flags och data
+        document.cookie = "pendingBillData=; path=/; max-age=0";
+        sessionStorage.removeItem("pendingAnalysis");
+        localStorage.removeItem("pendingBillData");
+        sessionStorage.removeItem("billData");
+        hasProcessedPendingRef.current = true; // Markera som processad
+        
+        // Om användaren är inloggad, fakturan är förmodligen redan sparad
+        if (user) {
+          console.log('[upload] ✅ Användaren är inloggad - fakturan är redan sparad i databasen');
+          console.log('[upload] 💡 Tips: Kolla ditt dashboard för att se fakturan');
+        }
+      }
+      
       // Om användaren bara navigerar till upload-sidan (inte från registrering),
       // rensa gammal billData från cookie, localStorage och sessionStorage för att undvika förvirring
       if (billData && !pendingAnalysis && typeof window !== "undefined") {
@@ -188,7 +208,7 @@ function UploadPageContent() {
         console.log('[upload] pendingAnalysis är inte true');
       }
       if (!billData) {
-        console.log('[upload] billData saknas i sessionStorage');
+        console.log('[upload] billData saknas i alla storage-locations');
       }
       if (!user) {
         console.log('[upload] Användare är inte inloggad');
