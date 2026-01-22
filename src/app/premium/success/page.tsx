@@ -2,14 +2,15 @@
 
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { CheckCircle2, Sparkles, ArrowRight } from "lucide-react";
 import Link from "next/link";
 
 function PremiumSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { data: session } = useSession();
+  const { user } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
 
@@ -24,11 +25,21 @@ function PremiumSuccessContent() {
 
     // Check premium status after a short delay to allow webhook to process
     const checkPremiumStatus = async () => {
+      if (!user) return;
+      
       // Wait a bit for webhook to process
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       try {
-        const response = await fetch('/api/user/info');
+        // Create session-like object from user for fetchWithAuth
+        const session = {
+          user: {
+            email: user.email || undefined,
+            id: user.id
+          }
+        };
+        
+        const response = await fetchWithAuth('/api/user/info', {}, session);
         if (response.ok) {
           const data = await response.json();
           if (data.success) {
@@ -42,8 +53,10 @@ function PremiumSuccessContent() {
       }
     };
 
-    checkPremiumStatus();
-  }, [searchParams, router]);
+    if (user) {
+      checkPremiumStatus();
+    }
+  }, [searchParams, router, user]);
 
   if (isLoading) {
     return (

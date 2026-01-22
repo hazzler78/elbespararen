@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import { 
   Sparkles, 
@@ -17,25 +17,35 @@ import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 export default function PremiumPage() {
-  const { data: session, status } = useSession();
+  const { user, loading: authLoading } = useAuth();
   const router = useRouter();
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") {
+    if (!authLoading && !user) {
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`);
       return;
     }
 
-    if (status === "authenticated" && session) {
+    if (!authLoading && user) {
       fetchUserInfo();
     }
-  }, [status, session, router]);
+  }, [authLoading, user, router]);
 
   const fetchUserInfo = async () => {
+    if (!user) return;
+    
     try {
+      // Create session-like object from user for fetchWithAuth
+      const session = {
+        user: {
+          email: user.email || undefined,
+          id: user.id
+        }
+      };
+      
       const response = await fetchWithAuth('/api/user/info', {}, session);
       if (response.ok) {
         const data = await response.json();
@@ -51,13 +61,21 @@ export default function PremiumPage() {
   };
 
   const handleUpgrade = async () => {
-    if (!session?.user?.email) {
+    if (!user?.email) {
       router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`);
       return;
     }
 
     setIsCreatingCheckout(true);
     try {
+      // Create session-like object from user for fetchWithAuth
+      const session = {
+        user: {
+          email: user.email || undefined,
+          id: user.id
+        }
+      };
+      
       const response = await fetchWithAuth('/api/stripe/create-checkout-session', {
         method: 'POST',
         headers: {
@@ -89,7 +107,7 @@ export default function PremiumPage() {
     }
   }, []);
 
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
