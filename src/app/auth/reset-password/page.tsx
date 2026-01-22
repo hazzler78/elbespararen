@@ -18,13 +18,64 @@ function ResetPasswordForm() {
   const [isValidToken, setIsValidToken] = useState<boolean | null>(null);
 
   useEffect(() => {
-    // Check if we have a valid reset token in the URL
+    let mounted = true;
+
+    // Check if we have a valid reset token in the URL hash
     const checkToken = async () => {
+      // First, check if there's a hash fragment with tokens (password reset flow)
+      if (typeof window !== 'undefined') {
+        const hash = window.location.hash;
+        const hasResetToken = hash && (hash.includes('access_token') || hash.includes('type=recovery'));
+        
+        if (hasResetToken) {
+          // Token exists in hash - Supabase will process it automatically
+          // Wait for Supabase to process the hash and create a session
+          const checkSession = async () => {
+            const { data: { session }, error } = await supabase.auth.getSession();
+            
+            if (mounted) {
+              if (session) {
+                setIsValidToken(true);
+              } else if (error) {
+                console.error('[ResetPassword] Error processing token:', error);
+                setIsValidToken(false);
+              } else {
+                // No session yet, wait a bit more
+                setTimeout(checkSession, 500);
+              }
+            }
+          };
+
+          // Initial check
+          setTimeout(checkSession, 100);
+          return;
+        }
+      }
+
+      // No hash fragment - check if we already have a session
       const { data: { session } } = await supabase.auth.getSession();
-      // If we have a session, the token is valid
-      setIsValidToken(!!session);
+      if (mounted) {
+        setIsValidToken(!!session);
+      }
     };
+
+    // Listen for auth state changes (when token is processed)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if (mounted) {
+        if (event === 'PASSWORD_RECOVERY' || (event === 'SIGNED_IN' && session)) {
+          setIsValidToken(true);
+        } else if (event === 'TOKEN_REFRESHED' && session) {
+          setIsValidToken(true);
+        }
+      }
+    });
+
     checkToken();
+
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, [supabase]);
 
   const handleSubmit = async (e: React.FormEvent) => {
