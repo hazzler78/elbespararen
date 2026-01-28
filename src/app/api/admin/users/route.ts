@@ -29,6 +29,14 @@ export async function GET(req: NextRequest) {
       const { getMockStore } = await import('@/lib/database/mock-store');
       const store = getMockStore();
       const users = store.getUsers();
+      console.log(`[admin/users] Found ${users.length} users in MockDatabase`);
+      if (users.length > 0) {
+        console.log('[admin/users] Sample user data:', JSON.stringify({
+          email: users[0].email,
+          subscriptionTier: users[0].subscriptionTier,
+          subscriptionStatus: users[0].subscriptionStatus,
+        }, null, 2));
+      }
       
       const usersWithPremium = users.map((u: any) => ({
         id: u.id,
@@ -81,6 +89,10 @@ export async function GET(req: NextRequest) {
         `).all();
       
       const rows = Array.isArray(result.results) ? result.results : [];
+      console.log(`[admin/users] Found ${rows.length} users in CloudflareDatabase`);
+      if (rows.length > 0) {
+        console.log('[admin/users] Sample user data:', JSON.stringify(rows[0], null, 2));
+      }
       
       const usersWithPremium = rows.map((row: any) => ({
         id: String(row.id),

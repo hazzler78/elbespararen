@@ -25,6 +25,7 @@ interface UsersData {
     activePremium: number;
   };
   users: UserWithPremium[];
+  databaseType?: string;
 }
 
 export default function AdminUsersPage() {
@@ -42,10 +43,14 @@ export default function AdminUsersPage() {
         console.log('[Admin Users] API Response:', responseData);
         
         if (response.ok) {
-          const data = responseData as ApiResponse<UsersData>;
+          const data = responseData as ApiResponse<UsersData> & { databaseType?: string };
           if (data.success && data.data) {
             console.log('[Admin Users] Setting users data:', data.data);
-            setUsersData(data.data);
+            console.log('[Admin Users] Database type:', data.databaseType);
+            setUsersData({
+              ...data.data,
+              databaseType: (responseData as any).databaseType || 'Unknown',
+            });
           } else {
             console.error('[Admin Users] Failed to fetch users:', data.error);
             // Set empty data if API returns success but no data
@@ -131,6 +136,11 @@ export default function AdminUsersPage() {
               <div>
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Användare & Premium</h1>
                 <p className="text-gray-600">Översikt över alla användare och deras premium-status</p>
+                {usersData?.databaseType && (
+                  <p className="text-sm text-gray-500 mt-1">
+                    Databas: <span className="font-medium">{usersData.databaseType === 'MockDatabase' ? 'MockDatabase (Lokal utveckling)' : 'CloudflareDatabase (Produktion)'}</span>
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -337,6 +347,16 @@ export default function AdminUsersPage() {
             <p className="text-sm text-blue-700 text-center">
               💡 <strong>Tips:</strong> Premium-användare betalar 99 kr/år för obegränsad historik, export-funktioner och avancerad analys.
             </p>
+            {usersData?.databaseType === 'MockDatabase' && (
+              <p className="text-sm text-orange-700 text-center mt-2">
+              ⚠️ <strong>Varning:</strong> Du använder MockDatabase (lokal utveckling). Data försvinner när servern startar om. För att se produktionsdata, kontrollera att du är ansluten till CloudflareDatabase.
+            </p>
+            )}
+            {usersData && usersData.stats.premium === 0 && usersData.databaseType === 'CloudflareDatabase' && (
+              <p className="text-sm text-gray-600 text-center mt-2">
+              ℹ️ Inga premium-användare hittades. Detta kan bero på att ingen har köpt premium ännu, eller att premium-data inte är korrekt sparad i databasen.
+            </p>
+            )}
           </div>
         </div>
       </div>
