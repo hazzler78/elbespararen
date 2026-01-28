@@ -77,6 +77,12 @@ const navigation = [
     href: "/admin/set-premium",
     icon: Sparkles,
     description: "Sätt premium-status för användare"
+  },
+  {
+    name: "Användare & Premium",
+    href: "/admin/users",
+    icon: Users,
+    description: "Visa alla användare och premium-status"
   }
 ];
 
