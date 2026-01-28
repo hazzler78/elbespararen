@@ -137,9 +137,14 @@ export default function AdminUsersPage() {
                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Användare & Premium</h1>
                 <p className="text-gray-600">Översikt över alla användare och deras premium-status</p>
                 {usersData?.databaseType && (
-                  <p className="text-sm text-gray-500 mt-1">
-                    Databas: <span className="font-medium">{usersData.databaseType === 'MockDatabase' ? 'MockDatabase (Lokal utveckling)' : 'CloudflareDatabase (Produktion)'}</span>
-                  </p>
+                  <div className="mt-2 space-y-1">
+                    <p className="text-sm text-gray-500">
+                      Databas: <span className="font-medium">{usersData.databaseType === 'MockDatabase' ? 'MockDatabase (Lokal utveckling)' : 'CloudflareDatabase (Produktion)'}</span>
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      ⚠️ Detta visar användare i lokal databas. Supabase Auth kan ha ett annat antal användare.
+                    </p>
+                  </div>
                 )}
               </div>
             </div>
@@ -343,19 +348,44 @@ export default function AdminUsersPage() {
           </div>
 
           {/* Info */}
-          <div className="mt-8 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-700 text-center">
-              💡 <strong>Tips:</strong> Premium-användare betalar 99 kr/år för obegränsad historik, export-funktioner och avancerad analys.
-            </p>
+          <div className="mt-8 space-y-3">
+            <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p className="text-sm text-blue-700 text-center">
+                💡 <strong>Tips:</strong> Premium-användare betalar 99 kr/år för obegränsad historik, export-funktioner och avancerad analys.
+              </p>
+            </div>
+
+            <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800 font-semibold mb-2">
+                ⚠️ Viktigt: Två separata system för användare
+              </p>
+              <div className="text-sm text-yellow-700 space-y-1">
+                <p>• <strong>Supabase Auth:</strong> Hanterar autentisering (inloggning). Användare syns i Supabase Dashboard → Authentication → Users</p>
+                <p>• <strong>Lokal databas:</strong> Lagrar användardata och premium-status. Detta är vad du ser här.</p>
+                <p className="mt-2">
+                  <strong>Varför fler användare här än i Supabase?</strong> Användare kan skapas på flera sätt:
+                </p>
+                <ul className="list-disc list-inside ml-2 mt-1 space-y-1">
+                  <li>Via Supabase Auth (Google OAuth eller e-post/lösenord) - syns i båda systemen</li>
+                  <li>Via registreringsformulär direkt i appen - skapas bara i lokal databas</li>
+                  <li>Via test/utveckling - kan finnas i MockDatabase</li>
+                </ul>
+              </div>
+            </div>
+
             {usersData?.databaseType === 'MockDatabase' && (
-              <p className="text-sm text-orange-700 text-center mt-2">
-              ⚠️ <strong>Varning:</strong> Du använder MockDatabase (lokal utveckling). Data försvinner när servern startar om. För att se produktionsdata, kontrollera att du är ansluten till CloudflareDatabase.
-            </p>
+              <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
+                <p className="text-sm text-orange-700 text-center">
+                  ⚠️ <strong>Varning:</strong> Du använder MockDatabase (lokal utveckling). Data försvinner när servern startar om. För att se produktionsdata, kontrollera att du är ansluten till CloudflareDatabase.
+                </p>
+              </div>
             )}
             {usersData && usersData.stats.premium === 0 && usersData.databaseType === 'CloudflareDatabase' && (
-              <p className="text-sm text-gray-600 text-center mt-2">
-              ℹ️ Inga premium-användare hittades. Detta kan bero på att ingen har köpt premium ännu, eller att premium-data inte är korrekt sparad i databasen.
-            </p>
+              <div className="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+                <p className="text-sm text-gray-600 text-center">
+                  ℹ️ Inga premium-användare hittades. Detta kan bero på att ingen har köpt premium ännu, eller att premium-data inte är korrekt sparad i databasen.
+                </p>
+              </div>
             )}
           </div>
         </div>
