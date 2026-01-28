@@ -56,26 +56,29 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({
         success: true,
         databaseType: 'MockDatabase',
-        stats,
-        users: usersWithPremium,
+        data: {
+          stats,
+          users: usersWithPremium,
+        },
       } as ApiResponse<{ stats: typeof stats; users: typeof usersWithPremium }>);
     } else {
       // For CloudflareDatabase, query SQL
-      const result = await (db as any).db.prepare(`
-        SELECT 
-          id,
-          email,
-          name,
-          subscription_tier,
-          subscription_status,
-          subscription_started_at,
-          subscription_expires_at,
-          subscription_stripe_id,
-          created_at,
-          updated_at
-        FROM users
-        ORDER BY created_at DESC
-      `).all();
+      try {
+        const result = await (db as any).db.prepare(`
+          SELECT 
+            id,
+            email,
+            name,
+            subscription_tier,
+            subscription_status,
+            subscription_started_at,
+            subscription_expires_at,
+            subscription_stripe_id,
+            created_at,
+            updated_at
+          FROM users
+          ORDER BY created_at DESC
+        `).all();
       
       const rows = Array.isArray(result.results) ? result.results : [];
       
@@ -102,12 +105,29 @@ export async function GET(req: NextRequest) {
         ).length,
       };
       
-      return NextResponse.json({
-        success: true,
-        databaseType: 'CloudflareDatabase',
-        stats,
-        users: usersWithPremium,
-      } as ApiResponse<{ stats: typeof stats; users: typeof usersWithPremium }>);
+        return NextResponse.json({
+          success: true,
+          databaseType: 'CloudflareDatabase',
+          data: {
+            stats,
+            users: usersWithPremium,
+          },
+        } as ApiResponse<{ stats: typeof stats; users: typeof usersWithPremium }>);
+      } catch (sqlError) {
+        console.error('[admin/users] SQL error:', sqlError);
+        // If table doesn't exist, return empty result
+        if (String(sqlError).includes('no such table')) {
+          return NextResponse.json({
+            success: true,
+            databaseType: 'CloudflareDatabase',
+            data: {
+              stats: { total: 0, premium: 0, free: 0, activePremium: 0 },
+              users: [],
+            },
+          } as ApiResponse<{ stats: any; users: any[] }>);
+        }
+        throw sqlError;
+      }
     }
   } catch (error) {
     console.error("[admin/users] GET error:", error);

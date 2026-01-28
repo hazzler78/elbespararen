@@ -38,18 +38,26 @@ export default function AdminUsersPage() {
       try {
         setIsLoading(true);
         const response = await fetch('/api/admin/users');
+        const responseData = await response.json();
+        console.log('[Admin Users] API Response:', responseData);
+        
         if (response.ok) {
-          const data = await response.json() as ApiResponse<UsersData>;
+          const data = responseData as ApiResponse<UsersData>;
           if (data.success && data.data) {
+            console.log('[Admin Users] Setting users data:', data.data);
             setUsersData(data.data);
           } else {
-            console.error('Failed to fetch users:', data.error);
+            console.error('[Admin Users] Failed to fetch users:', data.error);
+            // Set empty data if API returns success but no data
+            setUsersData({ stats: { total: 0, premium: 0, free: 0, activePremium: 0 }, users: [] });
           }
         } else {
-          console.error('Failed to fetch users:', response.statusText);
+          console.error('[Admin Users] API error:', response.status, responseData);
+          setUsersData({ stats: { total: 0, premium: 0, free: 0, activePremium: 0 }, users: [] });
         }
       } catch (error) {
-        console.error('Error fetching users:', error);
+        console.error('[Admin Users] Error fetching users:', error);
+        setUsersData({ stats: { total: 0, premium: 0, free: 0, activePremium: 0 }, users: [] });
       } finally {
         setIsLoading(false);
       }
