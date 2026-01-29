@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Newspaper, ExternalLink, Calendar } from "lucide-react";
+import { Newspaper, ExternalLink, Calendar, FileText } from "lucide-react";
 import Link from "next/link";
 import Footer from "@/components/Footer";
 import type { NewsPost, ApiResponse } from "@/lib/types";
@@ -169,6 +169,22 @@ export default function NewsPage() {
               Här hittar du de senaste nyheterna om Elbespararen, pressmeddelanden 
               och media-omtalanden. Håll dig uppdaterad om vad som händer i elmarknaden.
             </p>
+
+            <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+              <Link
+                href="/contracts"
+                className="
+                  inline-flex items-center gap-2 px-8 py-4
+                  bg-primary text-white text-lg font-semibold rounded-lg
+                  hover:bg-primary/90 active:scale-[0.98]
+                  transition-all duration-200
+                  shadow-md hover:shadow-lg
+                "
+              >
+                <FileText className="w-5 h-5" />
+                Se tillgängliga elavtal
+              </Link>
+            </div>
           </motion.div>
         </div>
       </section>
