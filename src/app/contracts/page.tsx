@@ -7,10 +7,15 @@ import AppHeader from "@/components/AppHeader";
 import PostalCodeInput from "@/components/PostalCodeInput";
 import ProviderComparison from "@/components/ProviderComparison";
 import ContactForm from "@/components/ContactForm";
-import { BillData, SavingsCalculation } from "@/lib/types";
+import { BillData, SavingsCalculation, ElectricityProvider } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
 
+// Hårdkodade länkar som fallback
+const DEFAULT_QUICK_ACTION_LINKS = {
+  variable: "https://www.cheapenergy.se/teckna-elavtal/?src=Elbespararen",
+  fixed: "https://www.svealandselbolag.se/teckna-avtal/?src=Elbespararen"
+};
 
 export default function ContractsPage() {
   const router = useRouter();
@@ -22,6 +27,8 @@ export default function ContractsPage() {
   const contactFormRef = useRef<HTMLDivElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  const [quickActionLinks, setQuickActionLinks] = useState(DEFAULT_QUICK_ACTION_LINKS);
+
   // Cleanup timeout när komponenten unmountas
   useEffect(() => {
     return () => {
@@ -29,6 +36,87 @@ export default function ContractsPage() {
         clearTimeout(saveTimeoutRef.current);
       }
     };
+  }, []);
+
+  // Hämta länkar från "Mest populär" providers
+  useEffect(() => {
+    const fetchQuickActionLinks = async () => {
+      try {
+        // Hämta inställningar för best choice providers
+        const settingsResponse = await fetch('/api/settings');
+        if (!settingsResponse.ok) {
+          // Använd fallback-länkarna vid fel
+          setQuickActionLinks(DEFAULT_QUICK_ACTION_LINKS);
+          return;
+        }
+        
+        const settingsData = await settingsResponse.json() as { 
+          success: boolean; 
+          data?: { 
+            bestChoiceProviderIdVariable?: string | null;
+            bestChoiceProviderIdFixed?: string | null;
+          } 
+        };
+        
+        if (!settingsData.success || !settingsData.data) {
+          setQuickActionLinks(DEFAULT_QUICK_ACTION_LINKS);
+          return;
+        }
+
+        const variableId = settingsData.data.bestChoiceProviderIdVariable;
+        const fixedId = settingsData.data.bestChoiceProviderIdFixed;
+
+        // Hämta alla providers
+        const providersResponse = await fetch('/api/providers');
+        if (!providersResponse.ok) {
+          setQuickActionLinks(DEFAULT_QUICK_ACTION_LINKS);
+          return;
+        }
+        
+        const providersData = await providersResponse.json() as { 
+          success: boolean; 
+          data?: ElectricityProvider[] 
+        };
+        
+        if (!providersData.success || !providersData.data) {
+          setQuickActionLinks(DEFAULT_QUICK_ACTION_LINKS);
+          return;
+        }
+
+        const links = {
+          variable: DEFAULT_QUICK_ACTION_LINKS.variable, // Fallback
+          fixed: DEFAULT_QUICK_ACTION_LINKS.fixed // Fallback
+        };
+
+        // Hitta rörligt provider
+        if (variableId) {
+          const variableProvider = providersData.data.find(
+            p => p.id === variableId && p.contractType === "rörligt"
+          );
+          if (variableProvider?.affiliateUrl) {
+            links.variable = variableProvider.affiliateUrl;
+          }
+        }
+
+        // Hitta fastpris provider
+        if (fixedId) {
+          const fixedProvider = providersData.data.find(
+            p => p.id === fixedId && p.contractType === "fastpris"
+          );
+          if (fixedProvider?.affiliateUrl) {
+            links.fixed = fixedProvider.affiliateUrl;
+          }
+        }
+
+        setQuickActionLinks(links);
+      } catch (error) {
+        console.error('[ContractsPage] Error fetching quick action links:', error);
+        // Använd fallback-länkarna vid fel
+        setQuickActionLinks(DEFAULT_QUICK_ACTION_LINKS);
+      }
+    };
+
+    fetchQuickActionLinks();
   }, []);
 
   // Funktion för att spara postal code analytics med debounce
@@ -207,7 +295,7 @@ export default function ContractsPage() {
               {/* Quick action buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
                 <a
-                  href="https://www.cheapenergy.se/teckna-elavtal-cheap-elchef/"
+                  href={quickActionLinks.variable}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
@@ -215,7 +303,7 @@ export default function ContractsPage() {
                   Rörligt
                 </a>
                 <a
-                  href="https://www.svealandselbolag.se/elchef-fastpris/"
+                  href={quickActionLinks.fixed}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
