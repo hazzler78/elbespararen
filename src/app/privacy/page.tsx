@@ -131,7 +131,7 @@ export default function PrivacyPage() {
             </div>
 
             {/* Terms of Service */}
-            <div className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
+            <div id="terms" className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
               <h2 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-3">
                 <FileText className="w-6 h-6 text-primary" />
                 Användarvillkor
