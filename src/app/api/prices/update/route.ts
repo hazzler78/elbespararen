@@ -130,6 +130,13 @@ const VARIABLE_PROVIDERS_TO_UPDATE = [
   normalizeProviderName("Stockholms Elbolag")
 ];
 
+/** Kopplar det visade namnet till leverantörens slug hos elprishantering. */
+const RORLIG_SLUG: Record<string, string> = {
+  "Cheap Energy": "cheapenergy",
+  "Svekraft": "svekraft",
+  "Stockholms Elbolag": "sthlmsel"
+};
+
 // Kandidat-URL:er att läsa spotpriser ifrån (öre/kWh i källan)
 const SPOT_CANDIDATE_URLS: string[] = [
   "https://cheapenergy.se/Site_Priser_CheapEnergy_de2.json",
@@ -178,12 +185,61 @@ async function fetchSpotPrices(): Promise<Record<string, number>> {
  * inklusive moms. Genom att läsa samma källa som Elchef blir siffrorna identiska på
  * båda sajterna, i stället för att två egna system råkar räkna likadant.
  */
+interface ElprisKalla {
+  /** Fastpris per leverantör, i samma form som parseProviderPrices bygger. */
+  fast: Map<string, PriceData>;
+  /** Rörligt påslag per leverantör, i öre/kWh exkl. moms (samma enhet som
+   *  extractVariableComponents ger, så computeEnergyPriceFromComponents kan användas). */
+  rorligt: Map<string, number>;
+}
+
 const ELPRISHANTERING_BASE = "https://elprishantering.com";
 const ELPRISHANTERING_SLUGS = ["cheapenergy", "energi2", "sthlmsel", "svealandsel", "svekraft", "motala"];
 const PRISOMRADEN = ["se1", "se2", "se3", "se4"];
+/** Samma antagande som Elchef använder när rörliga avtal jämförs. */
+const FORBRUKNING_KWH = 5000;
 
-async function fetchElprishanteringPrices(): Promise<Map<string, PriceData>> {
-  const perSlug = new Map<string, PriceData>();
+/** Månadsavgift efter rabatt. Listpriset kan vara helt rabatterat, som hos Cheap Energy. */
+function manadsavgiftEfterRabatt(product: any): number {
+  const lista = Number(product?.components?.monthly_fee ?? 0);
+  const rabatt = Number(product?.components?.customer_discount_per_month ?? 0);
+  return Math.max(0, Math.round(lista - rabatt));
+}
+
+/**
+ * Väljer rörligt avtal som Elchef gör: billigaste obundna, där kvartspris (annars
+ * timpris) jämförs med månadspris på årskostnad. Returnerar påslaget i öre/kWh
+ * exkl. moms — det vill säga allt som inte är spotpris.
+ */
+function valjRorligtPris(produkter: any[], spotOre: number): number | null {
+  const obundna = produkter.filter((p) => (p?.binding_period_months ?? 0) === 0);
+  const perKategori = (typ: string) => obundna.filter((p) => p.type === typ);
+  const kvarts = perKategori('quarter_hourly');
+  const timme = perKategori('hourly');
+  const manad = perKategori('monthly');
+  const spotFoljande = kvarts.length ? kvarts : timme;
+
+  const billigaste = (lista: any[]): { paslag: number; kostnad: number } | null => {
+    let bäst: { paslag: number; kostnad: number } | null = null;
+    for (const p of lista) {
+      const energy = p?.breakdown?.energy_price_excl_vat;
+      if (typeof energy !== 'number' || !Number.isFinite(energy)) continue;
+      const paslag = Math.round((energy - spotOre) * 100) / 100;
+      const kostnad = manadsavgiftEfterRabatt(p) * 12 + (paslag * FORBRUKNING_KWH) / 100;
+      if (!bäst || kostnad < bäst.kostnad) bäst = { paslag, kostnad };
+    }
+    return bäst;
+  };
+
+  const spotVal = billigaste(spotFoljande);
+  const manadsVal = billigaste(manad);
+  if (spotVal && manadsVal) return spotVal.kostnad <= manadsVal.kostnad ? spotVal.paslag : manadsVal.paslag;
+  return spotVal?.paslag ?? manadsVal?.paslag ?? null;
+}
+
+async function fetchElprishanteringPrices(): Promise<ElprisKalla> {
+  const fast = new Map<string, PriceData>();
+  const rorligt = new Map<string, number>();
 
   for (const area of PRISOMRADEN) {
     const url = `${ELPRISHANTERING_BASE}/v2/prices?price_area=${area.toUpperCase()}&supplier=${ELPRISHANTERING_SLUGS.join(",")}`;
@@ -202,12 +258,21 @@ async function fetchElprishanteringPrices(): Promise<Map<string, PriceData>> {
       continue;
     }
 
-    for (const product of json?.products ?? []) {
+    const spotOre = Number(json?.spot_price?.ore_kwh);
+    const produkter: any[] = json?.products ?? [];
+    const perLeverantor = new Map<string, any[]>();
+    for (const p of produkter) {
+      const lista = perLeverantor.get(p.supplier) ?? [];
+      lista.push(p);
+      perLeverantor.set(p.supplier, lista);
+    }
+
+    for (const product of produkter) {
       if (product?.type !== 'fixed') continue;
       const total = product?.breakdown?.total_price;
       if (typeof total !== 'number' || !Number.isFinite(total)) continue;
 
-      const post = perSlug.get(product.supplier) ?? {
+      const post = fast.get(product.supplier) ?? {
         fastpris: 0,
         månadskostnad: 0,
         påslag: 0,
@@ -227,12 +292,21 @@ async function fetchElprishanteringPrices(): Promise<Map<string, PriceData>> {
         areaCode: area
       } as ContractAlternative);
 
-      perSlug.set(product.supplier, post);
+      fast.set(product.supplier, post);
+    }
+
+    // Rörligt: bara första området avgör rubrikvärdet, samma som för fastpris.
+    if (Number.isFinite(spotOre)) {
+      for (const [slug, lista] of perLeverantor) {
+        if (rorligt.has(slug)) continue;
+        const paslag = valjRorligtPris(lista, spotOre);
+        if (paslag !== null) rorligt.set(slug, paslag);
+      }
     }
   }
 
   // Samma regel som parseProviderPrices: rubrikpriset är 12-månadersalternativet.
-  for (const post of perSlug.values()) {
+  for (const post of fast.values()) {
     const alt = post.avtalsalternativ ?? [];
     const basta = alt.find((a) => a.bindningstid === 12) ?? alt[0];
     if (basta) {
@@ -242,7 +316,7 @@ async function fetchElprishanteringPrices(): Promise<Map<string, PriceData>> {
     }
   }
 
-  return perSlug;
+  return { fast, rorligt };
 }
 
 const PRICE_ENDPOINTS = [
@@ -548,10 +622,10 @@ export async function POST(request: NextRequest) {
     const latestVariableData = new Map<string, any>();
 
     // Hämta alla priser från elprishantering en gång — samma källa som Elchef.
-    let elprisPriser = new Map<string, PriceData>();
+    let elprisPriser: ElprisKalla = { fast: new Map(), rorligt: new Map() };
     try {
       elprisPriser = await fetchElprishanteringPrices();
-      console.log(`[Price Update] elprishantering: ${elprisPriser.size} leverantörer`);
+      console.log(`[Price Update] elprishantering: ${elprisPriser.fast.size} fastpris, ${elprisPriser.rorligt.size} rörliga`);
     } catch (e) {
       console.error('[Price Update] elprishantering misslyckades helt, faller tillbaka på partnerfilerna:', e);
     }
@@ -562,7 +636,7 @@ export async function POST(request: NextRequest) {
         // Föredra elprishantering (aktuell och verifierad för alla sex).
         // Partnerfilerna används bara som reserv — två av sex svarar 404.
         const slug = endpoint.endpoint.replace(/_v2$/, '');
-        const franElpris = elprisPriser.get(slug);
+        const franElpris = elprisPriser.fast.get(slug);
         const priceResponse: ProviderPriceResponse = franElpris
           ? { success: true, data: franElpris }
           : await fetchProviderPrices(endpoint.endpoint, endpoint.url);
@@ -707,12 +781,23 @@ export async function POST(request: NextRequest) {
           const canonicalTarget = normalizeProviderName(targetName);
           const provider = existingProviders.find(p => p.contractType === 'rörligt' && normalizeProviderName(p.name).toLowerCase() === canonicalTarget.toLowerCase());
           if (provider) {
-            const rawVariable = latestVariableData.get(canonicalTarget.toLowerCase());
+            // Föredra elprishantering (samma källa som Elchef). Partnerfilerna används
+            // bara som reserv — och för rörliga avtal räcker dom inte, eftersom Svekraft
+            // och Stockholms Elbolags filer är döda.
+            const slug = RORLIG_SLUG[canonicalTarget];
+            const franElpris = slug ? elprisPriser.rorligt.get(slug) : undefined;
+            const rawVariable = franElpris === undefined
+              ? latestVariableData.get(canonicalTarget.toLowerCase())
+              : undefined;
             const components = rawVariable ? extractVariableComponents(rawVariable, canonicalTarget) : null;
             const updatePayload: Partial<ElectricityProvider> = { isActive: true };
             let action = 'kept_variable_active';
 
-            if (components) {
+            if (franElpris !== undefined) {
+              // Påslaget är redan nettot (elpris exkl. moms minus spot), i öre exkl. moms.
+              updatePayload.energyPrice = computeEnergyPriceFromComponents(franElpris, 0, 0);
+              action = 'variable_updated';
+            } else if (components) {
               updatePayload.energyPrice = computeEnergyPriceFromComponents(
                 components.surcharge,
                 components.elCertificateFee,
