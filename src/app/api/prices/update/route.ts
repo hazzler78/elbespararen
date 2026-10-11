@@ -165,6 +165,86 @@ async function fetchSpotPrices(): Promise<Record<string, number>> {
   throw new Error('Could not fetch spot prices from candidates');
 }
 
+/**
+ * Elprishantering.com — samma priskälla som Elchef använder.
+ *
+ * Elbespararens egna partneradresser fungerar inte längre: elify.se (Svealands och
+ * Motala) svarar 404, och energi2.se och svekraft.com svarar med HTML i stället för
+ * JSON. Uppdateringen loggade "fetch_failed" och behöll de gamla värdena — i oktober
+ * 2026 stod Svealands och Motala på priser från 4 oktober medan Cheap Energy och
+ * Stockholms Elbolag var aktuella, så felet var osynligt.
+ *
+ * Elprishantering samlar samma partnerfiler och har aktuella priser för alla sex,
+ * inklusive moms. Genom att läsa samma källa som Elchef blir siffrorna identiska på
+ * båda sajterna, i stället för att två egna system råkar räkna likadant.
+ */
+const ELPRISHANTERING_BASE = "https://elprishantering.com";
+const ELPRISHANTERING_SLUGS = ["cheapenergy", "energi2", "sthlmsel", "svealandsel", "svekraft", "motala"];
+const PRISOMRADEN = ["se1", "se2", "se3", "se4"];
+
+async function fetchElprishanteringPrices(): Promise<Map<string, PriceData>> {
+  const perSlug = new Map<string, PriceData>();
+
+  for (const area of PRISOMRADEN) {
+    const url = `${ELPRISHANTERING_BASE}/v2/prices?price_area=${area.toUpperCase()}&supplier=${ELPRISHANTERING_SLUGS.join(",")}`;
+    let json: any;
+    try {
+      const res = await fetch(url, {
+        headers: { 'User-Agent': 'Elbespararen/2.0', 'Accept': 'application/json' }
+      });
+      if (!res.ok) {
+        console.log(`[Price Update] elprishantering ${area}: HTTP ${res.status}`);
+        continue;
+      }
+      json = await res.json();
+    } catch (e) {
+      console.log(`[Price Update] elprishantering ${area} misslyckades:`, e);
+      continue;
+    }
+
+    for (const product of json?.products ?? []) {
+      if (product?.type !== 'fixed') continue;
+      const total = product?.breakdown?.total_price;
+      if (typeof total !== 'number' || !Number.isFinite(total)) continue;
+
+      const post = perSlug.get(product.supplier) ?? {
+        fastpris: 0,
+        månadskostnad: 0,
+        påslag: 0,
+        beskrivning: `${product.supplier_name} fastpris - flera avtalsalternativ tillgängliga`,
+        bindningstid: 12,
+        gratis_månader: 0,
+        features: ["Fastpris", "Flera avtalsalternativ"],
+        avtalsalternativ: [] as ContractAlternative[]
+      };
+
+      post.avtalsalternativ!.push({
+        namn: `${product.binding_period_months} månader`,
+        fastpris: total / 100,   // öre/kWh inkl. moms -> kr/kWh
+        månadskostnad: product?.breakdown?.monthly_fee ?? 0,
+        bindningstid: product.binding_period_months,
+        gratis_månader: product?.discount_months ?? 0,
+        areaCode: area
+      } as ContractAlternative);
+
+      perSlug.set(product.supplier, post);
+    }
+  }
+
+  // Samma regel som parseProviderPrices: rubrikpriset är 12-månadersalternativet.
+  for (const post of perSlug.values()) {
+    const alt = post.avtalsalternativ ?? [];
+    const basta = alt.find((a) => a.bindningstid === 12) ?? alt[0];
+    if (basta) {
+      post.fastpris = Number(basta.fastpris);
+      post.månadskostnad = basta.månadskostnad;
+      post.bindningstid = basta.bindningstid;
+    }
+  }
+
+  return perSlug;
+}
+
 const PRICE_ENDPOINTS = [
   {
     endpoint: "cheapenergy_v2",
@@ -467,11 +547,26 @@ export async function POST(request: NextRequest) {
     const allRörliga = existingProviders.filter(p => p.contractType === "rörligt");
     const latestVariableData = new Map<string, any>();
 
+    // Hämta alla priser från elprishantering en gång — samma källa som Elchef.
+    let elprisPriser = new Map<string, PriceData>();
+    try {
+      elprisPriser = await fetchElprishanteringPrices();
+      console.log(`[Price Update] elprishantering: ${elprisPriser.size} leverantörer`);
+    } catch (e) {
+      console.error('[Price Update] elprishantering misslyckades helt, faller tillbaka på partnerfilerna:', e);
+    }
+
     // Uppdatera priser för varje endpoint
     for (const endpoint of PRICE_ENDPOINTS) {
       try {
-        const priceResponse = await fetchProviderPrices(endpoint.endpoint, endpoint.url);
-        
+        // Föredra elprishantering (aktuell och verifierad för alla sex).
+        // Partnerfilerna används bara som reserv — två av sex svarar 404.
+        const slug = endpoint.endpoint.replace(/_v2$/, '');
+        const franElpris = elprisPriser.get(slug);
+        const priceResponse: ProviderPriceResponse = franElpris
+          ? { success: true, data: franElpris }
+          : await fetchProviderPrices(endpoint.endpoint, endpoint.url);
+
         if (priceResponse.success && priceResponse.data) {
           const canonicalName = normalizeProviderName(endpoint.providerName);
           if (priceResponse.raw) {
