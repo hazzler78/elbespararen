@@ -195,7 +195,19 @@ interface ElprisKalla {
 
 const ELPRISHANTERING_BASE = "https://elprishantering.com";
 const ELPRISHANTERING_SLUGS = ["cheapenergy", "energi2", "sthlmsel", "svealandsel", "svekraft", "motala"];
-const PRISOMRADEN = ["se1", "se2", "se3", "se4"];
+/**
+ * Ordningen avgör vilket område som blir leverantörens rubrikpris.
+ *
+ * UI:t (PostalCodeInput -> ProviderComparison) filtrerar avtalsalternativen på
+ * besökarens eget prisområde, så den som angett postnummer får alltid rätt siffra.
+ * Rubrikpriset används bara som reserv — när inget område valts, eller på sidor som
+ * läser energyPrice direkt. Då ska det vara representativt.
+ *
+ * SE3 först: största området, och det Elchef visar (Cheap Energy 259,9 för 3 och 6
+ * månader, 199,9 för 12 — alla SE3-siffror). Låg SE1 först tidigare, vilket gav
+ * 159,9 för Cheap Energy och alltså ett för lågt reservpris för dom flesta.
+ */
+const PRISOMRADEN = ["se3", "se1", "se2", "se4"];
 /** Samma antagande som Elchef använder när rörliga avtal jämförs. */
 const FORBRUKNING_KWH = 5000;
 
