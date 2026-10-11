@@ -4,6 +4,60 @@ import { createDatabaseFromBinding } from "@/lib/database";
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
+/**
+ * Hur gammalt prissvaret får vara innan vi hämtar nya priser.
+ *
+ * Tidigare fylldes D1 av ett GitHub Actions-cron (22:05 varje dag). GitHub stänger
+ * av schemalagda jobb efter 60 dagars repo-inaktivitet — det hände i mars 2026 och
+ * priserna stod still i 5,5 månader utan att någon märkte det. Cloudflare Pages har
+ * inga cron-triggers, så vi gör som Elchef i stället: kontrollera färskheten vid
+ * förfrågan och uppdatera på plats. Då kan priset aldrig bli liggande.
+ *
+ * Elchef revaliderar var 15:e minut. En timme här ger samma praktiska färskhet med
+ * lägre belastning (sex partnerhämtningar i stället för en aggregerad).
+ */
+const STALE_AFTER_MS = 60 * 60 * 1000;
+
+/** Skydd mot att hamra uppdateringen om updatedAt av någon anledning inte sätts. */
+let senasteForsok = 0;
+const MIN_MELLAN_MS = 5 * 60 * 1000;
+
+async function refreshPricesIfStale(request: NextRequest, db: any, providers: any[]): Promise<any[]> {
+  // VIKTIGT: titta på det ÄLDSTA datumet, inte det nyaste.
+  // /api/prices/update lyckas inte alltid för alla leverantörer — i oktober 2026 var
+  // Cheap Energy och Stockholms Elbolag färska medan Svealands och Motala låg kvar på
+  // 4-5 dagar gamla priser. En kontroll på det nyaste datumet hade sett allt som färskt
+  // och lämnat de gamla kvar för evigt.
+  const aldsta = providers.reduce((min: number, p: any) => {
+    const t = new Date(p?.updatedAt ?? 0).getTime();
+    if (!Number.isFinite(t) || t <= 0) return min;
+    return min === 0 || t < min ? t : min;
+  }, 0);
+
+  if (aldsta > 0 && Date.now() - aldsta < STALE_AFTER_MS) return providers;
+  if (Date.now() - senasteForsok < MIN_MELLAN_MS) return providers;
+  senasteForsok = Date.now();
+
+  try {
+    console.log('[providers] priserna är gamla — uppdaterar');
+    // Tidsgräns: uppdateringen hämtar sex partnerfiler. Hänger den ska besökaren
+    // hellre få dom befintliga priserna direkt än att sidan står och väntar.
+    const res = await fetch(new URL('/api/prices/update', request.url), {
+      method: 'POST',
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!res.ok) {
+      console.error(`[providers] prisuppdateringen svarade ${res.status}, behåller befintliga priser`);
+      return providers;
+    }
+    const farska = await db.getAllProviders();
+    return farska?.length ? farska : providers;
+  } catch (e) {
+    console.error('[providers] prisuppdateringen misslyckades, behåller befintliga priser:', e);
+    return providers;
+  }
+}
+
 export async function GET(request: NextRequest) {
   try {
     // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
@@ -35,6 +89,9 @@ export async function GET(request: NextRequest) {
     const customerType = customerTypeParam === 'business' ? 'business' : customerTypeParam === 'private' ? 'private' : undefined;
     
     let providers = includeHidden ? await db.getAllProviders() : await db.getProviders(customerType ?? "private");
+
+    // Priserna får aldrig bli liggande — uppdatera på plats om de är gamla.
+    providers = await refreshPricesIfStale(request, db, providers);
 
     if (includeHidden && customerType) {
       providers = providers.filter(provider => provider.customerType === customerType);
