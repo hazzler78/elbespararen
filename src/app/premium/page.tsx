@@ -303,7 +303,7 @@ export default function PremiumPage() {
               </ul>
               <button
                 type="button"
-                onClick={handleUpgrade}
+                onClick={() => void handleUpgrade()}
                 disabled={isCreatingCheckout}
                 className="w-full bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
               >
