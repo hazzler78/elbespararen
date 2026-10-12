@@ -11,6 +11,7 @@ import { BillData } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { AnalyticsEvents } from "@/lib/analytics";
+import { startPremiumCheckout } from "@/lib/start-premium-checkout";
 
 type ExampleImage = {
   src: string;
@@ -27,6 +28,7 @@ function UploadPageContent() {
   const [saveLimitHit, setSaveLimitHit] = useState(false);
   const [saveLimit, setSaveLimit] = useState(2);
   const [savedCount, setSavedCount] = useState(0);
+  const [startingCheckout, setStartingCheckout] = useState(false);
   const hasProcessedPendingRef = useRef(false);
 
   const handleUploadSuccess = useCallback((data: BillData) => {
@@ -328,14 +330,29 @@ function UploadPageContent() {
                   Du har redan {savedCount} sparade. Du kan fortfarande analysera — men
                   den här fakturan sparas inte på kontot utan Premium (99 kr/år).
                 </p>
-                <Link
-                  href="/premium"
-                  onClick={() => AnalyticsEvents.premiumCtaClicked("upload_save_limit")}
-                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                <button
+                  type="button"
+                  disabled={startingCheckout}
+                  onClick={async () => {
+                    if (!user?.email) {
+                      router.push("/premium");
+                      return;
+                    }
+                    setStartingCheckout(true);
+                    const ok = await startPremiumCheckout(
+                      { user: { email: user.email, id: user.id } },
+                      "upload_save_limit"
+                    );
+                    if (!ok) {
+                      setStartingCheckout(false);
+                      router.push("/premium");
+                    }
+                  }}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                 >
-                  Bli Premium — 99 kr/år
+                  {startingCheckout ? "Öppnar betalning…" : "Bli Premium — 99 kr/år"}
                   <ArrowRight className="h-4 w-4" />
-                </Link>
+                </button>
               </div>
             </div>
           </motion.div>

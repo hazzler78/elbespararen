@@ -1,9 +1,13 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Sparkles, Download, History, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
 import { AnalyticsEvents } from "@/lib/analytics";
+import { useAuth } from "@/hooks/useAuth";
+import { startPremiumCheckout } from "@/lib/start-premium-checkout";
 
 interface PremiumValueCTAProps {
   /** Potential monthly savings from the current analysis, if known */
@@ -21,6 +25,7 @@ interface PremiumValueCTAProps {
 /**
  * Conversion CTA at the moment of value (after bill analysis).
  * Free: show what Premium unlocks. Guest: account first, then Premium.
+ * Logged-in: go straight to Stripe Checkout when possible.
  */
 export default function PremiumValueCTA({
   potentialSavings,
@@ -30,6 +35,10 @@ export default function PremiumValueCTA({
   accountSaveLimit = 2,
   className = "",
 }: PremiumValueCTAProps) {
+  const { user } = useAuth();
+  const router = useRouter();
+  const [starting, setStarting] = useState(false);
+
   if (isPremium) return null;
 
   const savingsLine = accountSaveBlocked
@@ -38,14 +47,38 @@ export default function PremiumValueCTA({
       ? `Du kan spara ca ${formatCurrency(potentialSavings)}/mån — håll koll på varje faktura så du ser att besparingen blir verklig.`
       : "Spara varje analys och se hur dina elkostnader förändras över tid.";
 
-  const href = isLoggedIn
-    ? "/premium"
-    : `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`;
-
-  const ctaLabel = isLoggedIn ? "Bli Premium — 99 kr/år" : "Skapa konto & bli Premium";
+  const registerHref = `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`;
+  const ctaLabel = isLoggedIn
+    ? starting
+      ? "Öppnar betalning…"
+      : "Bli Premium — 99 kr/år"
+    : "Skapa konto & bli Premium";
   const title = accountSaveBlocked
     ? "Du har nått gratisgränsen"
     : "Lås in värdet med Premium";
+
+  const source = accountSaveBlocked
+    ? "result_save_limit"
+    : isLoggedIn
+      ? "result_logged_in"
+      : "result_guest";
+
+  const handleClick = async () => {
+    if (!isLoggedIn || !user?.email) {
+      AnalyticsEvents.premiumCtaClicked(source);
+      router.push(registerHref);
+      return;
+    }
+    setStarting(true);
+    const ok = await startPremiumCheckout(
+      { user: { email: user.email, id: user.id } },
+      source
+    );
+    if (!ok) {
+      setStarting(false);
+      router.push("/premium");
+    }
+  };
 
   return (
     <div
@@ -73,24 +106,25 @@ export default function PremiumValueCTA({
       </ul>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <Link
-          href={href}
-          onClick={() =>
-            AnalyticsEvents.premiumCtaClicked(
-              accountSaveBlocked
-                ? "result_save_limit"
-                : isLoggedIn
-                  ? "result_logged_in"
-                  : "result_guest"
-            )
-          }
-          className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
+        <button
+          type="button"
+          onClick={handleClick}
+          disabled={starting}
+          className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors disabled:opacity-60"
         >
           {ctaLabel}
           <ArrowRight className="h-4 w-4" />
-        </Link>
+        </button>
         <p className="text-xs text-gray-500">
           Cirka 8 kr/månad · Avsluta när du vill
+          {isLoggedIn && (
+            <>
+              {" · "}
+              <Link href="/premium" className="underline hover:no-underline">
+                mer info
+              </Link>
+            </>
+          )}
         </p>
       </div>
     </div>
