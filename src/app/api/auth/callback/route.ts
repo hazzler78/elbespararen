@@ -8,17 +8,15 @@ export async function GET(request: NextRequest) {
   const code = requestUrl.searchParams.get('code')
   let next = requestUrl.searchParams.get('next') || '/dashboard'
 
-  // If user came from upload page with pending analysis, redirect back to upload
-  // The upload page will check for pendingAnalysis in sessionStorage and show results
-  if (next === '/auth/register' || next === '/premium') {
-    // Check if there's a pending analysis (stored in referer or we can check sessionStorage client-side)
-    // For now, redirect to upload if they came from register/premium
-    // The upload page will handle showing the analysis result
+  // Honor explicit next destinations (especially /premium checkout).
+  // Only rewrite register→upload when pending analysis flow needs the result page.
+  if (next === '/auth/register') {
     const referer = request.headers.get('referer');
     if (referer?.includes('/upload')) {
       next = '/upload';
     }
   }
+  // Never steal /premium away — that is the paid conversion path after OAuth.
 
   if (!code) {
     return NextResponse.redirect(new URL('/auth/signin?error=Missing authorization code', request.url))
