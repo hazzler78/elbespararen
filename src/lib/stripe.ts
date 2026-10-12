@@ -101,10 +101,13 @@ export async function createCheckoutSession(
 
     // Create checkout session for annual subscription
     // Price: 99 SEK per year
+    // Omit payment_method_types so Stripe Dashboard methods apply (card, Link, m.m.)
     const session = await stripeInstance.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
-      payment_method_types: ['card'],
+      locale: 'sv',
+      allow_promotion_codes: true,
+      billing_address_collection: 'auto',
       line_items: [
         {
           price_data: {
