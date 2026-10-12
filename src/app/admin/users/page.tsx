@@ -88,6 +88,8 @@ export default function AdminUsersPage() {
     return true;
   }) || [];
 
+  const [inviteCopied, setInviteCopied] = useState(false);
+
   const exportToCSV = () => {
     if (!usersData) return;
     
@@ -116,6 +118,44 @@ export default function AdminUsersPage() {
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+  };
+
+  const copyPremiumInvite = async () => {
+    if (!usersData) return;
+    const freeEmails = usersData.users
+      .filter((u) => u.subscriptionTier !== "premium")
+      .map((u) => u.email)
+      .filter(Boolean);
+
+    const body = [
+      "Hej!",
+      "",
+      "Tack för att du använder Elbespararen.",
+      "",
+      "Vi har precis gjort Premium tydligare — för 99 kr/år får du:",
+      "• Obegränsad fakturahistorik (gratis stannar vid 3 månader)",
+      "• CSV-export av dina analyser",
+      "",
+      "Uppgradera här: https://elbespararen.se/premium",
+      "",
+      "Cirka 8 kr/månad. Avsluta när du vill.",
+      "",
+      "Hälsningar,",
+      "Elbespararen",
+      "",
+      "---",
+      `BCC-lista (${freeEmails.length} free):`,
+      freeEmails.join(", "),
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(body);
+      setInviteCopied(true);
+      setTimeout(() => setInviteCopied(false), 2500);
+    } catch {
+      alert("Kunde inte kopiera. Markera texten manuellt från konsolen.");
+      console.log(body);
+    }
   };
 
   if (isLoading) {
@@ -235,7 +275,20 @@ export default function AdminUsersPage() {
                 <Download className="w-4 h-4" />
                 Exportera CSV
               </button>
+
+              <button
+                type="button"
+                onClick={copyPremiumInvite}
+                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 transition-colors flex items-center gap-2 font-medium"
+              >
+                <Crown className="w-4 h-4" />
+                {inviteCopied ? "Kopierat!" : "Kopiera premium-mail"}
+              </button>
             </div>
+            <p className="mt-3 text-xs text-gray-500">
+              Premium-mail kopierar ett utkast + BCC-lista för free-användare. Skicka bara till dem som gett
+              samtycke till e-post.
+            </p>
           </div>
 
           {/* Users List */}

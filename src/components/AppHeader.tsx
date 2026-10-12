@@ -126,22 +126,27 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`
-                  flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
-                  ${isActive(item.href)
-                    ? 'bg-primary text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                  }
-                `}
-              >
-                <item.icon className="w-4 h-4" />
-                <span className="font-medium">{item.label}</span>
-              </Link>
-            ))}
+            {navigationItems.map((item) => {
+              const isPremiumCta = item.href === "/premium";
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
+                    flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
+                    ${isPremiumCta
+                      ? "bg-amber-500 text-white hover:bg-amber-600 shadow-sm"
+                      : isActive(item.href)
+                        ? "bg-primary text-white"
+                        : "text-gray-700 hover:bg-gray-100"
+                    }
+                  `}
+                >
+                  <item.icon className="w-4 h-4" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
           </nav>
 
           {/* User Menu / Auth Button */}
