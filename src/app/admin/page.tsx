@@ -237,48 +237,43 @@ export default function AdminPage() {
   const fixedProviders = providers.filter(p => p.contractType === 'fastpris');
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="py-6">
+    <div className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="mb-8">
-            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
-                <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Admin Dashboard</h1>
-                <p className="text-gray-600">Översikt över leads och besparingar</p>
+                <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Dashboard</h1>
+                <p className="mt-1 text-gray-600">Översikt över leads och besparingar</p>
               </div>
-              <div className="flex flex-wrap gap-2 sm:gap-3">
+              <div className="flex flex-wrap gap-2">
                 <Link
                   href="/admin/providers"
-                  className="flex items-center gap-2 bg-blue-600 text-white px-3 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  <Zap className="w-4 h-4" />
-                  <span className="hidden sm:inline">Hantera leverantörer</span>
-                  <span className="sm:hidden">Leverantörer</span>
+                  <Zap className="h-4 w-4 text-gray-500" />
+                  Leverantörer
                 </Link>
                 <Link
                   href="/admin/switch-requests"
-                  className="flex items-center gap-2 bg-purple-600 text-white px-3 py-2 rounded-lg hover:bg-purple-700 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  <ArrowRight className="w-4 h-4" />
-                  <span className="hidden sm:inline">Bytförfrågningar</span>
-                  <span className="sm:hidden">Bytförfrågningar</span>
+                  <ArrowRight className="h-4 w-4 text-gray-500" />
+                  Bytförfrågningar
                 </Link>
                 <Link
                   href="/admin/price-updates"
-                  className="flex items-center gap-2 bg-green-600 text-white px-3 py-2 rounded-lg hover:bg-green-700 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  <TrendingUp className="w-4 h-4" />
-                  <span className="hidden sm:inline">Prisuppdateringar</span>
-                  <span className="sm:hidden">Priser</span>
+                  <TrendingUp className="h-4 w-4 text-gray-500" />
+                  Priser
                 </Link>
                 <Link
                   href="/admin/analytics"
-                  className="flex items-center gap-2 bg-indigo-600 text-white px-3 py-2 rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                  className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
                 >
-                  <BarChart3 className="w-4 h-4" />
-                  <span className="hidden sm:inline">Analytics</span>
-                  <span className="sm:hidden">Stats</span>
+                  <BarChart3 className="h-4 w-4 text-gray-500" />
+                  Analytics
                 </Link>
               </div>
             </div>
@@ -697,7 +692,6 @@ export default function AdminPage() {
             </div>
           )}
         </div>
-      </div>
     </div>
   );
 }

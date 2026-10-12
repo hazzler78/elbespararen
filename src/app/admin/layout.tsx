@@ -212,107 +212,99 @@ export default function AdminLayout({
     <div className="min-h-screen bg-gray-50">
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div 
-          className="fixed inset-0 z-40 bg-black bg-opacity-50 lg:hidden"
+        <div
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
           onClick={() => setSidebarOpen(false)}
+          aria-hidden
         />
       )}
 
-      {/* Sidebar */}
-      <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 lg:z-auto flex flex-col ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between h-16 px-6 border-b border-gray-200 flex-shrink-0">
-          <h1 className="text-xl font-bold text-gray-900">Admin Panel</h1>
+      {/* Sidebar — always fixed so it sits beside content, not above it */}
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-gray-200 bg-white shadow-sm transition-transform duration-300 ease-in-out ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
+        <div className="flex h-14 shrink-0 items-center justify-between border-b border-gray-200 px-4">
+          <div>
+            <p className="text-sm font-semibold text-gray-900">Elbespararen</p>
+            <p className="text-xs text-gray-500">Admin</p>
+          </div>
           <button
+            type="button"
             onClick={() => setSidebarOpen(false)}
-            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100"
+            className="rounded-md p-2 text-gray-400 hover:bg-gray-100 hover:text-gray-600 lg:hidden"
+            aria-label="Stäng meny"
           >
-            <X className="w-5 h-5" />
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        <nav className="mt-6 px-3 flex-1 overflow-y-auto pb-20">
-          <div className="space-y-1">
-            {navigation.map((item) => {
-              const isActive = pathname === item.href;
-              return (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-lg transition-colors cursor-pointer relative ${
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-3">
+          {navigation.map((item) => {
+            const isActive =
+              item.href === "/admin"
+                ? pathname === "/admin"
+                : pathname === item.href || pathname.startsWith(`${item.href}/`);
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => setSidebarOpen(false)}
+                className={`group flex items-start gap-3 rounded-lg px-3 py-2.5 text-sm transition-colors ${
+                  isActive
+                    ? "bg-blue-50 text-blue-800"
+                    : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <item.icon
+                  className={`mt-0.5 h-4 w-4 shrink-0 ${
                     isActive
-                      ? 'bg-blue-50 text-blue-700 border-r-2 border-blue-700'
-                      : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
+                      ? "text-blue-700"
+                      : "text-gray-400 group-hover:text-gray-600"
                   }`}
-                  onClick={() => {
-                    console.log(`[Admin] Navigating to: ${item.href}`);
-                    setSidebarOpen(false);
-                  }}
-                  style={{ pointerEvents: 'auto' }}
-                >
-                  <item.icon className={`mr-3 w-5 h-5 flex-shrink-0 ${
-                    isActive ? 'text-blue-700' : 'text-gray-400 group-hover:text-gray-600'
-                  }`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="font-medium truncate">{item.name}</div>
-                    <div className="text-xs text-gray-500 truncate">{item.description}</div>
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
+                />
+                <span className="min-w-0">
+                  <span className="block font-medium leading-tight">{item.name}</span>
+                  <span className="mt-0.5 block text-xs font-normal text-gray-500 leading-snug">
+                    {item.description}
+                  </span>
+                </span>
+              </Link>
+            );
+          })}
         </nav>
 
-        {/* Bottom section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200 bg-white">
-          <div className="text-xs text-gray-500 text-center">
-            Elbespararen Admin v1.0
-          </div>
+        <div className="shrink-0 border-t border-gray-200 p-3">
+          <button
+            type="button"
+            onClick={handleLogout}
+            className="w-full rounded-lg px-3 py-2 text-left text-sm text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+          >
+            Logga ut
+          </button>
         </div>
-      </div>
+      </aside>
 
-      {/* Main content */}
-      <div className="lg:ml-64">
-        {/* Top bar */}
-        <div className="sticky top-0 z-20 bg-white shadow-sm border-b border-gray-200">
-          <div className="flex items-center justify-between h-16 px-4 sm:px-6 lg:px-8">
-            <button
-              onClick={() => {
-                console.log('[Admin] Opening sidebar');
-                setSidebarOpen(true);
-              }}
-              className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors"
-              type="button"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-            
-            <div className="flex items-center space-x-4">
-              <div className="hidden sm:block">
-                <div className="text-sm text-gray-500">
-                  Välkommen till admin-panelen
-                </div>
-              </div>
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-sm text-gray-600">Online</span>
-              </div>
-              <button
-                type="button"
-                onClick={handleLogout}
-                className="text-sm text-gray-600 hover:text-gray-900 underline"
-              >
-                Logga ut
-              </button>
-            </div>
+      {/* Main column */}
+      <div className="lg:pl-64">
+        <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gray-200 bg-white/95 px-4 backdrop-blur sm:px-6 lg:px-8">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-md p-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700 lg:hidden"
+            aria-label="Öppna meny"
+          >
+            <Menu className="h-5 w-5" />
+          </button>
+          <div className="hidden text-sm text-gray-500 lg:block">Admin</div>
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <span className="inline-block h-2 w-2 rounded-full bg-emerald-400" />
+            Online
           </div>
-        </div>
+        </header>
 
-        {/* Page content */}
-        <main className="flex-1 relative">
-          {children}
-        </main>
+        <main>{children}</main>
       </div>
     </div>
   );
