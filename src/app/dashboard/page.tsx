@@ -572,7 +572,7 @@ export default function DashboardPage() {
         </div>
 
         {!isPremium && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <span>
               {hiddenAnalysesCount > 0
                 ? `Du har ${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar max 2 sparade (3 mån) — Premium låser upp allt + CSV-export.`
@@ -588,9 +588,13 @@ export default function DashboardPage() {
               type="button"
               disabled={startingCheckout}
               onClick={() => goPremiumCheckout("dashboard_banner")}
-              className="font-semibold text-amber-800 underline shrink-0 disabled:opacity-60"
+              className="shrink-0 inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
             >
-              {startingCheckout ? "Öppnar…" : "Bli Premium"}
+              {startingCheckout
+                ? "Öppnar…"
+                : hiddenAnalysesCount > 0
+                  ? `Lås upp ${hiddenAnalysesCount} — ${PREMIUM_PRICE_LABEL}`
+                  : `Bli Premium — ${PREMIUM_PRICE_LABEL}`}
             </button>
           </div>
         )}
