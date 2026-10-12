@@ -167,8 +167,8 @@ export default function ContactPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {[
               {
-                question: "Är Elbespararen verkligen gratis?",
-                answer: "Ja, helt gratis! Ingen registrering, inga dolda kostnader. Vi tjänar inga pengar på dig."
+                question: "Är Elbespararen gratis?",
+                answer: "Ja — analysen är gratis. Konto sparar upp till 2 fakturor (3 mån historik). Premium 99 kr/år ger obegränsat sparande, längre historik och CSV-export."
               },
               {
                 question: "Sparas min faktura någonstans?",

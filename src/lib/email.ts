@@ -27,7 +27,7 @@ function getEmailConfig() {
   
   // Sverige (Elchef.se)
   const MAIL_FROM_SE = getEnvVar("MAIL_FROM_SE") || getEnvVar("MAIL_FROM") || "info@elbespararen.se";
-  const MAIL_FROM_NAME_SE = getEnvVar("MAIL_FROM_NAME_SE") || getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
+  const MAIL_FROM_NAME_SE = getEnvVar("MAIL_FROM_NAME_SE") || getEnvVar("MAIL_FROM_NAME") || "Elbespararen";
   const MAILERLITE_GROUP_NEWSLETTER_SE = getEnvVar("MAILERLITE_GROUP_NEWSLETTER_SE") || getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
   const MAILERLITE_GROUP_RECEIPTS_SE = getEnvVar("MAILERLITE_GROUP_RECEIPTS_SE") || getEnvVar("MAILERLITE_GROUP_RECEIPTS");
   
@@ -39,7 +39,7 @@ function getEmailConfig() {
   
   // Bakåtkompatibilitet (standard)
   const MAIL_FROM = getEnvVar("MAIL_FROM") || "info@elbespararen.se";
-  const MAIL_FROM_NAME = getEnvVar("MAIL_FROM_NAME") || "Elchef.se";
+  const MAIL_FROM_NAME = getEnvVar("MAIL_FROM_NAME") || "Elbespararen";
   const MAILERLITE_GROUP_NEWSLETTER = getEnvVar("MAILERLITE_GROUP_NEWSLETTER");
   const MAILERLITE_GROUP_RECEIPTS = getEnvVar("MAILERLITE_GROUP_RECEIPTS");
   

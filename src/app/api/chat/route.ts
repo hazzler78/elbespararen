@@ -121,7 +121,8 @@ export async function POST(req: NextRequest) {
 - Hittar onödiga extra avgifter automatiskt
 - Beräknar exakt besparingspotential genom att jämföra mot spotpris
 - Hjälper användare att byta till billigare leverantörer
-- Helt kostnadsfritt och säkert
+- Gratis att analysera; Premium (99 kr/år) för obegränsat sparande, längre historik och CSV-export
+- Säkert — betalning via Stripe om du uppgraderar
 
 ## Hur analysen fungerar:
 1. Besök Elbespararen-webbplatsen i din webbläsare

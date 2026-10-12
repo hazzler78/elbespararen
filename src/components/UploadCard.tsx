@@ -499,7 +499,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                     </div>
                     <div className="text-left">
                       <div className="font-semibold">Skapa konto</div>
-                      <div className="text-xs text-white/80">Spara din faktura - helt gratis</div>
+                      <div className="text-xs text-white/80">Spara upp till 2 fakturor gratis</div>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

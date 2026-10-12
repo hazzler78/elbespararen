@@ -13,8 +13,13 @@ interface FAQItem {
 
 const faqData: FAQItem[] = [
   {
-    question: "Är Elbespararen verkligen helt gratis?",
-    answer: "Ja, Elbespararen är 100% gratis att använda. Ingen registrering krävs, inga dolda kostnader, och vi tjänar inga pengar på dig. Vår tjänst finansieras genom partnerskap med elbolag som vill erbjuda transparenta avtal.",
+    question: "Är Elbespararen gratis?",
+    answer: "Ja — du kan analysera din faktura gratis utan kort. Med gratis konto sparar du upp till 2 fakturor och ser 3 månaders historik. Vill du ha obegränsat sparande, längre historik och CSV-export finns Premium för 99 kr/år.",
+    category: "Allmänt"
+  },
+  {
+    question: "Vad ingår i Premium?",
+    answer: "Premium (99 kr/år) ger obegränsat antal sparade analyser, historik längre än 3 månader och CSV-export. Du betalar säkert via Stripe och kan låta bli att förnya när perioden går ut. Läs mer på /premium.",
     category: "Allmänt"
   },
   {

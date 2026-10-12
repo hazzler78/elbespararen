@@ -166,11 +166,11 @@ export default function AboutPage() {
                   <div className="w-12 h-12 bg-success/10 rounded-full flex items-center justify-center">
                     <Heart className="w-6 h-6 text-success" />
                   </div>
-                  <h3 className="text-xl font-semibold">Helt kostnadsfritt</h3>
+                  <h3 className="text-xl font-semibold">Gratis att börja</h3>
                 </div>
                 <p className="text-muted">
-                  Ingen registrering, inga dolda kostnader. Din faktura analyseras och raderas direkt. 
-                  Inga personuppgifter sparas.
+                  Analysera din faktura utan kort. Skapa konto gratis (upp till 2 sparade fakturor).
+                  Premium 99 kr/år ger obegränsad historik och CSV-export när du vill följa besparingen över tid.
                 </p>
               </motion.div>
             </div>
