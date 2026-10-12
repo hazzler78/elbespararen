@@ -30,6 +30,10 @@ export default function PremiumPage() {
     if (urlParams.get("canceled") === "true") {
       setCanceled(true);
     }
+    const utm = urlParams.get("utm_campaign") || urlParams.get("utm_source");
+    if (utm) {
+      AnalyticsEvents.premiumCtaClicked(`utm_${utm}`);
+    }
   }, []);
 
   useEffect(() => {
@@ -238,12 +242,15 @@ export default function PremiumPage() {
                 {isCreatingCheckout
                   ? "Laddar..."
                   : user
-                    ? "Uppgradera nu"
+                    ? "Uppgradera nu — 99 kr/år"
                     : "Skapa konto & uppgradera"}
                 {!isCreatingCheckout && <ArrowRight className="w-5 h-5" />}
               </button>
+              <p className="mt-3 text-center text-xs text-gray-500">
+                Säker betalning via Stripe · Avsluta när du vill · Inga dolda avgifter
+              </p>
               {!user && (
-                <p className="mt-3 text-center text-xs text-gray-500">
+                <p className="mt-2 text-center text-xs text-gray-500">
                   Redan konto?{" "}
                   <Link
                     href={`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`}
@@ -256,7 +263,7 @@ export default function PremiumPage() {
             </div>
           </div>
 
-          <div className="bg-white rounded-xl p-6 border border-gray-200 text-sm text-gray-600">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 text-sm text-gray-600 mb-6">
             <p className="font-medium text-gray-900 mb-2">Vad du betalar för</p>
             <p>
               Gratis ger dig en stark analys av varje faktura. Premium är till
@@ -265,6 +272,32 @@ export default function PremiumPage() {
               <strong>exportera ut underlaget</strong> — utan att tappa äldre
               analyser efter tre månader.
             </p>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 text-sm space-y-4">
+            <p className="font-medium text-gray-900">Vanliga frågor</p>
+            <div>
+              <p className="font-medium text-gray-800">Kan jag avsluta?</p>
+              <p className="text-gray-600">
+                Ja. Premium löper per år och du kan låta bli att förnya — inga
+                bindningstider utöver den betalda perioden.
+              </p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Vad händer med mina analyser?</p>
+              <p className="text-gray-600">
+                De sparas på ditt konto. Gratis ser du senaste 3 månaderna;
+                Premium visar hela historiken och låter dig exportera till CSV.
+              </p>
+            </div>
+            <div>
+              <p className="font-medium text-gray-800">Är 99 kr/år värt det?</p>
+              <p className="text-gray-600">
+                Om du byter avtal eller bara undviker en onödig avgift sparar de
+                flesta mer än så på en månad. Premium hjälper dig se att
+                besparingen faktiskt håller.
+              </p>
+            </div>
           </div>
         </div>
       </div>
