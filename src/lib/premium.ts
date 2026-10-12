@@ -58,5 +58,41 @@ export const PREMIUM_LIMITS = {
  */
 export function getUserLimits(user: User | null | undefined) {
   const tier = getUserTier(user);
-  return tier === 'premium' ? PREMIUM_LIMITS.PREMIUM : PREMIUM_LIMITS.FREE;
+  // Use isPremium() so expired subscriptions fall back to free limits
+  return isPremium(user) ? PREMIUM_LIMITS.PREMIUM : PREMIUM_LIMITS.FREE;
+}
+
+/** History ranges the API/UI understand */
+export type HistoryRange = "month" | "3months" | "year" | "all";
+
+const FREE_HISTORY_RANGES: HistoryRange[] = ["month", "3months"];
+const PREMIUM_HISTORY_RANGES: HistoryRange[] = ["month", "3months", "year", "all"];
+
+/**
+ * Free users: month + 3 months only.
+ * Premium: all ranges.
+ */
+export function getAllowedHistoryRanges(user: User | null | undefined): HistoryRange[] {
+  return isPremium(user) ? PREMIUM_HISTORY_RANGES : FREE_HISTORY_RANGES;
+}
+
+/**
+ * Clamp a requested range to what the user's tier allows.
+ * Returns the effective range and whether it was limited.
+ */
+export function clampHistoryRange(
+  user: User | null | undefined,
+  requested: string | null | undefined
+): { range: HistoryRange; limited: boolean } {
+  const allowed = getAllowedHistoryRanges(user);
+  const fallback: HistoryRange = isPremium(user) ? "year" : "3months";
+  const raw = (requested || fallback) as HistoryRange;
+  const valid: HistoryRange[] = ["month", "3months", "year", "all"];
+  const requestedRange = valid.includes(raw) ? raw : fallback;
+
+  if (allowed.includes(requestedRange)) {
+    return { range: requestedRange, limited: false };
+  }
+
+  return { range: "3months", limited: true };
 }

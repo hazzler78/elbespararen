@@ -111,7 +111,7 @@ export async function createCheckoutSession(
             currency: 'sek',
             product_data: {
               name: 'Elbespararen Premium',
-              description: 'Årsprenumeration med obegränsad historik, export-funktioner och avancerad analys',
+              description: 'Årsprenumeration: obegränsad fakturahistorik och CSV-export',
             },
             unit_amount: 9900, // 99 SEK in öre
             recurring: {

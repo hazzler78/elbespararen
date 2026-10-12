@@ -508,8 +508,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                       <Sparkles className="w-5 h-5" />
                     </div>
                     <div className="text-left">
-                      <div className="font-semibold">Bli Premium</div>
-                      <div className="text-xs text-yellow-900/80">Alla fördelar och obegränsad historik</div>
+                      <div className="font-semibold">Bli Premium — 99 kr/år</div>
+                      <div className="text-xs text-yellow-900/80">Obegränsad historik + CSV-export</div>
                     </div>
                   </div>
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

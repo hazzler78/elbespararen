@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { clampHistoryRange, isPremium } from "@/lib/premium";
 
 // Cloudflare Pages requires Edge runtime for all routes
 export const runtime = 'edge';
@@ -38,9 +39,10 @@ export async function GET(req: NextRequest) {
       image: user.image,
     });
 
-    // Hämta query parametrar
+    // Hämta query parametrar — free users are limited to 3 months
     const url = new URL(req.url);
-    const range = url.searchParams.get('range') || 'year';
+    const requestedRange = url.searchParams.get('range');
+    const { range, limited } = clampHistoryRange(dbUser, requestedRange);
 
     // Hämta användarens fakturaanalyser
     const analyses = await db.getBillAnalysesByUserId(dbUser.id, range);
@@ -48,7 +50,13 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       success: true,
       data: analyses,
-      count: analyses.length
+      count: analyses.length,
+      meta: {
+        range,
+        requestedRange: requestedRange || null,
+        historyLimited: limited,
+        isPremium: isPremium(dbUser),
+      },
     });
   } catch (error) {
     console.error("[user/bill-analyses] GET error:", error);

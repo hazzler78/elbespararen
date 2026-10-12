@@ -8,12 +8,14 @@ import { BillData, SavingsCalculation } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 import AppHeader from "@/components/AppHeader";
 import ResultSummary from "@/components/ResultSummary";
+import PremiumValueCTA from "@/components/PremiumValueCTA";
 import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
 import ProviderComparison from "@/components/ProviderComparison";
 import { AnalyticsEvents, trackPageView } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
 
 export default function ResultPage() {
   const router = useRouter();
@@ -21,7 +23,31 @@ export default function ResultPage() {
   const [billData, setBillData] = useState<BillData | null>(null);
   const [savings, setSavings] = useState<SavingsCalculation | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
+  const [isPremium, setIsPremium] = useState(false);
   const contactFormRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (authLoading || !user) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const session = {
+          user: { email: user.email || undefined, id: user.id },
+        };
+        const res = await fetchWithAuth("/api/user/info", {}, session);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (data?.success && !cancelled) {
+          setIsPremium(Boolean(data.data?.isPremium));
+        }
+      } catch {
+        // ignore — CTA stays visible for free users
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user]);
 
   useEffect(() => {
     // Track page view
@@ -113,6 +139,17 @@ export default function ResultPage() {
           <div className="mb-8">
             <ResultSummary key={`${savings.currentCost}-${savings.potentialSavings}`} savings={savings} />
           </div>
+
+          {/* Premium conversion — right after value is shown */}
+          {!authLoading && (
+            <div className="mb-8">
+              <PremiumValueCTA
+                potentialSavings={savings.potentialSavings}
+                isPremium={isPremium}
+                isLoggedIn={Boolean(user)}
+              />
+            </div>
+          )}
 
           {/* Extra Fees */}
           {billData.extraFeesDetailed.length > 0 && (

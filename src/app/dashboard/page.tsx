@@ -19,7 +19,6 @@ import {
   Upload,
   Sparkles,
   Crown,
-  Lock,
   User,
   LogOut,
   Trash2
@@ -51,7 +50,8 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isPremium, setIsPremium] = useState(false);
-  const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("year");
+  const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
+  const [historyLimited, setHistoryLimited] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -120,14 +120,16 @@ export default function DashboardPage() {
       
       // Hämta användarinfo (inkl. premium-status)
       const userInfoResponse = await fetchWithAuth('/api/user/info', {}, session);
+      let premium = false;
       if (userInfoResponse.ok) {
         const userInfoData = await userInfoResponse.json();
         if (userInfoData.success) {
-          setIsPremium(userInfoData.data.isPremium || false);
+          premium = Boolean(userInfoData.data.isPremium);
+          setIsPremium(premium);
         }
       }
       
-      // Hämta fakturaanalyser från API
+      // Hämta fakturaanalyser från API (server clamps free users to 3 months)
       const analysesResponse = await fetchWithAuth(`/api/user/bill-analyses?range=${timeRange}`, {}, session);
       if (!analysesResponse.ok) {
         if (analysesResponse.status === 401) {
@@ -141,6 +143,17 @@ export default function DashboardPage() {
       
       const analysesData = await analysesResponse.json();
       const analyses = analysesData.success ? analysesData.data : [];
+      if (analysesData.meta?.historyLimited) {
+        setHistoryLimited(true);
+        if (analysesData.meta.range && analysesData.meta.range !== timeRange) {
+          setTimeRange(analysesData.meta.range);
+        }
+      } else {
+        setHistoryLimited(false);
+      }
+      if (!premium && (timeRange === "year" || timeRange === "all")) {
+        setTimeRange("3months");
+      }
       
       console.log(`[Dashboard] Fetched ${analyses.length} analyses from API`);
       if (analyses.length > 0) {
@@ -328,14 +341,23 @@ export default function DashboardPage() {
             <div className="flex items-center gap-3">
               <select
                 value={timeRange}
-                onChange={(e) => setTimeRange(e.target.value as typeof timeRange)}
+                onChange={(e) => {
+                  const next = e.target.value as typeof timeRange;
+                  if (!isPremium && (next === "year" || next === "all")) {
+                    setHistoryLimited(true);
+                    return;
+                  }
+                  setTimeRange(next);
+                }}
                 className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               >
                 <option value="month">Senaste månaden</option>
                 <option value="3months">Senaste 3 månaderna</option>
-                <option value="year">Senaste året</option>
+                <option value="year" disabled={!isPremium}>
+                  Senaste året {!isPremium && "(Premium)"}
+                </option>
                 <option value="all" disabled={!isPremium}>
-                  All tid {!isPremium && '(Premium)'}
+                  All tid {!isPremium && "(Premium)"}
                 </option>
               </select>
               <Link
@@ -421,19 +443,21 @@ export default function DashboardPage() {
                 ? "Du betalar mer än genomsnittet" 
                 : "Du betalar mindre än genomsnittet"}
             </p>
-            {!isPremium && (
-              <div className="mt-3 pt-3 border-t border-gray-200">
-                <Link
-                  href="/premium"
-                  className="text-xs text-primary hover:text-primary/80 flex items-center gap-1"
-                >
-                  <Lock className="w-3 h-3" />
-                  Uppgradera för avancerad benchmarking
-                </Link>
-              </div>
-            )}
           </div>
         </div>
+
+        {!isPremium && (
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+            <span>
+              {historyLimited
+                ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
+                : "Gratis: senaste 3 månaderna. Premium ger årshistorik och CSV-export — 99 kr/år."}
+            </span>
+            <Link href="/premium" className="font-semibold text-amber-800 underline shrink-0">
+              Bli Premium
+            </Link>
+          </div>
+        )}
 
         {/* Main Content Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
@@ -540,9 +564,9 @@ export default function DashboardPage() {
                       )}
                     </div>
                     <p className="text-sm text-gray-600 mb-3">
-                      {isPremium 
-                        ? "Ladda ner alla dina analyser som CSV, Excel eller PDF."
-                        : "Ladda ner alla dina analyser som CSV, Excel eller PDF. Premium-funktion."}
+                      {isPremium
+                        ? "Ladda ner dina analyser som CSV."
+                        : "Exportera dina analyser som CSV. Premium-funktion."}
                     </p>
                     {isPremium ? (
                       <div className="flex gap-2">
@@ -551,18 +575,6 @@ export default function DashboardPage() {
                           className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
                         >
                           CSV
-                        </a>
-                        <a
-                          href={`/api/user/export?format=excel&range=${timeRange}`}
-                          className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
-                        >
-                          Excel
-                        </a>
-                        <a
-                          href={`/api/user/export?format=pdf&range=${timeRange}`}
-                          className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
-                        >
-                          PDF
                         </a>
                       </div>
                     ) : (

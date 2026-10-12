@@ -3,18 +3,17 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
-import { 
-  Sparkles, 
-  TrendingUp, 
-  Download, 
-  BarChart3, 
-  Target,
+import {
+  Sparkles,
+  Download,
+  History,
   CheckCircle2,
   ArrowRight,
-  Zap
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import AppHeader from "@/components/AppHeader";
 
 export default function PremiumPage() {
   const { user, loading: authLoading } = useAuth();
@@ -22,31 +21,38 @@ export default function PremiumPage() {
   const [isPremium, setIsPremium] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
+  const [canceled, setCanceled] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`);
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("canceled") === "true") {
+      setCanceled(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      setIsLoading(false);
       return;
     }
 
-    if (!authLoading && user) {
-      fetchUserInfo();
-    }
-  }, [authLoading, user, router]);
+    fetchUserInfo();
+  }, [authLoading, user]);
 
   const fetchUserInfo = async () => {
     if (!user) return;
-    
+
     try {
-      // Create session-like object from user for fetchWithAuth
       const session = {
         user: {
           email: user.email || undefined,
-          id: user.id
-        }
+          id: user.id,
+        },
       };
-      
-      const response = await fetchWithAuth('/api/user/info', {}, session);
+
+      const response = await fetchWithAuth("/api/user/info", {}, session);
       if (response.ok) {
         const data = await response.json();
         if (data.success) {
@@ -62,52 +68,51 @@ export default function PremiumPage() {
 
   const handleUpgrade = async () => {
     if (!user?.email) {
-      router.push(`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`);
+      router.push(
+        `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`
+      );
       return;
     }
 
     setIsCreatingCheckout(true);
     try {
-      // Create session-like object from user for fetchWithAuth
       const session = {
         user: {
           email: user.email || undefined,
-          id: user.id
-        }
-      };
-      
-      const response = await fetchWithAuth('/api/stripe/create-checkout-session', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+          id: user.id,
         },
-      }, session);
+      };
+
+      const response = await fetchWithAuth(
+        "/api/stripe/create-checkout-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+        session
+      );
 
       const data = await response.json();
 
       if (data.success && data.url) {
-        // Redirect to Stripe Checkout
         window.location.href = data.url;
       } else {
-        alert(data.error || 'Kunde inte skapa checkout-session. Försök igen senare.');
+        alert(
+          data.error ||
+            "Kunde inte skapa checkout-session. Försök igen senare."
+        );
         setIsCreatingCheckout(false);
       }
     } catch (error) {
-      console.error('Error creating checkout session:', error);
-      alert('Ett fel uppstod. Försök igen senare.');
+      console.error("Error creating checkout session:", error);
+      alert("Ett fel uppstod. Försök igen senare.");
       setIsCreatingCheckout(false);
     }
   };
 
-  // Check for canceled parameter in URL
-  useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('canceled') === 'true') {
-      // User canceled checkout, could show a message here
-    }
-  }, []);
-
-  if (authLoading || isLoading) {
+  if (authLoading || (user && isLoading)) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -120,147 +125,145 @@ export default function PremiumPage() {
 
   if (isPremium) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-xl p-8 border border-yellow-200 text-center">
-            <Sparkles className="w-16 h-16 text-yellow-600 mx-auto mb-4" />
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Du har redan Premium!</h1>
-            <p className="text-gray-600 mb-6">
-              Du har tillgång till alla premium-funktioner.
-            </p>
-            <Link
-              href="/dashboard"
-              className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
-            >
-              Gå till Dashboard
-              <ArrowRight className="w-5 h-5" />
-            </Link>
+      <>
+        <AppHeader />
+        <div className="min-h-screen bg-gray-50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+            <div className="bg-gradient-to-br from-amber-50 to-amber-100 rounded-xl p-8 border border-amber-200 text-center">
+              <Sparkles className="w-16 h-16 text-amber-600 mx-auto mb-4" />
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Du har redan Premium!
+              </h1>
+              <p className="text-gray-600 mb-6">
+                Du har obegränsad historik och kan exportera dina analyser.
+              </p>
+              <Link
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Gå till Dashboard
+                <ArrowRight className="w-5 h-5" />
+              </Link>
+            </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="bg-gradient-to-br from-primary to-primary/80 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-          <div className="text-center">
-            <Sparkles className="w-16 h-16 mx-auto mb-4" />
-            <h1 className="text-4xl font-bold mb-4">Uppgradera till Premium</h1>
-            <p className="text-xl text-white/90 max-w-2xl mx-auto">
-              Få tillgång till avancerad analys, obegränsad historik och export-funktioner
+    <>
+      <AppHeader />
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-primary text-white">
+          <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
+            <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-90" />
+            <h1 className="text-3xl sm:text-4xl font-bold mb-3">
+              Premium — 99 kr/år
+            </h1>
+            <p className="text-lg text-white/90 max-w-xl mx-auto">
+              Spara varje fakturaanalys, följ kostnaden över tid och exportera
+              när du vill. Cirka 8 kr/månad.
+            </p>
+          </div>
+        </div>
+
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+          {canceled && (
+            <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+              Betalningen avbröts. Du kan försöka igen när du är redo — inget har
+              dragits.
+            </div>
+          )}
+
+          <div className="grid sm:grid-cols-2 gap-6 mb-10">
+            <div className="bg-white rounded-xl p-6 border border-gray-200">
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Gratis</h2>
+              <p className="text-3xl font-bold text-gray-900 mb-5">0 kr</p>
+              <ul className="space-y-3 text-sm">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  <span>AI-analys av elräkning</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
+                  <span>Dashboard med senaste 3 månaderna</span>
+                </li>
+                <li className="flex items-start gap-2 text-gray-400">
+                  <X className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>Längre historik</span>
+                </li>
+                <li className="flex items-start gap-2 text-gray-400">
+                  <X className="w-4 h-4 mt-0.5 shrink-0" />
+                  <span>Export till CSV</span>
+                </li>
+              </ul>
+            </div>
+
+            <div className="bg-white rounded-xl p-6 border-2 border-primary shadow-md relative">
+              <div className="absolute -top-3 right-4 bg-amber-400 text-amber-950 text-xs font-bold px-3 py-1 rounded-full">
+                99 kr/år
+              </div>
+              <h2 className="text-xl font-bold text-gray-900 mb-1">Premium</h2>
+              <p className="text-3xl font-bold text-gray-900 mb-1">99 kr/år</p>
+              <p className="text-xs text-gray-500 mb-5">Introduktionspris</p>
+              <ul className="space-y-3 text-sm mb-6">
+                <li className="flex items-start gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>Allt i gratisplanen</span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <History className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>
+                    <strong>Obegränsad historik</strong> — år och all tid
+                  </span>
+                </li>
+                <li className="flex items-start gap-2">
+                  <Download className="w-4 h-4 text-primary mt-0.5 shrink-0" />
+                  <span>
+                    <strong>CSV-export</strong> av dina analyser
+                  </span>
+                </li>
+              </ul>
+              <button
+                type="button"
+                onClick={handleUpgrade}
+                disabled={isCreatingCheckout}
+                className="w-full bg-primary text-white font-semibold py-3 px-6 rounded-lg hover:bg-primary/90 transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {isCreatingCheckout
+                  ? "Laddar..."
+                  : user
+                    ? "Uppgradera nu"
+                    : "Skapa konto & uppgradera"}
+                {!isCreatingCheckout && <ArrowRight className="w-5 h-5" />}
+              </button>
+              {!user && (
+                <p className="mt-3 text-center text-xs text-gray-500">
+                  Redan konto?{" "}
+                  <Link
+                    href={`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`}
+                    className="text-primary underline"
+                  >
+                    Logga in
+                  </Link>
+                </p>
+              )}
+            </div>
+          </div>
+
+          <div className="bg-white rounded-xl p-6 border border-gray-200 text-sm text-gray-600">
+            <p className="font-medium text-gray-900 mb-2">Vad du betalar för</p>
+            <p>
+              Gratis ger dig en stark analys av varje faktura. Premium är till
+              för dig som vill{" "}
+              <strong>följa besparingen över tid</strong> och{" "}
+              <strong>exportera ut underlaget</strong> — utan att tappa äldre
+              analyser efter tre månader.
             </p>
           </div>
         </div>
       </div>
-
-      {/* Pricing */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid md:grid-cols-2 gap-8 mb-12">
-          {/* Free Plan */}
-          <div className="bg-white rounded-xl p-8 border border-gray-200">
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Gratis</h2>
-            <p className="text-4xl font-bold text-gray-900 mb-6">0 kr/månad</p>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-600">Grundläggande dashboard</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-600">Fakturaanalys</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-600">Senaste 3 månaderna</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-gray-300 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-400 line-through">Export-funktioner</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-gray-300 mt-0.5 flex-shrink-0" />
-                <span className="text-gray-400 line-through">Avancerad benchmarking</span>
-              </li>
-            </ul>
-          </div>
-
-          {/* Premium Plan */}
-          <div className="bg-gradient-to-br from-primary to-primary/90 text-white rounded-xl p-8 border-2 border-primary shadow-lg relative">
-            <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 text-xs font-bold px-3 py-1 rounded-full">
-              POPULÄR
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Premium</h2>
-            <p className="text-4xl font-bold mb-2">99 kr/år</p>
-            <p className="text-sm text-white/80 mb-1">Cirka 8 kr/månad</p>
-            <p className="text-xs text-white/70 mb-6">Introduktionspris - kan höjas senare</p>
-            <ul className="space-y-4 mb-8">
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Allt i Gratis-planen</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Obegränsad historik</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Export till CSV, Excel & PDF</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Avancerad benchmarking</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Detaljerad extraavgiftsanalys</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <CheckCircle2 className="w-5 h-5 text-white mt-0.5 flex-shrink-0" />
-                <span>Kostnadsprognoser</span>
-              </li>
-            </ul>
-            <button
-              onClick={handleUpgrade}
-              disabled={isCreatingCheckout}
-              className="w-full bg-white text-primary font-semibold py-3 px-6 rounded-lg hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isCreatingCheckout ? 'Laddar...' : 'Uppgradera nu'}
-              {!isCreatingCheckout && <ArrowRight className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Features */}
-        <div className="bg-white rounded-xl p-8 border border-gray-200">
-          <h2 className="text-2xl font-bold text-gray-900 mb-8 text-center">Premium-funktioner</h2>
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <Download className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Export-funktioner</h3>
-              <p className="text-sm text-gray-600">
-                Exportera alla dina analyser som CSV, Excel eller PDF för egen analys eller delning.
-              </p>
-            </div>
-            <div className="text-center">
-              <BarChart3 className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Avancerad benchmarking</h3>
-              <p className="text-sm text-gray-600">
-                Jämför med andra i samma postnummer eller med liknande förbrukning.
-              </p>
-            </div>
-            <div className="text-center">
-              <TrendingUp className="w-12 h-12 text-primary mx-auto mb-4" />
-              <h3 className="font-semibold text-gray-900 mb-2">Kostnadsprognoser</h3>
-              <p className="text-sm text-gray-600">
-                Få förutsägelser om framtida kostnader baserat på din historik.
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
+    </>
   );
 }

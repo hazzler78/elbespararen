@@ -25,7 +25,8 @@ export default function AnalysesPage() {
   const router = useRouter();
   const [analyses, setAnalyses] = useState<BillAnalysis[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("all");
+  const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
+  const [isPremium, setIsPremium] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
@@ -42,6 +43,14 @@ export default function AnalysesPage() {
         }
       };
       
+      const infoRes = await fetchWithAuth("/api/user/info", {}, session);
+      if (infoRes.ok) {
+        const info = await infoRes.json();
+        if (info.success) {
+          setIsPremium(Boolean(info.data?.isPremium));
+        }
+      }
+
       const analysesResponse = await fetchWithAuth(`/api/user/bill-analyses?range=${timeRange}`, {}, session);
       
       if (!analysesResponse.ok) {
@@ -55,6 +64,9 @@ export default function AnalysesPage() {
       const analysesData = await analysesResponse.json();
       const fetchedAnalyses = analysesData.success ? analysesData.data : [];
       setAnalyses(fetchedAnalyses);
+      if (analysesData.meta?.historyLimited && analysesData.meta.range) {
+        setTimeRange(analysesData.meta.range);
+      }
     } catch (error) {
       console.error('Fel vid hämtning av analyser:', error);
     } finally {
@@ -145,23 +157,37 @@ export default function AnalysesPage() {
             <span className="text-sm font-medium text-foreground">Visa:</span>
             <div className="flex gap-2 flex-wrap">
               {[
-                { value: "month" as const, label: "Senaste månaden" },
-                { value: "3months" as const, label: "Senaste 3 månaderna" },
-                { value: "year" as const, label: "Senaste året" },
-                { value: "all" as const, label: "Alla" },
-              ].map((option) => (
-                <button
-                  key={option.value}
-                  onClick={() => setTimeRange(option.value)}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                    timeRange === option.value
-                      ? "bg-primary text-white"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              ))}
+                { value: "month" as const, label: "Senaste månaden", premium: false },
+                { value: "3months" as const, label: "Senaste 3 månaderna", premium: false },
+                { value: "year" as const, label: "Senaste året", premium: true },
+                { value: "all" as const, label: "Alla", premium: true },
+              ].map((option) => {
+                const locked = option.premium && !isPremium;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      if (locked) {
+                        router.push("/premium");
+                        return;
+                      }
+                      setTimeRange(option.value);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                      timeRange === option.value
+                        ? "bg-primary text-white"
+                        : locked
+                          ? "bg-gray-50 text-gray-400 border border-dashed border-gray-300"
+                          : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                    title={locked ? "Premium krävs" : undefined}
+                  >
+                    {option.label}
+                    {locked ? " · Premium" : ""}
+                  </button>
+                );
+              })}
             </div>
           </div>
         </div>
