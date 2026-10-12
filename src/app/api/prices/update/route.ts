@@ -2,8 +2,19 @@ import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import type { ContractAlternative, ElectricityProvider } from "@/lib/types";
 import { getPriceAreaFromPostalCode, PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
+import { getEnvVar, requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
+
+async function requireAdminOrCron(request: NextRequest): Promise<NextResponse | null> {
+  const cronSecret = getEnvVar("CRON_SECRET");
+  const authHeader = request.headers.get("authorization");
+  if (cronSecret && authHeader === `Bearer ${cronSecret}`) {
+    return null;
+  }
+  return requireAdmin(request);
+}
+
 
 function computeEnergyPriceFromComponents(
   surchargeOre?: number,
@@ -601,6 +612,9 @@ function createVariableProvidersFromSpotPrices(data: any, providerName: string):
 
 // Huvudfunktion för att uppdatera priser
 export async function POST(request: NextRequest) {
+  const denied = await requireAdminOrCron(request);
+  if (denied) return denied;
+
   try {
     console.log('[Price Update] Starting price update process...');
 
@@ -882,6 +896,9 @@ export async function POST(request: NextRequest) {
 
 // GET endpoint för att testa systemet
 export async function GET(request: NextRequest) {
+  const denied = await requireAdminOrCron(request);
+  if (denied) return denied;
+
   return NextResponse.json({
     success: true,
     message: "Price update endpoint is ready",

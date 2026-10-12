@@ -114,6 +114,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
                 alt="Elbespararen" 
                 width={160}
                 height={32}
+                priority
                 className="h-8 w-auto object-contain"
                 onError={() => {
                   console.error('[AppHeader] Logo failed to load, using fallback');

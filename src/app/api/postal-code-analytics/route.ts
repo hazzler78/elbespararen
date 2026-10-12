@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};

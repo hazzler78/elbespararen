@@ -1,11 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { BillAnalysis } from "@/lib/types";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
 // GET - Hämta alla fakturaanalyser
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};

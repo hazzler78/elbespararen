@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
@@ -10,16 +10,10 @@ export const runtime = 'edge';
  * Body: { email: string, tier: 'free' | 'premium' }
  */
 export async function POST(req: NextRequest) {
-  try {
-    // Check authentication
-    const user = await getSessionUser(req);
-    if (!user?.email) {
-      return NextResponse.json(
-        { success: false, error: "Ej autentiserad" },
-        { status: 401 }
-      );
-    }
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
 
+  try {
     // Get database
     let env: any = {};
     if ((globalThis as any).getRequestContext) {
@@ -34,21 +28,17 @@ export async function POST(req: NextRequest) {
 
     const db = createDatabaseFromBinding(env?.DB);
 
-    // Get current user
-    const currentUser = await db.getUserByEmail(user.email);
-    if (!currentUser) {
+    const body = await req.json();
+    const { email, tier } = body as { email?: string; tier?: string };
+
+    if (!email || !tier || (tier !== "free" && tier !== "premium")) {
       return NextResponse.json(
-        { success: false, error: "Användare hittades inte" },
-        { status: 404 }
+        { success: false, error: "email och tier (free|premium) krävs" },
+        { status: 400 }
       );
     }
 
-    // Parse request body
-    const body = await req.json();
-    const { email, tier } = body;
-
-    // Get target user
-    const targetUser = await db.getUserByEmail(email || user.email);
+    const targetUser = await db.getUserByEmail(email);
     if (!targetUser) {
       return NextResponse.json(
         { success: false, error: "Målanvändare hittades inte" },

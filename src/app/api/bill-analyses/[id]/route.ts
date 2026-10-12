@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { BillAnalysis } from "@/lib/types";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
@@ -9,6 +10,9 @@ export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     
@@ -52,6 +56,9 @@ export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     const body = await req.json() as {
@@ -111,6 +118,9 @@ export async function DELETE(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     const { id } = await params;
     

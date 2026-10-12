@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import type { NewsPost, ApiResponse } from "@/lib/types";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -32,6 +33,10 @@ export async function GET(request: NextRequest) {
     // Kontrollera om vi ska inkludera opublicerade inlägg
     const url = new URL(request.url);
     const includeUnpublished = url.searchParams.get('includeUnpublished') === 'true';
+    if (includeUnpublished) {
+      const denied = await requireAdmin(request);
+      if (denied) return denied;
+    }
     const id = url.searchParams.get('id');
     
     if (id) {
@@ -65,6 +70,9 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};
@@ -121,6 +129,9 @@ export async function POST(request: NextRequest) {
 }
 
 export async function PUT(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};
@@ -175,6 +186,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};

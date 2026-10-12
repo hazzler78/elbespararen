@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types";
 import { createClient } from "@supabase/supabase-js";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages för Cloudflare
 export const runtime = 'edge';
@@ -319,6 +320,9 @@ async function countAnalyzedBills(period?: string): Promise<number> {
  * Hämtar analytics-data från Google Analytics Data API
  */
 export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
     const gaPropertyId = process.env.GOOGLE_ANALYTICS_PROPERTY_ID;

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { ApiResponse } from "@/lib/types";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
@@ -9,6 +10,9 @@ export const runtime = 'edge';
  * GET /api/admin/users
  */
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     // Get database
     let env: any = {};

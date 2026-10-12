@@ -11,8 +11,6 @@ import {
   ArrowRight, 
   Menu, 
   X,
-  Settings,
-  BarChart3,
   Lock,
   Newspaper,
   MessageCircle,
@@ -20,8 +18,6 @@ import {
   FileText,
   Sparkles
 } from "lucide-react";
-
-const ADMIN_PASSWORD = "grodan2025";
 
 const navigation = [
   {
@@ -95,30 +91,64 @@ export default function AdminLayout({
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
-    // Check if user is already authenticated from sessionStorage
-    const authStatus = sessionStorage.getItem("admin_authenticated");
-    if (authStatus === "true") {
-      setIsAuthenticated(true);
-    } else {
-      setIsAuthenticated(false);
-    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/admin/session", { credentials: "same-origin" });
+        const data = await res.json().catch(() => ({}));
+        if (!cancelled) {
+          setIsAuthenticated(Boolean(data?.authenticated));
+        }
+      } catch {
+        if (!cancelled) setIsAuthenticated(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const handlePasswordSubmit = (e: React.FormEvent) => {
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
-    
-    if (password === ADMIN_PASSWORD) {
+    setIsSubmitting(true);
+    try {
+      const res = await fetch("/api/admin/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "same-origin",
+        body: JSON.stringify({ password }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok || !data?.success) {
+        setError(data?.error || "Fel lösenord. Försök igen.");
+        setPassword("");
+        return;
+      }
       setIsAuthenticated(true);
-      sessionStorage.setItem("admin_authenticated", "true");
       setPassword("");
-    } else {
-      setError("Fel lösenord. Försök igen.");
+    } catch {
+      setError("Kunde inte logga in. Försök igen.");
       setPassword("");
+    } finally {
+      setIsSubmitting(false);
     }
+  };
+
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/admin/logout", {
+        method: "POST",
+        credentials: "same-origin",
+      });
+    } catch {
+      // ignore
+    }
+    setIsAuthenticated(false);
   };
 
   // Show password prompt if not authenticated
@@ -158,9 +188,10 @@ export default function AdminLayout({
             
             <button
               type="submit"
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium"
+              disabled={isSubmitting}
+              className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-60"
             >
-              Logga in
+              {isSubmitting ? "Loggar in..." : "Logga in"}
             </button>
           </form>
         </div>
@@ -267,6 +298,13 @@ export default function AdminLayout({
                 <div className="w-2 h-2 bg-green-400 rounded-full"></div>
                 <span className="text-sm text-gray-600">Online</span>
               </div>
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="text-sm text-gray-600 hover:text-gray-900 underline"
+              >
+                Logga ut
+              </button>
             </div>
           </div>
         </div>

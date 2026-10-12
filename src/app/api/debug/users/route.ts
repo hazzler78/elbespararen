@@ -1,15 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
 /**
  * Debug endpoint to list and delete users in database
+ * Requires admin session. Prefer disabling in production when unused.
  * GET /api/debug/users - List all users
  * DELETE /api/debug/users?email=... - Delete user by email
  * DELETE /api/debug/users?clear=all - Clear all users (MockDatabase only)
  */
 export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     // Get database
     let env: any = {};
@@ -61,6 +66,9 @@ export async function GET(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     const { searchParams } = new URL(req.url);
     const email = searchParams.get('email');

@@ -3,11 +3,15 @@ import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
 import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime
     let env: any = {};

@@ -6,6 +6,10 @@ import { NextRequest, NextResponse } from "next/server";
 import { handlers } from "@/lib/auth-config";
 
 export async function GET(req: NextRequest) {
+  if (process.env.NODE_ENV === "production") {
+    return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
+  }
+
   try {
     // Try to get auth handlers
     const authHandlers = handlers;

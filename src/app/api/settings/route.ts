@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { ApiResponse } from "@/lib/types";
+import { requireAdmin } from "@/lib/admin-auth";
 
 export const runtime = 'edge';
 
@@ -114,6 +115,9 @@ export async function GET() {
 
 // POST - Spara best choice provider IDs
 export async function POST(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     const { db } = await getBinding();
     const body = await request.json() as { 

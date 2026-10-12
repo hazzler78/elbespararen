@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { sendOrderConfirmationEmail, sendWelcomeEmail, addToNewsletter, getDefaultNewsletterGroupId, getDefaultReceiptsGroupId } from "@/lib/email";
 import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
+import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -316,7 +317,10 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
     let env: any = {};
@@ -356,6 +360,9 @@ export async function GET() {
 }
 
 export async function PUT(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
     let env: any = {};
@@ -429,6 +436,9 @@ export async function PUT(request: NextRequest) {
 }
 
 export async function DELETE(request: NextRequest) {
+  const denied = await requireAdmin(request);
+  if (denied) return denied;
+
   try {
     // Hämta D1-binding från Edge-runtime - flera metoder för Cloudflare Pages
     let env: any = {};
