@@ -3,6 +3,11 @@
  */
 
 import Stripe from 'stripe';
+import {
+  PREMIUM_PRICE_ORE,
+  PREMIUM_PRICE_LABEL,
+  PREMIUM_PRICE_INTRO_NOTE,
+} from '@/lib/premium-pricing';
 
 // Helper function to get environment variable (works in both Node and Edge runtime)
 function getEnvVar(key: string): string | undefined {
@@ -99,8 +104,7 @@ export async function createCheckoutSession(
       });
     }
 
-    // Create checkout session for annual subscription
-    // Price: 99 SEK per year
+    // Create checkout session for annual subscription (intro price)
     // Omit payment_method_types so Stripe Dashboard methods apply (card, Link, m.m.)
     const session = await stripeInstance.checkout.sessions.create({
       customer: customer.id,
@@ -114,9 +118,9 @@ export async function createCheckoutSession(
             currency: 'sek',
             product_data: {
               name: 'Elbespararen Premium',
-              description: 'Årsprenumeration: obegränsad fakturahistorik och CSV-export',
+              description: `${PREMIUM_PRICE_INTRO_NOTE}: obegränsad fakturahistorik och CSV-export (${PREMIUM_PRICE_LABEL})`,
             },
-            unit_amount: 9900, // 99 SEK in öre
+            unit_amount: PREMIUM_PRICE_ORE,
             recurring: {
               interval: 'year',
             },

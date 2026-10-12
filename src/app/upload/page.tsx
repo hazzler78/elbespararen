@@ -12,6 +12,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { startPremiumCheckout } from "@/lib/start-premium-checkout";
+import { PREMIUM_PRICE_CTA, PREMIUM_PRICE_LABEL } from "@/lib/premium-pricing";
 
 type ExampleImage = {
   src: string;
@@ -328,7 +329,8 @@ function UploadPageContent() {
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   Du har redan {savedCount} sparade. Du kan fortfarande analysera — men
-                  den här fakturan sparas inte på kontot utan Premium (99 kr/år).
+                  den här fakturan sparas inte på kontot utan Premium (
+                  {PREMIUM_PRICE_LABEL}).
                 </p>
                 <button
                   type="button"
@@ -350,7 +352,7 @@ function UploadPageContent() {
                   }}
                   className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                 >
-                  {startingCheckout ? "Öppnar betalning…" : "Bli Premium — 99 kr/år"}
+                  {startingCheckout ? "Öppnar betalning…" : PREMIUM_PRICE_CTA}
                   <ArrowRight className="h-4 w-4" />
                 </button>
               </div>

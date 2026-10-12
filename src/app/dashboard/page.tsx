@@ -31,6 +31,7 @@ import { formatCurrency } from "@/lib/calculations";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { startPremiumCheckout } from "@/lib/start-premium-checkout";
+import { PREMIUM_PRICE_CTA, PREMIUM_PRICE_LABEL } from "@/lib/premium-pricing";
 
 interface DashboardStats {
   totalAnalyses: number;
@@ -370,10 +371,10 @@ export default function DashboardPage() {
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   {hiddenAnalysesCount > 0
-                    ? "Gratis visar max 2 sparade. Premium (99 kr/år) låser upp hela historiken och CSV-export."
+                    ? `Gratis visar max 2 sparade. Premium (${PREMIUM_PRICE_LABEL}) låser upp hela historiken och CSV-export.`
                     : analyses.length >= 2
-                      ? "Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — 99 kr/år."
-                      : "Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export — så du ser att besparingen håller."}
+                      ? `Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — ${PREMIUM_PRICE_LABEL}.`
+                      : `Gratis visar 3 månader. Premium (${PREMIUM_PRICE_LABEL}) ger obegränsad historik och CSV-export — så du ser att besparingen håller.`}
                 </p>
               </div>
             </div>
@@ -387,7 +388,7 @@ export default function DashboardPage() {
                   await goPremiumCheckout("dashboard_nudge");
                 }}
               >
-                {startingCheckout ? "Öppnar betalning…" : "Bli Premium — 99 kr/år"}
+                {startingCheckout ? "Öppnar betalning…" : PREMIUM_PRICE_CTA}
                 <ArrowUpRight className="h-4 w-4" />
               </button>
               <button
@@ -575,8 +576,8 @@ export default function DashboardPage() {
                 : historyLimited
                   ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
                   : analyses.length >= 2
-                    ? "Gratisplanen är full (2/2). Nästa faktura sparas inte utan Premium — 99 kr/år."
-                    : "Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — 99 kr/år."}
+                    ? `Gratisplanen är full (2/2). Nästa faktura sparas inte utan Premium — ${PREMIUM_PRICE_LABEL}.`
+                    : `Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — ${PREMIUM_PRICE_LABEL}.`}
             </span>
             <button
               type="button"
@@ -883,7 +884,8 @@ export default function DashboardPage() {
                         {hiddenAnalysesCount === 1 ? " analys" : "a analyser"}
                       </h3>
                       <p className="text-sm text-amber-900/80">
-                        Gratis visar max 2. Premium låser upp hela historiken — 99 kr/år.
+                        Gratis visar max 2. Premium låser upp hela historiken —{" "}
+                        {PREMIUM_PRICE_LABEL}.
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-amber-800 shrink-0">

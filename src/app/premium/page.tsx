@@ -15,6 +15,12 @@ import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import AppHeader from "@/components/AppHeader";
 import { AnalyticsEvents } from "@/lib/analytics";
+import {
+  PREMIUM_PRICE_LABEL,
+  PREMIUM_PRICE_MONTHLY_HINT,
+  PREMIUM_PRICE_INTRO_NOTE,
+  PREMIUM_PRICE_WAS_SEK,
+} from "@/lib/premium-pricing";
 
 export default function PremiumPage() {
   const { user, loading: authLoading } = useAuth();
@@ -181,11 +187,11 @@ export default function PremiumPage() {
           <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-14 text-center">
             <Sparkles className="w-12 h-12 mx-auto mb-4 opacity-90" />
             <h1 className="text-3xl sm:text-4xl font-bold mb-3">
-              Premium — 99 kr/år
+              Premium — {PREMIUM_PRICE_LABEL}
             </h1>
             <p className="text-lg text-white/90 max-w-xl mx-auto">
               Spara varje fakturaanalys, följ kostnaden över tid och exportera
-              när du vill. Cirka 8 kr/månad.
+              när du vill. {PREMIUM_PRICE_MONTHLY_HINT}.
             </p>
             {user && hiddenAnalysesCount > 0 && (
               <p className="mt-4 inline-block rounded-lg bg-white/15 px-4 py-2 text-sm font-medium">
@@ -231,11 +237,18 @@ export default function PremiumPage() {
 
             <div className="bg-white rounded-xl p-6 border-2 border-primary shadow-md relative">
               <div className="absolute -top-3 right-4 bg-amber-400 text-amber-950 text-xs font-bold px-3 py-1 rounded-full">
-                99 kr/år
+                {PREMIUM_PRICE_LABEL}
               </div>
               <h2 className="text-xl font-bold text-gray-900 mb-1">Premium</h2>
-              <p className="text-3xl font-bold text-gray-900 mb-1">99 kr/år</p>
-              <p className="text-xs text-gray-500 mb-5">Introduktionspris</p>
+              <p className="text-3xl font-bold text-gray-900 mb-1">
+                {PREMIUM_PRICE_LABEL}
+              </p>
+              <p className="text-xs text-gray-500 mb-5">
+                {PREMIUM_PRICE_INTRO_NOTE}{" "}
+                <span className="line-through opacity-70">
+                  {PREMIUM_PRICE_WAS_SEK} kr/år
+                </span>
+              </p>
               <ul className="space-y-3 text-sm mb-6">
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-primary mt-0.5 shrink-0" />
@@ -263,7 +276,7 @@ export default function PremiumPage() {
                 {isCreatingCheckout
                   ? "Laddar..."
                   : user
-                    ? "Uppgradera nu — 99 kr/år"
+                    ? `Uppgradera nu — ${PREMIUM_PRICE_LABEL}`
                     : "Skapa konto & uppgradera"}
                 {!isCreatingCheckout && <ArrowRight className="w-5 h-5" />}
               </button>
@@ -312,7 +325,9 @@ export default function PremiumPage() {
               </p>
             </div>
             <div>
-              <p className="font-medium text-gray-800">Är 99 kr/år värt det?</p>
+              <p className="font-medium text-gray-800">
+                Är {PREMIUM_PRICE_LABEL} värt det?
+              </p>
               <p className="text-gray-600">
                 Om du byter avtal eller bara undviker en onödig avgift sparar de
                 flesta mer än så på en månad. Premium hjälper dig se att

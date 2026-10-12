@@ -14,12 +14,12 @@ interface FAQItem {
 const faqData: FAQItem[] = [
   {
     question: "Är Elbespararen gratis?",
-    answer: "Ja — du kan analysera din faktura gratis utan kort. Med gratis konto sparar du upp till 2 fakturor och ser 3 månaders historik. Vill du ha obegränsat sparande, längre historik och CSV-export finns Premium för 99 kr/år.",
+    answer: "Ja — du kan analysera din faktura gratis utan kort. Med gratis konto sparar du upp till 2 fakturor och ser 3 månaders historik. Vill du ha obegränsat sparande, längre historik och CSV-export finns Premium för 49 kr/år (introduktionspris).",
     category: "Allmänt"
   },
   {
     question: "Vad ingår i Premium?",
-    answer: "Premium (99 kr/år) ger obegränsat antal sparade analyser, historik längre än 3 månader och CSV-export. Du betalar säkert via Stripe och kan låta bli att förnya när perioden går ut. Läs mer på /premium.",
+    answer: "Premium (49 kr/år intro) ger obegränsat antal sparade analyser, historik längre än 3 månader och CSV-export. Du betalar säkert via Stripe och kan låta bli att förnya när perioden går ut. Läs mer på /premium.",
     category: "Allmänt"
   },
   {

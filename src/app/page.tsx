@@ -206,7 +206,7 @@ export default function Home() {
               },
               {
                 title: "Börja gratis",
-                desc: "Analysera din faktura utan kostnad. Premium (99 kr/år) ger historik och export när du behöver mer."
+                desc: "Analysera din faktura utan kostnad. Premium (49 kr/år intro) ger historik och export när du behöver mer."
               },
               {
                 title: "Säker & privat",
@@ -239,7 +239,7 @@ export default function Home() {
           >
             <div className="inline-flex items-center gap-2 text-amber-800 font-medium text-sm mb-3">
               <Sparkles className="w-4 h-4" />
-              Premium — 99 kr/år
+              Premium — 49 kr/år
             </div>
             <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
               Spara analyserna — se att besparingen blir verklig

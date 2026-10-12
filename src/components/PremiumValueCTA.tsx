@@ -8,6 +8,10 @@ import { formatCurrency } from "@/lib/calculations";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
 import { startPremiumCheckout } from "@/lib/start-premium-checkout";
+import {
+  PREMIUM_PRICE_CTA,
+  PREMIUM_PRICE_MONTHLY_HINT,
+} from "@/lib/premium-pricing";
 
 interface PremiumValueCTAProps {
   /** Potential monthly savings from the current analysis, if known */
@@ -51,7 +55,7 @@ export default function PremiumValueCTA({
   const ctaLabel = isLoggedIn
     ? starting
       ? "Öppnar betalning…"
-      : "Bli Premium — 99 kr/år"
+      : PREMIUM_PRICE_CTA
     : "Skapa konto & bli Premium";
   const title = accountSaveBlocked
     ? "Du har nått gratisgränsen"
@@ -116,7 +120,7 @@ export default function PremiumValueCTA({
           <ArrowRight className="h-4 w-4" />
         </button>
         <p className="text-xs text-gray-500">
-          Cirka 8 kr/månad · Avsluta när du vill
+          {PREMIUM_PRICE_MONTHLY_HINT} · Avsluta när du vill
           {isLoggedIn && (
             <>
               {" · "}

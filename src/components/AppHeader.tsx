@@ -17,6 +17,7 @@ import {
   X
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { startPremiumCheckout } from "@/lib/start-premium-checkout";
 
 interface AppHeaderProps {
   showBackButton?: boolean;
@@ -31,6 +32,22 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
   const [isLoadingPremium, setIsLoadingPremium] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [logoError, setLogoError] = useState(false);
+  const [startingCheckout, setStartingCheckout] = useState(false);
+
+  const handlePremiumClick = async (e: React.MouseEvent) => {
+    if (!user?.email || isPremium) return;
+    e.preventDefault();
+    setStartingCheckout(true);
+    setMobileMenuOpen(false);
+    const ok = await startPremiumCheckout(
+      { user: { email: user.email, id: user.id } },
+      "header_cta"
+    );
+    if (!ok) {
+      setStartingCheckout(false);
+      router.push("/premium");
+    }
+  };
 
   // Hämta premium-status om användaren är inloggad
   useEffect(() => {
@@ -132,6 +149,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
                 <Link
                   key={item.href}
                   href={item.href}
+                  onClick={isPremiumCta && user ? handlePremiumClick : undefined}
                   className={`
                     flex items-center gap-2 px-4 py-2 rounded-lg transition-colors
                     ${isPremiumCta
@@ -143,7 +161,9 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
                   `}
                 >
                   <item.icon className="w-4 h-4" />
-                  <span className="font-medium">{item.label}</span>
+                  <span className="font-medium">
+                    {isPremiumCta && startingCheckout ? "Öppnar…" : item.label}
+                  </span>
                 </Link>
               );
             })}
@@ -233,7 +253,11 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
                     <Link
                       key={item.href}
                       href={item.href}
-                      onClick={() => setMobileMenuOpen(false)}
+                      onClick={
+                        isPremiumCta && user
+                          ? handlePremiumClick
+                          : () => setMobileMenuOpen(false)
+                      }
                       className={`
                         flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
                         ${isPremiumCta
@@ -245,7 +269,9 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
                       `}
                     >
                       <item.icon className="w-5 h-5" />
-                      <span className="font-medium">{item.label}</span>
+                      <span className="font-medium">
+                        {isPremiumCta && startingCheckout ? "Öppnar…" : item.label}
+                      </span>
                     </Link>
                   );
                 })}
