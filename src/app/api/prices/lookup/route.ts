@@ -43,6 +43,90 @@ function slugify(value: string): string {
     .replace(/(^-|-$)/g, '');
 }
 
+/** Kopplar uppslagets nycklar till leverantörens slug hos elprishantering. */
+const ELPRIS_SLUG: Record<string, string> = {
+  'cheap-energy': 'cheapenergy',
+  'energi2': 'energi2',
+  'stockholms-el': 'sthlmsel',
+  'svealands-el': 'svealandsel',
+  'svekraft': 'svekraft',
+  'motala-el': 'motala'
+};
+
+/**
+ * Hämtar det rörliga påslaget från elprishantering — samma källa som Elchef och som
+ * uppdateringsrouten använder. Partnerfilerna duger inte: elify.se svarar 404 och
+ * energi2.se/svekraft.com HTML, och Cheap Energys fil visade en äldre rabatt
+ * (-9,5 i stället för -12,9) vilket vände påslaget från -1,36 till +2,04 öre.
+ *
+ * Urvalet är detsamma som i uppdateringsrouten: billigaste obundna avtal, kvartspris
+ * (annars timpris) jämfört med månadspris på årskostnad.
+ */
+async function lookupViaElprishantering(
+  providerKey: string,
+  area: string,
+  kwh: number
+): Promise<Normalized | null> {
+  const slug = ELPRIS_SLUG[providerKey];
+  if (!slug) return null;
+
+  const url = `https://elprishantering.com/v2/prices?price_area=${area.toUpperCase()}&supplier=${slug}&consumption_kwh=${kwh}`;
+  try {
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json', 'User-Agent': 'Elbespararen/2.0' }
+    });
+    if (!res.ok) return null;
+    const json: any = await res.json();
+
+    const obundna: any[] = (json?.products ?? []).filter(
+      (p: any) => (p?.binding_period_months ?? 0) === 0
+    );
+    if (!obundna.length) return null;
+
+    const spotOre = Number(json?.spot_price?.ore_kwh);
+    const manadsavgift = (p: any) =>
+      Math.max(0, Number(p?.components?.monthly_fee ?? 0) - Number(p?.components?.customer_discount_per_month ?? 0));
+    const paslag = (p: any) => Number(p?.breakdown?.energy_price_excl_vat) - spotOre;
+    const arskostnad = (p: any) => manadsavgift(p) * 12 + (paslag(p) * kwh) / 100;
+
+    const kategori = (typ: string) => obundna.filter((p) => p.type === typ);
+    const kvarts = kategori('quarter_hourly');
+    const spotFoljande = kvarts.length ? kvarts : kategori('hourly');
+    const billigaste = (lista: any[]) =>
+      lista.reduce((b: any, p: any) => (!b || arskostnad(p) < arskostnad(b) ? p : b), null);
+    const spotVal = billigaste(spotFoljande);
+    const manadsVal = billigaste(kategori('monthly'));
+    const vald =
+      spotVal && manadsVal
+        ? (arskostnad(spotVal) <= arskostnad(manadsVal) ? spotVal : manadsVal)
+        : (spotVal ?? manadsVal);
+    if (!vald) return null;
+
+    const c = vald.components ?? {};
+    const b = vald.breakdown ?? {};
+    return {
+      area,
+      range: c.usage_tier
+        ? { min: Number(c.usage_tier.min_kwh ?? 0), max: Number(c.usage_tier.max_kwh ?? 0) }
+        : null,
+      surcharge: Number(c.markup ?? 0),
+      variable_costs: Number(c.variable_costs ?? 0),
+      el_certificate_fee: 0,
+      // ProviderComparison räknar markup + discount, så rabatten lämnas negativ
+      // (samma teckenkonvention som partnerfilerna hade).
+      _12_month_discount: -Number(c.discount ?? 0),
+      price: b.energy_price_excl_vat,
+      monthly_fee: b.monthly_fee,
+      total: b.energy_price_excl_vat,
+      total_with_vat: b.total_price,
+      vat: b.vat,
+      source: 'live'
+    };
+  } catch {
+    return null;
+  }
+}
+
 function canonicalizeProvider(name: string): string | null {
   const slug = slugify(name || '');
   if (URL_MAP[slug]) return slug;
@@ -149,6 +233,14 @@ export async function POST(request: NextRequest) {
         success: true, 
         data: normalized
       });
+    }
+
+    // Föredra elprishantering — samma källa som Elchef. Partnerfilerna nedan är bara
+    // reserv: fyra av sex svarar 404 eller HTML, och Cheap Energys fil gav fel rabatt.
+    const viaElpris = await lookupViaElprishantering(providerKey, area, kwh);
+    if (viaElpris) {
+      if (db) await writeCache(db, providerKey, area, viaElpris);
+      return NextResponse.json({ success: true, data: viaElpris });
     }
 
     const url = URL_MAP[providerKey];

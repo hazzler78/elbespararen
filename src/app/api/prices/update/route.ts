@@ -806,8 +806,10 @@ export async function POST(request: NextRequest) {
             let action = 'kept_variable_active';
 
             if (franElpris !== undefined) {
-              // Påslaget är redan nettot (elpris exkl. moms minus spot), i öre exkl. moms.
-              updatePayload.energyPrice = computeEnergyPriceFromComponents(franElpris, 0, 0);
+              // Räknas utan klampning: ett negativt påslag är giltigt och ska visas.
+              // Cheap Energy ligger på -1,36 öre/kWh, alltså -0,017 kr/kWh inkl. moms.
+              // computeEnergyPriceFromComponents klämmer allt under noll till noll.
+              updatePayload.energyPrice = Number(((franElpris / 100) * 1.25).toFixed(6));
               action = 'variable_updated';
             } else if (components) {
               updatePayload.energyPrice = computeEnergyPriceFromComponents(
