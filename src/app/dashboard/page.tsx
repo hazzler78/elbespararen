@@ -342,11 +342,14 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h2 id="premium-nudge-title" className="text-lg font-semibold text-gray-900">
-                  Du har {analyses.length} sparade analyser
+                  {analyses.length >= 2
+                    ? `Gratisplanen: max 2 sparade fakturor`
+                    : `Du har ${analyses.length} sparade analyser`}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export
-                  — så du ser att besparingen håller.
+                  {analyses.length >= 2
+                    ? "Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — 99 kr/år."
+                    : "Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export — så du ser att besparingen håller."}
                 </p>
               </div>
             </div>

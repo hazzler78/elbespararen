@@ -24,6 +24,8 @@ export default function ResultPage() {
   const [savings, setSavings] = useState<SavingsCalculation | null>(null);
   const [showContactForm, setShowContactForm] = useState(false);
   const [isPremium, setIsPremium] = useState(false);
+  const [accountSaveBlocked, setAccountSaveBlocked] = useState(false);
+  const [accountSaveLimit, setAccountSaveLimit] = useState(2);
   const contactFormRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -58,6 +60,16 @@ export default function ResultPage() {
     
     // Hämta från sessionStorage
     if (typeof window !== "undefined") {
+      const blockedRaw = sessionStorage.getItem("accountSaveBlocked");
+      if (blockedRaw) {
+        try {
+          const blocked = JSON.parse(blockedRaw) as { limit?: number };
+          setAccountSaveBlocked(true);
+          if (blocked.limit) setAccountSaveLimit(blocked.limit);
+        } catch {
+          setAccountSaveBlocked(true);
+        }
+      }
       const stored = sessionStorage.getItem("billData");
       if (stored) {
         const data: BillData = JSON.parse(stored);
@@ -147,6 +159,8 @@ export default function ResultPage() {
                 potentialSavings={savings.potentialSavings}
                 isPremium={isPremium}
                 isLoggedIn={Boolean(user)}
+                accountSaveBlocked={accountSaveBlocked}
+                accountSaveLimit={accountSaveLimit}
               />
             </div>
           )}
@@ -251,9 +265,13 @@ export default function ResultPage() {
           {/* Dashboard CTA - Om användaren är inloggad */}
           {!authLoading && user && (
             <div className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20 p-6 text-center">
-              <h3 className="font-semibold text-lg mb-2">Se alla dina fakturor</h3>
+              <h3 className="font-semibold text-lg mb-2">
+                {accountSaveBlocked ? "Se dina sparade fakturor" : "Se alla dina fakturor"}
+              </h3>
               <p className="text-sm text-muted mb-4">
-                Din faktura är sparad. Gå till ditt dashboard för att se alla analyser och följa dina besparingar över tid.
+                {accountSaveBlocked
+                  ? `Den här analysen sparades inte på kontot (gratis max ${accountSaveLimit}). Dina tidigare analyser finns kvar på dashboard.`
+                  : "Din faktura är sparad. Gå till ditt dashboard för att se alla analyser och följa dina besparingar över tid."}
               </p>
               <Link
                 href="/dashboard"

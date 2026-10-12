@@ -148,6 +148,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         meta?: {
           dbSaved?: boolean;
           dbError?: string;
+          accountSaved?: boolean;
+          accountSaveBlocked?: boolean;
+          accountSaveLimit?: number;
         };
       };
 
@@ -162,6 +165,18 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         console.warn("[UploadCard] Detta kan bero på att tabellen saknas eller databas-binding saknas");
       } else if (result.meta?.dbSaved === true) {
         console.log("[UploadCard] ✅ Analys sparad i databasen för admin-granskning");
+      }
+
+      if (typeof window !== "undefined" && result.meta?.accountSaveBlocked) {
+        sessionStorage.setItem(
+          "accountSaveBlocked",
+          JSON.stringify({
+            limit: result.meta.accountSaveLimit ?? 2,
+            at: Date.now(),
+          })
+        );
+      } else if (typeof window !== "undefined") {
+        sessionStorage.removeItem("accountSaveBlocked");
       }
 
       // Lägg till postnummer och prisområde i resultatet

@@ -195,15 +195,15 @@ export default function PremiumPage() {
                 </li>
                 <li className="flex items-start gap-2">
                   <CheckCircle2 className="w-4 h-4 text-green-600 mt-0.5 shrink-0" />
-                  <span>Dashboard med senaste 3 månaderna</span>
+                  <span>Spara upp till 2 fakturor + 3 månaders vy</span>
                 </li>
                 <li className="flex items-start gap-2 text-gray-400">
                   <X className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>Längre historik</span>
+                  <span>Obegränsat antal sparade fakturor</span>
                 </li>
                 <li className="flex items-start gap-2 text-gray-400">
                   <X className="w-4 h-4 mt-0.5 shrink-0" />
-                  <span>Export till CSV</span>
+                  <span>Längre historik &amp; CSV-export</span>
                 </li>
               </ul>
             </div>
@@ -223,7 +223,7 @@ export default function PremiumPage() {
                 <li className="flex items-start gap-2">
                   <History className="w-4 h-4 text-primary mt-0.5 shrink-0" />
                   <span>
-                    <strong>Obegränsad historik</strong> — år och all tid
+                    <strong>Obegränsat sparande</strong> + historik (år / all tid)
                   </span>
                 </li>
                 <li className="flex items-start gap-2">

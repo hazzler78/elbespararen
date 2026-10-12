@@ -43,11 +43,14 @@ export function hasPremiumAccess(user: User | null | undefined, featureRequiresP
 export const PREMIUM_LIMITS = {
   FREE: {
     maxAnalysesHistory: 3, // Only last 3 months
+    /** Max sparade analyser kopplade till kontot (gratis) */
+    maxSavedAnalyses: 2,
     maxExportPerMonth: 0, // No exports
     maxBenchmarkingQueries: 0, // No advanced benchmarking
   },
   PREMIUM: {
     maxAnalysesHistory: Infinity, // Unlimited
+    maxSavedAnalyses: Infinity,
     maxExportPerMonth: Infinity, // Unlimited
     maxBenchmarkingQueries: Infinity, // Unlimited
   },
@@ -57,9 +60,25 @@ export const PREMIUM_LIMITS = {
  * Get limits for user based on their tier
  */
 export function getUserLimits(user: User | null | undefined) {
-  const tier = getUserTier(user);
   // Use isPremium() so expired subscriptions fall back to free limits
   return isPremium(user) ? PREMIUM_LIMITS.PREMIUM : PREMIUM_LIMITS.FREE;
+}
+
+/**
+ * Can this user attach another analysis to their account?
+ * Free: max 2 saved. Premium: unlimited.
+ */
+export function canSaveAnalysisToAccount(
+  user: User | null | undefined,
+  currentSavedCount: number
+): { allowed: boolean; limit: number; remaining: number } {
+  const limits = getUserLimits(user);
+  const limit = limits.maxSavedAnalyses;
+  if (!Number.isFinite(limit)) {
+    return { allowed: true, limit: Infinity, remaining: Infinity };
+  }
+  const remaining = Math.max(0, limit - currentSavedCount);
+  return { allowed: remaining > 0, limit, remaining };
 }
 
 /** History ranges the API/UI understand */

@@ -12,6 +12,9 @@ interface PremiumValueCTAProps {
   isPremium?: boolean;
   /** Logged-in free user vs guest */
   isLoggedIn?: boolean;
+  /** Free save limit hit — stronger conversion copy */
+  accountSaveBlocked?: boolean;
+  accountSaveLimit?: number;
   className?: string;
 }
 
@@ -23,12 +26,15 @@ export default function PremiumValueCTA({
   potentialSavings,
   isPremium = false,
   isLoggedIn = false,
+  accountSaveBlocked = false,
+  accountSaveLimit = 2,
   className = "",
 }: PremiumValueCTAProps) {
   if (isPremium) return null;
 
-  const savingsLine =
-    typeof potentialSavings === "number" && potentialSavings > 0
+  const savingsLine = accountSaveBlocked
+    ? `Gratisplanen sparar max ${accountSaveLimit} fakturor på kontot. Den här analysen visas nu — Premium sparar den och alla kommande.`
+    : typeof potentialSavings === "number" && potentialSavings > 0
       ? `Du kan spara ca ${formatCurrency(potentialSavings)}/mån — håll koll på varje faktura så du ser att besparingen blir verklig.`
       : "Spara varje analys och se hur dina elkostnader förändras över tid.";
 
@@ -37,6 +43,9 @@ export default function PremiumValueCTA({
     : `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`;
 
   const ctaLabel = isLoggedIn ? "Bli Premium — 99 kr/år" : "Skapa konto & bli Premium";
+  const title = accountSaveBlocked
+    ? "Du har nått gratisgränsen"
+    : "Lås in värdet med Premium";
 
   return (
     <div
@@ -47,9 +56,7 @@ export default function PremiumValueCTA({
           <Sparkles className="h-5 w-5 text-amber-700" />
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900 text-lg">
-            Lås in värdet med Premium
-          </h3>
+          <h3 className="font-semibold text-gray-900 text-lg">{title}</h3>
           <p className="text-sm text-gray-600 mt-1">{savingsLine}</p>
         </div>
       </div>
@@ -57,7 +64,7 @@ export default function PremiumValueCTA({
       <ul className="space-y-2 mb-5 text-sm text-gray-700">
         <li className="flex items-center gap-2">
           <History className="h-4 w-4 text-amber-700 shrink-0" />
-          Obegränsad historik — jämför fakturor över tid
+          Obegränsat antal sparade fakturor + historik över tid
         </li>
         <li className="flex items-center gap-2">
           <Download className="h-4 w-4 text-amber-700 shrink-0" />
@@ -68,7 +75,15 @@ export default function PremiumValueCTA({
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <Link
           href={href}
-          onClick={() => AnalyticsEvents.premiumCtaClicked(isLoggedIn ? "result_logged_in" : "result_guest")}
+          onClick={() =>
+            AnalyticsEvents.premiumCtaClicked(
+              accountSaveBlocked
+                ? "result_save_limit"
+                : isLoggedIn
+                  ? "result_logged_in"
+                  : "result_guest"
+            )
+          }
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
         >
           {ctaLabel}

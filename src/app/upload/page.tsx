@@ -135,8 +135,17 @@ function UploadPageContent() {
         .then(result => {
           if (result.success) {
             console.log('[upload] ✅ Faktura sparad med user_id:', result.data?.userId);
+            if (typeof window !== "undefined") {
+              sessionStorage.removeItem("accountSaveBlocked");
+            }
           } else {
             console.error('[upload] ❌ Kunde inte spara faktura:', result.error);
+            if (result.code === "FREE_SAVE_LIMIT" && typeof window !== "undefined") {
+              sessionStorage.setItem(
+                "accountSaveBlocked",
+                JSON.stringify({ limit: result.limit ?? 2, at: Date.now() })
+              );
+            }
           }
           // Visa resultatet oavsett om sparandet lyckades eller inte
           // Rensa cookie, localStorage och sessionStorage
@@ -145,7 +154,7 @@ function UploadPageContent() {
             document.cookie = "pendingBillData=; path=/; max-age=0";
             sessionStorage.removeItem("pendingAnalysis");
             localStorage.removeItem("pendingBillData");
-            sessionStorage.removeItem("billData");
+            sessionStorage.setItem("billData", JSON.stringify(data));
           }
           handleUploadSuccess(data);
         })

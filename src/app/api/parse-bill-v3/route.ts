@@ -207,6 +207,8 @@ export async function POST(
     // Spara analys i databasen för admin-granskning
     let dbSaveSuccess = false;
     let dbSaveError: string | null = null;
+    let accountSaveBlocked = false;
+    let accountSaveLimit: number | undefined = undefined;
     
     try {
       // Hämta D1-binding från Edge-runtime
@@ -235,10 +237,11 @@ export async function POST(
 
       console.log(`[parse-bill-v3] Försöker spara analys i databasen...`);
       
-      // Hämta användare om inloggad
+      // Hämta användare om inloggad — gratis max 2 sparade på kontot
       let userId: string | undefined = undefined;
       try {
         const { getSessionUser } = await import("@/lib/auth");
+        const { canSaveAnalysisToAccount } = await import("@/lib/premium");
         const user = await getSessionUser(req);
         if (user?.email) {
           console.log(`[parse-bill-v3] User authenticated: ${user.email}`);
@@ -247,8 +250,16 @@ export async function POST(
             name: user.name,
             image: user.image,
           });
-          userId = dbUser.id;
-          console.log(`[parse-bill-v3] User ID set: ${userId}`);
+          const existing = await db.getBillAnalysesByUserId(dbUser.id, "all");
+          const gate = canSaveAnalysisToAccount(dbUser, existing.length);
+          if (gate.allowed) {
+            userId = dbUser.id;
+            console.log(`[parse-bill-v3] User ID set: ${userId} (saved=${existing.length}, limit=${gate.limit})`);
+          } else {
+            accountSaveBlocked = true;
+            accountSaveLimit = gate.limit;
+            console.log(`[parse-bill-v3] Free save limit reached (${existing.length}/${gate.limit}) — saving without user_id`);
+          }
         } else {
           console.log('[parse-bill-v3] No user found in session, saving without user_id');
         }
@@ -274,7 +285,7 @@ export async function POST(
       });
 
       console.log(`[parse-bill-v3] ✅ Analys sparad i databasen för admin-granskning`);
-      console.log(`[parse-bill-v3] Analysis ID: ${savedAnalysis.id}, User ID: ${userId || 'none (not logged in)'}`);
+      console.log(`[parse-bill-v3] Analysis ID: ${savedAnalysis.id}, User ID: ${userId || 'none (not logged in)'}${accountSaveBlocked ? ' [account save blocked]' : ''}`);
       dbSaveSuccess = true;
     } catch (dbError) {
       // Logga felet men fortsätt - analysen ska fortfarande returneras till användaren
@@ -300,7 +311,10 @@ export async function POST(
         imageKey: savedImageResult?.key,
         storage: savedImageResult?.storage ?? "unknown",
         dbSaved: dbSaveSuccess,
-        dbError: dbSaveError || undefined
+        dbError: dbSaveError || undefined,
+        accountSaved: dbSaveSuccess && !accountSaveBlocked,
+        accountSaveBlocked: accountSaveBlocked || undefined,
+        accountSaveLimit: accountSaveLimit,
       }
     });
 

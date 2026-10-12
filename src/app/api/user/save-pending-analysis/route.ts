@@ -54,6 +54,22 @@ export async function POST(req: NextRequest) {
       image: user.image,
     });
 
+    const { canSaveAnalysisToAccount } = await import("@/lib/premium");
+    const existing = await db.getBillAnalysesByUserId(dbUser.id, "all");
+    const gate = canSaveAnalysisToAccount(dbUser, existing.length);
+    if (!gate.allowed) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: `Gratisplanen sparar max ${gate.limit} fakturor. Uppgradera till Premium för obegränsat.`,
+          code: "FREE_SAVE_LIMIT",
+          limit: gate.limit,
+          upgradeUrl: "/premium",
+        },
+        { status: 402 }
+      );
+    }
+
     // Beräkna besparingar
     const savings = calculateSavings(billData);
 
