@@ -337,7 +337,7 @@ function UploadPageContent() {
                   disabled={startingCheckout}
                   onClick={async () => {
                     if (!user?.email) {
-                      router.push("/premium");
+                      router.push("/premium?checkout=1");
                       return;
                     }
                     setStartingCheckout(true);
@@ -347,7 +347,7 @@ function UploadPageContent() {
                     );
                     if (!ok) {
                       setStartingCheckout(false);
-                      router.push("/premium");
+                      router.push("/premium?checkout=1");
                     }
                   }}
                   className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
@@ -357,6 +357,43 @@ function UploadPageContent() {
                 </button>
               </div>
             </div>
+          </motion.div>
+        )}
+
+        {/* One slot left — soft urgency before the hard paywall */}
+        {!saveLimitHit && user && savedCount === 1 && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 rounded-xl border border-amber-100 bg-amber-50/70 px-5 py-4 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+          >
+            <p>
+              Du har <strong>1 av {saveLimit}</strong> gratisplatser kvar. Nästa
+              sparade faktura fyller gratisplanen — Premium (
+              {PREMIUM_PRICE_LABEL}) tar bort taket.
+            </p>
+            <button
+              type="button"
+              disabled={startingCheckout}
+              onClick={async () => {
+                if (!user?.email) {
+                  router.push("/premium?checkout=1");
+                  return;
+                }
+                setStartingCheckout(true);
+                const ok = await startPremiumCheckout(
+                  { user: { email: user.email, id: user.id } },
+                  "upload_one_left"
+                );
+                if (!ok) {
+                  setStartingCheckout(false);
+                  router.push("/premium?checkout=1");
+                }
+              }}
+              className="shrink-0 font-semibold text-amber-800 underline disabled:opacity-60"
+            >
+              {startingCheckout ? "Öppnar…" : "Bli Premium nu"}
+            </button>
           </motion.div>
         )}
 

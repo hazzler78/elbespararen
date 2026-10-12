@@ -580,7 +580,9 @@ export default function DashboardPage() {
                   ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
                   : analyses.length >= 2
                     ? `Gratisplanen är full (2/2). Nästa faktura sparas inte utan Premium — ${PREMIUM_PRICE_LABEL}.`
-                    : `Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — ${PREMIUM_PRICE_LABEL}.`}
+                    : analyses.length === 1
+                      ? `Du har 1 av 2 gratisplatser kvar. Nästa sparade faktura fyller gratisplanen — Premium (${PREMIUM_PRICE_LABEL}) tar bort taket.`
+                      : `Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — ${PREMIUM_PRICE_LABEL}.`}
             </span>
             <button
               type="button"
