@@ -228,6 +228,36 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Premium value — conversion toward paid */}
+      <section className="py-16 px-4 bg-amber-50 border-y border-amber-100">
+        <div className="max-w-3xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <div className="inline-flex items-center gap-2 text-amber-800 font-medium text-sm mb-3">
+              <Sparkles className="w-4 h-4" />
+              Premium — 99 kr/år
+            </div>
+            <h2 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
+              Spara analyserna — se att besparingen blir verklig
+            </h2>
+            <p className="text-gray-600 mb-6 max-w-xl mx-auto">
+              Gratis ger dig en stark fakturaanalys. Premium låser upp obegränsad historik
+              och CSV-export så du kan följa kostnaden över tid.
+            </p>
+            <Link
+              href="/premium"
+              className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
+            >
+              Se Premium
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Newsletter Signup */}
       <section className="py-20 px-4 bg-gray-50">
         <div className="max-w-2xl mx-auto">
