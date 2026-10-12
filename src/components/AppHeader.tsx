@@ -227,23 +227,28 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
               className="md:hidden border-t border-gray-200 py-4"
             >
               <nav className="flex flex-col gap-2">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`
-                      flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
-                      ${isActive(item.href)
-                        ? 'bg-primary text-white'
-                        : 'text-gray-700 hover:bg-gray-100'
-                      }
-                    `}
-                  >
-                    <item.icon className="w-5 h-5" />
-                    <span className="font-medium">{item.label}</span>
-                  </Link>
-                ))}
+                {navigationItems.map((item) => {
+                  const isPremiumCta = item.href === "/premium";
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`
+                        flex items-center gap-3 px-4 py-3 rounded-lg transition-colors
+                        ${isPremiumCta
+                          ? "bg-amber-500 text-white hover:bg-amber-600"
+                          : isActive(item.href)
+                            ? "bg-primary text-white"
+                            : "text-gray-700 hover:bg-gray-100"
+                        }
+                      `}
+                    >
+                      <item.icon className="w-5 h-5" />
+                      <span className="font-medium">{item.label}</span>
+                    </Link>
+                  );
+                })}
                 
                 {/* Mobile User Section */}
                 {user && (

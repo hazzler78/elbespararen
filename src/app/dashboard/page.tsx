@@ -570,12 +570,46 @@ export default function DashboardPage() {
                     </p>
                     {isPremium ? (
                       <div className="flex gap-2">
-                        <a
-                          href={`/api/user/export?format=csv&range=${timeRange}`}
+                        <button
+                          type="button"
+                          onClick={async () => {
+                            try {
+                              const session = user
+                                ? {
+                                    user: {
+                                      email: user.email || undefined,
+                                      id: user.id,
+                                    },
+                                  }
+                                : null;
+                              const res = await fetchWithAuth(
+                                `/api/user/export?format=csv&range=${timeRange}`,
+                                {},
+                                session
+                              );
+                              if (!res.ok) {
+                                const err = await res.json().catch(() => ({}));
+                                alert(err.error || "Kunde inte exportera");
+                                return;
+                              }
+                              const blob = await res.blob();
+                              const url = URL.createObjectURL(blob);
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = `elbespararen-analyser-${new Date().toISOString().slice(0, 10)}.csv`;
+                              document.body.appendChild(a);
+                              a.click();
+                              a.remove();
+                              URL.revokeObjectURL(url);
+                            } catch (e) {
+                              console.error(e);
+                              alert("Kunde inte exportera. Försök igen.");
+                            }
+                          }}
                           className="text-sm font-medium text-green-700 hover:text-green-800 flex items-center gap-1 px-3 py-1.5 bg-white border border-green-300 rounded hover:bg-green-50 transition-colors"
                         >
                           CSV
-                        </a>
+                        </button>
                       </div>
                     ) : (
                       <Link
