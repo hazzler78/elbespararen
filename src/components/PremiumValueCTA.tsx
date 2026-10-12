@@ -60,7 +60,7 @@ export default function PremiumValueCTA({
       ? `Du kan spara ca ${formatCurrency(potentialSavings!)}/mån. Premium (${PREMIUM_PRICE_LABEL}) betalar sig på ungefär ${daysToPayback} dagar — sedan följer du att besparingen håller.`
       : "Spara varje analys och se hur dina elkostnader förändras över tid.";
 
-  const registerHref = `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`;
+  const registerHref = `/auth/register?callbackUrl=${encodeURIComponent("/premium?checkout=1")}`;
   const ctaLabel = isLoggedIn
     ? starting
       ? "Öppnar betalning…"

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import {
@@ -30,12 +30,17 @@ export default function PremiumPage() {
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [canceled, setCanceled] = useState(false);
   const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
+  const [autoCheckout, setAutoCheckout] = useState(false);
+  const autoCheckoutStarted = useRef(false);
 
   useEffect(() => {
     AnalyticsEvents.premiumPageViewed();
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("canceled") === "true") {
       setCanceled(true);
+    }
+    if (urlParams.get("checkout") === "1") {
+      setAutoCheckout(true);
     }
     const utm = urlParams.get("utm_campaign") || urlParams.get("utm_source");
     if (utm) {
@@ -92,16 +97,16 @@ export default function PremiumPage() {
     }
   };
 
-  const handleUpgrade = async () => {
+  const handleUpgrade = async (source = "premium_page") => {
     if (!user?.email) {
       router.push(
-        `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`
+        `/auth/register?callbackUrl=${encodeURIComponent("/premium?checkout=1")}`
       );
       return;
     }
 
     setIsCreatingCheckout(true);
-    AnalyticsEvents.premiumCtaClicked("premium_page");
+    AnalyticsEvents.premiumCtaClicked(source);
     try {
       const session = {
         user: {
@@ -139,6 +144,35 @@ export default function PremiumPage() {
       setIsCreatingCheckout(false);
     }
   };
+
+  // After signup/login with ?checkout=1, open Stripe immediately (one less click).
+  useEffect(() => {
+    if (
+      !autoCheckout ||
+      canceled ||
+      authLoading ||
+      isLoading ||
+      !user?.email ||
+      isPremium ||
+      isCreatingCheckout ||
+      autoCheckoutStarted.current
+    ) {
+      return;
+    }
+    autoCheckoutStarted.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    window.history.replaceState({}, "", url.pathname + url.search);
+    void handleUpgrade("premium_auto_checkout");
+  }, [
+    autoCheckout,
+    canceled,
+    authLoading,
+    isLoading,
+    user,
+    isPremium,
+    isCreatingCheckout,
+  ]);
 
   if (authLoading || (user && isLoading)) {
     return (
@@ -287,7 +321,7 @@ export default function PremiumPage() {
                 <p className="mt-2 text-center text-xs text-gray-500">
                   Redan konto?{" "}
                   <Link
-                    href={`/auth/signin?callbackUrl=${encodeURIComponent("/premium")}`}
+                    href={`/auth/signin?callbackUrl=${encodeURIComponent("/premium?checkout=1")}`}
                     className="text-primary underline"
                   >
                     Logga in
