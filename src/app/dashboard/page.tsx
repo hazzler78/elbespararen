@@ -21,7 +21,8 @@ import {
   Crown,
   User,
   LogOut,
-  Trash2
+  Trash2,
+  Lock
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -766,7 +767,8 @@ export default function DashboardPage() {
                 </Link>
               </div>
             ) : (
-              analyses.map((analysis) => (
+              <>
+              {analyses.map((analysis) => (
                 <div
                   key={analysis.id}
                   className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all"
@@ -841,7 +843,33 @@ export default function DashboardPage() {
                     </div>
                   </div>
                 </div>
-              ))
+              ))}
+              {!isPremium && hiddenAnalysesCount > 0 && (
+                <Link
+                  href="/premium"
+                  onClick={() => AnalyticsEvents.premiumCtaClicked("dashboard_locked_cards")}
+                  className="block p-4 border border-dashed border-amber-300 bg-amber-50/60 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-all"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-amber-100">
+                      <Lock className="w-4 h-4 text-amber-700" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-amber-950">
+                        +{hiddenAnalysesCount} låst
+                        {hiddenAnalysesCount === 1 ? " analys" : "a analyser"}
+                      </h3>
+                      <p className="text-sm text-amber-900/80">
+                        Gratis visar max 2. Premium låser upp hela historiken — 99 kr/år.
+                      </p>
+                    </div>
+                    <span className="text-sm font-semibold text-amber-800 shrink-0">
+                      Lås upp
+                    </span>
+                  </div>
+                </Link>
+              )}
+              </>
             )}
           </div>
         </div>
