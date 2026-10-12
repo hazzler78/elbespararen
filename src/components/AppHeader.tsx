@@ -99,7 +99,11 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
 
     // Lägg till premium-länk om inte premium
     if (!isPremium) {
-      items.push({ href: "/premium", label: "Bli Premium", icon: Sparkles });
+      items.push({
+        href: "/premium?checkout=1",
+        label: "Bli Premium",
+        icon: Sparkles,
+      });
     }
 
     return items;
@@ -144,7 +148,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-1">
             {navigationItems.map((item) => {
-              const isPremiumCta = item.href === "/premium";
+              const isPremiumCta = item.href.startsWith("/premium");
               return (
                 <Link
                   key={item.href}
@@ -248,7 +252,7 @@ export default function AppHeader({ showBackButton = false, backHref = "/" }: Ap
             >
               <nav className="flex flex-col gap-2">
                 {navigationItems.map((item) => {
-                  const isPremiumCta = item.href === "/premium";
+                  const isPremiumCta = item.href.startsWith("/premium");
                   return (
                     <Link
                       key={item.href}

@@ -249,7 +249,7 @@ export default function Home() {
               och CSV-export så du kan följa kostnaden över tid.
             </p>
             <Link
-              href="/premium"
+              href="/premium?checkout=1"
               onClick={() => AnalyticsEvents.premiumCtaClicked("homepage")}
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
             >

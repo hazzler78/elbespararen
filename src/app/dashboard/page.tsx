@@ -317,8 +317,12 @@ export default function DashboardPage() {
       const raw = localStorage.getItem(key);
       if (raw) {
         const dismissedAt = Number(raw);
-        // Re-show after 7 days
-        if (Number.isFinite(dismissedAt) && Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000) {
+        // FOMO users (hidden analyses): re-show after 1 day; others after 3 days
+        const coolDownMs =
+          hiddenAnalysesCount > 0
+            ? 1 * 24 * 60 * 60 * 1000
+            : 3 * 24 * 60 * 60 * 1000;
+        if (Number.isFinite(dismissedAt) && Date.now() - dismissedAt < coolDownMs) {
           return;
         }
       }
@@ -371,10 +375,10 @@ export default function DashboardPage() {
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
                   {hiddenAnalysesCount > 0
-                    ? `Gratis visar max 2 sparade. Premium (${PREMIUM_PRICE_LABEL}) låser upp hela historiken och CSV-export.`
+                    ? `Gratis visar max 2 sparade. Premium (${PREMIUM_PRICE_LABEL}, ca 4 kr/mån) låser upp hela historiken och CSV — öppnar säker Stripe-betalning direkt.`
                     : analyses.length >= 2
-                      ? `Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — ${PREMIUM_PRICE_LABEL}.`
-                      : `Gratis visar 3 månader. Premium (${PREMIUM_PRICE_LABEL}) ger obegränsad historik och CSV-export — så du ser att besparingen håller.`}
+                      ? `Nästa faktura sparas inte på kontot utan Premium. Obegränsat sparande, historik och CSV — ${PREMIUM_PRICE_LABEL}.`
+                      : `Gratis visar 3 månader. Premium (${PREMIUM_PRICE_LABEL}) ger obegränsad historik och CSV — så du ser att besparingen håller.`}
                 </p>
               </div>
             </div>
@@ -384,7 +388,6 @@ export default function DashboardPage() {
                 disabled={startingCheckout}
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                 onClick={async () => {
-                  dismissPremiumNudge();
                   await goPremiumCheckout("dashboard_nudge");
                 }}
               >
@@ -394,9 +397,9 @@ export default function DashboardPage() {
               <button
                 type="button"
                 onClick={dismissPremiumNudge}
-                className="rounded-lg px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+                className="rounded-lg px-4 py-2.5 text-sm text-gray-500 hover:bg-gray-50"
               >
-                Senare
+                Inte nu
               </button>
             </div>
           </div>
