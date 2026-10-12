@@ -23,13 +23,11 @@ function PremiumSuccessContent() {
       return;
     }
 
-    // Check premium status after a short delay to allow webhook to process
     const checkPremiumStatus = async () => {
-      // Wait a bit for webhook to process
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Brief wait for webhook, then confirm via Stripe session (fallback)
+      await new Promise((resolve) => setTimeout(resolve, 1500));
 
       if (!user) {
-        // Payment succeeded; session may still be loading — show success UI anyway
         setIsLoading(false);
         return;
       }
@@ -42,8 +40,22 @@ function PremiumSuccessContent() {
           },
         };
 
-        // Poll a few times — webhook can lag
-        for (let i = 0; i < 4; i++) {
+        // Activate from Checkout session if webhook lagged/missed
+        try {
+          await fetchWithAuth(
+            "/api/stripe/confirm-session",
+            {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ sessionId }),
+            },
+            session
+          );
+        } catch (confirmErr) {
+          console.warn("confirm-session failed (webhook may still win):", confirmErr);
+        }
+
+        for (let i = 0; i < 5; i++) {
           const response = await fetchWithAuth("/api/user/info", {}, session);
           if (response.ok) {
             const data = await response.json();
@@ -52,7 +64,7 @@ function PremiumSuccessContent() {
               break;
             }
           }
-          if (i < 3) await new Promise((r) => setTimeout(r, 1500));
+          if (i < 4) await new Promise((r) => setTimeout(r, 1200));
         }
       } catch (error) {
         console.error("Error checking premium status:", error);

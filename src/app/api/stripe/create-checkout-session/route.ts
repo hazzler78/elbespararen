@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
   try {
     // Check authentication
     const user = await getSessionUser(req);
-    if (!user?.email || !user?.id) {
+    if (!user?.email) {
       return NextResponse.json(
         { success: false, error: 'Ej autentiserad' },
         { status: 401 }
@@ -24,10 +24,10 @@ export async function POST(req: NextRequest) {
     const successUrl = `${origin}/premium/success?session_id={CHECKOUT_SESSION_ID}`;
     const cancelUrl = `${origin}/premium?canceled=true`;
 
-    // Create checkout session
+    // user.id may be missing on some auth paths — email is enough for metadata
     const session = await createCheckoutSession(
       user.email,
-      user.id,
+      user.id || user.email,
       successUrl,
       cancelUrl
     );

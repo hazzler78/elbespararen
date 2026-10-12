@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getStripe } from '@/lib/stripe';
 import { createDatabaseFromBinding } from '@/lib/database';
+import { activatePremiumForEmail } from '@/lib/activate-premium';
 
 // Cloudflare Pages requires Edge Runtime for all routes
 export const runtime = 'edge';
@@ -100,52 +101,23 @@ export async function POST(req: NextRequest) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as any;
-        const userId = session.metadata?.userId;
-        const userEmail = session.metadata?.userEmail || session.customer_details?.email;
+        const userEmail =
+          session.metadata?.userEmail ||
+          session.customer_details?.email ||
+          session.customer_email;
 
-        if (userId && userEmail) {
+        if (userEmail) {
           console.log(`[Stripe Webhook] Checkout completed for user: ${userEmail}`);
-          
-          // Update user subscription status
-          const user = await db.getUserByEmail(userEmail);
-          if (user) {
-            const now = new Date().toISOString();
-            const expiresAt = new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(); // 1 year
-
-            // Check if this is MockDatabase
-            const isMockDatabase = db.constructor.name === 'MockDatabase';
-            
-            if (isMockDatabase) {
-              (user as any).subscriptionTier = 'premium';
-              (user as any).subscriptionStatus = 'active';
-              (user as any).subscriptionStartedAt = new Date(now);
-              (user as any).subscriptionExpiresAt = new Date(expiresAt);
-              (user as any).subscriptionStripeId = session.subscription;
-              (user as any).updatedAt = new Date(now);
-            } else {
-              // For CloudflareDatabase, use SQL
-              await (db as any).db.prepare(`
-                UPDATE users 
-                SET subscription_tier = ?,
-                    subscription_status = ?,
-                    subscription_started_at = ?,
-                    subscription_expires_at = ?,
-                    subscription_stripe_id = ?,
-                    updated_at = ?
-                WHERE email = ?
-              `).bind(
-                'premium',
-                'active',
-                now,
-                expiresAt,
-                session.subscription,
-                now,
-                userEmail
-              ).run();
-            }
-
+          const subId =
+            typeof session.subscription === 'string'
+              ? session.subscription
+              : session.subscription?.id || null;
+          const ok = await activatePremiumForEmail(db, userEmail, subId);
+          if (ok) {
             console.log(`[Stripe Webhook] User ${userEmail} upgraded to premium`);
           }
+        } else {
+          console.error('[Stripe Webhook] checkout.session.completed missing email');
         }
         break;
       }
