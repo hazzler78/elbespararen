@@ -53,6 +53,7 @@ export default function DashboardPage() {
   const [isPremium, setIsPremium] = useState(false);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
   const [historyLimited, setHistoryLimited] = useState(false);
+  const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showPremiumNudge, setShowPremiumNudge] = useState(false);
@@ -153,6 +154,7 @@ export default function DashboardPage() {
       } else {
         setHistoryLimited(false);
       }
+      setHiddenAnalysesCount(Number(analysesData.meta?.hiddenAnalysesCount) || 0);
       if (!premium && (timeRange === "year" || timeRange === "all")) {
         setTimeRange("3months");
       }
@@ -523,11 +525,17 @@ export default function DashboardPage() {
         {!isPremium && (
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
-              {historyLimited
-                ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
-                : "Gratis: senaste 3 månaderna. Premium ger årshistorik och CSV-export — 99 kr/år."}
+              {hiddenAnalysesCount > 0
+                ? `Du har ${hiddenAnalysesCount} äldre analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar 3 månader — Premium låser upp allt + CSV-export.`
+                : historyLimited
+                  ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
+                  : "Gratis: senaste 3 månaderna. Premium ger årshistorik och CSV-export — 99 kr/år."}
             </span>
-            <Link href="/premium" className="font-semibold text-amber-800 underline shrink-0">
+            <Link
+              href="/premium"
+              onClick={() => AnalyticsEvents.premiumCtaClicked("dashboard_banner")}
+              className="font-semibold text-amber-800 underline shrink-0"
+            >
               Bli Premium
             </Link>
           </div>

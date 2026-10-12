@@ -44,8 +44,17 @@ export async function GET(req: NextRequest) {
     const requestedRange = url.searchParams.get('range');
     const { range, limited } = clampHistoryRange(dbUser, requestedRange);
 
-    // Hämta användarens fakturaanalyser
+    // Hämta användarens fakturaanalyser (clamped for free)
     const analyses = await db.getBillAnalysesByUserId(dbUser.id, range);
+
+    // For free users: count how many analyses exist beyond the free window
+    // so the UI can show a concrete reason to upgrade
+    let hiddenAnalysesCount = 0;
+    const premiumUser = isPremium(dbUser);
+    if (!premiumUser) {
+      const allAnalyses = await db.getBillAnalysesByUserId(dbUser.id, "all");
+      hiddenAnalysesCount = Math.max(0, allAnalyses.length - analyses.length);
+    }
 
     return NextResponse.json({
       success: true,
@@ -55,7 +64,8 @@ export async function GET(req: NextRequest) {
         range,
         requestedRange: requestedRange || null,
         historyLimited: limited,
-        isPremium: isPremium(dbUser),
+        isPremium: premiumUser,
+        hiddenAnalysesCount,
       },
     });
   } catch (error) {
