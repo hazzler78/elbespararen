@@ -11,6 +11,8 @@ import { startPremiumCheckout } from "@/lib/start-premium-checkout";
 import {
   PREMIUM_PRICE_CTA,
   PREMIUM_PRICE_MONTHLY_HINT,
+  PREMIUM_PRICE_SEK,
+  PREMIUM_PRICE_LABEL,
 } from "@/lib/premium-pricing";
 
 interface PremiumValueCTAProps {
@@ -45,10 +47,17 @@ export default function PremiumValueCTA({
 
   if (isPremium) return null;
 
+  const hasSavings =
+    typeof potentialSavings === "number" && potentialSavings > 0;
+  const daysToPayback =
+    hasSavings && potentialSavings > 0
+      ? Math.max(1, Math.ceil(PREMIUM_PRICE_SEK / (potentialSavings / 30)))
+      : null;
+
   const savingsLine = accountSaveBlocked
     ? `Gratisplanen sparar max ${accountSaveLimit} fakturor på kontot. Den här analysen visas nu — Premium sparar den och alla kommande.`
-    : typeof potentialSavings === "number" && potentialSavings > 0
-      ? `Du kan spara ca ${formatCurrency(potentialSavings)}/mån — håll koll på varje faktura så du ser att besparingen blir verklig.`
+    : hasSavings
+      ? `Du kan spara ca ${formatCurrency(potentialSavings!)}/mån. Premium (${PREMIUM_PRICE_LABEL}) betalar sig på ungefär ${daysToPayback} dagar — sedan följer du att besparingen håller.`
       : "Spara varje analys och se hur dina elkostnader förändras över tid.";
 
   const registerHref = `/auth/register?callbackUrl=${encodeURIComponent("/premium")}`;

@@ -329,9 +329,9 @@ export default function PremiumPage() {
                 Är {PREMIUM_PRICE_LABEL} värt det?
               </p>
               <p className="text-gray-600">
-                Om du byter avtal eller bara undviker en onödig avgift sparar de
-                flesta mer än så på en månad. Premium hjälper dig se att
-                besparingen faktiskt håller.
+                Om du sparar några tior i månaden på elen betalar Premium (
+                {PREMIUM_PRICE_LABEL}) tillbaka sig snabbt. Det hjälper dig se
+                att besparingen faktiskt håller över tid.
               </p>
             </div>
           </div>

@@ -168,7 +168,7 @@ export default function ContactPage() {
             {[
               {
                 question: "Är Elbespararen gratis?",
-                answer: "Ja — analysen är gratis. Konto sparar upp till 2 fakturor (3 mån historik). Premium 99 kr/år ger obegränsat sparande, längre historik och CSV-export."
+                answer: "Ja — analysen är gratis. Konto sparar upp till 2 fakturor (3 mån historik). Premium 49 kr/år (intro) ger obegränsat sparande, längre historik och CSV-export."
               },
               {
                 question: "Sparas min faktura någonstans?",

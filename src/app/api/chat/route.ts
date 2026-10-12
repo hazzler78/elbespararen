@@ -121,7 +121,7 @@ export async function POST(req: NextRequest) {
 - Hittar onödiga extra avgifter automatiskt
 - Beräknar exakt besparingspotential genom att jämföra mot spotpris
 - Hjälper användare att byta till billigare leverantörer
-- Gratis att analysera; Premium (99 kr/år) för obegränsat sparande, längre historik och CSV-export
+- Gratis att analysera; Premium (49 kr/år intro) för obegränsat sparande, längre historik och CSV-export
 - Säkert — betalning via Stripe om du uppgraderar
 
 ## Hur analysen fungerar:

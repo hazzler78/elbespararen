@@ -170,7 +170,7 @@ export default function AboutPage() {
                 </div>
                 <p className="text-muted">
                   Analysera din faktura utan kort. Skapa konto gratis (upp till 2 sparade fakturor).
-                  Premium 99 kr/år ger obegränsad historik och CSV-export när du vill följa besparingen över tid.
+                  Premium 49 kr/år (intro) ger obegränsad historik och CSV-export när du vill följa besparingen över tid.
                 </p>
               </motion.div>
             </div>
