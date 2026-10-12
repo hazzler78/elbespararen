@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [historyLimited, setHistoryLimited] = useState(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+  const [showPremiumNudge, setShowPremiumNudge] = useState(false);
 
   const handleSignOut = async () => {
     await signOut();
@@ -285,6 +286,33 @@ export default function DashboardPage() {
     };
   }, [user, fetchDashboardData]);
 
+  useEffect(() => {
+    if (isLoading || isPremium || analyses.length < 2) return;
+    try {
+      const key = "elbespararen_premium_nudge_dismissed";
+      const raw = localStorage.getItem(key);
+      if (raw) {
+        const dismissedAt = Number(raw);
+        // Re-show after 7 days
+        if (Number.isFinite(dismissedAt) && Date.now() - dismissedAt < 7 * 24 * 60 * 60 * 1000) {
+          return;
+        }
+      }
+      setShowPremiumNudge(true);
+    } catch {
+      setShowPremiumNudge(true);
+    }
+  }, [isLoading, isPremium, analyses.length]);
+
+  const dismissPremiumNudge = () => {
+    setShowPremiumNudge(false);
+    try {
+      localStorage.setItem("elbespararen_premium_nudge_dismissed", String(Date.now()));
+    } catch {
+      // ignore
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
@@ -298,6 +326,48 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {showPremiumNudge && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
+          <div
+            role="dialog"
+            aria-labelledby="premium-nudge-title"
+            className="w-full max-w-md rounded-xl bg-white p-6 shadow-xl border border-amber-100"
+          >
+            <div className="flex items-start gap-3 mb-4">
+              <div className="rounded-lg bg-amber-100 p-2">
+                <Sparkles className="h-5 w-5 text-amber-700" />
+              </div>
+              <div>
+                <h2 id="premium-nudge-title" className="text-lg font-semibold text-gray-900">
+                  Du har {analyses.length} sparade analyser
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export
+                  — så du ser att besparingen håller.
+                </p>
+              </div>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Link
+                href="/premium"
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
+                onClick={dismissPremiumNudge}
+              >
+                Bli Premium
+                <ArrowUpRight className="h-4 w-4" />
+              </Link>
+              <button
+                type="button"
+                onClick={dismissPremiumNudge}
+                className="rounded-lg px-4 py-2.5 text-sm text-gray-600 hover:bg-gray-50"
+              >
+                Senare
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
