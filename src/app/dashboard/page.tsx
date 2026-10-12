@@ -30,6 +30,7 @@ import { BillAnalysis } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import { AnalyticsEvents } from "@/lib/analytics";
+import { startPremiumCheckout } from "@/lib/start-premium-checkout";
 
 interface DashboardStats {
   totalAnalyses: number;
@@ -58,6 +59,23 @@ export default function DashboardPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showPremiumNudge, setShowPremiumNudge] = useState(false);
+  const [startingCheckout, setStartingCheckout] = useState(false);
+
+  const goPremiumCheckout = async (source: string) => {
+    if (!user?.email) {
+      router.push("/premium");
+      return;
+    }
+    setStartingCheckout(true);
+    const ok = await startPremiumCheckout(
+      { user: { email: user.email, id: user.id } },
+      source
+    );
+    if (!ok) {
+      setStartingCheckout(false);
+      router.push("/premium");
+    }
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -360,17 +378,18 @@ export default function DashboardPage() {
               </div>
             </div>
             <div className="flex flex-col sm:flex-row gap-2">
-              <Link
-                href="/premium"
-                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
-                onClick={() => {
-                  AnalyticsEvents.premiumCtaClicked("dashboard_nudge");
+              <button
+                type="button"
+                disabled={startingCheckout}
+                className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+                onClick={async () => {
                   dismissPremiumNudge();
+                  await goPremiumCheckout("dashboard_nudge");
                 }}
               >
-                Bli Premium
+                {startingCheckout ? "Öppnar betalning…" : "Bli Premium — 99 kr/år"}
                 <ArrowUpRight className="h-4 w-4" />
-              </Link>
+              </button>
               <button
                 type="button"
                 onClick={dismissPremiumNudge}
@@ -559,13 +578,14 @@ export default function DashboardPage() {
                     ? "Gratisplanen är full (2/2). Nästa faktura sparas inte utan Premium — 99 kr/år."
                     : "Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — 99 kr/år."}
             </span>
-            <Link
-              href="/premium"
-              onClick={() => AnalyticsEvents.premiumCtaClicked("dashboard_banner")}
-              className="font-semibold text-amber-800 underline shrink-0"
+            <button
+              type="button"
+              disabled={startingCheckout}
+              onClick={() => goPremiumCheckout("dashboard_banner")}
+              className="font-semibold text-amber-800 underline shrink-0 disabled:opacity-60"
             >
-              Bli Premium
-            </Link>
+              {startingCheckout ? "Öppnar…" : "Bli Premium"}
+            </button>
           </div>
         )}
 
@@ -722,13 +742,15 @@ export default function DashboardPage() {
                         </button>
                       </div>
                     ) : (
-                      <Link
-                        href="/premium"
-                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80"
+                      <button
+                        type="button"
+                        disabled={startingCheckout}
+                        onClick={() => goPremiumCheckout("dashboard_export")}
+                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-60"
                       >
-                        Uppgradera till Premium
+                        {startingCheckout ? "Öppnar betalning…" : "Uppgradera till Premium"}
                         <ArrowUpRight className="w-4 h-4" />
-                      </Link>
+                      </button>
                     )}
                   </div>
                 </div>
@@ -845,10 +867,11 @@ export default function DashboardPage() {
                 </div>
               ))}
               {!isPremium && hiddenAnalysesCount > 0 && (
-                <Link
-                  href="/premium"
-                  onClick={() => AnalyticsEvents.premiumCtaClicked("dashboard_locked_cards")}
-                  className="block p-4 border border-dashed border-amber-300 bg-amber-50/60 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-all"
+                <button
+                  type="button"
+                  disabled={startingCheckout}
+                  onClick={() => goPremiumCheckout("dashboard_locked_cards")}
+                  className="w-full text-left p-4 border border-dashed border-amber-300 bg-amber-50/60 rounded-lg hover:border-amber-400 hover:bg-amber-50 transition-all disabled:opacity-60"
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 rounded-lg bg-amber-100">
@@ -864,10 +887,10 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-amber-800 shrink-0">
-                      Lås upp
+                      {startingCheckout ? "Öppnar…" : "Lås upp"}
                     </span>
                   </div>
-                </Link>
+                </button>
               )}
               </>
             )}
