@@ -646,43 +646,144 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Trend Chart - Takes 2 columns */}
           <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 gap-3">
               <div>
                 <h2 className="text-xl font-bold text-gray-900">Kostnadstrend</h2>
-                <p className="text-sm text-gray-600">Utveckling över tid</p>
+                <p className="text-sm text-gray-600">
+                  {!isPremium && hiddenAnalysesCount > 0
+                    ? `${analyses.length} synliga · ${hiddenAnalysesCount} dolda — Premium visar hela kurvan`
+                    : "Kostnad och identifierad besparing per faktura"}
+                </p>
               </div>
-              <BarChart3 className="w-5 h-5 text-gray-400" />
+              {!isPremium && hiddenAnalysesCount > 0 ? (
+                <button
+                  type="button"
+                  disabled={startingCheckout}
+                  onClick={() => goPremiumCheckout("dashboard_trend_chart")}
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+                >
+                  {startingCheckout ? "Öppnar…" : `Lås upp — ${PREMIUM_PRICE_LABEL}`}
+                  <ArrowUpRight className="h-3.5 w-3.5" />
+                </button>
+              ) : (
+                <BarChart3 className="w-5 h-5 text-gray-400" />
+              )}
             </div>
-            
-            {/* Simple Chart Mockup */}
-            <div className="h-64 flex items-end justify-between gap-2">
-              {analyses.map((analysis, index) => {
-                const height = (analysis.billData.totalAmount / 1200) * 100; // Normalize to max 1200
+
+            {analyses.length === 0 ? (
+              <div className="h-64 flex items-center justify-center text-sm text-gray-500 border border-dashed border-gray-200 rounded-lg">
+                Ladda upp en faktura för att se din kostnadstrend.
+              </div>
+            ) : (
+              (() => {
+                const chartAnalyses = [...analyses].reverse();
+                const maxAmount = Math.max(
+                  ...chartAnalyses.map((a) => a.billData.totalAmount || 0),
+                  1
+                );
+                const lockedSlots = !isPremium
+                  ? Math.min(hiddenAnalysesCount, 6)
+                  : 0;
                 return (
-                  <div key={analysis.id} className="flex-1 flex flex-col items-center">
-                    <div 
-                      className="w-full bg-gradient-to-t from-blue-500 to-blue-400 rounded-t-lg hover:from-blue-600 hover:to-blue-500 transition-all cursor-pointer"
-                      style={{ height: `${height}%` }}
-                      title={`${formatCurrency(analysis.billData.totalAmount)} - ${analysis.billData.period}`}
-                    />
-                    <div className="mt-2 text-xs text-gray-500 text-center">
-                      {new Date(analysis.createdAt).toLocaleDateString('sv-SE', { month: 'short' })}
-                    </div>
+                  <div className="h-64 flex items-end justify-between gap-2">
+                    {chartAnalyses.map((analysis) => {
+                      const amount = analysis.billData.totalAmount || 0;
+                      const savings = analysis.savings?.potentialSavings || 0;
+                      const heightPct = Math.max(
+                        8,
+                        Math.min(100, (amount / maxAmount) * 100)
+                      );
+                      const savingsPct = Math.max(
+                        0,
+                        Math.min(heightPct, (savings / maxAmount) * 100)
+                      );
+                      return (
+                        <div
+                          key={analysis.id}
+                          className="flex-1 flex flex-col items-center min-w-0"
+                        >
+                          <div
+                            className="w-full relative flex flex-col justify-end"
+                            style={{ height: "100%" }}
+                          >
+                            <div
+                              className="w-full rounded-t-md bg-gradient-to-t from-blue-600 to-blue-400 relative overflow-hidden"
+                              style={{ height: `${heightPct}%` }}
+                              title={`${analysis.billData.period}: ${formatCurrency(amount)}${
+                                savings > 0
+                                  ? ` · besparing ${formatCurrency(savings)}`
+                                  : ""
+                              }`}
+                            >
+                              {savingsPct > 0 && (
+                                <div
+                                  className="absolute bottom-0 inset-x-0 bg-emerald-400/90"
+                                  style={{ height: `${(savingsPct / heightPct) * 100}%` }}
+                                  title={`Besparing ${formatCurrency(savings)}`}
+                                />
+                              )}
+                            </div>
+                          </div>
+                          <div className="mt-2 text-[10px] sm:text-xs text-gray-500 text-center truncate w-full">
+                            {new Date(analysis.createdAt).toLocaleDateString(
+                              "sv-SE",
+                              { month: "short" }
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                    {Array.from({ length: lockedSlots }).map((_, i) => (
+                      <button
+                        key={`locked-${i}`}
+                        type="button"
+                        disabled={startingCheckout}
+                        onClick={() => goPremiumCheckout("dashboard_trend_locked_bar")}
+                        className="flex-1 flex flex-col items-center min-w-0 group disabled:opacity-60"
+                        title={`Lås upp med Premium — ${PREMIUM_PRICE_LABEL}`}
+                      >
+                        <div
+                          className="w-full relative flex flex-col justify-end"
+                          style={{ height: "100%" }}
+                        >
+                          <div
+                            className="w-full rounded-t-md border border-dashed border-amber-300 bg-amber-50 group-hover:bg-amber-100 transition-colors flex items-center justify-center"
+                            style={{
+                              height: `${Math.max(24, 40 + (i % 3) * 12)}%`,
+                            }}
+                          >
+                            <Lock className="w-3.5 h-3.5 text-amber-600" />
+                          </div>
+                        </div>
+                        <div className="mt-2 text-[10px] sm:text-xs text-amber-700/80 text-center truncate w-full">
+                          låst
+                        </div>
+                      </button>
+                    ))}
                   </div>
                 );
-              })}
-            </div>
-            
+              })()
+            )}
+
             <div className="mt-6 pt-6 border-t border-gray-200">
-              <div className="flex items-center justify-between text-sm">
+              <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                  <div className="w-3 h-3 bg-blue-500 rounded-full" />
                   <span className="text-gray-600">Din kostnad</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-gray-600">Genomsnitt i område</span>
+                  <div className="w-3 h-3 bg-emerald-400 rounded-full" />
+                  <span className="text-gray-600">Identifierad besparing</span>
                 </div>
+                {!isPremium && hiddenAnalysesCount > 0 && (
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full border border-dashed border-amber-400 bg-amber-50" />
+                    <span className="text-amber-800">
+                      {hiddenAnalysesCount} dold
+                      {hiddenAnalysesCount === 1 ? "" : "a"} med Premium
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>

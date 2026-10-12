@@ -135,7 +135,7 @@ function PremiumSuccessContent() {
             </li>
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <span>Exportera dina analyser som CSV, Excel eller PDF</span>
+              <span>Exportera dina analyser som CSV</span>
             </li>
             <li className="flex items-start gap-3">
               <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
