@@ -266,19 +266,19 @@ export default function ResultPage() {
           {!authLoading && user && (
             <div className="mb-8 bg-gradient-to-r from-primary/10 to-primary/5 rounded-lg border border-primary/20 p-6 text-center">
               <h3 className="font-semibold text-lg mb-2">
-                {accountSaveBlocked ? "Se dina sparade fakturor" : "Se alla dina fakturor"}
+                {accountSaveBlocked ? "Gratisplanen är full — lås upp historiken" : "Se alla dina fakturor"}
               </h3>
               <p className="text-sm text-muted mb-4">
                 {accountSaveBlocked
-                  ? `Den här analysen sparades inte på kontot (gratis max ${accountSaveLimit}). Dina tidigare analyser finns kvar på dashboard.`
+                  ? `Den här analysen sparades inte på kontot (gratis max ${accountSaveLimit}). Premium sparar den + hela historiken — öppnar betalning direkt.`
                   : "Din faktura är sparad. Gå till ditt dashboard för att se alla analyser och följa dina besparingar över tid."}
               </p>
               <Link
-                href="/dashboard"
+                href={accountSaveBlocked ? "/dashboard?checkout=1" : "/dashboard"}
                 className="inline-flex items-center gap-2 px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium"
               >
                 <LayoutDashboard className="w-5 h-5" />
-                Gå till Mitt Dashboard
+                {accountSaveBlocked ? "Lås upp med Premium" : "Gå till Mitt Dashboard"}
               </Link>
             </div>
           )}
