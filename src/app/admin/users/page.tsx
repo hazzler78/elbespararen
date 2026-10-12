@@ -132,7 +132,7 @@ export default function AdminUsersPage() {
       "",
       "Tack för att du använder Elbespararen.",
       "",
-      "Vi har precis gjort Premium tydligare — för 99 kr/år får du:",
+      "Vi har precis gjort Premium tydligare — för 49 kr/år (intro) får du:",
       "• Obegränsad fakturahistorik (gratis stannar vid 3 månader)",
       "• CSV-export av dina analyser",
       "",
@@ -404,7 +404,7 @@ export default function AdminUsersPage() {
           <div className="mt-8 space-y-3">
             <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <p className="text-sm text-blue-700 text-center">
-                💡 <strong>Tips:</strong> Premium-användare betalar 99 kr/år för obegränsad historik, export-funktioner och avancerad analys.
+                💡 <strong>Tips:</strong> Premium-användare betalar 49 kr/år (intro) för obegränsad historik, export-funktioner och avancerad analys.
               </p>
             </div>
 
