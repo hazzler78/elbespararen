@@ -127,5 +127,15 @@ export const AnalyticsEvents = {
   
   chatError: (errorType: string) => 
     trackEvent('chat_error', 'error', errorType),
+
+  // Premium conversion funnel
+  premiumCtaClicked: (source: string) =>
+    trackEvent('premium_cta_click', 'conversion', source),
+
+  premiumCheckoutStarted: () =>
+    trackEvent('premium_checkout_started', 'conversion', 'stripe'),
+
+  premiumPageViewed: () =>
+    trackEvent('premium_page_view', 'engagement', 'premium'),
 };
 

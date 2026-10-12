@@ -28,6 +28,7 @@ import { useRouter } from "next/navigation";
 import { BillAnalysis } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 interface DashboardStats {
   totalAnalyses: number;

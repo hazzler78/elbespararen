@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { Sparkles, Download, History, ArrowRight } from "lucide-react";
 import { formatCurrency } from "@/lib/calculations";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 interface PremiumValueCTAProps {
   /** Potential monthly savings from the current analysis, if known */
@@ -67,6 +68,7 @@ export default function PremiumValueCTA({
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
         <Link
           href={href}
+          onClick={() => AnalyticsEvents.premiumCtaClicked(isLoggedIn ? "result_logged_in" : "result_guest")}
           className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 transition-colors"
         >
           {ctaLabel}

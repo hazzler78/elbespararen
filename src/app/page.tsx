@@ -10,6 +10,7 @@ import AppHeader from "@/components/AppHeader";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 function OAuthRedirectHandler() {
   const searchParams = useSearchParams();
@@ -71,8 +72,8 @@ export default function Home() {
             </h1>
 
             <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
-              AI-driven analys hittar onödiga extra avgifter och visar exakt hur mycket du kan spara. 
-              Elbespararen - en tjänst från Elchef. Enkelt, säkert och helt kostnadsfritt.
+              AI-driven analys hittar onödiga extra avgifter och visar exakt hur mycket du kan spara.
+              Börja gratis — Premium ger historik och export när du vill följa besparingen över tid.
             </p>
 
             {/* CTA */}
@@ -249,6 +250,7 @@ export default function Home() {
             </p>
             <Link
               href="/premium"
+              onClick={() => AnalyticsEvents.premiumCtaClicked("homepage")}
               className="inline-flex items-center gap-2 px-6 py-3 bg-amber-600 text-white font-semibold rounded-lg hover:bg-amber-700 transition-colors"
             >
               Se Premium

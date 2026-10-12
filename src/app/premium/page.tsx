@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
 import AppHeader from "@/components/AppHeader";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 export default function PremiumPage() {
   const { user, loading: authLoading } = useAuth();
@@ -24,6 +25,7 @@ export default function PremiumPage() {
   const [canceled, setCanceled] = useState(false);
 
   useEffect(() => {
+    AnalyticsEvents.premiumPageViewed();
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get("canceled") === "true") {
       setCanceled(true);
@@ -75,6 +77,7 @@ export default function PremiumPage() {
     }
 
     setIsCreatingCheckout(true);
+    AnalyticsEvents.premiumCtaClicked("premium_page");
     try {
       const session = {
         user: {
@@ -97,6 +100,7 @@ export default function PremiumPage() {
       const data = await response.json();
 
       if (data.success && data.url) {
+        AnalyticsEvents.premiumCheckoutStarted();
         window.location.href = data.url;
       } else {
         alert(
