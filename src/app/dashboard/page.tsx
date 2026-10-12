@@ -504,6 +504,7 @@ export default function DashboardPage() {
                   const next = e.target.value as typeof timeRange;
                   if (!isPremium && (next === "year" || next === "all")) {
                     setHistoryLimited(true);
+                    void goPremiumCheckout("dashboard_range_locked");
                     return;
                   }
                   setTimeRange(next);
@@ -813,10 +814,16 @@ export default function DashboardPage() {
               <p className="text-sm text-gray-600">Dina fakturaanalyser över tid</p>
             </div>
             <Link
-              href="/dashboard/analyses"
+              href={
+                !isPremium && hiddenAnalysesCount > 0
+                  ? "/dashboard/analyses?checkout=1"
+                  : "/dashboard/analyses"
+              }
               className="text-sm font-medium text-primary hover:text-primary/80 flex items-center gap-1"
             >
-              Visa alla
+              {!isPremium && hiddenAnalysesCount > 0
+                ? `Lås upp ${hiddenAnalysesCount}`
+                : "Visa alla"}
               <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>

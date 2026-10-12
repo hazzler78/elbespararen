@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -13,11 +13,15 @@ import {
   ArrowLeft,
   Upload,
   Calendar,
-  Filter
+  Filter,
+  ArrowUpRight,
+  Lock,
 } from "lucide-react";
 import { BillAnalysis } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { startPremiumCheckout } from "@/lib/start-premium-checkout";
+import { PREMIUM_PRICE_LABEL } from "@/lib/premium-pricing";
 import AppHeader from "@/components/AppHeader";
 
 export default function AnalysesPage() {
@@ -27,8 +31,26 @@ export default function AnalysesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
   const [isPremium, setIsPremium] = useState(false);
+  const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
+  const [totalSavedCount, setTotalSavedCount] = useState(0);
+  const [startingCheckout, setStartingCheckout] = useState(false);
+  const [autoCheckout, setAutoCheckout] = useState(false);
+  const autoCheckoutStarted = useRef(false);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
+
+  const goPremiumCheckout = async (source: string) => {
+    if (!user?.email || startingCheckout) return;
+    setStartingCheckout(true);
+    const ok = await startPremiumCheckout(
+      { user: { email: user.email, id: user.id } },
+      source
+    );
+    if (!ok) {
+      setStartingCheckout(false);
+      router.push("/premium?checkout=1");
+    }
+  };
 
   const fetchAnalyses = useCallback(async () => {
     if (!user) return;
@@ -64,6 +86,10 @@ export default function AnalysesPage() {
       const analysesData = await analysesResponse.json();
       const fetchedAnalyses = analysesData.success ? analysesData.data : [];
       setAnalyses(fetchedAnalyses);
+      setHiddenAnalysesCount(Number(analysesData.meta?.hiddenAnalysesCount) || 0);
+      setTotalSavedCount(
+        Number(analysesData.meta?.totalSavedCount) || fetchedAnalyses.length
+      );
       if (analysesData.meta?.historyLimited && analysesData.meta.range) {
         setTimeRange(analysesData.meta.range);
       }
@@ -73,6 +99,32 @@ export default function AnalysesPage() {
       setIsLoading(false);
     }
   }, [timeRange, router, user]);
+
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("checkout") === "1") {
+      setAutoCheckout(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      !autoCheckout ||
+      loading ||
+      isLoading ||
+      !user?.email ||
+      isPremium ||
+      startingCheckout ||
+      autoCheckoutStarted.current
+    ) {
+      return;
+    }
+    autoCheckoutStarted.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    window.history.replaceState({}, "", url.pathname + url.search);
+    void goPremiumCheckout("analyses_auto_checkout");
+  }, [autoCheckout, loading, isLoading, user, isPremium, startingCheckout]);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -140,15 +192,56 @@ export default function AnalysesPage() {
             <ArrowLeft className="w-4 h-4" />
             Tillbaka till dashboard
           </Link>
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4 flex-wrap">
             <div>
               <h1 className="text-3xl font-bold text-foreground mb-2">Alla analyser</h1>
               <p className="text-muted">
-                {analyses.length} {analyses.length === 1 ? 'analys' : 'analyser'} totalt
+                {!isPremium && hiddenAnalysesCount > 0
+                  ? `${analyses.length} synliga · ${hiddenAnalysesCount} dolda bakom Premium`
+                  : `${totalSavedCount || analyses.length} ${
+                      (totalSavedCount || analyses.length) === 1 ? "analys" : "analyser"
+                    } totalt`}
               </p>
             </div>
+            {!isPremium && (hiddenAnalysesCount > 0 || totalSavedCount >= 2) && (
+              <button
+                type="button"
+                disabled={startingCheckout}
+                onClick={() => goPremiumCheckout("analyses_header")}
+                className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {startingCheckout
+                  ? "Öppnar betalning…"
+                  : hiddenAnalysesCount > 0
+                    ? `Lås upp ${hiddenAnalysesCount} — ${PREMIUM_PRICE_LABEL}`
+                    : `Bli Premium — ${PREMIUM_PRICE_LABEL}`}
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+            )}
           </div>
         </div>
+
+        {!isPremium && hiddenAnalysesCount > 0 && (
+          <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div className="flex items-start gap-2 text-sm text-amber-950">
+              <Lock className="h-4 w-4 mt-0.5 shrink-0 text-amber-700" />
+              <p>
+                Gratis visar max 2 sparade (3 mån). Du har {hiddenAnalysesCount} analys
+                {hiddenAnalysesCount === 1 ? "" : "er"} dolda — Premium låser upp hela
+                historiken + CSV.
+              </p>
+            </div>
+            <button
+              type="button"
+              disabled={startingCheckout}
+              onClick={() => goPremiumCheckout("analyses_banner")}
+              className="inline-flex items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60 shrink-0"
+            >
+              {startingCheckout ? "Öppnar…" : `Lås upp — ${PREMIUM_PRICE_LABEL}`}
+              <ArrowUpRight className="h-4 w-4" />
+            </button>
+          </div>
+        )}
 
         {/* Filter */}
         <div className="bg-white rounded-lg border border-border p-4 mb-6">
@@ -167,9 +260,10 @@ export default function AnalysesPage() {
                   <button
                     key={option.value}
                     type="button"
+                    disabled={locked && startingCheckout}
                     onClick={() => {
                       if (locked) {
-                        router.push("/premium");
+                        void goPremiumCheckout("analyses_range_locked");
                         return;
                       }
                       setTimeRange(option.value);
@@ -178,13 +272,17 @@ export default function AnalysesPage() {
                       timeRange === option.value
                         ? "bg-primary text-white"
                         : locked
-                          ? "bg-gray-50 text-gray-400 border border-dashed border-gray-300"
+                          ? "bg-amber-50 text-amber-800 border border-dashed border-amber-300 hover:bg-amber-100"
                           : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
-                    title={locked ? "Premium krävs" : undefined}
+                    title={
+                      locked
+                        ? `Premium (${PREMIUM_PRICE_LABEL}) — öppnar betalning`
+                        : undefined
+                    }
                   >
                     {option.label}
-                    {locked ? " · Premium" : ""}
+                    {locked ? " · Lås upp" : ""}
                   </button>
                 );
               })}
