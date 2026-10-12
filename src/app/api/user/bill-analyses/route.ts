@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
-import { clampHistoryRange, isPremium } from "@/lib/premium";
+import {
+  clampHistoryRange,
+  isPremium,
+  PREMIUM_LIMITS,
+} from "@/lib/premium";
 
 // Cloudflare Pages requires Edge runtime for all routes
 export const runtime = 'edge';
@@ -45,15 +49,25 @@ export async function GET(req: NextRequest) {
     const { range, limited } = clampHistoryRange(dbUser, requestedRange);
 
     // Hämta användarens fakturaanalyser (clamped for free)
-    const analyses = await db.getBillAnalysesByUserId(dbUser.id, range);
+    let analyses = await db.getBillAnalysesByUserId(dbUser.id, range);
 
-    // For free users: count how many analyses exist beyond the free window
-    // so the UI can show a concrete reason to upgrade
+    // Free: max 2 sparade synliga + 3 mån fönster. Räkna dolda så UI kan uppgradera.
     let hiddenAnalysesCount = 0;
+    let totalSavedCount = analyses.length;
     const premiumUser = isPremium(dbUser);
     if (!premiumUser) {
       const allAnalyses = await db.getBillAnalysesByUserId(dbUser.id, "all");
-      hiddenAnalysesCount = Math.max(0, allAnalyses.length - analyses.length);
+      totalSavedCount = allAnalyses.length;
+      const maxSaved = PREMIUM_LIMITS.FREE.maxSavedAnalyses;
+      // Dolda p.g.a. tidsfönster (utanför 3 mån)
+      const outsideWindow = Math.max(0, allAnalyses.length - analyses.length);
+      // Dolda p.g.a. spargräns (fler än 2 inom fönstret)
+      let overSaveLimit = 0;
+      if (analyses.length > maxSaved) {
+        overSaveLimit = analyses.length - maxSaved;
+        analyses = analyses.slice(0, maxSaved);
+      }
+      hiddenAnalysesCount = outsideWindow + overSaveLimit;
     }
 
     return NextResponse.json({
@@ -66,6 +80,10 @@ export async function GET(req: NextRequest) {
         historyLimited: limited,
         isPremium: premiumUser,
         hiddenAnalysesCount,
+        totalSavedCount,
+        freeSaveLimit: premiumUser
+          ? null
+          : PREMIUM_LIMITS.FREE.maxSavedAnalyses,
       },
     });
   } catch (error) {

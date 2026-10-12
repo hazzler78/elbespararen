@@ -290,7 +290,8 @@ export default function DashboardPage() {
   }, [user, fetchDashboardData]);
 
   useEffect(() => {
-    if (isLoading || isPremium || analyses.length < 2) return;
+    if (isLoading || isPremium) return;
+    if (analyses.length < 2 && hiddenAnalysesCount < 1) return;
     try {
       const key = "elbespararen_premium_nudge_dismissed";
       const raw = localStorage.getItem(key);
@@ -305,7 +306,7 @@ export default function DashboardPage() {
     } catch {
       setShowPremiumNudge(true);
     }
-  }, [isLoading, isPremium, analyses.length]);
+  }, [isLoading, isPremium, analyses.length, hiddenAnalysesCount]);
 
   const dismissPremiumNudge = () => {
     setShowPremiumNudge(false);
@@ -342,14 +343,18 @@ export default function DashboardPage() {
               </div>
               <div>
                 <h2 id="premium-nudge-title" className="text-lg font-semibold text-gray-900">
-                  {analyses.length >= 2
-                    ? `Gratisplanen: max 2 sparade fakturor`
-                    : `Du har ${analyses.length} sparade analyser`}
+                  {hiddenAnalysesCount > 0
+                    ? `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} väntar bakom Premium`
+                    : analyses.length >= 2
+                      ? `Gratisplanen: max 2 sparade fakturor`
+                      : `Du har ${analyses.length} sparade analyser`}
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  {analyses.length >= 2
-                    ? "Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — 99 kr/år."
-                    : "Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export — så du ser att besparingen håller."}
+                  {hiddenAnalysesCount > 0
+                    ? "Gratis visar max 2 sparade. Premium (99 kr/år) låser upp hela historiken och CSV-export."
+                    : analyses.length >= 2
+                      ? "Nästa faktura sparas inte på kontot utan Premium. Du får obegränsat sparande, historik och CSV-export — 99 kr/år."
+                      : "Gratis visar 3 månader. Premium (99 kr/år) ger obegränsad historik och CSV-export — så du ser att besparingen håller."}
                 </p>
               </div>
             </div>
@@ -546,10 +551,12 @@ export default function DashboardPage() {
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
             <span>
               {hiddenAnalysesCount > 0
-                ? `Du har ${hiddenAnalysesCount} äldre analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar 3 månader — Premium låser upp allt + CSV-export.`
+                ? `Du har ${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar max 2 sparade (3 mån) — Premium låser upp allt + CSV-export.`
                 : historyLimited
                   ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
-                  : "Gratis: senaste 3 månaderna. Premium ger årshistorik och CSV-export — 99 kr/år."}
+                  : analyses.length >= 2
+                    ? "Gratisplanen är full (2/2). Nästa faktura sparas inte utan Premium — 99 kr/år."
+                    : "Gratis: max 2 sparade + 3 månader. Premium ger obegränsat + CSV — 99 kr/år."}
             </span>
             <Link
               href="/premium"

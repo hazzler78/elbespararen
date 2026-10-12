@@ -23,6 +23,7 @@ export default function PremiumPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [canceled, setCanceled] = useState(false);
+  const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
 
   useEffect(() => {
     AnalyticsEvents.premiumPageViewed();
@@ -63,6 +64,19 @@ export default function PremiumPage() {
         const data = await response.json();
         if (data.success) {
           setIsPremium(data.data.isPremium || false);
+        }
+      }
+      const analysesRes = await fetchWithAuth(
+        "/api/user/bill-analyses?range=3months",
+        {},
+        session
+      );
+      if (analysesRes.ok) {
+        const analysesData = await analysesRes.json();
+        if (analysesData.success) {
+          setHiddenAnalysesCount(
+            Number(analysesData.meta?.hiddenAnalysesCount) || 0
+          );
         }
       }
     } catch (error) {
@@ -173,6 +187,13 @@ export default function PremiumPage() {
               Spara varje fakturaanalys, följ kostnaden över tid och exportera
               när du vill. Cirka 8 kr/månad.
             </p>
+            {user && hiddenAnalysesCount > 0 && (
+              <p className="mt-4 inline-block rounded-lg bg-white/15 px-4 py-2 text-sm font-medium">
+                Du har {hiddenAnalysesCount} analys
+                {hiddenAnalysesCount === 1 ? "" : "er"} dolda på gratisplanen —
+                Premium låser upp dem.
+              </p>
+            )}
           </div>
         </div>
 
