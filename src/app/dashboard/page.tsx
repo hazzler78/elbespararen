@@ -381,8 +381,13 @@ export default function DashboardPage() {
     );
   }
 
+  const showStickyPaywall =
+    !isPremium &&
+    !showPremiumNudge &&
+    (hiddenAnalysesCount > 0 || analyses.length >= 2);
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className={`min-h-screen bg-gray-50 ${showStickyPaywall ? "pb-24" : ""}`}>
       {showPremiumNudge && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-4">
           <div
@@ -937,6 +942,32 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
+
+      {/* Sticky paywall bar — stays after modal dismiss so return visits still convert */}
+      {showStickyPaywall && (
+          <div className="fixed bottom-0 inset-x-0 z-40 border-t border-amber-200 bg-amber-50/95 backdrop-blur px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-amber-950">
+                {hiddenAnalysesCount > 0
+                  ? `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda — Premium (${PREMIUM_PRICE_LABEL}) låser upp allt + CSV.`
+                  : `Gratisplanen full (2/2). Nästa faktura sparas inte utan Premium — ${PREMIUM_PRICE_LABEL}.`}
+              </p>
+              <button
+                type="button"
+                disabled={startingCheckout}
+                onClick={() => goPremiumCheckout("dashboard_sticky_bar")}
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+              >
+                {startingCheckout
+                  ? "Öppnar…"
+                  : hiddenAnalysesCount > 0
+                    ? `Lås upp ${hiddenAnalysesCount} — ${PREMIUM_PRICE_LABEL}`
+                    : PREMIUM_PRICE_CTA}
+                <ArrowUpRight className="h-4 w-4" />
+              </button>
+            </div>
+          </div>
+        )}
 
       {/* Bekräftelsedialog för borttagning */}
       {confirmDeleteId && (
