@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { 
   TrendingUp, 
@@ -61,6 +61,8 @@ export default function DashboardPage() {
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showPremiumNudge, setShowPremiumNudge] = useState(false);
   const [startingCheckout, setStartingCheckout] = useState(false);
+  const [autoCheckout, setAutoCheckout] = useState(false);
+  const autoCheckoutStarted = useRef(false);
 
   const goPremiumCheckout = async (source: string) => {
     if (!user?.email) {
@@ -77,6 +79,33 @@ export default function DashboardPage() {
       router.push("/premium");
     }
   };
+
+  // Deep link from email/CTA: /dashboard?checkout=1 opens Stripe (same as /premium?checkout=1).
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get("checkout") === "1") {
+      setAutoCheckout(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (
+      !autoCheckout ||
+      loading ||
+      isLoading ||
+      !user?.email ||
+      isPremium ||
+      startingCheckout ||
+      autoCheckoutStarted.current
+    ) {
+      return;
+    }
+    autoCheckoutStarted.current = true;
+    const url = new URL(window.location.href);
+    url.searchParams.delete("checkout");
+    window.history.replaceState({}, "", url.pathname + url.search);
+    void goPremiumCheckout("dashboard_auto_checkout");
+  }, [autoCheckout, loading, isLoading, user, isPremium, startingCheckout]);
 
   const handleSignOut = async () => {
     await signOut();

@@ -23,13 +23,17 @@ port = int(env.get("HEJ_SMTP_PORT", "587"))
 if not pwd:
     raise SystemExit("MISSING_SMTP")
 
-# Hottest free users at/over save wall (not mass). Hidden ≈ saved - 2.
-RECIPIENTS = [
-    ("Oliver", "axelsson.oliver@icloud.com", 6),
-    ("Peter", "peter@phsalj.se", 1),
-]
+# Hottest free users at/over save wall (not mass). Hidden ≈ max(0, saved - 2).
+# Pass recipients via CLI: python scripts/send-info-smtp.py oliver peter
+# Default: none (avoid accidental resends). Explicit names required.
+ALL_LEADS = {
+    "oliver": ("Oliver", "axelsson.oliver@icloud.com", 6),
+    "peter": ("Peter", "peter@phsalj.se", 1),
+    "mattias": ("Mattias", "mattiasborjesson89@gmail.com", 0),  # 2/2 full
+    "tor": ("Tor", "tor.odqvistextra@gmail.com", 0),  # 2/2 full
+}
 
-CHECKOUT = "https://elbespararen.se/premium?checkout=1"
+CHECKOUT = "https://elbespararen.se/dashboard?checkout=1"
 
 def body_for(name: str, hidden: int) -> str:
     hi = f"Hej {name}," if name else "Hej,"
@@ -37,7 +41,7 @@ def body_for(name: str, hidden: int) -> str:
         f"Just nu syns bara 2 av dina sparade fakturor — {hidden} analys"
         f"{'' if hidden == 1 else 'er'} är dolda bakom gratisgränsen."
         if hidden > 0
-        else "Din gratisplan är full (2/2 sparade fakturor)."
+        else "Din gratisplan är full (2/2 sparade fakturor) — nästa analys sparas inte utan Premium."
     )
     return f"""{hi}
 
@@ -45,7 +49,7 @@ def body_for(name: str, hidden: int) -> str:
 
 Premium kostar 49 kr/år (ca 4 kr/mån) och låser upp hela historiken + CSV-export.
 
-Ett klick (inloggad):
+Logga in så öppnas betalningen direkt (Stripe, säkert):
 {CHECKOUT}
 
 Hälsningar
@@ -58,7 +62,7 @@ def send_one(name: str, to: str, hidden: int) -> None:
     subject = (
         f"{hidden} analys{'er' if hidden != 1 else ''} dolda — Premium 49 kr/år"
         if hidden > 0
-        else "Premium 49 kr/år — lås upp dina analyser"
+        else "Gratisplanen full — Premium 49 kr/år"
     )
     msg["Subject"] = subject
     msg["From"] = f"Elbespararen <{from_}>"
@@ -72,7 +76,12 @@ def send_one(name: str, to: str, hidden: int) -> None:
     print("OK", to, f"hidden={hidden}")
 
 if __name__ == "__main__":
-    for name, to, hidden in RECIPIENTS:
+    import sys
+    keys = [a.lower() for a in sys.argv[1:] if a.lower() in ALL_LEADS]
+    if not keys:
+        raise SystemExit("Usage: python scripts/send-info-smtp.py mattias tor")
+    for key in keys:
+        name, to, hidden = ALL_LEADS[key]
         try:
             send_one(name, to, hidden)
         except Exception as e:
