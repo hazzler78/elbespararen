@@ -740,7 +740,7 @@ export default function DashboardPage() {
                     <p className="text-sm text-gray-600 mb-3">
                       {isPremium
                         ? "Ladda ner dina analyser som CSV."
-                        : "Exportera dina analyser som CSV. Premium-funktion."}
+                        : `CSV-export ingår i Premium (${PREMIUM_PRICE_LABEL}). Ett klick öppnar säker betalning.`}
                     </p>
                     {isPremium ? (
                       <div className="flex gap-2">
@@ -790,10 +790,12 @@ export default function DashboardPage() {
                         type="button"
                         disabled={startingCheckout}
                         onClick={() => goPremiumCheckout("dashboard_export")}
-                        className="inline-flex items-center gap-2 text-sm font-medium text-primary hover:text-primary/80 disabled:opacity-60"
+                        className="inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                       >
-                        {startingCheckout ? "Öppnar betalning…" : "Uppgradera till Premium"}
-                        <ArrowUpRight className="w-4 h-4" />
+                        {startingCheckout
+                          ? "Öppnar betalning…"
+                          : `Lås upp CSV — ${PREMIUM_PRICE_LABEL}`}
+                        <ArrowUpRight className="h-4 w-4" />
                       </button>
                     )}
                   </div>
