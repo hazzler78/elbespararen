@@ -57,6 +57,7 @@ export default function DashboardPage() {
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
   const [historyLimited, setHistoryLimited] = useState(false);
   const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
+  const [hiddenPotentialSavings, setHiddenPotentialSavings] = useState(0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const [showPremiumNudge, setShowPremiumNudge] = useState(false);
@@ -204,6 +205,9 @@ export default function DashboardPage() {
         setHistoryLimited(false);
       }
       setHiddenAnalysesCount(Number(analysesData.meta?.hiddenAnalysesCount) || 0);
+      setHiddenPotentialSavings(
+        Number(analysesData.meta?.hiddenPotentialSavings) || 0
+      );
       if (!premium && (timeRange === "year" || timeRange === "all")) {
         setTimeRange("3months");
       }
@@ -402,7 +406,9 @@ export default function DashboardPage() {
               <div>
                 <h2 id="premium-nudge-title" className="text-lg font-semibold text-gray-900">
                   {hiddenAnalysesCount > 0
-                    ? `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} väntar bakom Premium`
+                    ? hiddenPotentialSavings > 0
+                      ? `${hiddenAnalysesCount} dolda · ca ${formatCurrency(hiddenPotentialSavings)} bakom Premium`
+                      : `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} väntar bakom Premium`
                     : analyses.length >= 2
                       ? `Gratisplanen: max 2 sparade fakturor`
                       : `Du har ${analyses.length} sparade analyser`}
@@ -610,7 +616,9 @@ export default function DashboardPage() {
           <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <span>
               {hiddenAnalysesCount > 0
-                ? `Du har ${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar max 2 sparade (3 mån) — Premium låser upp allt + CSV-export.`
+                ? hiddenPotentialSavings > 0
+                  ? `Du har ${hiddenAnalysesCount} dolda analyser med ca ${formatCurrency(hiddenPotentialSavings)} i identifierad besparing. Premium låser upp allt + CSV.`
+                  : `Du har ${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda. Gratis visar max 2 sparade (3 mån) — Premium låser upp allt + CSV-export.`
                 : historyLimited
                   ? "Den perioden kräver Premium. Gratis visar senaste 3 månaderna."
                   : analyses.length >= 2
@@ -936,8 +944,9 @@ export default function DashboardPage() {
                         {hiddenAnalysesCount === 1 ? " analys" : "a analyser"}
                       </h3>
                       <p className="text-sm text-amber-900/80">
-                        Gratis visar max 2. Premium låser upp hela historiken —{" "}
-                        {PREMIUM_PRICE_LABEL}.
+                        {hiddenPotentialSavings > 0
+                          ? `Ca ${formatCurrency(hiddenPotentialSavings)} i identifierad besparing väntar bakom Premium (${PREMIUM_PRICE_LABEL}).`
+                          : `Gratis visar max 2. Premium låser upp hela historiken — ${PREMIUM_PRICE_LABEL}.`}
                       </p>
                     </div>
                     <span className="text-sm font-semibold text-amber-800 shrink-0">
@@ -958,7 +967,9 @@ export default function DashboardPage() {
             <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
               <p className="text-sm text-amber-950">
                 {hiddenAnalysesCount > 0
-                  ? `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda — Premium (${PREMIUM_PRICE_LABEL}) låser upp allt + CSV.`
+                  ? hiddenPotentialSavings > 0
+                    ? `${hiddenAnalysesCount} dolda · ca ${formatCurrency(hiddenPotentialSavings)} i besparing — Premium (${PREMIUM_PRICE_LABEL}) låser upp allt + CSV.`
+                    : `${hiddenAnalysesCount} analys${hiddenAnalysesCount === 1 ? "" : "er"} dolda — Premium (${PREMIUM_PRICE_LABEL}) låser upp allt + CSV.`
                   : `Gratisplanen full (2/2). Nästa faktura sparas inte utan Premium — ${PREMIUM_PRICE_LABEL}.`}
               </p>
               <button

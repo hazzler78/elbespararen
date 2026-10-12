@@ -51,13 +51,22 @@ export async function GET(req: NextRequest) {
     // Hämta användarens fakturaanalyser (clamped for free)
     let analyses = await db.getBillAnalysesByUserId(dbUser.id, range);
 
+    const sumPotentialSavings = (list: { savings?: { potentialSavings?: number } }[]) =>
+      list.reduce(
+        (sum, a) => sum + (Number(a.savings?.potentialSavings) || 0),
+        0
+      );
+
     // Free: max 2 sparade synliga + 3 mån fönster. Räkna dolda så UI kan uppgradera.
     let hiddenAnalysesCount = 0;
     let totalSavedCount = analyses.length;
+    let totalPotentialSavings = sumPotentialSavings(analyses);
+    let hiddenPotentialSavings = 0;
     const premiumUser = isPremium(dbUser);
     if (!premiumUser) {
       const allAnalyses = await db.getBillAnalysesByUserId(dbUser.id, "all");
       totalSavedCount = allAnalyses.length;
+      totalPotentialSavings = sumPotentialSavings(allAnalyses);
       const maxSaved = PREMIUM_LIMITS.FREE.maxSavedAnalyses;
       // Dolda p.g.a. tidsfönster (utanför 3 mån)
       const outsideWindow = Math.max(0, allAnalyses.length - analyses.length);
@@ -68,6 +77,11 @@ export async function GET(req: NextRequest) {
         analyses = analyses.slice(0, maxSaved);
       }
       hiddenAnalysesCount = outsideWindow + overSaveLimit;
+      const visibleSavings = sumPotentialSavings(analyses);
+      hiddenPotentialSavings = Math.max(
+        0,
+        totalPotentialSavings - visibleSavings
+      );
     }
 
     return NextResponse.json({
@@ -81,6 +95,8 @@ export async function GET(req: NextRequest) {
         isPremium: premiumUser,
         hiddenAnalysesCount,
         totalSavedCount,
+        totalPotentialSavings,
+        hiddenPotentialSavings,
         freeSaveLimit: premiumUser
           ? null
           : PREMIUM_LIMITS.FREE.maxSavedAnalyses,

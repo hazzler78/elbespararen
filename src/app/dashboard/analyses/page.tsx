@@ -32,6 +32,7 @@ export default function AnalysesPage() {
   const [timeRange, setTimeRange] = useState<"month" | "3months" | "year" | "all">("3months");
   const [isPremium, setIsPremium] = useState(false);
   const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
+  const [hiddenPotentialSavings, setHiddenPotentialSavings] = useState(0);
   const [totalSavedCount, setTotalSavedCount] = useState(0);
   const [startingCheckout, setStartingCheckout] = useState(false);
   const [autoCheckout, setAutoCheckout] = useState(false);
@@ -87,6 +88,9 @@ export default function AnalysesPage() {
       const fetchedAnalyses = analysesData.success ? analysesData.data : [];
       setAnalyses(fetchedAnalyses);
       setHiddenAnalysesCount(Number(analysesData.meta?.hiddenAnalysesCount) || 0);
+      setHiddenPotentialSavings(
+        Number(analysesData.meta?.hiddenPotentialSavings) || 0
+      );
       setTotalSavedCount(
         Number(analysesData.meta?.totalSavedCount) || fetchedAnalyses.length
       );
@@ -227,8 +231,11 @@ export default function AnalysesPage() {
               <Lock className="h-4 w-4 mt-0.5 shrink-0 text-amber-700" />
               <p>
                 Gratis visar max 2 sparade (3 mån). Du har {hiddenAnalysesCount} analys
-                {hiddenAnalysesCount === 1 ? "" : "er"} dolda — Premium låser upp hela
-                historiken + CSV.
+                {hiddenAnalysesCount === 1 ? "" : "er"} dolda
+                {hiddenPotentialSavings > 0
+                  ? ` med ca ${formatCurrency(hiddenPotentialSavings)} i identifierad besparing`
+                  : ""}{" "}
+                — Premium låser upp hela historiken + CSV.
               </p>
             </div>
             <button

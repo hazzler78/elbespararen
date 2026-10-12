@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { formatCurrency } from "@/lib/calculations";
 import AppHeader from "@/components/AppHeader";
 import { AnalyticsEvents } from "@/lib/analytics";
 import {
@@ -30,6 +31,7 @@ export default function PremiumPage() {
   const [isCreatingCheckout, setIsCreatingCheckout] = useState(false);
   const [canceled, setCanceled] = useState(false);
   const [hiddenAnalysesCount, setHiddenAnalysesCount] = useState(0);
+  const [hiddenPotentialSavings, setHiddenPotentialSavings] = useState(0);
   const [autoCheckout, setAutoCheckout] = useState(false);
   const autoCheckoutStarted = useRef(false);
 
@@ -87,6 +89,9 @@ export default function PremiumPage() {
         if (analysesData.success) {
           setHiddenAnalysesCount(
             Number(analysesData.meta?.hiddenAnalysesCount) || 0
+          );
+          setHiddenPotentialSavings(
+            Number(analysesData.meta?.hiddenPotentialSavings) || 0
           );
         }
       }
@@ -230,8 +235,11 @@ export default function PremiumPage() {
             {user && hiddenAnalysesCount > 0 && (
               <p className="mt-4 inline-block rounded-lg bg-white/15 px-4 py-2 text-sm font-medium">
                 Du har {hiddenAnalysesCount} analys
-                {hiddenAnalysesCount === 1 ? "" : "er"} dolda på gratisplanen —
-                Premium låser upp dem.
+                {hiddenAnalysesCount === 1 ? "" : "er"} dolda
+                {hiddenPotentialSavings > 0
+                  ? ` · ca ${formatCurrency(hiddenPotentialSavings)} i identifierad besparing`
+                  : ""}{" "}
+                — Premium låser upp dem.
               </p>
             )}
           </div>
