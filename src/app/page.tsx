@@ -204,8 +204,8 @@ export default function Home() {
                 desc: "Vi visar exakt vad vi hittat, med säkerhetspoäng för varje avgift."
               },
               {
-                title: "Helt kostnadsfritt",
-                desc: "Ingen registrering, inga dolda kostnader. Bara ärlig information."
+                title: "Börja gratis",
+                desc: "Analysera din faktura utan kostnad. Premium (99 kr/år) ger historik och export när du behöver mer."
               },
               {
                 title: "Säker & privat",

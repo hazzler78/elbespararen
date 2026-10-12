@@ -25,26 +25,34 @@ function PremiumSuccessContent() {
 
     // Check premium status after a short delay to allow webhook to process
     const checkPremiumStatus = async () => {
-      if (!user) return;
-      
       // Wait a bit for webhook to process
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
+      if (!user) {
+        // Payment succeeded; session may still be loading — show success UI anyway
+        setIsLoading(false);
+        return;
+      }
+
       try {
-        // Create session-like object from user for fetchWithAuth
         const session = {
           user: {
             email: user.email || undefined,
-            id: user.id
-          }
+            id: user.id,
+          },
         };
-        
-        const response = await fetchWithAuth('/api/user/info', {}, session);
-        if (response.ok) {
-          const data = await response.json();
-          if (data.success) {
-            setIsPremium(data.data.isPremium || false);
+
+        // Poll a few times — webhook can lag
+        for (let i = 0; i < 4; i++) {
+          const response = await fetchWithAuth("/api/user/info", {}, session);
+          if (response.ok) {
+            const data = await response.json();
+            if (data.success && data.data?.isPremium) {
+              setIsPremium(true);
+              break;
+            }
           }
+          if (i < 3) await new Promise((r) => setTimeout(r, 1500));
         }
       } catch (error) {
         console.error("Error checking premium status:", error);
@@ -53,9 +61,7 @@ function PremiumSuccessContent() {
       }
     };
 
-    if (user) {
-      checkPremiumStatus();
-    }
+    checkPremiumStatus();
   }, [searchParams, router, user]);
 
   if (isLoading) {
