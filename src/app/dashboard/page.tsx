@@ -352,7 +352,10 @@ export default function DashboardPage() {
               <Link
                 href="/premium"
                 className="inline-flex flex-1 items-center justify-center gap-2 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700"
-                onClick={dismissPremiumNudge}
+                onClick={() => {
+                  AnalyticsEvents.premiumCtaClicked("dashboard_nudge");
+                  dismissPremiumNudge();
+                }}
               >
                 Bli Premium
                 <ArrowUpRight className="h-4 w-4" />
