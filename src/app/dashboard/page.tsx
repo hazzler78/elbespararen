@@ -416,6 +416,23 @@ export default function DashboardPage() {
                 </div>
               )}
               <p className="text-gray-600 mt-1">Översikt över dina fakturaanalyser och besparingar</p>
+              {!isPremium && analyses.length === 1 && (
+                <p className="mt-3 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+                  Du har 1 av 2 gratis sparplatser kvar.{" "}
+                  <Link href="/upload" className="font-semibold underline hover:no-underline">
+                    Ladda upp nästa månadsfaktura
+                  </Link>{" "}
+                  och jämför — eller{" "}
+                  <Link
+                    href="/premium"
+                    className="font-semibold underline hover:no-underline"
+                    onClick={() => AnalyticsEvents.premiumCtaClicked("dashboard_one_slot")}
+                  >
+                    bli Premium
+                  </Link>{" "}
+                  för obegränsat.
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-3">
               <select

@@ -3,12 +3,14 @@
 import { useEffect, useState, useCallback, useRef, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { FileText, ArrowRight, X, CheckCircle2, LayoutDashboard } from "lucide-react";
+import { FileText, ArrowRight, X, CheckCircle2, LayoutDashboard, Sparkles } from "lucide-react";
 import Link from "next/link";
 import UploadCard from "@/components/UploadCard";
 import AppHeader from "@/components/AppHeader";
 import { BillData } from "@/lib/types";
 import { useAuth } from "@/hooks/useAuth";
+import { fetchWithAuth } from "@/lib/fetch-with-auth";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 type ExampleImage = {
   src: string;
@@ -22,6 +24,9 @@ function UploadPageContent() {
   const { user, loading: authLoading } = useAuth();
   const [selectedImage, setSelectedImage] = useState<ExampleImage | null>(null);
   const [showBillAlreadySaved, setShowBillAlreadySaved] = useState(false);
+  const [saveLimitHit, setSaveLimitHit] = useState(false);
+  const [saveLimit, setSaveLimit] = useState(2);
+  const [savedCount, setSavedCount] = useState(0);
   const hasProcessedPendingRef = useRef(false);
 
   const handleUploadSuccess = useCallback((data: BillData) => {
@@ -230,6 +235,40 @@ function UploadPageContent() {
   }, [authLoading, user, handleUploadSuccess, searchParams]);
 
   useEffect(() => {
+    if (authLoading || !user) {
+      setSaveLimitHit(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const session = {
+          user: { email: user.email || undefined, id: user.id },
+        };
+        const res = await fetchWithAuth("/api/user/info", {}, session);
+        if (!res.ok || cancelled) return;
+        const data = await res.json();
+        if (!data?.success || cancelled) return;
+        const info = data.data;
+        if (info?.isPremium) {
+          setSaveLimitHit(false);
+          return;
+        }
+        const limit = Number(info?.freeSaveLimit) || 2;
+        const count = Number(info?.savedAnalysesCount) || 0;
+        setSaveLimit(limit);
+        setSavedCount(count);
+        setSaveLimitHit(info?.canSaveMore === false || count >= limit);
+      } catch {
+        // ignore — upload still works
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [authLoading, user]);
+
+  useEffect(() => {
     if (!selectedImage) {
       return;
     }
@@ -269,6 +308,38 @@ function UploadPageContent() {
             Ta en skärmbild eller ett foto av din elräkning. Vår AI analyserar den på några sekunder.
           </p>
         </motion.div>
+
+        {/* Free save limit — conversion moment before upload */}
+        {saveLimitHit && user && (
+          <motion.div
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-8 rounded-xl border border-amber-200 bg-gradient-to-br from-amber-50 to-white p-5"
+          >
+            <div className="flex items-start gap-3">
+              <div className="rounded-lg bg-amber-100 p-2 shrink-0">
+                <Sparkles className="h-5 w-5 text-amber-700" />
+              </div>
+              <div className="flex-1">
+                <h2 className="font-semibold text-gray-900">
+                  Gratisplanen sparar max {saveLimit} fakturor
+                </h2>
+                <p className="text-sm text-gray-600 mt-1">
+                  Du har redan {savedCount} sparade. Du kan fortfarande analysera — men
+                  den här fakturan sparas inte på kontot utan Premium (99 kr/år).
+                </p>
+                <Link
+                  href="/premium"
+                  onClick={() => AnalyticsEvents.premiumCtaClicked("upload_save_limit")}
+                  className="mt-3 inline-flex items-center gap-2 rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700"
+                >
+                  Bli Premium — 99 kr/år
+                  <ArrowRight className="h-4 w-4" />
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+        )}
 
         {/* Bill Already Saved Message */}
         <AnimatePresence>

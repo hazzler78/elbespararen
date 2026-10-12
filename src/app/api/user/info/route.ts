@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSessionUser } from "@/lib/auth";
 import { createDatabaseFromBinding } from "@/lib/database";
-import { isPremium, getUserTier } from "@/lib/premium";
+import { isPremium, getUserTier, canSaveAnalysisToAccount, PREMIUM_LIMITS } from "@/lib/premium";
 
 export const runtime = 'edge';
 
@@ -41,6 +41,10 @@ export async function GET(req: NextRequest) {
       image: user.image,
     });
 
+    const savedAnalyses = await db.getBillAnalysesByUserId(dbUser.id, "all");
+    const savedCount = savedAnalyses.length;
+    const saveGate = canSaveAnalysisToAccount(dbUser, savedCount);
+
     return NextResponse.json({
       success: true,
       data: {
@@ -52,6 +56,10 @@ export async function GET(req: NextRequest) {
         isPremium: isPremium(dbUser),
         subscriptionStatus: dbUser.subscriptionStatus,
         subscriptionExpiresAt: dbUser.subscriptionExpiresAt,
+        savedAnalysesCount: savedCount,
+        freeSaveLimit: PREMIUM_LIMITS.FREE.maxSavedAnalyses,
+        canSaveMore: saveGate.allowed,
+        saveSlotsRemaining: Number.isFinite(saveGate.remaining) ? saveGate.remaining : null,
       }
     });
   } catch (error) {
