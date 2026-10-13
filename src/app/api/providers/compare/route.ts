@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ElectricityProvider, ProviderComparison, BillData, ApiResponse } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
+import { filterSavableFees, sumFees } from "@/lib/fee-classification";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -122,10 +123,8 @@ async function calculateProviderCost(
   const totalKWh = billData.totalKWh > 0 ? billData.totalKWh : 1;
   const { elnatCost, extraFeesDetailed } = billData;
 
-  // Använd samma logik som "billigaste alternativ"
-  // Billigaste alternativ = nuvarande kostnad - besparing
-  // AI:n returnerar belopp EXKL. moms, men konsumenter behöver se priser INKL. moms
-  const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+  // Samma logik som calculateSavings: endast sparbara elhandelsavgifter
+  const calculatedExtraFees = sumFees(filterSavableFees(extraFeesDetailed || []));
   const calculatedExtraFeesWithVAT = calculatedExtraFees * 1.25;
   const cheapestAlternative = billData.totalAmount - calculatedExtraFeesWithVAT;
 

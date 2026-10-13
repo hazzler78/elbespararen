@@ -25,9 +25,10 @@ Analysera bilden och extrahera kostnader enligt dessa kritiska regler:
 ## 5. ALDRIG INKLUDERA SOM EXTRA AVGIFTER
 - Moms (Moms är skatt, inte avgift)
 - Öresutjämning
-- Elnät
-- Grundläggande energikostnad
+- Elnät (inkl. Abonnemang, Elnätsabonnemang, Elöverföring, Myndighetsavgift, Effektavgift)
+- Grundläggande energikostnad (Medelspotpris / Spotpris)
 - Energiskatt (är grundläggande skatt, inte extra avgift)
+- Hallucinerade tillägg: hitta ALDRIG på "E.ON Elna" om texten inte syns på fakturan
 
 ## 6. MOMS-HANTERING
 - Moms är alltid skatt, aldrig en extra avgift

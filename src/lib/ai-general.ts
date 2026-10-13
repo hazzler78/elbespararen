@@ -43,11 +43,12 @@ Extra avgifter kan ha många olika namn - var noga med att identifiera ALLA!
 ALDRIG INKLUDERA SOM EXTRA AVGIFTER:
 - Moms / Moms 25% (Moms är skatt, inte avgift)
 - Energiskatt (grundläggande skatt)
-- Elnät / Elnätskostnad / Elnätsavgift (grundläggande nätkostnad)
+- Elnät / Elnätskostnad / Elnätsavgift / Abonnemang / Myndighetsavgift (grundläggande nätkostnad)
 - Grundläggande energikostnad (Medelspotpris / Spotpris / Grundpris / El timmätt)
 - Öresutjämning (tekniskt justering)
 - Elöverföring (del av elnät)
 - Elnätsabonnemang (del av elnät)
+- Hitta ALDRIG på "E.ON Elna" om texten inte syns på fakturan
 
 LÄS EXAKTA BELOPP:
 - Läs belopp direkt från fakturan - använd EXAKT det belopp som står

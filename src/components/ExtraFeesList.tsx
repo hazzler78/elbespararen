@@ -2,6 +2,7 @@
 
 import { ExtraFeeDetailed } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
+import { filterSavableFees } from "@/lib/fee-classification";
 import ConfidenceBadge from "./ConfidenceBadge";
 import { AlertTriangle } from "lucide-react";
 
@@ -12,16 +13,19 @@ interface ExtraFeesListProps {
 }
 
 export default function ExtraFeesList({ fees, totalAmount, showConfidence = true }: ExtraFeesListProps) {
-  if (fees.length === 0) {
+  // Visa endast avgifter som går att spara bort (ej nät/skatt)
+  const savableFees = filterSavableFees(fees);
+
+  if (savableFees.length === 0) {
     return (
       <div className="p-6 text-center text-muted">
-        <p className="text-sm">Inga extra avgifter hittades 🎉</p>
+        <p className="text-sm">Inga onödiga elhandelsavgifter hittades</p>
       </div>
     );
   }
 
   // Använd summan av fees och lägg till moms (25%) för konsumentvisning
-  const displayTotal = fees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
+  const displayTotal = savableFees.reduce((sum, fee) => sum + fee.amount, 0) * 1.25;
 
   return (
     <div className="space-y-3">
@@ -36,7 +40,7 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
 
       {/* Lista över avgifter */}
       <div className="space-y-2">
-        {fees.map((fee, index) => (
+        {savableFees.map((fee, index) => (
           <div
             key={`${fee.label}-${index}`}
             className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
@@ -60,7 +64,7 @@ export default function ExtraFeesList({ fees, totalAmount, showConfidence = true
       </div>
 
       {/* Varning om låg confidence */}
-      {fees.some(fee => fee.confidence < 0.7) && (
+      {savableFees.some(fee => fee.confidence < 0.7) && (
         <div
           className="mt-4 p-3 bg-warning/10 border border-warning/20 rounded-lg"
         >

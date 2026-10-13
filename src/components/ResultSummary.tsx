@@ -37,23 +37,23 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
           <Sparkles className="w-8 h-8 text-primary" />
         </div>
         <h2 className="text-3xl font-bold mb-2">Din besparingspotential</h2>
-        <p className="text-muted">Baserat på AI-analys av din faktura</p>
+        <p className="text-muted">Från avgifter du kan slippa genom att byta elhandlare</p>
       </div>
 
       {/* Huvudsiffra - Besparing */}
       <div
         className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-xl p-8 mb-6 text-center border-2 border-primary/20"
       >
-        <p className="text-lg font-semibold text-primary mb-4">Grattis!</p>
+        <p className="text-lg font-semibold text-primary mb-4">Uppskattad besparing</p>
         <div className="flex flex-col items-center gap-2 mb-3">
           <p className="text-2xl md:text-3xl font-bold text-primary leading-tight">
-            Du sparar upp till{" "}
+            Upp till{" "}
             <span className="text-4xl md:text-5xl">{formatCurrency(potentialSavings * 12)}</span>{" "}
-            kr – byt elavtal nu 💪
+            kr/år i onödiga avgifter
           </p>
         </div>
         <p className="text-base text-muted">
-          per år ({savingsPercentage}% lägre) inkl. moms
+          ({savingsPercentage}% av fakturan) inkl. moms — jämför avtal nedan
         </p>
       </div>
 
@@ -89,8 +89,8 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         className="mt-6 p-4 bg-primary/5 rounded-lg border border-primary/10"
       >
         <p className="text-xs text-muted text-center">
-          💡 <strong>Obs!</strong> Elnätkostnader är ej inkluderade i besparingen eftersom de inte går att påverka.
-          Beräkningar baseras på AI-analys och kan variera från faktiska priser.
+          Elnät, skatt och spotpris räknas inte — bara påslag och tilläggsavgifter hos elhandlaren.
+          Exakt besparing vid byte visas i avtalsjämförelsen nedan.
         </p>
       </div>
     </div>

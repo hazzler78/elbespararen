@@ -14,26 +14,29 @@ LÄS UT DESSA FÄLT FRÅN E.ON-FAKTUROR:
 - period: Läs intervallet för fakturaperioden, t.ex. "2025-08-31 – 2025-09-30".
 - contractType: Sätt till "rörligt" om texten innehåller "Rörligt pris"/"Rörligt"; annars "fast" om "Fastpris"/"Fast".
 
-E.ON-SPECIFIKA AVGIFTER:
-- Rörliga kostnader (alltid närvarande)
-- Fast påslag (alltid närvarande)
-- Elavtal årsavgift (alltid närvarande)
-- E.ON Elna™ (närvarande om det finns på fakturan)
-- Kampanjrabatt (närvarande om det finns på fakturan)
+E.ON-SPECIFIKA AVGIFTER (elhandel):
+- Rörliga kostnader (nästan alltid)
+- Fast påslag (nästan alltid)
+- Elavtal årsavgift (nästan alltid)
+- Kampanjrabatt (endast om raden finns)
+- E.ON Elna™ (SÄLLAN — inkludera BARA om du ser texten ordagrant i avgiftstabellen)
+
+ALDRIG som extra avgift (detta är elnät/skatt/basenergi):
+- Abonnemang, Elnätsabonnemang, Myndighetsavgift, Elöverföring, Energiskatt, Medelspotpris, Moms
 
 VIKTIGA REGLER:
-1. Rörliga kostnader är ALLTID en extra avgift
-2. Fast påslag är ALLTID en extra avgift
-3. Elavtal årsavgift är ALLTID en extra avgift
-4. E.ON Elna™ är en extra avgift ENDAST om det ordagrant står "E.ON Elna" på fakturan. Om texten inte finns exakt, inkludera den INTE.
+1. Rörliga kostnader är en extra avgift när raden finns
+2. Fast påslag är en extra avgift när raden finns — läs EXAKT belopp, gissa aldrig
+3. Elavtal årsavgift är en extra avgift — använd beloppet EFTER kolonet
+4. E.ON Elna™: DEFAULT ÄR ATT INTE INKLUDERA. Lägg bara till om strängen "E.ON Elna" syns i samma tabellrad som ett belopp under "Det här betalar du för". Hitta på ALDRIG 49 kr.
 5. Kampanjrabatt är en extra avgift om det finns på fakturan (kan vara negativt)
-6. Läs EXAKTA belopp från fakturan
+6. Läs EXAKTA belopp från fakturan — hardkoda aldrig belopp från exempel
 7. Inkludera INTE avgifter som inte finns på fakturan
 8. Hallucinera INTE avgifter som inte finns på fakturan
 9. Moms är ALDRIG en extra avgift
 10. Energiskatt är ALDRIG en extra avgift
 11. Elöverföring är ALDRIG en extra avgift
-12. Elnätsabonnemang är ALDRIG en extra avgift
+12. Elnätsabonnemang / Abonnemang / Myndighetsavgift är ALDRIG extra avgifter (elnät)
 13. Medelspotpris är ALDRIG en extra avgift
 
 SYNONYMER/VARIANTER ATT KÄNNA IGEN:
@@ -44,22 +47,21 @@ SYNONYMER/VARIANTER ATT KÄNNA IGEN:
 
 EXEMPEL PÅ KORREKT E.ON ANALYS:
 
-Exempel 1 - Faktura med alla avgifter (hög förbrukning):
+Exempel 1 - Faktura med vanliga elhandelsavgifter (ingen Elna):
 Om fakturan visar under "Det här betalar du för":
 - Rörliga kostnader: 192.44 kr
 - Fast påslag: 86.20 kr
 - Elavtal årsavgift: 56.05 kr
-- E.ON Elna™: 49.00 kr
+(och INGEN rad med "E.ON Elna")
 
-Då ska du returnera ALLA fyra avgifterna:
+Då ska du returnera ENDAST dessa tre — hitta inte på Elna:
 {
   "extraFeesDetailed": [
     {"label": "Rörliga kostnader", "amount": 192.44, "confidence": 0.9},
     {"label": "Fast påslag", "amount": 86.20, "confidence": 0.9},
-    {"label": "Elavtal årsavgift", "amount": 56.05, "confidence": 0.9},
-    {"label": "E.ON Elna™", "amount": 49.00, "confidence": 0.9}
+    {"label": "Elavtal årsavgift", "amount": 56.05, "confidence": 0.9}
   ],
-  "extraFeesTotal": 383.69
+  "extraFeesTotal": 334.69
 }
 
 Exempel 2 - Faktura med medel förbrukning (445 kWh, maj):

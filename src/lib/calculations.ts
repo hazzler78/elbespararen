@@ -1,6 +1,7 @@
 // Besparingslogik för Elbespararen v7
 
 import { BillData, SavingsCalculation } from "./types";
+import { filterSavableFees, sumFees } from "./fee-classification";
 
 /**
  * Validerar fakturadata för att upptäcka fel
@@ -64,9 +65,10 @@ function validateBillData(billData: BillData): { isValid: boolean; errors: strin
 export function calculateSavings(billData: BillData): SavingsCalculation {
   const { elnatCost, elhandelCost, extraFeesTotal, extraFeesDetailed, totalKWh, totalAmount } = billData;
 
-  // Använd summan av extraFeesDetailed
+  // Endast avgifter som går att slippa genom att byta elhandlare (ej nät/skatt/spot)
+  const savableFees = filterSavableFees(extraFeesDetailed || []);
+  const calculatedExtraFees = sumFees(savableFees);
   // AI:n returnerar belopp EXKL. moms, men konsumenter behöver se priser INKL. moms
-  const calculatedExtraFees = extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
   const calculatedExtraFeesWithVAT = calculatedExtraFees * 1.25;
 
   // Nuvarande total kostnad = exakt som "Belopp att betala" på fakturan
@@ -79,8 +81,8 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
 
   const cheapestElhandelCost = totalKWh * estimatedSpotPrice + minimalMonthlyFee;
   
-  // Potentiell besparing = endast extra avgifter INKL. moms (för konsumenter)
-  // Elhandelsbesparing räknas inte eftersom spotpris kan variera
+  // Potentiell besparing = endast sparbara extra avgifter INKL. moms
+  // Elhandelsbesparing (spot vs avtal) räknas separat i ProviderComparison
   const potentialSavings = calculatedExtraFeesWithVAT;
 
   // Billigaste alternativ = nuvarande kostnad - besparing
@@ -102,15 +104,16 @@ export function calculateSavings(billData: BillData): SavingsCalculation {
     elhandelCost,
     extraFeesTotal,
     calculatedExtraFees,
+    droppedFees: (extraFeesDetailed || []).length - savableFees.length,
     totalAmount,
     totalKWh,
     currentCost,
     cheapestElhandelCost,
     cheapestAlternative,
     potentialSavings,
-    extraFeesDetailed: billData.extraFeesDetailed,
+    savableFees,
     validation: validation,
-    note: "Besparing = summan av extra avgifter (inkl. moms)"
+    note: "Besparing = sparbara extra avgifter (inkl. moms), ej nät/skatt"
   });
 
   return {
