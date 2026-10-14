@@ -147,23 +147,23 @@ export default function ResultPage() {
                 </button>
               </div>
 
-          {/* Result Summary */}
+          {/* Result Summary + primary Byt CTA */}
           <div className="mb-8">
             <ResultSummary key={`${savings.currentCost}-${savings.potentialSavings}`} savings={savings} />
           </div>
 
-          {/* Premium conversion — right after value is shown */}
-          {!authLoading && (
-            <div className="mb-8">
-              <PremiumValueCTA
-                potentialSavings={savings.potentialSavings}
-                isPremium={isPremium}
-                isLoggedIn={Boolean(user)}
-                accountSaveBlocked={accountSaveBlocked}
-                accountSaveLimit={accountSaveLimit}
-              />
-            </div>
-          )}
+          {/* Byt first — Premium comes after */}
+          <div className="mb-8">
+            <ProviderComparison
+              billData={billData}
+              savings={savings}
+              onRequestContact={handleScrollToContact}
+              secondaryCta={{
+                label: "Jämför fler avtal",
+                href: "/contracts"
+              }}
+            />
+          </div>
 
           {/* Extra Fees */}
           {billData.extraFeesDetailed.length > 0 && (
@@ -199,20 +199,18 @@ export default function ResultPage() {
             </div>
           </div>
 
-          {/* Provider Comparison */}
-          <div
-            className="mb-8"
-          >
-            <ProviderComparison
-              billData={billData}
-              savings={savings}
-              onRequestContact={handleScrollToContact}
-              secondaryCta={{
-                label: "Testa själv och jämför avtal",
-                href: "/contracts"
-              }}
-            />
-          </div>
+          {/* Premium after switch path */}
+          {!authLoading && (
+            <div className="mb-8">
+              <PremiumValueCTA
+                potentialSavings={savings.potentialSavings}
+                isPremium={isPremium}
+                isLoggedIn={Boolean(user)}
+                accountSaveBlocked={accountSaveBlocked}
+                accountSaveLimit={accountSaveLimit}
+              />
+            </div>
+          )}
 
           {/* Contact Form */}
           {showContactForm && (

@@ -7,7 +7,10 @@ import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, A
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 import SwitchProcess from "./SwitchProcess";
+import SalesysEmbedModal from "./SalesysEmbedModal";
 import { trackCustomEvent } from "@/lib/analytics";
+import { getSalesysFormForProvider } from "@/lib/salesys-forms";
+import type { SalesysFormConfig } from "@/lib/salesys-forms";
 
 interface ProviderComparisonProps {
   billData: BillData;
@@ -41,6 +44,12 @@ export default function ProviderComparison({
   const [error, setError] = useState<string | null>(null);
   const [showSwitchProcess, setShowSwitchProcess] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState<ProviderComparison | null>(null);
+  const [salesysEmbed, setSalesysEmbed] = useState<{
+    form: SalesysFormConfig;
+    providerName: string;
+    attributionReferrer?: string;
+    externalUrl?: string;
+  } | null>(null);
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
   const [enteredKwh, setEnteredKwh] = useState<number | null>(enableConsumptionEntry ? null : billData.totalKWh);
   const [spotPrices, setSpotPrices] = useState<{ [key: string]: number } | null>(null);
@@ -284,19 +293,32 @@ export default function ProviderComparison({
   // Vi markerar dem med "Mest populär" badge i renderComparisonCard
 
   const handleSwitchClick = (comparison: ProviderComparison) => {
-    // Track contract click event
+    const affiliate = comparison.provider.affiliateUrl;
+    const salesysForm = getSalesysFormForProvider(comparison.provider.name);
+
     trackCustomEvent('contract_click', {
       provider_name: comparison.provider.name,
       provider_id: comparison.provider.id,
       contract_type: comparison.provider.contractType,
       estimated_savings: comparison.estimatedSavings,
-      has_affiliate: !!(comparison.provider as any).affiliateUrl,
+      has_affiliate: !!affiliate,
+      has_salesys_embed: !!salesysForm,
       page_context: enableConsumptionEntry ? 'contracts' : 'result'
     });
 
-    const affiliate = (comparison.provider as any).affiliateUrl as string | undefined;
+    // Prefer in-page SaleSys form (keeps user on Elbespararen)
+    if (salesysForm) {
+      setSalesysEmbed({
+        form: salesysForm,
+        providerName: comparison.provider.name,
+        attributionReferrer: affiliate,
+        externalUrl: affiliate,
+      });
+      return;
+    }
+
     if (affiliate && /^https?:\/\//i.test(affiliate)) {
-      window.open(affiliate, '_blank', 'noopener');
+      window.location.assign(affiliate);
       return;
     }
     setSelectedProvider(comparison);
@@ -457,9 +479,13 @@ export default function ProviderComparison({
         <div className="flex gap-2">
           <button
             onClick={() => handleSwitchClick(comparison)}
-            className="flex-1 bg-primary text-white py-2 px-4 rounded-lg font-medium hover:bg-primary/90 transition-colors"
+            className="flex-1 bg-primary text-white py-2.5 px-4 rounded-lg font-semibold hover:bg-primary/90 transition-colors"
           >
-            Välj
+            {showSavings && comparison.estimatedSavings > 0
+              ? `Byt och spara ${formatCurrency(comparison.estimatedSavings)}/mån`
+              : savings && savings.potentialSavings > 0
+                ? `Byt och spara upp till ${formatCurrency(savings.potentialSavings * 12)}/år`
+                : "Byt avtal nu"}
           </button>
           {comparison.provider.phoneNumber && (
             <a
@@ -500,10 +526,10 @@ export default function ProviderComparison({
   };
 
   return (
-    <div className="space-y-6">
+    <div id="byt-avtal" className="space-y-6 scroll-mt-24">
       {/* Header - Sticky on contracts page */}
       <div className={`text-center ${enableConsumptionEntry ? 'sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 mb-6 border-b border-border shadow-sm' : ''}`}>
-        <h2 className="text-2xl font-bold mb-2">Bästa alternativen för dig</h2>
+        <h2 className="text-2xl font-bold mb-2">Byt elavtal och ta hem besparingen</h2>
         {enableConsumptionEntry ? (
           <div className="flex items-center justify-center gap-3 text-muted">
             <span>Ange din förbrukning</span>
@@ -608,6 +634,17 @@ export default function ProviderComparison({
           selectedContract={getSelectedContract(selectedProvider.provider)}
           onClose={() => setShowSwitchProcess(false)}
           onComplete={handleSwitchComplete}
+        />
+      )}
+
+      {salesysEmbed && (
+        <SalesysEmbedModal
+          open={!!salesysEmbed}
+          onClose={() => setSalesysEmbed(null)}
+          form={salesysEmbed.form}
+          providerName={salesysEmbed.providerName}
+          attributionReferrer={salesysEmbed.attributionReferrer}
+          externalUrl={salesysEmbed.externalUrl}
         />
       )}
     </div>

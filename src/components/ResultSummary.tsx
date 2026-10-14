@@ -52,9 +52,15 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
             kr/år i onödiga avgifter
           </p>
         </div>
-        <p className="text-base text-muted">
-          ({savingsPercentage}% av fakturan) inkl. moms — jämför avtal nedan
+        <p className="text-base text-muted mb-6">
+          ({savingsPercentage}% av fakturan) inkl. moms
         </p>
+        <a
+          href="#byt-avtal"
+          className="inline-flex items-center justify-center px-8 py-3.5 bg-primary text-white text-lg font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+        >
+          Byt elavtal — spara upp till {formatCurrency(potentialSavings * 12)} kr/år
+        </a>
       </div>
 
       {/* Detaljerad uppdelning */}
