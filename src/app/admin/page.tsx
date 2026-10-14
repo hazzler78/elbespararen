@@ -14,6 +14,30 @@ interface MemberStats {
   activePremium: number;
 }
 
+interface SalesysChannelStat {
+  readerId: string;
+  name: string;
+  brand: "Elchef" | "Elbespararen" | "Other";
+  provider: string;
+  value: number;
+  position: number;
+}
+
+interface SalesysPeriodStats {
+  period: "today" | "month";
+  after: string;
+  channels: SalesysChannelStat[];
+  elbespararenTotal: number;
+  elchefTotal: number;
+  total: number;
+}
+
+interface SalesysData {
+  dashboardUrl: string;
+  today: SalesysPeriodStats;
+  month: SalesysPeriodStats;
+}
+
 interface AnalyticsData {
   enabled: boolean;
   analytics?: {
@@ -54,6 +78,9 @@ export default function AdminPage() {
     activePremium: 0,
   });
   const [isLoadingMembers, setIsLoadingMembers] = useState(true);
+  const [salesysData, setSalesysData] = useState<SalesysData | null>(null);
+  const [isLoadingSalesys, setIsLoadingSalesys] = useState(true);
+  const [salesysError, setSalesysError] = useState<string | null>(null);
 
   useEffect(() => {
     const isSameLocalDay = (iso: string | null) => {
@@ -167,11 +194,31 @@ export default function AdminPage() {
       }
     };
 
+    const fetchSalesys = async () => {
+      try {
+        setIsLoadingSalesys(true);
+        setSalesysError(null);
+        const response = await fetch('/api/admin/salesys');
+        const payload = await response.json() as ApiResponse<SalesysData>;
+        if (response.ok && payload.success && payload.data) {
+          setSalesysData(payload.data);
+        } else {
+          setSalesysError(payload.error || 'Kunde inte hämta SaleSys');
+        }
+      } catch (error) {
+        console.error('Fel vid hämtning av SaleSys:', error);
+        setSalesysError('Kunde inte hämta SaleSys');
+      } finally {
+        setIsLoadingSalesys(false);
+      }
+    };
+
     fetchMembers();
     fetchLeads();
     fetchProviders();
     fetchSettings();
     fetchAnalytics();
+    fetchSalesys();
   }, []);
 
   const filteredLeads = filter === "all" 
@@ -369,11 +416,9 @@ export default function AdminPage() {
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Kontraktsklick</p>
                       <p className="text-2xl font-bold text-gray-900">{(analyticsData.analytics.contractClicks || 0).toLocaleString('sv-SE')}</p>
-                      {analyticsData.analytics.totalVisits > 0 && (
-                        <p className="text-xs text-gray-500 mt-1">
-                          {((analyticsData.analytics.contractClicks || 0) / analyticsData.analytics.totalVisits * 100).toFixed(2)}% konvertering
-                        </p>
-                      )}
+                      <p className="text-xs text-gray-500 mt-1">
+                        intresse (GA) — inte färdiga byten
+                      </p>
                     </div>
                     <div>
                       <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Senast uppdaterad</p>
@@ -397,6 +442,78 @@ export default function AdminPage() {
                 </p>
               </div>
             )}
+          </div>
+
+          {/* SaleSys: only Elbespararen channels in UI (Elchef kept in API for elchef.se/admin) */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+              <div>
+                <h2 className="text-xl font-bold text-gray-900">Försäljning (SaleSys)</h2>
+                <p className="text-sm text-gray-500 mt-1">
+                  Färdiga Elbespararen-byten via affiliate — samma källa som statistik.salesys.se
+                </p>
+              </div>
+              {salesysData?.dashboardUrl && (
+                <a
+                  href={salesysData.dashboardUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm text-indigo-600 hover:text-indigo-700 font-medium"
+                >
+                  Öppna SaleSys →
+                </a>
+              )}
+            </div>
+
+            {isLoadingSalesys ? (
+              <p className="text-gray-500">Laddar SaleSys…</p>
+            ) : salesysError ? (
+              <p className="text-sm text-red-600">{salesysError}</p>
+            ) : salesysData ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="rounded-lg border border-emerald-200 bg-emerald-50/50 p-4">
+                    <p className="text-xs text-emerald-800 uppercase tracking-wide mb-1">Denna månad</p>
+                    <p className="text-3xl font-bold text-emerald-900">{salesysData.month.elbespararenTotal}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Idag</p>
+                    <p className="text-3xl font-bold text-gray-900">{salesysData.today.elbespararenTotal}</p>
+                  </div>
+                  <div className="rounded-lg border border-gray-200 p-4 col-span-2 lg:col-span-1">
+                    <p className="text-xs text-gray-500 uppercase tracking-wide mb-1">Cheap Energy</p>
+                    <p className="text-3xl font-bold text-gray-900">
+                      {salesysData.month.channels.find((c) => c.name === "Elbespararen - Cheap")?.value ?? 0}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      idag:{" "}
+                      {salesysData.today.channels.find((c) => c.name === "Elbespararen - Cheap")?.value ?? 0}
+                    </p>
+                  </div>
+                </div>
+
+                <div>
+                  <p className="text-sm font-medium text-gray-700 mb-3">Per leverantör (denna månad)</p>
+                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {salesysData.month.channels
+                      .filter((channel) => channel.brand === "Elbespararen")
+                      .map((channel) => (
+                        <div
+                          key={channel.readerId}
+                          className="rounded-lg border border-emerald-200 bg-emerald-50/40 p-3"
+                        >
+                          <p className="text-xs text-gray-500 truncate" title={channel.name}>
+                            {channel.provider || channel.name}
+                          </p>
+                          <p className="text-xl font-bold text-gray-900 mt-1">
+                            {channel.value > 0 ? channel.value : "–"}
+                          </p>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           {/* Member stats (current product) */}

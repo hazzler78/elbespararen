@@ -168,11 +168,9 @@ export default function AnalyticsPage() {
               <p className="text-3xl font-bold text-gray-900">
                 {analytics ? (analytics.contractClicks || 0).toLocaleString('sv-SE') : '0'}
               </p>
-              {analytics && analytics.totalVisits > 0 && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {((analytics.contractClicks || 0) / analytics.totalVisits * 100).toFixed(2)}% konvertering
-                </p>
-              )}
+              <p className="text-xs text-gray-500 mt-1">
+                intresse (GA) — inte färdiga byten
+              </p>
             </div>
 
             <div className="bg-white rounded-lg border border-gray-200 p-6">
