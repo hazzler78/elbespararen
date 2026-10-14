@@ -1,10 +1,18 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, AlertCircle, CheckCircle2, Mail, Phone, Zap, ArrowRight, Activity, Star, X, BarChart3, Edit } from "lucide-react";
+import { Users, TrendingUp, UserPlus, Crown, Mail, Phone, Zap, ArrowRight, Activity, Star, X, BarChart3, Edit } from "lucide-react";
 import Link from "next/link";
 import { Lead, ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
+
+interface MemberStats {
+  total: number;
+  today: number;
+  premium: number;
+  free: number;
+  activePremium: number;
+}
 
 interface AnalyticsData {
   enabled: boolean;
@@ -38,8 +46,53 @@ export default function AdminPage() {
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [isLoadingAnalytics, setIsLoadingAnalytics] = useState(true);
   const [editingLead, setEditingLead] = useState<Lead | null>(null);
+  const [memberStats, setMemberStats] = useState<MemberStats>({
+    total: 0,
+    today: 0,
+    premium: 0,
+    free: 0,
+    activePremium: 0,
+  });
+  const [isLoadingMembers, setIsLoadingMembers] = useState(true);
 
   useEffect(() => {
+    const isSameLocalDay = (iso: string | null) => {
+      if (!iso) return false;
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return false;
+      const now = new Date();
+      return (
+        d.getFullYear() === now.getFullYear() &&
+        d.getMonth() === now.getMonth() &&
+        d.getDate() === now.getDate()
+      );
+    };
+
+    const fetchMembers = async () => {
+      try {
+        setIsLoadingMembers(true);
+        const response = await fetch('/api/admin/users');
+        if (!response.ok) return;
+        const payload = await response.json() as ApiResponse<{
+          stats: { total: number; premium: number; free: number; activePremium: number };
+          users: Array<{ createdAt: string | null }>;
+        }>;
+        if (!payload.success || !payload.data) return;
+        const { stats, users } = payload.data;
+        setMemberStats({
+          total: stats.total,
+          today: users.filter((u) => isSameLocalDay(u.createdAt)).length,
+          premium: stats.premium,
+          free: stats.free,
+          activePremium: stats.activePremium,
+        });
+      } catch (error) {
+        console.error('Fel vid hämtning av medlemmar:', error);
+      } finally {
+        setIsLoadingMembers(false);
+      }
+    };
+
     const fetchLeads = async () => {
       try {
         const response = await fetch('/api/leads');
@@ -114,6 +167,7 @@ export default function AdminPage() {
       }
     };
 
+    fetchMembers();
     fetchLeads();
     fetchProviders();
     fetchSettings();
@@ -124,12 +178,12 @@ export default function AdminPage() {
     ? leads 
     : leads.filter(lead => lead.status === filter);
 
-  const stats = {
+  const legacyLeadStats = {
     total: leads.length,
     new: leads.filter(l => l.status === "new").length,
     contacted: leads.filter(l => l.status === "contacted").length,
     converted: leads.filter(l => l.status === "converted").length,
-    totalSavings: leads.reduce((sum, l) => sum + l.savings.potentialSavings, 0)
+    totalSavings: leads.reduce((sum, l) => sum + (l.savings?.potentialSavings || 0), 0)
   };
 
   const handleBestChoiceChange = async (type: 'variable' | 'fixed', providerId: string | null) => {
@@ -244,7 +298,7 @@ export default function AdminPage() {
             <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
               <div>
                 <h1 className="text-2xl font-bold text-gray-900 sm:text-3xl">Dashboard</h1>
-                <p className="mt-1 text-gray-600">Översikt över leads och besparingar</p>
+                <p className="mt-1 text-gray-600">Översikt över medlemmar och aktivitet</p>
               </div>
               <div className="flex flex-wrap gap-2">
                 <Link
@@ -345,38 +399,48 @@ export default function AdminPage() {
             )}
           </div>
 
-          {/* Stats */}
+          {/* Member stats (current product) */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
+            <Link href="/admin/users" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:border-primary/40 transition-colors">
+              <div className="flex items-center gap-3 mb-2">
+                <UserPlus className="w-5 h-5 text-green-600" />
+                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Nya medlemmar idag</p>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {isLoadingMembers ? "…" : memberStats.today}
+              </p>
+            </Link>
+
+            <Link href="/admin/users" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:border-primary/40 transition-colors">
               <div className="flex items-center gap-3 mb-2">
                 <Users className="w-5 h-5 text-blue-600" />
-                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Totalt leads</p>
+                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Totalt medlemmar</p>
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.total}</p>
-            </div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {isLoadingMembers ? "…" : memberStats.total}
+              </p>
+            </Link>
+
+            <Link href="/admin/users" className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6 hover:border-primary/40 transition-colors">
+              <div className="flex items-center gap-3 mb-2">
+                <Crown className="w-5 h-5 text-amber-500" />
+                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Premium</p>
+              </div>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">
+                {isLoadingMembers ? "…" : memberStats.activePremium}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                {isLoadingMembers ? "" : `${memberStats.free} free`}
+              </p>
+            </Link>
 
             <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
               <div className="flex items-center gap-3 mb-2">
-                <AlertCircle className="w-5 h-5 text-yellow-600" />
-                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Nya</p>
+                <Mail className="w-5 h-5 text-gray-400" />
+                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Gamla kontaktleads</p>
               </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.new}</p>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <CheckCircle2 className="w-5 h-5 text-green-600" />
-                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Konverterade</p>
-              </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{stats.converted}</p>
-            </div>
-
-            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-6">
-              <div className="flex items-center gap-3 mb-2">
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-                <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Total besparing</p>
-              </div>
-              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{formatCurrency(stats.totalSavings)}</p>
+              <p className="text-2xl sm:text-3xl font-bold text-gray-900">{legacyLeadStats.total}</p>
+              <p className="text-xs text-gray-500 mt-1">från tidigare bytessystem</p>
             </div>
           </div>
 
@@ -473,6 +537,14 @@ export default function AdminPage() {
             )}
           </div>
 
+          {/* Legacy contact leads from old switch-on-site flow */}
+          <div className="mb-4">
+            <h2 className="text-lg font-semibold text-gray-900">Kontaktleads (äldre bytessystem)</h2>
+            <p className="text-sm text-gray-500 mt-1">
+              Kvarleva från när kunder bytte avtal direkt via kontaktformulär. Aktuella medlemmar finns under EBL Premium / användare.
+            </p>
+          </div>
+
           {/* Filter */}
           <div className="mb-6">
             <div className="flex gap-2 flex-wrap">
@@ -503,9 +575,9 @@ export default function AdminPage() {
             ) : filteredLeads.length === 0 ? (
               <div className="p-8 sm:p-12 text-center">
                 <Activity className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-                <p className="text-gray-500 text-lg font-medium">Inga leads ännu</p>
+                <p className="text-gray-500 text-lg font-medium">Inga gamla kontaktleads</p>
                 <p className="text-sm text-gray-400 mt-2">
-                  När användare fyller i kontaktformuläret dyker de upp här.
+                  Nya medlemmar syns under EBL Premium, inte här.
                 </p>
               </div>
             ) : (
