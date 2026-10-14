@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Users, TrendingUp, UserPlus, Crown, Zap, ArrowRight, Star, BarChart3 } from "lucide-react";
+import { Users, TrendingUp, UserPlus, Crown, Zap, ArrowRight, Star, BarChart3, X } from "lucide-react";
 import Link from "next/link";
 import { ElectricityProvider, ApiResponse } from "@/lib/types";
 
