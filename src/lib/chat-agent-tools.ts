@@ -59,7 +59,8 @@ function isAllowedPath(path: string): path is AgentNavPath {
 
 /** Parse OpenAI-style tool_calls into safe client actions */
 export function parseAgentToolCalls(
-  toolCalls: Array<{
+  toolCalls: ReadonlyArray<{
+    type?: string;
     function?: { name?: string; arguments?: string };
   }> | null | undefined
 ): AgentClientAction[] {
@@ -67,6 +68,8 @@ export function parseAgentToolCalls(
 
   const actions: AgentClientAction[] = [];
   for (const call of toolCalls) {
+    // Newer OpenAI types include custom tool calls without `function`
+    if (call.type && call.type !== "function") continue;
     if (call.function?.name !== "navigate") continue;
     try {
       const args = JSON.parse(call.function.arguments || "{}") as {

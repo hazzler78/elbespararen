@@ -204,7 +204,11 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
       });
 
       const choice = response.choices[0]?.message;
-      actions = parseAgentToolCalls(choice?.tool_calls);
+      actions = parseAgentToolCalls(
+        choice?.tool_calls as
+          | Array<{ type?: string; function?: { name?: string; arguments?: string } }>
+          | undefined
+      );
       reply = choice?.content?.trim() || null;
       if (!reply && actions.length > 0) {
         reply = defaultReplyForActions(actions);
