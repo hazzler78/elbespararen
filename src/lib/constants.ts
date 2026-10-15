@@ -60,7 +60,7 @@ export const APP_CONFIG = {
 
 /** @deprecated Use AI_VISION_MODEL / createAiClient from @/lib/ai-client */
 export const OPENAI_CONFIG = {
-  model: "grok-4.7",
+  model: "grok-4.3",
   temperature: 0,
   maxTokens: 2000
 } as const;

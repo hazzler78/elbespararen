@@ -2,6 +2,7 @@
 import { BillData } from './types';
 import {
   getVisionModel,
+  getVisionReasoningParams,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -184,11 +185,12 @@ export class GeneralAI {
     console.log('[General AI] Analyserar okänd leverantör...');
     
     try {
+      const model = getVisionModel();
       const response = await fetch(getChatCompletionsUrl(), {
         method: 'POST',
         headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: getVisionModel(),
+          model,
           messages: [
             {
               role: 'system',
@@ -215,14 +217,15 @@ Steg för steg:
                   type: 'image_url',
                   image_url: {
                     url: billImage,
-                    detail: 'high'
+                    detail: 'auto'
                   }
                 }
               ]
             }
           ],
           max_tokens: 1500,
-          temperature: 0.1
+          temperature: 0.1,
+          ...getVisionReasoningParams(model),
         })
       });
 

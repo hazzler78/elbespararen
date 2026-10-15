@@ -2,6 +2,7 @@
 import { BillData } from './types';
 import {
   getVisionModel,
+  getVisionReasoningParams,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -165,7 +166,8 @@ export class EonAI {
             }
           ],
           max_tokens: 1500,
-          temperature: 0.1
+          temperature: 0.1,
+          ...getVisionReasoningParams(),
         })
       });
 

@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 import { applyCorrections, validateBillData } from "@/lib/ai-corrections";
-import { providerRouter } from "@/lib/ai-provider-routing";
 import { analyzeBillStructured, normalizeBillData } from "@/lib/bill-vision";
 import { saveBillImage } from "@/lib/storage/bill-images";
 import { calculateSavings } from "@/lib/calculations";
@@ -107,19 +106,21 @@ export async function POST(
     try {
       billData = await analyzeBillStructured(openai, dataUrl, customPrompt);
     } catch (structuredError) {
+      // One more single-shot call only — never identify+analyze (2× vision ≈ 2+ min).
       console.warn(
-        `[parse-bill-v3] Structured vision misslyckades, fallback till provider routing:`,
+        `[parse-bill-v3] Structured vision misslyckades, fallback till generalAI (1 anrop):`,
         structuredError
       );
       try {
-        billData = normalizeBillData(await providerRouter.routeToProvider(dataUrl));
-      } catch (routingError) {
+        const { generalAI } = await import("@/lib/ai-general");
+        billData = normalizeBillData(await generalAI.analyze(dataUrl));
+      } catch (fallbackError) {
         const structuredMsg =
           structuredError instanceof Error ? structuredError.message : String(structuredError);
-        const routingMsg =
-          routingError instanceof Error ? routingError.message : String(routingError);
+        const fallbackMsg =
+          fallbackError instanceof Error ? fallbackError.message : String(fallbackError);
         throw new Error(
-          `Vision-analys misslyckades (${structuredMsg}). Routing: ${routingMsg}`
+          `Vision-analys misslyckades (${structuredMsg}). Fallback: ${fallbackMsg}`
         );
       }
     }

@@ -2,6 +2,7 @@
 import { BillData } from './types';
 import {
   getVisionModel,
+  getVisionReasoningParams,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -57,14 +58,16 @@ export async function identifyProvider(billImage: string): Promise<ProviderIdent
               {
                 type: 'image_url',
                 image_url: {
-                  url: billImage
+                  url: billImage,
+                  detail: 'low'
                 }
               }
             ]
           }
         ],
         max_tokens: 200,
-        temperature: 0.1
+        temperature: 0.1,
+        ...getVisionReasoningParams(),
       })
     });
 

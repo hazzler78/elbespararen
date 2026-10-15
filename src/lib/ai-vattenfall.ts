@@ -2,6 +2,7 @@
 import { BillData } from './types';
 import {
   getVisionModel,
+  getVisionReasoningParams,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -94,7 +95,8 @@ export class VattenfallAI {
             }
           ],
           max_tokens: 1000,
-          temperature: 0.1
+          temperature: 0.1,
+          ...getVisionReasoningParams(),
         })
       });
 

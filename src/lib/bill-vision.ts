@@ -6,7 +6,7 @@ import type OpenAI from "openai";
 import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG } from "@/lib/constants";
 import type { BillData } from "@/lib/types";
-import { getVisionModel } from "@/lib/ai-client";
+import { getVisionModel, getVisionReasoningParams } from "@/lib/ai-client";
 
 export function parseJsonFromModelContent(content: string): unknown {
   const cleaned = content
@@ -54,8 +54,9 @@ export async function analyzeBillStructured(
   dataUrl: string,
   customPrompt?: string | null
 ): Promise<BillData> {
+  const model = getVisionModel();
   const response = await client.chat.completions.create({
-    model: getVisionModel(),
+    model,
     messages: [
       {
         role: "system",
@@ -72,7 +73,8 @@ export async function analyzeBillStructured(
             type: "image_url",
             image_url: {
               url: dataUrl,
-              detail: "high",
+              // "high" multiplies image tokens and latency; bills are readable at auto
+              detail: "auto",
             },
           },
         ],
@@ -88,7 +90,9 @@ export async function analyzeBillStructured(
     },
     temperature: OPENAI_CONFIG.temperature,
     max_tokens: OPENAI_CONFIG.maxTokens,
-  });
+    // OpenAI SDK types may lag xAI's reasoning_effort field
+    ...getVisionReasoningParams(model),
+  } as Parameters<typeof client.chat.completions.create>[0]);
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
