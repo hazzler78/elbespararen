@@ -1,8 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { X, ExternalLink } from "lucide-react";
-import { buildSalesysEmbedUrl, type SalesysFormConfig } from "@/lib/salesys-forms";
+import {
+  buildSalesysAttributionFields,
+  buildSalesysEmbedUrl,
+  SALESYS_EMBED_ORIGIN,
+  type SalesysFormConfig,
+} from "@/lib/salesys-forms";
 
 interface SalesysEmbedModalProps {
   open: boolean;
@@ -15,6 +20,12 @@ interface SalesysEmbedModalProps {
   providerName: string;
 }
 
+const DEFAULT_IFRAME_HEIGHT = 640;
+
+/**
+ * SaleSys iframe expects the parent to handle postMessage (see salesys.se/scripts/web_form1.js).
+ * Without redirect/resize handlers the multi-step form appears to hang after submit.
+ */
 export default function SalesysEmbedModal({
   open,
   onClose,
@@ -23,6 +34,20 @@ export default function SalesysEmbedModal({
   externalUrl,
   providerName,
 }: SalesysEmbedModalProps) {
+  const iframeRef = useRef<HTMLIFrameElement>(null);
+  const [iframeHeight, setIframeHeight] = useState(DEFAULT_IFRAME_HEIGHT);
+  const [embedSrc] = useState(() =>
+    buildSalesysEmbedUrl(form.formId, attributionReferrer)
+  );
+
+  const pushAttributionFields = useCallback(() => {
+    const win = iframeRef.current?.contentWindow;
+    if (!win) return;
+    const fields = buildSalesysAttributionFields(form, attributionReferrer);
+    if (fields.length === 0) return;
+    win.postMessage({ type: "setFields", references: fields }, SALESYS_EMBED_ORIGIN);
+  }, [form, attributionReferrer]);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -37,9 +62,47 @@ export default function SalesysEmbedModal({
     };
   }, [open, onClose]);
 
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
 
-  const src = buildSalesysEmbedUrl(form.formId, attributionReferrer);
+    const onMessage = (event: MessageEvent) => {
+      if (event.origin !== SALESYS_EMBED_ORIGIN) return;
+      if (event.source !== iframeRef.current?.contentWindow) return;
+
+      const data = event.data;
+      if (!data || typeof data !== "object" || !("type" in data)) return;
+
+      switch (data.type) {
+        case "resize": {
+          const height = Number((data as { height?: number }).height);
+          if (Number.isFinite(height) && height > 0) {
+            const max = Math.round(window.innerHeight * 0.85);
+            setIframeHeight(Math.min(height + 24, max));
+          }
+          break;
+        }
+        case "redirect": {
+          const url = (data as { url?: string; context?: string }).url;
+          if (!url) break;
+          // Official SaleSys parent bridge: navigate top window after submit/redirect
+          window.location.assign(url);
+          break;
+        }
+        case "stepChanged": {
+          // Keep the form visible when steps grow inside the modal
+          iframeRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener("message", onMessage);
+    return () => window.removeEventListener("message", onMessage);
+  }, [open]);
+
+  if (!open) return null;
 
   return (
     <div
@@ -53,7 +116,7 @@ export default function SalesysEmbedModal({
         className="bg-white w-full sm:max-w-3xl sm:rounded-xl shadow-xl max-h-[95vh] flex flex-col rounded-t-xl"
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200">
+        <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200 flex-shrink-0">
           <div>
             <h2 id="salesys-embed-title" className="text-lg font-bold text-gray-900">
               Byt till {providerName}
@@ -72,17 +135,20 @@ export default function SalesysEmbedModal({
           </button>
         </div>
 
-        <div className="flex-1 min-h-0 overflow-hidden bg-gray-50">
+        <div className="flex-1 min-h-0 overflow-y-auto bg-gray-50">
           <iframe
+            ref={iframeRef}
             title={`Teckna avtal hos ${form.label}`}
-            src={src}
-            className="w-full h-[min(75vh,720px)] border-0 bg-white"
+            src={embedSrc}
+            onLoad={pushAttributionFields}
+            style={{ height: iframeHeight }}
+            className="w-full border-0 bg-white block"
             allow="clipboard-write"
           />
         </div>
 
         {externalUrl && (
-          <div className="p-3 border-t border-gray-200 text-center">
+          <div className="p-3 border-t border-gray-200 text-center flex-shrink-0">
             <a
               href={externalUrl}
               target="_blank"
