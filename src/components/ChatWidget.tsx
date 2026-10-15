@@ -380,7 +380,7 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
                   "
                 />
                 <button
-                  onClick={sendMessage}
+                  onClick={() => sendMessage()}
                   disabled={!inputValue.trim() || isLoading}
                   className="
                     px-3 py-2 bg-primary text-white rounded-lg
