@@ -6,6 +6,11 @@ import {
   getChatModel,
   hasXaiApiKey,
 } from "@/lib/ai-client";
+import {
+  CHAT_AGENT_TOOLS,
+  defaultReplyForActions,
+  parseAgentToolCalls,
+} from "@/lib/chat-agent-tools";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -52,7 +57,13 @@ export async function POST(req: NextRequest) {
     const openai = createAiClient();
 
     // Parse and validate request body
-    let body: { message?: string; context?: unknown; sessionId?: string };
+    let body: {
+      message?: string;
+      context?: unknown;
+      sessionId?: string;
+      currentPath?: string;
+      hasBillAnalysis?: boolean;
+    };
     try {
       body = await req.json();
     } catch (error) {
@@ -62,7 +73,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { message, context, sessionId } = body;
+    const { message, context, sessionId, currentPath, hasBillAnalysis } = body;
     
     // Generate session ID if not provided
     const chatSessionId = sessionId || `session-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -106,46 +117,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const systemPrompt = `Du är Elbespararens chatt — en hjälpsam, jordnära guide på svenska elmarknaden. Du pratar som en kunnig kompis, inte som en FAQ eller säljare.
+    const systemPrompt = `Du är Elbespararens sparagent — inte en FAQ-chatbot. Du äger uppdraget: få besökaren från "osäker" till "har bytt/förstått besparingen".
 
-## Mål
-Hjälp besökaren ta nästa steg: 1) ladda upp faktura, 2) förstå besparingen, 3) byta elavtal. Konvertera genom tydlighet och trygghet — aldrig pushighet.
+## Roll
+- Du agerar. Du tar nästa steg. Du frågar bara när du behöver ett beslut.
+- Prata i jag-form: "Jag tar dig vidare…", "Nästa steg är…", "Då gör vi så här…"
+- Aldrig: "Jag kan hjälpa dig med:", bulletlistor, eller generella lektioner om elmarknaden.
 
-## Språk (kritiskt)
-- Elbespararen är en webbplats (elbespararen.se) — ALDRIG "app", "App Store" eller "ladda ner".
-- Säg "här på sajten", "ladda upp fakturan", "gå till Analysera faktura".
-- Du: vänlig, konkret, vardaglig svenska. Inga bulletlistor. Inga långa föreläsningar.
+## Uppdrag (håll i huvudet)
+1. Få in en faktura (Analysera faktura)
+2. Tolka besparingen kort
+3. Få dem att byta via "Byt elavtal" på resultatsidan
+Konvertera genom klarhet — aldrig pushighet eller säljsnack.
 
-## Svarslängd
-- MAX 2 korta meningar + gärna en enkel följdfråga ELLER ett tydligt nästa steg.
-- Max ~60 ord. Hellre för kort än för långt.
-- Undvik uppräkningar ("Jag kan hjälpa dig med: …").
+## Verktyg
+Du har verktyget navigate. Använd det när nästa steg är att öppna en sida — säg kort vad du gör och anropa navigate i samma svar.
+- Ingen faktura ännu → navigate /upload
+- Redo att byta → navigate /result#byt-avtal
+- Jämföra avtal utan analys → /contracts
+- FAQ → /faq, inloggning → /auth/signin, Premium → /premium
+Anropa inte navigate i onödan (t.ex. om de bara frågar vad något kostar).
 
-## Fakta du får använda
-- Gratis fakturaanalys (bild/PDF). AI hittar onödiga tilläggsavgifter och jämför mot spotpris.
-- Elnätsavgifter går inte att byta bort; elhandel och tillägg går ofta att påverka.
-- Efter analys visas leverantörsförslag med tydlig sparpotential — byt via knappen på resultatsidan.
-- Premium (intro ca 49 kr/år) bara om de frågar om historik, obegränsade sparanden eller CSV — nämn det inte i varje svar.
+## Stil
+- Svenska, kort, personligt. MAX 2 meningar + ett konkret nästa steg.
+- Max ~50 ord. En sak i taget.
+- Webbplats (elbespararen.se) — ALDRIG "app" / App Store.
 
-## När de har fakturakontext
-- Använd siffrorna. Säg ungefär hur mycket som ser ut som onödiga avgifter.
-- Peka mot "Byt elavtal" på resultatsidan om de undrar hur de sparar på riktigt.
+## Fakta
+- Gratis analys (bild/PDF). Onödiga tilläggsavgifter + jämförelse mot spotpris.
+- Elnät går inte att byta bort; elhandel/tillägg går ofta.
+- Premium (~49 kr/år intro) bara om de frågar om historik/CSV — annars tyst.
 
-## När de saknar faktura
-- Led mjukt till uppladdning: "Ladda upp en faktura under Analysera faktura — tar under en minut."
+## Lägesinfo
+${currentPath ? `Användaren är nu på: ${currentPath}.` : ""}
+${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "De har ingen fakturaanalys ännu."}
 
-## Exempelton
-Fråga: "Vad kostar detta?"
-→ "Analysen är gratis. Ladda upp fakturan så ser du direkt vad du kan spara — vill du att jag guidar dig?"
-
-Fråga: "Vem ska jag byta till?"
-→ "Bäst är att utgå från din faktura. Ladda upp den så får du förslag med sparpotential — har du den nära till hands?"
-
-Fråga: "Hittar den inte i App Store"
-→ "Ingen app behövs — öppna elbespararen.se i webbläsaren och analysera fakturan där."
-
-Fråga: "Hur sparar jag?"
-→ "Många betalar onödiga tilläggsavgifter. Ladda upp fakturan så visar vi hur mycket du kan skära bort och hur du byter."`
+## Exempel
+"Guidera mig" → kort bekräftelse + navigate /upload
+"Ta mig till bytet" (har analys) → "Då kör vi." + navigate /result#byt-avtal
+"Vad kostar det?" → svara i text, ingen navigation`
 
     // Build messages array with proper context handling
     const messages: Array<{role: "system" | "user" | "assistant", content: string}> = [
@@ -176,33 +186,38 @@ Fråga: "Hur sparar jag?"
       // Continue even if database save fails
     }
 
-    // Call OpenAI with enhanced error handling
     const startTime = Date.now();
-    let response;
     let reply: string | null = null;
+    let actions: ReturnType<typeof parseAgentToolCalls> = [];
     let responseTimeMs: number | undefined;
     let errorMessage: string | undefined;
 
     try {
-      response = await openai.chat.completions.create({
+      const response = await openai.chat.completions.create({
         model: getChatModel(),
         messages,
+        tools: CHAT_AGENT_TOOLS,
+        tool_choice: "auto",
         temperature: 0.7,
-        max_tokens: 120, // Korta, konverterande svar
+        max_tokens: 160,
         presence_penalty: 0.3,
       });
 
-      reply = response.choices[0]?.message?.content || null;
+      const choice = response.choices[0]?.message;
+      actions = parseAgentToolCalls(choice?.tool_calls);
+      reply = choice?.content?.trim() || null;
+      if (!reply && actions.length > 0) {
+        reply = defaultReplyForActions(actions);
+      }
       responseTimeMs = Date.now() - startTime;
 
       if (!reply) {
-        throw new Error("Tom respons från OpenAI");
+        throw new Error("Tom respons från agenten");
       }
     } catch (openaiError) {
       responseTimeMs = Date.now() - startTime;
       errorMessage = openaiError instanceof Error ? openaiError.message : String(openaiError);
       
-      // Save error to database
       try {
         await db.createChatMessage({
           sessionId: chatSessionId,
@@ -221,7 +236,6 @@ Fråga: "Hur sparar jag?"
       throw openaiError;
     }
 
-    // Save assistant response to database
     try {
       await db.createChatMessage({
         sessionId: chatSessionId,
@@ -235,22 +249,22 @@ Fråga: "Hur sparar jag?"
       });
     } catch (dbError) {
       console.error("[chat] Failed to save assistant message to database:", dbError);
-      // Continue even if database save fails
     }
 
-    // Log successful interaction (without sensitive data)
-    console.log(`[chat] Successful interaction - IP: ${clientIP}, Session: ${chatSessionId}, Message length: ${message.length}, Has context: ${!!context}, Response time: ${responseTimeMs}ms`);
+    console.log(`[chat] OK session=${chatSessionId} actions=${actions.length} ms=${responseTimeMs}`);
 
     return NextResponse.json({
       success: true,
       reply: reply.trim(),
+      actions,
       sessionId: chatSessionId,
       meta: {
         model: getChatModel(),
         timestamp: new Date().toISOString(),
         messageLength: message.length,
         hasContext: !!context,
-        responseTimeMs
+        responseTimeMs,
+        actionCount: actions.length,
       }
     });
 

@@ -1,11 +1,17 @@
 "use client";
 
 import { useState, useRef, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
+import { MessageCircle, X, Send, Bot, User, Loader2, Sparkles } from 'lucide-react';
 import { BillData } from '@/lib/types';
 import { AnalyticsEvents } from '@/lib/analytics';
 import { useAuth } from '@/hooks/useAuth';
+import type { AgentClientAction } from '@/lib/chat-agent-tools';
+
+type QuickAction =
+  | { label: string; kind: "message"; text: string }
+  | { label: string; kind: "navigate"; href: string };
 
 interface ChatMessage {
   id: string;
@@ -46,6 +52,7 @@ function UserAvatar({
 
 export default function ChatWidget({ billData: propBillData, className = '' }: ChatWidgetProps) {
   const { user } = useAuth();
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -110,7 +117,7 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
     }
   }, [isOpen, sessionId]);
 
-  // Short welcome when chat opens for the first time
+  // Agent-style welcome — owns the next step
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       let welcomeContent: string;
@@ -123,11 +130,11 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
         const estimatedSavings = Math.round(extraFeesTotal * 1.25);
         welcomeContent =
           estimatedSavings > 0
-            ? `Hej! Din analys pekar på ungefär ${estimatedSavings} kr/månad i möjliga besparingar. Vill du veta hur du tar hem dem — eller undrar du något om fakturan?`
-            : `Hej! Jag ser din analys. Vill du ha hjälp att tolka den, eller hur du byter till ett billigare avtal?`;
+            ? `Jag ser din analys — ungefär ${estimatedSavings} kr/månad att ta hem. Nästa steg: byt elavtal på resultatsidan. Säg till om du vill att jag guidar dig dit.`
+            : `Jag har din analys. Nästa steg är att välja avtal under Byt elavtal — vill du att jag tar dig dit?`;
       } else {
         welcomeContent =
-          `Hej! Vill du se vad du kan spara på elen? Ladda upp en faktura under Analysera faktura — eller fråga mig här.`;
+          `Jag är din sparagent. Nästa steg: ladda upp en elräkning under Analysera faktura — sen tolkar jag siffrorna och tar dig till bytet.`;
       }
 
       setMessages([
@@ -146,9 +153,36 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
     return null;
   }
 
-  const suggestions = billData
-    ? ["Hur byter jag?", "Vad betyder avgifterna?", "Hur mycket sparar jag?"]
-    : ["Hur funkar det?", "Vad kostar det?", "Hur sparar jag på elen?"];
+  const quickActions: QuickAction[] = billData
+    ? [
+        { label: "Ta mig till bytet", kind: "navigate", href: "/result#byt-avtal" },
+        { label: "Förklara min besparing", kind: "message", text: "Förklara min besparing kort och vad jag ska göra nu" },
+        { label: "Vad är nästa steg?", kind: "message", text: "Vad är mitt nästa steg för att spara?" },
+      ]
+    : [
+        { label: "Analysera min faktura", kind: "navigate", href: "/upload" },
+        { label: "Guidera mig", kind: "message", text: "Guidera mig steg för steg" },
+        { label: "Vad kostar det?", kind: "message", text: "Vad kostar det?" },
+      ];
+
+  const executeAgentActions = (actions: AgentClientAction[]) => {
+    const nav = actions.find((a) => a.type === "navigate");
+    if (!nav) return;
+    // Short beat so the user sees the agent message before leaving
+    window.setTimeout(() => {
+      setIsOpen(false);
+      router.push(nav.path);
+    }, 600);
+  };
+
+  const runQuickAction = (action: QuickAction) => {
+    if (action.kind === "navigate") {
+      setIsOpen(false);
+      router.push(action.href);
+      return;
+    }
+    void sendMessage(action.text);
+  };
 
   const sendMessage = async (overrideText?: string) => {
     const text = (overrideText ?? inputValue).trim();
@@ -178,6 +212,8 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
         body: JSON.stringify({
           message: userMessage.content,
           sessionId: sessionId,
+          currentPath: typeof window !== "undefined" ? window.location.pathname + window.location.hash : undefined,
+          hasBillAnalysis: !!billData,
           context: billData ? {
             totalAmount: billData.totalAmount,
             extraFeesTotal: billData.extraFeesTotal,
@@ -189,7 +225,14 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
         }),
       });
 
-      const data = await response.json() as { success?: boolean; reply?: string; error?: string; sessionId?: string; meta?: { responseTimeMs?: number } };
+      const data = await response.json() as {
+        success?: boolean;
+        reply?: string;
+        actions?: AgentClientAction[];
+        error?: string;
+        sessionId?: string;
+        meta?: { responseTimeMs?: number };
+      };
 
       if (!response.ok) {
         const errorMsg = data.error || 'Något gick fel';
@@ -197,7 +240,6 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
         throw new Error(errorMsg);
       }
 
-      // Update session ID if provided
       if (data.sessionId && data.sessionId !== sessionId) {
         setSessionId(data.sessionId);
       }
@@ -210,11 +252,13 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
           timestamp: new Date()
         };
         setMessages(prev => [...prev, assistantMessage]);
-        
-        // Track message received
         AnalyticsEvents.chatMessageReceived(data.meta?.responseTimeMs);
+
+        if (data.actions?.length) {
+          executeAgentActions(data.actions);
+        }
       } else {
-        throw new Error('Inget svar från AI:n');
+        throw new Error('Inget svar från agenten');
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Något gick fel';
@@ -279,8 +323,11 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
             {/* Header */}
             <div className="bg-primary text-white p-4 flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Bot className="w-5 h-5" />
-                <span className="font-semibold">Elbespararen AI</span>
+                <Sparkles className="w-5 h-5" />
+                <div className="leading-tight">
+                  <span className="font-semibold block">Sparagenten</span>
+                  <span className="text-[11px] text-white/75">Navigerar och guidar dig</span>
+                </div>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -354,7 +401,7 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
                   <div className="bg-gray-100 p-3 rounded-lg">
                     <div className="flex items-center gap-2">
                       <Loader2 className="w-4 h-4 animate-spin text-primary" />
-                      <span className="text-sm text-gray-600">Skriver...</span>
+                      <span className="text-sm text-gray-600">Jobbar...</span>
                     </div>
                   </div>
                 </motion.div>
@@ -380,17 +427,17 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
               <div ref={messagesEndRef} />
             </div>
 
-            {/* Quick suggestions — only before the visitor has replied */}
+            {/* Agent quick actions — before first reply */}
             {messages.length === 1 && messages[0]?.role === "assistant" && !isLoading && (
               <div className="px-3 pb-2 flex flex-wrap gap-1.5 border-t border-border/60 pt-2">
-                {suggestions.map((label) => (
+                {quickActions.map((action) => (
                   <button
-                    key={label}
+                    key={action.label}
                     type="button"
-                    onClick={() => sendMessage(label)}
+                    onClick={() => runQuickAction(action)}
                     className="text-xs px-2.5 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
                   >
-                    {label}
+                    {action.label}
                   </button>
                 ))}
               </div>
@@ -405,7 +452,7 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Fråga något…"
+                  placeholder="Säg vad du vill göra…"
                   disabled={isLoading}
                   className="
                     flex-1 px-3 py-2 border border-border rounded-lg
