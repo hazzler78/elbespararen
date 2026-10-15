@@ -1,7 +1,7 @@
 // Leverantörsidentifiering AI - Känner igen vilken leverantör det är
 import { BillData } from './types';
 import {
-  AI_VISION_MODEL,
+  getVisionModel,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -45,7 +45,7 @@ export async function identifyProvider(billImage: string): Promise<ProviderIdent
       method: 'POST',
       headers: getAiAuthHeaders(),
       body: JSON.stringify({
-        model: AI_VISION_MODEL,
+        model: getVisionModel(),
         messages: [
           {
             role: 'system',

@@ -1,22 +1,58 @@
 /**
  * xAI / Grok client (OpenAI-compatible SDK).
- * Prefer XAI_API_KEY; OPENAI_API_KEY is accepted as a temporary fallback
- * so existing Cloudflare env can be renamed gradually.
+ * Prefer XAI_API_KEY; OPENAI_API_KEY is accepted as a temporary fallback.
+ * Reads Cloudflare Pages bindings via getRequestContext (same pattern as Stripe).
  */
 import OpenAI from "openai";
 
 export const XAI_BASE_URL = "https://api.x.ai/v1";
 
+const DEFAULT_CHAT_MODEL = "grok-4.3";
+const DEFAULT_VISION_MODEL = "grok-4.7";
+
+function getEnvVar(key: string): string | undefined {
+  const fromProcess = (process.env as Record<string, string | undefined>)?.[key];
+  if (typeof fromProcess === "string" && fromProcess.length > 0) return fromProcess;
+
+  try {
+    const ctxEnv = (globalThis as any).getRequestContext?.()?.env;
+    if (ctxEnv && typeof ctxEnv[key] === "string" && ctxEnv[key]) {
+      return ctxEnv[key] as string;
+    }
+  } catch {
+    // ignore
+  }
+
+  try {
+    const workerEnv = (globalThis as any).env;
+    if (workerEnv && typeof workerEnv[key] === "string" && workerEnv[key]) {
+      return workerEnv[key] as string;
+    }
+  } catch {
+    // ignore
+  }
+
+  return undefined;
+}
+
 /** Chat: cheaper/fast enough for short widget replies */
-export const AI_CHAT_MODEL =
-  process.env.XAI_CHAT_MODEL || "grok-4.3";
+export function getChatModel(): string {
+  return getEnvVar("XAI_CHAT_MODEL") || DEFAULT_CHAT_MODEL;
+}
 
 /** Vision / bill OCR: flagship with image understanding */
-export const AI_VISION_MODEL =
-  process.env.XAI_VISION_MODEL || "grok-4.7";
+export function getVisionModel(): string {
+  return getEnvVar("XAI_VISION_MODEL") || DEFAULT_VISION_MODEL;
+}
+
+/** @deprecated prefer getChatModel() — kept for call sites that need a string at import time */
+export const AI_CHAT_MODEL = DEFAULT_CHAT_MODEL;
+
+/** @deprecated prefer getVisionModel() */
+export const AI_VISION_MODEL = DEFAULT_VISION_MODEL;
 
 export function getXaiApiKey(): string | undefined {
-  return process.env.XAI_API_KEY || process.env.OPENAI_API_KEY;
+  return getEnvVar("XAI_API_KEY") || getEnvVar("OPENAI_API_KEY");
 }
 
 export function hasXaiApiKey(): boolean {

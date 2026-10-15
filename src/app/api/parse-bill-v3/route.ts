@@ -8,8 +8,8 @@ import { saveBillImage } from "@/lib/storage/bill-images";
 import { calculateSavings } from "@/lib/calculations";
 import { createDatabaseFromBinding } from "@/lib/database";
 import {
-  AI_VISION_MODEL,
   createAiClient,
+  getVisionModel,
   hasXaiApiKey,
 } from "@/lib/ai-client";
 
@@ -112,7 +112,7 @@ export async function POST(
       // Fallback till original AI-logik
       const promptToUse = customPrompt || SYSTEM_PROMPT;
       const response = await openai.chat.completions.create({
-        model: OPENAI_CONFIG.model,
+        model: getVisionModel(),
         messages: [
           {
             role: "system",

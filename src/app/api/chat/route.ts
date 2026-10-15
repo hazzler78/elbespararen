@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { ChatMessage } from "@/lib/types";
 import {
-  AI_CHAT_MODEL,
   createAiClient,
+  getChatModel,
   hasXaiApiKey,
 } from "@/lib/ai-client";
 
@@ -185,7 +185,7 @@ Fråga: "Hur sparar jag?"
 
     try {
       response = await openai.chat.completions.create({
-        model: AI_CHAT_MODEL,
+        model: getChatModel(),
         messages,
         temperature: 0.7,
         max_tokens: 120, // Korta, konverterande svar
@@ -210,7 +210,7 @@ Fråga: "Hur sparar jag?"
           content: '',
           ipAddress: clientIP,
           userAgent: userAgent,
-          model: AI_CHAT_MODEL,
+          model: getChatModel(),
           responseTimeMs,
           error: errorMessage
         });
@@ -230,7 +230,7 @@ Fråga: "Hur sparar jag?"
         context: context && typeof context === 'object' ? context as ChatMessage['context'] : undefined,
         ipAddress: clientIP,
         userAgent: userAgent,
-        model: AI_CHAT_MODEL,
+        model: getChatModel(),
         responseTimeMs
       });
     } catch (dbError) {
@@ -246,7 +246,7 @@ Fråga: "Hur sparar jag?"
       reply: reply.trim(),
       sessionId: chatSessionId,
       meta: {
-        model: AI_CHAT_MODEL,
+        model: getChatModel(),
         timestamp: new Date().toISOString(),
         messageLength: message.length,
         hasContext: !!context,

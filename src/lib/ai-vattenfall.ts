@@ -1,7 +1,7 @@
 // Specialiserad Vattenfall AI - Expert på Vattenfall fakturor
 import { BillData } from './types';
 import {
-  AI_VISION_MODEL,
+  getVisionModel,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -75,7 +75,7 @@ export class VattenfallAI {
         method: 'POST',
         headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: AI_VISION_MODEL,
+          model: getVisionModel(),
           messages: [
             {
               role: 'system',

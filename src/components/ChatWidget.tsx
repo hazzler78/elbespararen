@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { MessageCircle, X, Send, Bot, User, Loader2 } from 'lucide-react';
 import { BillData } from '@/lib/types';
 import { AnalyticsEvents } from '@/lib/analytics';
+import { useAuth } from '@/hooks/useAuth';
 
 interface ChatMessage {
   id: string;
@@ -18,7 +19,33 @@ interface ChatWidgetProps {
   className?: string;
 }
 
+function UserAvatar({
+  avatarUrl,
+  name,
+}: {
+  avatarUrl?: string | null;
+  name?: string | null;
+}) {
+  if (avatarUrl) {
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={avatarUrl}
+        alt={name || "Du"}
+        className="w-8 h-8 rounded-full object-cover flex-shrink-0 border border-primary/30"
+        referrerPolicy="no-referrer"
+      />
+    );
+  }
+  return (
+    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
+      <User className="w-4 h-4 text-white" />
+    </div>
+  );
+}
+
 export default function ChatWidget({ billData: propBillData, className = '' }: ChatWidgetProps) {
+  const { user } = useAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
@@ -29,6 +56,16 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
   const [isAdminPage, setIsAdminPage] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const avatarUrl =
+    user?.user_metadata?.avatar_url ||
+    user?.user_metadata?.picture ||
+    null;
+  const displayName =
+    user?.user_metadata?.full_name ||
+    user?.user_metadata?.name ||
+    user?.email?.split("@")[0] ||
+    null;
 
   // Check if we're on an admin page
   useEffect(() => {
@@ -299,9 +336,7 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
                   </div>
 
                   {message.role === 'user' && (
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-4 h-4 text-white" />
-                    </div>
+                    <UserAvatar avatarUrl={avatarUrl} name={displayName} />
                   )}
                 </motion.div>
               ))}

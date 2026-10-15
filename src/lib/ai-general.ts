@@ -1,7 +1,7 @@
 // Generell AI - För okända leverantörer
 import { BillData } from './types';
 import {
-  AI_VISION_MODEL,
+  getVisionModel,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -188,7 +188,7 @@ export class GeneralAI {
         method: 'POST',
         headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: AI_VISION_MODEL,
+          model: getVisionModel(),
           messages: [
             {
               role: 'system',

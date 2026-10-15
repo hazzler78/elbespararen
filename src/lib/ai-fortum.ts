@@ -1,7 +1,7 @@
 // Specialiserad Fortum AI - Expert på Fortum fakturor
 import { BillData } from './types';
 import {
-  AI_VISION_MODEL,
+  getVisionModel,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -102,7 +102,7 @@ export class FortumAI {
         method: 'POST',
         headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: AI_VISION_MODEL,
+          model: getVisionModel(),
           messages: [
             {
               role: 'system',

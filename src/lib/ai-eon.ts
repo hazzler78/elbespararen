@@ -1,7 +1,7 @@
 // Specialiserad E.ON AI - Expert på E.ON fakturor
 import { BillData } from './types';
 import {
-  AI_VISION_MODEL,
+  getVisionModel,
   getAiAuthHeaders,
   getChatCompletionsUrl,
 } from './ai-client';
@@ -146,7 +146,7 @@ export class EonAI {
         method: 'POST',
         headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: AI_VISION_MODEL,
+          model: getVisionModel(),
           messages: [
             {
               role: 'system',
