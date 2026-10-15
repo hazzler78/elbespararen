@@ -1,5 +1,6 @@
-/** Avoid SSG page-data collection pulling browser webpack chunks (`self is not defined`). */
+/** Dynamic + Edge required by @cloudflare/next-on-pages for non-static routes. */
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default function ResultLayout({
   children,

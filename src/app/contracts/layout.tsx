@@ -5,8 +5,9 @@ export const metadata: Metadata = {
   description: "Jämför elavtal och byt till ett billigare alternativ.",
 };
 
-/** Avoid SSG collecting page data that pulls browser-only deps (`self is not defined`). */
+/** Dynamic + Edge required by @cloudflare/next-on-pages for non-static routes. */
 export const dynamic = "force-dynamic";
+export const runtime = "edge";
 
 export default function ContractsLayout({
   children,
