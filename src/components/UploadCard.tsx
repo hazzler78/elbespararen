@@ -155,7 +155,15 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       };
 
       if (!response.ok || !result.success || !result.data) {
-        throw new Error(result.error || "Kunde inte analysera fakturan");
+        const details =
+          typeof (result as { details?: unknown }).details === "string"
+            ? (result as { details: string }).details
+            : "";
+        throw new Error(
+          details
+            ? `${result.error || "Kunde inte analysera fakturan"}: ${details}`
+            : result.error || "Kunde inte analysera fakturan"
+        );
       }
 
       // Varna om analysen inte sparades i databasen

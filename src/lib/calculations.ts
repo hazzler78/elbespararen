@@ -35,7 +35,7 @@ function validateBillData(billData: BillData): { isValid: boolean; errors: strin
   }
   
   // Validera att summan av extra avgifter stämmer
-  const calculatedExtraFees = billData.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+  const calculatedExtraFees = (billData.extraFeesDetailed || []).reduce((sum, fee) => sum + fee.amount, 0);
   const tolerance = 0.01;
   if (Math.abs(calculatedExtraFees - billData.extraFeesTotal) > tolerance) {
     errors.push(`ExtraFeesDetailed summa ${calculatedExtraFees} kr matchar inte extraFeesTotal ${billData.extraFeesTotal} kr`);

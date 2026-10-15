@@ -1,21 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
-import { BILL_SCHEMA } from "@/lib/schema";
-import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
+import { APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
 import { applyCorrections, validateBillData } from "@/lib/ai-corrections";
 import { providerRouter } from "@/lib/ai-provider-routing";
+import { analyzeBillStructured, normalizeBillData } from "@/lib/bill-vision";
 import { saveBillImage } from "@/lib/storage/bill-images";
 import { calculateSavings } from "@/lib/calculations";
 import { createDatabaseFromBinding } from "@/lib/database";
 import {
   createAiClient,
-  getVisionModel,
   hasXaiApiKey,
 } from "@/lib/ai-client";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
-export const maxDuration = 30;
+/** Real bills + Grok vision often need >30s on cold CF Workers */
+export const maxDuration = 60;
 
 /**
  * POST /api/parse-bill-v3
@@ -100,66 +100,36 @@ export async function POST(
 
     console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
 
-    // Använd ny provider routing system
-    console.log(`[parse-bill-v3] Använder provider routing system...`);
+    // One structured vision call first (faster/more reliable than identify+analyze).
+    console.log(`[parse-bill-v3] Analyserar med Grok Vision (structured)...`);
     let billData: BillData;
-    
-    try {
-      billData = await providerRouter.routeToProvider(dataUrl);
-    } catch (routingError) {
-      console.warn(`[parse-bill-v3] Provider routing misslyckades, fallback till generell AI:`, routingError);
-      
-      // Fallback till original AI-logik
-      const promptToUse = customPrompt || SYSTEM_PROMPT;
-      const response = await openai.chat.completions.create({
-        model: getVisionModel(),
-        messages: [
-          {
-            role: "system",
-            content: promptToUse
-          },
-          {
-            role: "user",
-            content: [
-              {
-                type: "text",
-                text: "Analysera denna svenska elfaktura visuellt och textmässigt. Identifiera alla kostnader och hitta extra avgifter som kunden kan undvika genom att byta leverantör. Fokusera på strukturell analys av alla kostnader."
-              },
-              {
-                type: "image_url",
-                image_url: {
-                  url: dataUrl,
-                  detail: "high"
-                }
-              }
-            ]
-          }
-        ],
-        response_format: {
-          type: "json_schema",
-          json_schema: {
-            name: "bill_analysis",
-            strict: true,
-            schema: BILL_SCHEMA
-          }
-        },
-        temperature: OPENAI_CONFIG.temperature,
-        max_tokens: OPENAI_CONFIG.maxTokens
-      });
 
-      const content = response.choices[0].message.content;
-      if (!content) {
-        throw new Error("Tom respons från Grok");
+    try {
+      billData = await analyzeBillStructured(openai, dataUrl, customPrompt);
+    } catch (structuredError) {
+      console.warn(
+        `[parse-bill-v3] Structured vision misslyckades, fallback till provider routing:`,
+        structuredError
+      );
+      try {
+        billData = normalizeBillData(await providerRouter.routeToProvider(dataUrl));
+      } catch (routingError) {
+        const structuredMsg =
+          structuredError instanceof Error ? structuredError.message : String(structuredError);
+        const routingMsg =
+          routingError instanceof Error ? routingError.message : String(routingError);
+        throw new Error(
+          `Vision-analys misslyckades (${structuredMsg}). Routing: ${routingMsg}`
+        );
       }
-      billData = JSON.parse(content);
     }
 
     // Tillämpa AI-korrektioner för att fixa kända problem
     console.log(`[parse-bill-v3] Tillämpar AI-korrektioner...`);
-    billData = applyCorrections(billData);
+    billData = applyCorrections(normalizeBillData(billData));
 
     // Validera att extraFeesDetailed summerar till extraFeesTotal
-    const calculatedTotal = billData.extraFeesDetailed.reduce(
+    const calculatedTotal = (billData.extraFeesDetailed || []).reduce(
       (sum, fee) => sum + fee.amount,
       0
     );

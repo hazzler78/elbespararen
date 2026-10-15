@@ -492,7 +492,7 @@ function UploadPageContent() {
             <ul className="space-y-2 text-sm text-muted">
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>
-                <span>Fakturan analyseras med OpenAI Vision (GPT-4o)</span>
+                <span>Fakturan analyseras med AI (Grok Vision)</span>
               </li>
               <li className="flex items-start gap-2">
                 <span className="text-primary mt-0.5">✓</span>

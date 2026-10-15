@@ -19,7 +19,7 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     name: 'remove-unknown-fees',
     description: 'Tar bort avgifter utan label eller med okänd label',
     condition: (data) =>
-      data.extraFeesDetailed.some(
+      (data.extraFeesDetailed || []).some(
         (fee) =>
           !fee.label ||
           fee.label.trim() === '' ||
@@ -27,7 +27,7 @@ export const CORRECTION_RULES: CorrectionRule[] = [
           fee.label.toLowerCase().includes('unknown')
       ),
     correction: (data) => {
-      const filtered = data.extraFeesDetailed.filter(
+      const filtered = (data.extraFeesDetailed || []).filter(
         (fee) =>
           fee.label &&
           fee.label.trim() !== '' &&
@@ -46,13 +46,13 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     description:
       'Tar bort leverantörsspecifika avgifter (t.ex. E.ON Elna™) när fakturan inte matchar leverantören',
     condition: (data) =>
-      data.extraFeesDetailed.some((fee) => {
+      (data.extraFeesDetailed || []).some((fee) => {
         const label = fee.label.toLowerCase();
         if (label.includes('elna') || label.includes('e.ons') || label.includes('eon ')) {
-          const hasRoerliga = data.extraFeesDetailed.some((f) =>
+          const hasRoerliga = (data.extraFeesDetailed || []).some((f) =>
             f.label.toLowerCase().includes('rörliga kostnader')
           );
-          const hasFastPaaslag = data.extraFeesDetailed.some((f) => {
+          const hasFastPaaslag = (data.extraFeesDetailed || []).some((f) => {
             const l = f.label.toLowerCase();
             return l.includes('fast påslag') && !l.includes('spot');
           });
@@ -61,16 +61,17 @@ export const CORRECTION_RULES: CorrectionRule[] = [
         return false;
       }),
     correction: (data) => {
-      const hasRoerliga = data.extraFeesDetailed.some((f) =>
+      const fees = data.extraFeesDetailed || [];
+      const hasRoerliga = fees.some((f) =>
         f.label.toLowerCase().includes('rörliga kostnader')
       );
-      const hasFastPaaslag = data.extraFeesDetailed.some((f) => {
+      const hasFastPaaslag = fees.some((f) => {
         const l = f.label.toLowerCase();
         return l.includes('fast påslag') && !l.includes('spot');
       });
       const isLikelyEon = hasRoerliga && hasFastPaaslag;
 
-      const filtered = data.extraFeesDetailed.filter((fee) => {
+      const filtered = fees.filter((fee) => {
         const label = fee.label.toLowerCase();
         if (label.includes('elna')) {
           if (!isLikelyEon) {
@@ -111,18 +112,19 @@ export const CORRECTION_RULES: CorrectionRule[] = [
     name: 'cap-extra-fees-to-total',
     description: 'Varnar och kapar om extra avgifter överstiger totalAmount (misskategorisering)',
     condition: (data) => {
-      const calculatedTotal = sumFees(data.extraFeesDetailed);
+      const calculatedTotal = sumFees(data.extraFeesDetailed || []);
       return calculatedTotal > data.totalAmount * 0.8;
     },
     correction: (data) => {
-      const calculatedTotal = sumFees(data.extraFeesDetailed);
+      const fees = data.extraFeesDetailed || [];
+      const calculatedTotal = sumFees(fees);
       if (calculatedTotal <= data.totalAmount) return data;
 
       console.warn(
         `[AI Corrections] Extra avgifter (${calculatedTotal} kr) överstiger totalAmount (${data.totalAmount} kr).`
       );
       const maxExtraFees = data.totalAmount * 0.5;
-      const sortedFees = [...data.extraFeesDetailed].sort((a, b) => b.amount - a.amount);
+      const sortedFees = [...fees].sort((a, b) => b.amount - a.amount);
       const keptFees: typeof data.extraFeesDetailed = [];
       let runningTotal = 0;
 
@@ -175,13 +177,13 @@ export function applyCorrections(billData: BillData): BillData {
 export function validateBillData(billData: BillData): { isValid: boolean; warnings: string[] } {
   const warnings: string[] = [];
 
-  for (const fee of billData.extraFeesDetailed) {
+  for (const fee of billData.extraFeesDetailed || []) {
     if (isNonSavableFee(fee)) {
       warnings.push(`Extra avgift innehåller icke-sparbar term: ${fee.label}`);
     }
   }
 
-  const calculatedTotal = sumFees(billData.extraFeesDetailed);
+  const calculatedTotal = sumFees(billData.extraFeesDetailed || []);
   if (Math.abs(calculatedTotal - billData.extraFeesTotal) > 0.01) {
     warnings.push(
       `Extra avgifter summerar inte korrekt: ${calculatedTotal} vs ${billData.extraFeesTotal}`
