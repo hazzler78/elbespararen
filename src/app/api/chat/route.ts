@@ -193,6 +193,7 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
     let errorMessage: string | undefined;
 
     try {
+      // Note: grok-4.3 rejects presence_penalty (400). Keep params minimal.
       const response = await openai.chat.completions.create({
         model: getChatModel(),
         messages,
@@ -200,7 +201,6 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
         tool_choice: "auto",
         temperature: 0.7,
         max_tokens: 160,
-        presence_penalty: 0.3,
       });
 
       const choice = response.choices[0]?.message;
@@ -273,9 +273,15 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
     });
 
   } catch (error) {
-    console.error("[chat] Error:", error);
+    const detail =
+      error instanceof Error
+        ? error.message
+        : typeof error === "string"
+          ? error
+          : JSON.stringify(error);
+    console.error("[chat] Error:", detail);
     
-    // Handle specific OpenAI errors
+    // Handle specific OpenAI / xAI errors
     if (error instanceof Error) {
       if (error.message.includes('rate limit')) {
         return NextResponse.json(
