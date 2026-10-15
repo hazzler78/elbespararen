@@ -8,8 +8,7 @@ import {
 } from "@/lib/ai-client";
 import {
   CHAT_AGENT_TOOLS,
-  defaultReplyForActions,
-  parseAgentToolCalls,
+  resolveAgentResponse,
 } from "@/lib/chat-agent-tools";
 
 // Edge runtime krävs av next-on-pages
@@ -131,9 +130,10 @@ export async function POST(req: NextRequest) {
 Konvertera genom klarhet — aldrig pushighet eller säljsnack.
 
 ## Verktyg
-Du har verktyget navigate. Använd det när nästa steg är att öppna en sida — säg kort vad du gör och anropa navigate i samma svar.
-- Ingen faktura ännu → navigate /upload
-- Redo att byta → navigate /result#byt-avtal
+Du har function-tool:et "navigate". När användaren ska till en sida: skriv 1 kort mening till dem OCH anropa tools-API:t navigate (aldrig som vanlig text).
+Skriv ALDRIG "invoke navigate", "call navigate", "tool_call" eller liknande i chatten — det syns för användaren och fungerar inte.
+- Ingen faktura / "vart gör jag det?" / "guidera mig" → tool navigate path=/upload
+- Redo att byta → tool navigate path=/result#byt-avtal
 - Jämföra avtal utan analys → /contracts
 - FAQ → /faq, inloggning → /auth/signin, Premium → /premium
 Anropa inte navigate i onödan (t.ex. om de bara frågar vad något kostar).
@@ -153,8 +153,8 @@ ${currentPath ? `Användaren är nu på: ${currentPath}.` : ""}
 ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "De har ingen fakturaanalys ännu."}
 
 ## Exempel
-"Guidera mig" → kort bekräftelse + navigate /upload
-"Ta mig till bytet" (har analys) → "Då kör vi." + navigate /result#byt-avtal
+"Vart gör jag det?" / "Guidera mig" → "Då tar jag dig till uppladdningen." + tools-anrop navigate(/upload)
+"Ta mig till bytet" (har analys) → "Då kör vi." + tools-anrop navigate(/result#byt-avtal)
 "Vad kostar det?" → svara i text, ingen navigation`
 
     // Build messages array with proper context handling
@@ -188,7 +188,7 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
 
     const startTime = Date.now();
     let reply: string | null = null;
-    let actions: ReturnType<typeof parseAgentToolCalls> = [];
+    let actions: ReturnType<typeof resolveAgentResponse>["actions"] = [];
     let responseTimeMs: number | undefined;
     let errorMessage: string | undefined;
 
@@ -199,20 +199,19 @@ ${hasBillAnalysis || context ? "De har redan en fakturaanalys i sessionen." : "D
         messages,
         tools: CHAT_AGENT_TOOLS,
         tool_choice: "auto",
-        temperature: 0.7,
+        temperature: 0.4,
         max_tokens: 160,
       });
 
       const choice = response.choices[0]?.message;
-      actions = parseAgentToolCalls(
-        choice?.tool_calls as
+      const resolved = resolveAgentResponse({
+        content: choice?.content,
+        toolCalls: choice?.tool_calls as
           | Array<{ type?: string; function?: { name?: string; arguments?: string } }>
-          | undefined
-      );
-      reply = choice?.content?.trim() || null;
-      if (!reply && actions.length > 0) {
-        reply = defaultReplyForActions(actions);
-      }
+          | undefined,
+      });
+      actions = resolved.actions;
+      reply = resolved.reply || null;
       responseTimeMs = Date.now() - startTime;
 
       if (!reply) {

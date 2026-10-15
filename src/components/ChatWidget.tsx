@@ -171,7 +171,12 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
     // Short beat so the user sees the agent message before leaving
     window.setTimeout(() => {
       setIsOpen(false);
-      router.push(nav.path);
+      // Hash targets need location.assign — App Router may drop #fragments on push
+      if (nav.path.includes("#")) {
+        window.location.assign(nav.path);
+      } else {
+        router.push(nav.path);
+      }
     }, 600);
   };
 
