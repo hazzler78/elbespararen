@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Ensure path aliases work in OpenNext builds
-  webpack: (config, { isServer }) => {
+  webpack: (config, { isServer, webpack }) => {
     const path = require("path");
     config.resolve.alias = {
       ...config.resolve.alias,
@@ -9,8 +9,20 @@ const nextConfig = {
       'node:stream': path.resolve(__dirname, 'src/shims/node-stream'),
       'node:child_process': path.resolve(__dirname, 'src/shims/node-child-process'),
     };
+
+    // Client chunks use `self.webpackChunk_*`. Polyfill when those
+    // accidentally get evaluated during server page-data collection.
+    if (isServer) {
+      config.plugins.push(
+        new webpack.DefinePlugin({
+          self: "globalThis",
+        })
+      );
+    }
     
-    // Aggressively reduce bundle size for Cloudflare Pages
+    // Aggressively reduce client bundle size for Cloudflare Pages.
+    // Do NOT apply maxSize splitChunks on the server — it emits
+    // browser-style chunks that break `next build` with `self is not defined`.
     if (!isServer) {
       config.optimization = {
         ...config.optimization,
@@ -31,31 +43,20 @@ const nextConfig = {
               maxSize: 200000,
             },
             framer: {
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/
               name: 'framer-motion',
               priority: 10,
               chunks: 'all',
               maxSize: 100000,
             },
             lucide: {
-              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/
               name: 'lucide-react',
               priority: 10,
               chunks: 'all',
               maxSize: 50000,
             },
           },
-        },
-      };
-    }
-    
-    // Reduce server bundle size
-    if (isServer) {
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          chunks: 'all',
-          maxSize: 200000,
         },
       };
     }
