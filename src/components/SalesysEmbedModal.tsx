@@ -59,7 +59,7 @@ export default function SalesysEmbedModal({
               Byt till {providerName}
             </h2>
             <p className="text-sm text-gray-500 mt-1">
-              Fyll i formuläret här — du behöver inte lämna Elbespararen.
+              Fyll i uppgifterna för att byta elavtal.
             </p>
           </div>
           <button
