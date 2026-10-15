@@ -526,9 +526,9 @@ export default function ProviderComparison({
   };
 
   return (
-    <div id="byt-avtal" className="space-y-6 scroll-mt-24">
-      {/* Header - Sticky on contracts page */}
-      <div className={`text-center ${enableConsumptionEntry ? 'sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-4 mb-6 border-b border-border shadow-sm' : ''}`}>
+    <div id="byt-avtal" className="space-y-6 scroll-mt-20 sm:scroll-mt-24">
+      {/* Sticky under AppHeader (h-16), not under the menu */}
+      <div className={`text-center ${enableConsumptionEntry ? 'sticky top-16 z-10 bg-background/95 backdrop-blur-sm py-4 mb-6 border-b border-border shadow-sm' : ''}`}>
         <h2 className="text-2xl font-bold mb-2">Byt elavtal och ta hem besparingen</h2>
         {enableConsumptionEntry ? (
           <div className="flex items-center justify-center gap-3 text-muted">

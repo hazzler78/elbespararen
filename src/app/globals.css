@@ -18,6 +18,11 @@
   --error: #ef4444;
 }
 
+/* Sticky AppHeader is h-16 — keep hash targets (e.g. #byt-avtal) below it */
+html {
+  scroll-padding-top: 5rem;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
