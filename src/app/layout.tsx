@@ -1,15 +1,11 @@
 import type { Metadata } from "next";
-import dynamic from "next/dynamic";
 import "./globals.css";
 import GoogleAnalytics from "@/components/GoogleAnalytics";
 import Hotjar from "@/components/Hotjar";
 import TikTokPixel from "@/components/TikTokPixel";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
+import ChatWidgetLoader from "@/components/ChatWidgetLoader";
 import Providers from "@/components/Providers";
-
-const ChatWidget = dynamic(() => import("@/components/ChatWidget"), {
-  ssr: false,
-});
 
 // Funktion för att konstruera base URL för metadata
 function getBaseUrl() {
@@ -81,7 +77,7 @@ export default function RootLayout({
           <TikTokPixel />
           <CookieConsentBanner />
           {children}
-          <ChatWidget />
+          <ChatWidgetLoader />
         </Providers>
       </body>
     </html>
