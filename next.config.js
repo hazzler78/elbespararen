@@ -43,14 +43,14 @@ const nextConfig = {
               maxSize: 200000,
             },
             framer: {
-              test: /[\\/]node_modules[\\/]framer-motion[\\/]/
+              test: /[\\/]node_modules[\\/]framer-motion[\\/]/,
               name: 'framer-motion',
               priority: 10,
               chunks: 'all',
               maxSize: 100000,
             },
             lucide: {
-              test: /[\\/]node_modules[\\/]lucide-react[\\/]/
+              test: /[\\/]node_modules[\\/]lucide-react[\\/]/,
               name: 'lucide-react',
               priority: 10,
               chunks: 'all',
