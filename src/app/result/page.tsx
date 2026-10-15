@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { Download, Share2, LayoutDashboard } from "lucide-react";
 import Link from "next/link";
@@ -28,6 +28,9 @@ export default function ResultPage() {
   const [accountSaveLimit, setAccountSaveLimit] = useState(2);
   const contactFormRef = useRef<HTMLDivElement>(null);
   const primarySwitchRef = useRef<(() => void) | null>(null);
+  const handlePrimarySwitchReady = useCallback((open: (() => void) | null) => {
+    primarySwitchRef.current = open;
+  }, []);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -170,9 +173,7 @@ export default function ResultPage() {
               billData={billData}
               savings={savings}
               onRequestContact={handleScrollToContact}
-              onPrimarySwitchReady={(open) => {
-                primarySwitchRef.current = open;
-              }}
+              onPrimarySwitchReady={handlePrimarySwitchReady}
               secondaryCta={{
                 label: "Jämför fler avtal",
                 href: "/contracts"

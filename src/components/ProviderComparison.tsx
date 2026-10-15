@@ -241,6 +241,62 @@ export default function ProviderComparison({
     return () => { isCancelled = true; };
   }, [comparisonData, billData.priceArea, enableConsumptionEntry, enteredKwh, billData.totalKWh]);
 
+  const handleSwitchClick = (comparison: ProviderComparison) => {
+    const affiliate = comparison.provider.affiliateUrl;
+    const salesysForm = getSalesysFormForProvider(comparison.provider.name);
+
+    trackCustomEvent('contract_click', {
+      provider_name: comparison.provider.name,
+      provider_id: comparison.provider.id,
+      contract_type: comparison.provider.contractType,
+      estimated_savings: comparison.estimatedSavings,
+      has_affiliate: !!affiliate,
+      has_salesys_embed: !!salesysForm,
+      page_context: enableConsumptionEntry ? 'contracts' : 'result',
+    });
+
+    // Prefer in-page SaleSys form (keeps user on Elbespararen)
+    if (salesysForm) {
+      setSalesysEmbed({
+        form: salesysForm,
+        providerName: comparison.provider.name,
+        attributionReferrer: affiliate,
+        externalUrl: affiliate,
+      });
+      return;
+    }
+
+    if (affiliate && /^https?:\/\//i.test(affiliate)) {
+      window.location.assign(affiliate);
+      return;
+    }
+    setSelectedProvider(comparison);
+    setShowSwitchProcess(true);
+  };
+
+  // Must stay above early returns — otherwise hook count changes when loading finishes
+  // and React throws a client-side exception (blank "Application error" page).
+  // Hero "Byt elavtal" → same path as the recommended card (SaleSys / Cheap Energy first)
+  useEffect(() => {
+    if (!onPrimarySwitchReady) return;
+    if (!comparisonData?.comparisons?.length) {
+      onPrimarySwitchReady(null);
+      return;
+    }
+
+    const list = comparisonData.comparisons;
+    const withSalesys = list.find((c) => getSalesysFormForProvider(c.provider.name));
+    const primary =
+      withSalesys ||
+      list.find((c) => c.isRecommended) ||
+      list[0];
+
+    onPrimarySwitchReady(() => handleSwitchClick(primary));
+    return () => onPrimarySwitchReady(null);
+    // handleSwitchClick closes over latest state; re-bind when comparisons change
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [comparisonData, onPrimarySwitchReady]);
+
   if (isLoading) {
     return (
       <div
@@ -294,60 +350,6 @@ export default function ProviderComparison({
   
   // Best choice providers är redan sorterade först i varje kategori av API:et
   // Vi markerar dem med "Mest populär" badge i renderComparisonCard
-
-  const handleSwitchClick = (comparison: ProviderComparison) => {
-    const affiliate = comparison.provider.affiliateUrl;
-    const salesysForm = getSalesysFormForProvider(comparison.provider.name);
-
-    trackCustomEvent('contract_click', {
-      provider_name: comparison.provider.name,
-      provider_id: comparison.provider.id,
-      contract_type: comparison.provider.contractType,
-      estimated_savings: comparison.estimatedSavings,
-      has_affiliate: !!affiliate,
-      has_salesys_embed: !!salesysForm,
-      page_context: enableConsumptionEntry ? 'contracts' : 'result',
-    });
-
-    // Prefer in-page SaleSys form (keeps user on Elbespararen)
-    if (salesysForm) {
-      setSalesysEmbed({
-        form: salesysForm,
-        providerName: comparison.provider.name,
-        attributionReferrer: affiliate,
-        externalUrl: affiliate,
-      });
-      return;
-    }
-
-    if (affiliate && /^https?:\/\//i.test(affiliate)) {
-      window.location.assign(affiliate);
-      return;
-    }
-    setSelectedProvider(comparison);
-    setShowSwitchProcess(true);
-  };
-
-  // Hero "Byt elavtal" → same path as the recommended card (SaleSys / Cheap Energy first)
-  useEffect(() => {
-    if (!onPrimarySwitchReady) return;
-    if (!comparisonData?.comparisons?.length) {
-      onPrimarySwitchReady(null);
-      return;
-    }
-
-    const list = comparisonData.comparisons;
-    const withSalesys = list.find((c) => getSalesysFormForProvider(c.provider.name));
-    const primary =
-      withSalesys ||
-      list.find((c) => c.isRecommended) ||
-      list[0];
-
-    onPrimarySwitchReady(() => handleSwitchClick(primary));
-    return () => onPrimarySwitchReady(null);
-    // handleSwitchClick closes over latest state; re-bind when comparisons change
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [comparisonData, onPrimarySwitchReady]);
 
   const handleSwitchComplete = (switchRequest: SwitchRequest) => {
     console.log("Switch request completed:", switchRequest);
