@@ -1,5 +1,10 @@
 // Specialiserad E.ON AI - Expert på E.ON fakturor
 import { BillData } from './types';
+import {
+  AI_VISION_MODEL,
+  getAiAuthHeaders,
+  getChatCompletionsUrl,
+} from './ai-client';
 
 export const EON_PROMPT = `
 Du är en expert på att analysera E.ON elfakturor. E.ON har specifika avgifter och format.
@@ -137,14 +142,11 @@ export class EonAI {
     console.log('[E.ON AI] Analyserar E.ON faktura...');
     
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(getChatCompletionsUrl(), {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: AI_VISION_MODEL,
           messages: [
             {
               role: 'system',

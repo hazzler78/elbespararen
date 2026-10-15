@@ -1,5 +1,10 @@
 // Generell AI - För okända leverantörer
 import { BillData } from './types';
+import {
+  AI_VISION_MODEL,
+  getAiAuthHeaders,
+  getChatCompletionsUrl,
+} from './ai-client';
 
 export const GENERAL_PROMPT = `
 Du är en expert på att analysera svenska elfakturor från okända leverantörer. Du måste identifiera ALLA extra avgifter som kunden kan undvika genom att byta leverantör.
@@ -179,14 +184,11 @@ export class GeneralAI {
     console.log('[General AI] Analyserar okänd leverantör...');
     
     try {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      const response = await fetch(getChatCompletionsUrl(), {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-          'Content-Type': 'application/json',
-        },
+        headers: getAiAuthHeaders(),
         body: JSON.stringify({
-          model: 'gpt-4o',
+          model: AI_VISION_MODEL,
           messages: [
             {
               role: 'system',

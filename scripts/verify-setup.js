@@ -89,9 +89,9 @@ check('.env.local', hasEnvLocal, '.env.local saknas (kopiera från .env.example)
 if (hasEnvLocal) {
   const envContent = fs.readFileSync('.env.local', 'utf-8');
   check(
-    'OPENAI_API_KEY',
-    envContent.includes('OPENAI_API_KEY=sk-'),
-    'OPENAI_API_KEY inte konfigurerad',
+    'XAI_API_KEY',
+    envContent.includes('XAI_API_KEY=xai-') || envContent.includes('OPENAI_API_KEY='),
+    'XAI_API_KEY inte konfigurerad',
     true
   );
 }

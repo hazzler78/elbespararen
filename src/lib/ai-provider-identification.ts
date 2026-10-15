@@ -1,5 +1,10 @@
 // Leverantörsidentifiering AI - Känner igen vilken leverantör det är
 import { BillData } from './types';
+import {
+  AI_VISION_MODEL,
+  getAiAuthHeaders,
+  getChatCompletionsUrl,
+} from './ai-client';
 
 export interface ProviderIdentification {
   provider: string;
@@ -36,14 +41,11 @@ Om du inte känner igen leverantören, svara med "unknown".
 
 export async function identifyProvider(billImage: string): Promise<ProviderIdentification> {
   try {
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    const response = await fetch(getChatCompletionsUrl(), {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
+      headers: getAiAuthHeaders(),
       body: JSON.stringify({
-        model: 'gpt-4o',
+        model: AI_VISION_MODEL,
         messages: [
           {
             role: 'system',

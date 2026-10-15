@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG, APP_CONFIG } from "@/lib/constants";
 import { BillData } from "@/lib/types";
@@ -8,6 +7,11 @@ import { providerRouter } from "@/lib/ai-provider-routing";
 import { saveBillImage } from "@/lib/storage/bill-images";
 import { calculateSavings } from "@/lib/calculations";
 import { createDatabaseFromBinding } from "@/lib/database";
+import {
+  AI_VISION_MODEL,
+  createAiClient,
+  hasXaiApiKey,
+} from "@/lib/ai-client";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -15,25 +19,21 @@ export const maxDuration = 30;
 
 /**
  * POST /api/parse-bill-v3
- * Analyserar elräkning med OpenAI Vision
+ * Analyserar elräkning med Grok Vision (xAI)
  */
 export async function POST(
   req: NextRequest,
   context: any
 ) {
   try {
-    // Validera API-nyckel
-    if (!process.env.OPENAI_API_KEY) {
+    if (!hasXaiApiKey()) {
       return NextResponse.json(
-        { error: "OpenAI API-nyckel saknas" },
+        { error: "XAI_API_KEY saknas" },
         { status: 500 }
       );
     }
 
-    // Initiera OpenAI client (runtime, inte build-time)
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+    const openai = createAiClient({ timeoutMs: 60_000 });
 
     // Hämta fil från FormData
     const formData = await req.formData();
@@ -149,7 +149,7 @@ export async function POST(
 
       const content = response.choices[0].message.content;
       if (!content) {
-        throw new Error("Tom respons från OpenAI");
+        throw new Error("Tom respons från Grok");
       }
       billData = JSON.parse(content);
     }

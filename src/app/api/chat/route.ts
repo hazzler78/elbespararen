@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import OpenAI from "openai";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { ChatMessage } from "@/lib/types";
+import {
+  AI_CHAT_MODEL,
+  createAiClient,
+  hasXaiApiKey,
+} from "@/lib/ai-client";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -38,17 +42,14 @@ export async function POST(req: NextRequest) {
       rateLimitStore.set(clientIP, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
     }
 
-    // Validate API key
-    if (!process.env.OPENAI_API_KEY) {
+    if (!hasXaiApiKey()) {
       return NextResponse.json(
-        { error: "OpenAI API-nyckel saknas" },
+        { error: "XAI_API_KEY saknas" },
         { status: 500 }
       );
     }
-    
-    const openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY
-    });
+
+    const openai = createAiClient();
 
     // Parse and validate request body
     let body: { message?: string; context?: unknown; sessionId?: string };
@@ -184,7 +185,7 @@ Fråga: "Hur sparar jag?"
 
     try {
       response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
+        model: AI_CHAT_MODEL,
         messages,
         temperature: 0.7,
         max_tokens: 120, // Korta, konverterande svar
@@ -209,7 +210,7 @@ Fråga: "Hur sparar jag?"
           content: '',
           ipAddress: clientIP,
           userAgent: userAgent,
-          model: "gpt-4o-mini",
+          model: AI_CHAT_MODEL,
           responseTimeMs,
           error: errorMessage
         });
@@ -229,7 +230,7 @@ Fråga: "Hur sparar jag?"
         context: context && typeof context === 'object' ? context as ChatMessage['context'] : undefined,
         ipAddress: clientIP,
         userAgent: userAgent,
-        model: "gpt-4o-mini",
+        model: AI_CHAT_MODEL,
         responseTimeMs
       });
     } catch (dbError) {
@@ -245,7 +246,7 @@ Fråga: "Hur sparar jag?"
       reply: reply.trim(),
       sessionId: chatSessionId,
       meta: {
-        model: "gpt-4o-mini",
+        model: AI_CHAT_MODEL,
         timestamp: new Date().toISOString(),
         messageLength: message.length,
         hasContext: !!context,

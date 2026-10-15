@@ -58,8 +58,9 @@ export const APP_CONFIG = {
   contactPhone: "+46 70 123 45 67"
 } as const;
 
+/** @deprecated Use AI_VISION_MODEL / createAiClient from @/lib/ai-client */
 export const OPENAI_CONFIG = {
-  model: "gpt-4o",
+  model: "grok-4.7",
   temperature: 0,
   maxTokens: 2000
 } as const;
