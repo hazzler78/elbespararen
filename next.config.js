@@ -114,6 +114,7 @@ const nextConfig = {
               "img-src 'self' data: blob: https:",
               "font-src 'self' data:",
               "connect-src 'self' https://*.supabase.co https://www.google-analytics.com https://region1.google-analytics.com https://*.hotjar.com https://*.hotjar.io wss://*.hotjar.com https://analytics.tiktok.com https://api.openai.com",
+              "frame-src 'self' https://skaffa.salesys.se https://www.youtube-nocookie.com https://www.svtplay.se",
               "frame-ancestors 'none'",
               "base-uri 'self'",
               "form-action 'self'",
