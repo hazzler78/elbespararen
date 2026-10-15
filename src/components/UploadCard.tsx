@@ -145,6 +145,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       });
 
       const result = await response.json() as ApiResponse<BillData> & {
+        details?: string;
         meta?: {
           dbSaved?: boolean;
           dbError?: string;
@@ -155,10 +156,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       };
 
       if (!response.ok || !result.success || !result.data) {
-        const details =
-          typeof (result as { details?: unknown }).details === "string"
-            ? (result as { details: string }).details
-            : "";
+        const details = typeof result.details === "string" ? result.details : "";
         throw new Error(
           details
             ? `${result.error || "Kunde inte analysera fakturan"}: ${details}`
