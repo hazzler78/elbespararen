@@ -73,48 +73,34 @@ export default function ChatWidget({ billData: propBillData, className = '' }: C
     }
   }, [isOpen, sessionId]);
 
-  // Add welcome message when chat opens for the first time
+  // Short welcome when chat opens for the first time
   useEffect(() => {
     if (isOpen && messages.length === 0) {
       let welcomeContent: string;
-      
+
       if (billData) {
-        const extraFeesTotal = billData.extraFeesDetailed.reduce((sum, fee) => sum + fee.amount, 0);
+        const extraFeesTotal = (billData.extraFeesDetailed || []).reduce(
+          (sum, fee) => sum + fee.amount,
+          0
+        );
         const estimatedSavings = Math.round(extraFeesTotal * 1.25);
-        welcomeContent = `Hej! 👋 Jag ser att du redan har analyserat din elräkning här på Elbespararen. 
-
-Baserat på din analys kan du spara cirka **${estimatedSavings} kr/månad** genom att byta till spotpris och slippa onödiga extra avgifter.
-
-Jag kan hjälpa dig med:
-• Frågor om din faktura och analys
-• Förklaringar av olika avgifter
-• Tips om hur du kan spara mer pengar
-• Information om elavtal och leverantörer
-
-Vad undrar du?`;
+        welcomeContent =
+          estimatedSavings > 0
+            ? `Hej! Din analys pekar på ungefär ${estimatedSavings} kr/månad i möjliga besparingar. Vill du veta hur du tar hem dem — eller undrar du något om fakturan?`
+            : `Hej! Jag ser din analys. Vill du ha hjälp att tolka den, eller hur du byter till ett billigare avtal?`;
       } else {
-        welcomeContent = `Hej! 👋 Välkommen till Elbespararen!
-
-Jag är här för att hjälpa dig förstå din elräkning och hitta besparingsmöjligheter. 
-
-Jag kan hjälpa dig med:
-• Förklaringar av olika avgifter på elräkningar
-• Tips om hur du kan spara pengar på elen
-• Information om elavtal, spotpris och fastpris
-• Frågor om elbesparingar generellt
-
-**Kom igång:** Ladda upp din elräkning på startsidan så analyserar vi den med AI och visar exakt hur mycket du kan spara!
-
-Vad undrar du?`;
+        welcomeContent =
+          `Hej! Vill du se vad du kan spara på elen? Ladda upp en faktura under Analysera faktura — eller fråga mig här.`;
       }
-      
-      const welcomeMessage: ChatMessage = {
-        id: 'welcome',
-        role: 'assistant',
-        content: welcomeContent,
-        timestamp: new Date()
-      };
-      setMessages([welcomeMessage]);
+
+      setMessages([
+        {
+          id: "welcome",
+          role: "assistant",
+          content: welcomeContent,
+          timestamp: new Date(),
+        },
+      ]);
     }
   }, [isOpen, billData]);
 
@@ -123,13 +109,18 @@ Vad undrar du?`;
     return null;
   }
 
-  const sendMessage = async () => {
-    if (!inputValue.trim() || isLoading) return;
+  const suggestions = billData
+    ? ["Hur byter jag?", "Vad betyder avgifterna?", "Hur mycket sparar jag?"]
+    : ["Hur funkar det?", "Vad kostar det?", "Hur sparar jag på elen?"];
+
+  const sendMessage = async (overrideText?: string) => {
+    const text = (overrideText ?? inputValue).trim();
+    if (!text || isLoading) return;
 
     const userMessage: ChatMessage = {
       id: Date.now().toString(),
       role: 'user',
-      content: inputValue.trim(),
+      content: text,
       timestamp: new Date()
     };
 
@@ -354,6 +345,22 @@ Vad undrar du?`;
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Quick suggestions — only before the visitor has replied */}
+            {messages.length === 1 && messages[0]?.role === "assistant" && !isLoading && (
+              <div className="px-3 pb-2 flex flex-wrap gap-1.5 border-t border-border/60 pt-2">
+                {suggestions.map((label) => (
+                  <button
+                    key={label}
+                    type="button"
+                    onClick={() => sendMessage(label)}
+                    className="text-xs px-2.5 py-1.5 rounded-full border border-primary/30 text-primary bg-primary/5 hover:bg-primary/10 transition-colors"
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* Input */}
             <div className="p-4 border-t border-border">
               <div className="flex gap-2">
@@ -363,7 +370,7 @@ Vad undrar du?`;
                   value={inputValue}
                   onChange={(e) => setInputValue(e.target.value)}
                   onKeyPress={handleKeyPress}
-                  placeholder="Skriv din fråga..."
+                  placeholder="Fråga något…"
                   disabled={isLoading}
                   className="
                     flex-1 px-3 py-2 border border-border rounded-lg
