@@ -7,9 +7,11 @@ import { useEffect, useState } from "react";
 
 interface ResultSummaryProps {
   savings: SavingsCalculation;
+  /** Opens the recommended switch path (e.g. Cheap Energy SaleSys form) */
+  onPrimaryCta?: () => void;
 }
 
-export default function ResultSummary({ savings }: ResultSummaryProps) {
+export default function ResultSummary({ savings, onPrimaryCta }: ResultSummaryProps) {
   const [displaySavings, setDisplaySavings] = useState<SavingsCalculation | null>(null);
   
   // Debug log för att se vad som kommer in
@@ -48,19 +50,29 @@ export default function ResultSummary({ savings }: ResultSummaryProps) {
         <div className="flex flex-col items-center gap-2 mb-3">
           <p className="text-2xl md:text-3xl font-bold text-primary leading-tight">
             Upp till{" "}
-            <span className="text-4xl md:text-5xl">{formatCurrency(potentialSavings * 12)}</span>{" "}
-            kr/år i onödiga avgifter
+            <span className="text-4xl md:text-5xl">{formatCurrency(potentialSavings * 12)}</span>
+            /år i onödiga avgifter
           </p>
         </div>
         <p className="text-base text-muted mb-6">
           ({savingsPercentage}% av fakturan) inkl. moms
         </p>
-        <a
-          href="#byt-avtal"
-          className="inline-flex items-center justify-center px-8 py-3.5 bg-primary text-white text-lg font-semibold rounded-lg hover:bg-primary/90 transition-colors"
-        >
-          Byt elavtal — spara upp till {formatCurrency(potentialSavings * 12)} kr/år
-        </a>
+        {onPrimaryCta ? (
+          <button
+            type="button"
+            onClick={onPrimaryCta}
+            className="inline-flex items-center justify-center px-8 py-3.5 bg-primary text-white text-lg font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Byt elavtal — spara upp till {formatCurrency(potentialSavings * 12)}/år
+          </button>
+        ) : (
+          <a
+            href="#byt-avtal"
+            className="inline-flex items-center justify-center px-8 py-3.5 bg-primary text-white text-lg font-semibold rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Byt elavtal — spara upp till {formatCurrency(potentialSavings * 12)}/år
+          </a>
+        )}
       </div>
 
       {/* Detaljerad uppdelning */}

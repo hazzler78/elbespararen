@@ -27,6 +27,7 @@ export default function ResultPage() {
   const [accountSaveBlocked, setAccountSaveBlocked] = useState(false);
   const [accountSaveLimit, setAccountSaveLimit] = useState(2);
   const contactFormRef = useRef<HTMLDivElement>(null);
+  const primarySwitchRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     if (authLoading || !user) return;
@@ -149,7 +150,18 @@ export default function ResultPage() {
 
           {/* Result Summary + primary Byt CTA */}
           <div className="mb-8">
-            <ResultSummary key={`${savings.currentCost}-${savings.potentialSavings}`} savings={savings} />
+            <ResultSummary
+              key={`${savings.currentCost}-${savings.potentialSavings}`}
+              savings={savings}
+              onPrimaryCta={() => {
+                if (primarySwitchRef.current) {
+                  primarySwitchRef.current();
+                  return;
+                }
+                // Providers still loading — scroll to comparison as fallback
+                document.getElementById("byt-avtal")?.scrollIntoView({ behavior: "smooth" });
+              }}
+            />
           </div>
 
           {/* Byt first — Premium comes after */}
@@ -158,6 +170,9 @@ export default function ResultPage() {
               billData={billData}
               savings={savings}
               onRequestContact={handleScrollToContact}
+              onPrimarySwitchReady={(open) => {
+                primarySwitchRef.current = open;
+              }}
               secondaryCta={{
                 label: "Jämför fler avtal",
                 href: "/contracts"
