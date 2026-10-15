@@ -55,33 +55,35 @@ export async function analyzeBillStructured(
   customPrompt?: string | null
 ): Promise<BillData> {
   const model = getVisionModel();
-  const response = await client.chat.completions.create({
+  // Build params then cast once — xAI's reasoning_effort isn't in OpenAI SDK types yet,
+  // and casting create()'s overload union makes `.choices` disappear from the return type.
+  const params = {
     model,
     messages: [
       {
-        role: "system",
+        role: "system" as const,
         content: customPrompt || SYSTEM_PROMPT,
       },
       {
-        role: "user",
+        role: "user" as const,
         content: [
           {
-            type: "text",
+            type: "text" as const,
             text: "Analysera denna svenska elfaktura. Identifiera alla kostnader och extra avgifter som går att undvika genom att byta elhandlare. Svara enligt schemat.",
           },
           {
-            type: "image_url",
+            type: "image_url" as const,
             image_url: {
               url: dataUrl,
               // "high" multiplies image tokens and latency; bills are readable at auto
-              detail: "auto",
+              detail: "auto" as const,
             },
           },
         ],
       },
     ],
     response_format: {
-      type: "json_schema",
+      type: "json_schema" as const,
       json_schema: {
         name: "bill_analysis",
         strict: true,
@@ -90,9 +92,13 @@ export async function analyzeBillStructured(
     },
     temperature: OPENAI_CONFIG.temperature,
     max_tokens: OPENAI_CONFIG.maxTokens,
-    // OpenAI SDK types may lag xAI's reasoning_effort field
+    stream: false as const,
     ...getVisionReasoningParams(model),
-  } as Parameters<typeof client.chat.completions.create>[0]);
+  };
+
+  const response = await client.chat.completions.create(
+    params as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming
+  );
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
