@@ -22,10 +22,20 @@ interface SalesysEmbedModalProps {
 }
 
 const DEFAULT_IFRAME_HEIGHT = 640;
+/** Sanity cap only — never clip to viewport (that breaks mobile scroll). */
+const MAX_IFRAME_HEIGHT = 8000;
 
 /**
  * SaleSys iframe expects the parent to handle postMessage (see salesys.se/scripts/web_form1.js).
- * Without redirect/resize handlers the multi-step form appears to hang after submit.
+ * Official createWebForm sets iframe height to the FULL reported height (no viewport cap)
+ * and scrolls the page on stepChanged.
+ *
+ * Important for mobile (Chrome/Android):
+ * - Do NOT cap iframe height to ~85vh. A short iframe + tall SaleSys form clips
+ *   rörligt/fastpris options, and touch events stay trapped in the iframe so the
+ *   modal cannot scroll either.
+ * - Grow iframe to content height; let this modal's overflow container scroll.
+ *   When iframe height === content height, scroll chaining reaches the parent.
  *
  * Do NOT call scrollIntoView on the iframe: this modal is often mounted under #byt-avtal
  * at the bottom of a long page, and scrollIntoView jumps the window there on every step.
@@ -70,14 +80,37 @@ export default function SalesysEmbedModal({
       if (e.key === "Escape") onClose();
     };
     document.addEventListener("keydown", onKey);
-    const prevOverflow = document.body.style.overflow;
-    const prevScrollY = window.scrollY;
-    document.body.style.overflow = "hidden";
+
+    // position:fixed lock is more reliable than overflow:hidden alone on Android Chrome
+    const scrollY = window.scrollY;
+    const { body, documentElement } = document;
+    const prev = {
+      bodyOverflow: body.style.overflow,
+      bodyPosition: body.style.position,
+      bodyTop: body.style.top,
+      bodyLeft: body.style.left,
+      bodyRight: body.style.right,
+      bodyWidth: body.style.width,
+      htmlOverflow: documentElement.style.overflow,
+    };
+    body.style.overflow = "hidden";
+    body.style.position = "fixed";
+    body.style.top = `-${scrollY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+    documentElement.style.overflow = "hidden";
+
     return () => {
       document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = prevOverflow;
-      // Restore scroll if something still nudged the window (defensive)
-      window.scrollTo(0, prevScrollY);
+      body.style.overflow = prev.bodyOverflow;
+      body.style.position = prev.bodyPosition;
+      body.style.top = prev.bodyTop;
+      body.style.left = prev.bodyLeft;
+      body.style.right = prev.bodyRight;
+      body.style.width = prev.bodyWidth;
+      documentElement.style.overflow = prev.htmlOverflow;
+      window.scrollTo(0, scrollY);
     };
   }, [open, onClose]);
 
@@ -93,10 +126,12 @@ export default function SalesysEmbedModal({
 
       switch (data.type) {
         case "resize": {
+          // Match salesys.se/scripts/web_form1.js — full height, no viewport clamp.
           const height = Number((data as { height?: number }).height);
           if (Number.isFinite(height) && height > 0) {
-            const max = Math.round(window.innerHeight * 0.85);
-            setIframeHeight(Math.min(height + 24, max));
+            setIframeHeight(
+              Math.min(Math.max(Math.round(height + 24), DEFAULT_IFRAME_HEIGHT), MAX_IFRAME_HEIGHT)
+            );
           }
           break;
         }
@@ -107,7 +142,7 @@ export default function SalesysEmbedModal({
           break;
         }
         case "stepChanged": {
-          // Only reset scroll inside the modal — never scroll the page.
+          // Scroll only inside the modal — never the page under #byt-avtal.
           resetModalScroll();
           break;
         }
@@ -131,7 +166,7 @@ export default function SalesysEmbedModal({
       onClick={onClose}
     >
       <div
-        className="bg-white w-full sm:max-w-3xl sm:rounded-xl shadow-xl max-h-[95vh] flex flex-col rounded-t-xl"
+        className="bg-white w-full sm:max-w-3xl sm:rounded-xl shadow-xl h-[100dvh] sm:h-auto sm:max-h-[95vh] flex flex-col rounded-t-xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-start justify-between gap-3 p-4 border-b border-gray-200 flex-shrink-0">
@@ -153,7 +188,15 @@ export default function SalesysEmbedModal({
           </button>
         </div>
 
-        <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto bg-gray-50">
+        {/*
+          Parent scrolls the full-height iframe. Cap was removed so SaleSys
+          rörligt/fastpris steps are reachable via touch scroll chaining.
+        */}
+        <div
+          ref={scrollRef}
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain touch-pan-y bg-gray-50"
+          style={{ WebkitOverflowScrolling: "touch" }}
+        >
           <iframe
             ref={iframeRef}
             title={`Teckna avtal hos ${form.label}`}
