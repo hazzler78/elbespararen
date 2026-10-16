@@ -5,12 +5,8 @@
 
 import { hasAnalyticsConsent } from './cookie-consent';
 
-/** GA4 measurement ID (env override allowed, placeholder ignored) */
-const GA_FALLBACK_ID = 'G-N8JHZQV6CT';
-export const GA_MEASUREMENT_ID: string =
-  process.env.NEXT_PUBLIC_GA_ID && process.env.NEXT_PUBLIC_GA_ID !== 'G-XXXXXXXXXX'
-    ? process.env.NEXT_PUBLIC_GA_ID
-    : GA_FALLBACK_ID;
+/** GA4 measurement ID (hardcoded; NEXT_PUBLIC_GA_ID is intentionally ignored) */
+export const GA_MEASUREMENT_ID: string = 'G-N8JHZQV6CT';
 /** GA is on unless explicitly disabled with NEXT_PUBLIC_ENABLE_GA=false */
 export const GA_ENABLED: boolean = process.env.NEXT_PUBLIC_ENABLE_GA !== 'false';
 
