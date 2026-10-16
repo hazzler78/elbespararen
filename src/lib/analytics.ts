@@ -5,6 +5,15 @@
 
 import { hasAnalyticsConsent } from './cookie-consent';
 
+/** GA4 measurement ID (env override allowed, placeholder ignored) */
+const GA_FALLBACK_ID = 'G-N8JHZQV6CT';
+export const GA_MEASUREMENT_ID: string =
+  process.env.NEXT_PUBLIC_GA_ID && process.env.NEXT_PUBLIC_GA_ID !== 'G-XXXXXXXXXX'
+    ? process.env.NEXT_PUBLIC_GA_ID
+    : GA_FALLBACK_ID;
+/** GA is on unless explicitly disabled with NEXT_PUBLIC_ENABLE_GA=false */
+export const GA_ENABLED: boolean = process.env.NEXT_PUBLIC_ENABLE_GA !== 'false';
+
 declare global {
   interface Window {
     gtag?: (...args: any[]) => void;
@@ -19,13 +28,7 @@ declare global {
 export function isAnalyticsEnabled(): boolean {
   if (typeof window === 'undefined') return false;
   
-  // Check if analytics is enabled via environment variable
-  const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
-  if (!analyticsEnabled) return false;
-  
-  // Check if GA ID is set
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  if (!gaId || gaId === 'G-XXXXXXXXXX') return false;
+  if (!GA_ENABLED || !GA_MEASUREMENT_ID) return false;
   
   // Check if user has given consent
   return hasAnalyticsConsent();
@@ -60,7 +63,7 @@ export function trackPageView(path: string): void {
   if (!isAnalyticsEnabled() || !window.gtag) return;
   
   try {
-    window.gtag('config', process.env.NEXT_PUBLIC_GA_ID!, {
+    window.gtag('config', GA_MEASUREMENT_ID, {
       page_path: path,
     });
   } catch (error) {

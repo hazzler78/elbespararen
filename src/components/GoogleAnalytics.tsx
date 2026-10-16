@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { hasAnalyticsConsent } from '@/lib/cookie-consent';
+import { GA_MEASUREMENT_ID, GA_ENABLED } from '@/lib/analytics';
 
 /**
  * Google Analytics Component
@@ -12,8 +13,8 @@ import { hasAnalyticsConsent } from '@/lib/cookie-consent';
  * 3. User has given analytics consent
  */
 export default function GoogleAnalytics() {
-  const gaId = process.env.NEXT_PUBLIC_GA_ID;
-  const analyticsEnabled = process.env.NEXT_PUBLIC_ENABLE_ANALYTICS === 'true';
+  const gaId = GA_MEASUREMENT_ID;
+  const analyticsEnabled = GA_ENABLED;
   const [shouldLoad, setShouldLoad] = useState(false);
   
   // Don't load if disabled or no ID
