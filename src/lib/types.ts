@@ -36,8 +36,17 @@ export interface Lead {
   id: string;
   email?: string;
   phone?: string;
-  billData: BillData;
-  savings: SavingsCalculation;
+  /**
+   * Vilken sorts lead det är.
+   * - `analysis`: kunden har laddat upp en faktura → billData/savings är riktiga.
+   * - `interest`: kunden vill bli kontaktad om ett avtal, utan faktura → ingen analys finns.
+   * Saknas fältet behandlas leaden som `analysis` (bakåtkompatibelt).
+   */
+  type?: "analysis" | "interest";
+  /** Vilket avtal/erbjudande förfrågan gäller, när type = interest. */
+  interest?: string;
+  billData?: BillData;
+  savings?: SavingsCalculation;
   createdAt: Date;
   status: "new" | "contacted" | "converted" | "rejected";
 }

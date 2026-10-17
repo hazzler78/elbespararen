@@ -342,12 +342,15 @@ export default function ContractsPage() {
                         'Content-Type': 'application/json',
                       },
                       body: JSON.stringify({
+                        // Intresseanmälan, inte en analys: kunden har inte laddat upp
+                        // någon faktura. Tidigare skickades en påhittad exempelfaktura
+                        // (400 kWh, 1200 kr) som fick notisen att visa 0 kr besparing.
+                        type: "interest",
                         email: data.email,
                         phone: data.phone,
                         name: data.name,
                         subscribeNewsletter: !!data.subscribeNewsletter,
-                        billData: mockBillData,
-                        savings: savings
+                        interest: "Avtalsöversikten (/contracts)"
                       })
                     });
 

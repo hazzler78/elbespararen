@@ -2,11 +2,42 @@ import { NextRequest, NextResponse } from "next/server";
 import { Lead, BillData, SavingsCalculation } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
-import { isTelegramConfigured, sendTelegramMessage } from "@/lib/telegram";
+import { isTelegramConfigured, sendTelegramMessage, escapeMarkdown } from "@/lib/telegram";
 import { requireAdmin } from "@/lib/admin-auth";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
+
+/**
+ * Rimlighetskontroll av telefonnummer.
+ *
+ * Syftet är att stoppa uppenbart påhittade nummer — som `070000000` — innan de blir
+ * leads, hamnar i databasen och pingar Mikael. Ett nummer vi ändå inte kan ringa
+ * är värdelöst som lead, och skräpet gör statistiken missvisande.
+ *
+ * Svenska mobilnummer har 10 siffror (07…). Fasta nummer har 7–9 inkl. riktnummer,
+ * och utländska nummer tillåts upp till 13. Vi kräver inte 07 — en kund med fast
+ * telefon är fortfarande en kund.
+ */
+function validatePhone(raw: string): { ok: boolean; reason?: string } {
+  const digits = raw.replace(/[^\d]/g, "").replace(/^46(?=7)/, "0");
+
+  if (digits.length < 7) return { ok: false, reason: "för få siffror" };
+  if (digits.length > 13) return { ok: false, reason: "för många siffror" };
+  if (/^(\d)\1+$/.test(digits)) return { ok: false, reason: "bara samma siffra om och om" };
+
+  if (digits.startsWith("07")) {
+    if (digits.length !== 10) {
+      return { ok: false, reason: "svenskt mobilnummer har 10 siffror" };
+    }
+    const abonnent = digits.slice(2);
+    if (/^0+$/.test(abonnent) || /^(\d)\1+$/.test(abonnent)) {
+      return { ok: false, reason: "abonnentnumret ser påhittat ut" };
+    }
+  }
+
+  return { ok: true };
+}
 
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req);
@@ -50,8 +81,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation; subscribeNewsletter?: boolean; name?: string };
-    const { email, phone, billData, savings, subscribeNewsletter, name } = body;
+    const body = await req.json() as { email?: string; phone?: string; billData?: BillData; savings?: SavingsCalculation; subscribeNewsletter?: boolean; name?: string; type?: "analysis" | "interest"; interest?: string };
+    const { email, phone, billData, savings, subscribeNewsletter, name, interest } = body;
+    // Saknas type behandlas leaden som en analys (bakåtkompatibelt med befintliga anrop).
+    const leadType: "analysis" | "interest" = body.type === "interest" ? "interest" : "analysis";
     
     console.log("[leads] POST request received:", { email, phone, hasBillData: !!billData, hasSavings: !!savings });
 
@@ -63,9 +96,27 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    if (!billData || !savings) {
+    // Rimlighetskontroll av telefonnumret. Ett nummer vi inte kan ringa är ingen lead —
+    // och påhittade nummer (070000000) ska inte bli notiser eller statistik.
+    if (phone && phone.trim()) {
+      const kontroll = validatePhone(phone);
+      if (!kontroll.ok) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `Telefonnumret verkar felaktigt (${kontroll.reason}). Kontrollera numret och försök igen.`,
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // En analyslead måste ha fakturadata. En intresseanmälan har ingen faktura —
+    // tidigare skickade avtals-sidan en påhittad exempelfaktura hit, vilket gjorde
+    // att notisen visade 400 kWh / 80 % / 0 kr som om det vore kundens siffror.
+    if (leadType === "analysis" && (!billData || !savings)) {
       return NextResponse.json(
-        { success: false, error: "BillData och savings krävs" },
+        { success: false, error: "BillData och savings krävs för en analys" },
         { status: 400 }
       );
     }
@@ -95,6 +146,8 @@ export async function POST(req: NextRequest) {
     const leadData = {
       email: email || "",
       phone: phone || "",
+      type: leadType,
+      interest: interest || "",
       billData,
       savings,
       status: "new" as const
@@ -141,15 +194,56 @@ export async function POST(req: NextRequest) {
  * Skickar Telegram-notis om ny lead
  */
 async function sendTelegramNotification(lead: Lead) {
+  // En intresseanmälan har ingen faktura och därför ingen besparing. Att visa
+  // «0 kr/mån» för den såg ut som en analys utan åtgärd — det var fel.
+  if (lead.type === "interest") {
+    const rader = [
+      "🔔 *Ny förfrågan från Elbespararen!*",
+      "",
+      `📧 Email: ${escapeMarkdown(lead.email || "Ej angiven")}`,
+      `📱 Telefon: ${escapeMarkdown(lead.phone || "Ej angiven")}`,
+    ];
+    if (lead.interest) rader.push(`📄 Gäller: ${escapeMarkdown(lead.interest)}`);
+    rader.push("", "ℹ️ Ingen faktura uppladdad — kunden vill bli kontaktad.", "", `🕒 ${new Date(lead.createdAt).toLocaleString("sv-SE")}`);
+
+    try {
+      await sendTelegramMessage(rader.join("\n").trim(), "Markdown");
+      console.log("[telegram] Notis skickad för förfrågan:", lead.id);
+    } catch (error) {
+      console.error("[telegram] Kunde inte skicka notis:", error);
+    }
+    return;
+  }
+
+  // Analys: besparingen är summan av *sparbara* elhandelsavgifter (påslag,
+  // månadsavgift, tillägg) inkl. moms. Noll betyder inte «trasigt» — det betyder
+  // att analysen inte hittade något att spara. Tidigare skrevs alltid «0 kr/mån»,
+  // vilket såg ut som en möjlighet utan åtgärd. Nu visas vad AI:n faktiskt hittade.
+  const besparing = lead.savings?.potentialSavings ?? 0;
+  const avgifter = (lead.billData?.extraFeesDetailed ?? [])
+    .filter((f) => typeof f?.amount === "number" && f.amount !== 0)
+    .slice(0, 6)
+    .map((f) => `• ${escapeMarkdown(f.label)}: ${f.amount} kr`);
+
+  const besparingsRad =
+    besparing > 0
+      ? `💰 Besparing: *${besparing} kr/mån*`
+      : "💰 Besparing: *inga sparbara avgifter hittade*";
+
+  const avgiftsBlock =
+    avgifter.length > 0
+      ? `\n📋 Avgifter AI:n hittade:\n${avgifter.join("\n")}`
+      : "\n📋 Avgifter AI:n hittade: *inga* — räkningen innehöll bara nät, skatt och spot";
+
   const message = `
-🔔 *Ny lead från Elbespararen!*
+🔔 *Ny analys från Elbespararen!*
 
-📧 Email: ${lead.email || "Ej angiven"}
-📱 Telefon: ${lead.phone || "Ej angiven"}
+📧 Email: ${escapeMarkdown(lead.email || "Ej angiven")}
+📱 Telefon: ${escapeMarkdown(lead.phone || "Ej angiven")}
 
-💰 Besparing: *${lead.savings.potentialSavings} kr/mån*
-⚡️ Förbrukning: ${lead.billData.totalKWh} kWh
-📊 Confidence: ${Math.round(lead.billData.confidence * 100)}%
+${besparingsRad}
+⚡️ Förbrukning: ${lead.billData?.totalKWh ?? "?"} kWh
+📊 Confidence: ${Math.round((lead.billData?.confidence ?? 0) * 100)}%${avgiftsBlock}
 
 🕒 ${new Date(lead.createdAt).toLocaleString("sv-SE")}
   `.trim();

@@ -922,8 +922,10 @@ class CloudflareDatabase implements Database {
       id,
       leadData.email,
       leadData.phone,
-      JSON.stringify(leadData.billData),
-      JSON.stringify(leadData.savings),
+      // Intresseanmälningar saknar fakturadata — JSON.stringify(undefined) ger
+      // undefined, vilket D1 inte accepterar som bindning. Skriv null i stället.
+      JSON.stringify(leadData.billData ?? null),
+      JSON.stringify(leadData.savings ?? null),
       leadData.status,
       now
     ).run();
