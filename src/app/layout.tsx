@@ -86,13 +86,11 @@ export default function RootLayout({
           {children}
           <ChatWidgetLoader />
         </Providers>
-        {cfBeaconConfig ? (
-          <script
-            defer
-            src="https://static.cloudflareinsights.com/beacon.min.js"
-            data-cf-beacon={cfBeaconConfig}
-          />
-        ) : null}
+        <script
+          defer
+          src="https://static.cloudflareinsights.com/beacon.min.js"
+          data-cf-beacon={cfBeaconConfig}
+        />
       </body>
     </html>
   );

@@ -1,10 +1,11 @@
 /**
  * Cloudflare Web Analytics (RUM) — cookieless, loads via beacon.min.js.
- * Token: Cloudflare Dashboard → Web Analytics → your site → Manage → JS snippet.
+ * The site token is public (embedded in client HTML). Env override is optional.
  */
 
-export const CF_WEB_ANALYTICS_TOKEN: string | undefined =
-  process.env.NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN?.trim() || undefined;
+/** elbespararen.se Web Analytics token (from live site / CF dashboard). */
+export const CF_WEB_ANALYTICS_DEFAULT_TOKEN =
+  'ce91b174578341a796b4ce458130492d';
 
 const PLACEHOLDER_TOKENS = new Set([
   'your_cloudflare_web_analytics_token',
@@ -12,18 +13,18 @@ const PLACEHOLDER_TOKENS = new Set([
   '',
 ]);
 
-export function isCloudflareWebAnalyticsConfigured(): boolean {
-  if (!CF_WEB_ANALYTICS_TOKEN) return false;
-  return !PLACEHOLDER_TOKENS.has(CF_WEB_ANALYTICS_TOKEN);
+function resolveWebAnalyticsToken(): string {
+  const fromEnv = process.env.NEXT_PUBLIC_CF_WEB_ANALYTICS_TOKEN?.trim();
+  if (fromEnv && !PLACEHOLDER_TOKENS.has(fromEnv)) {
+    return fromEnv;
+  }
+  return CF_WEB_ANALYTICS_DEFAULT_TOKEN;
 }
 
 /** Serialized `data-cf-beacon` attribute (SPA route tracking enabled). */
-export function getCloudflareBeaconConfig(): string | null {
-  if (!isCloudflareWebAnalyticsConfigured() || !CF_WEB_ANALYTICS_TOKEN) {
-    return null;
-  }
+export function getCloudflareBeaconConfig(): string {
   return JSON.stringify({
-    token: CF_WEB_ANALYTICS_TOKEN,
+    token: resolveWebAnalyticsToken(),
     spa: true,
   });
 }
