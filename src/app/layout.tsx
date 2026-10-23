@@ -6,6 +6,9 @@ import TikTokPixel from "@/components/TikTokPixel";
 import CookieConsentBanner from "@/components/CookieConsentBanner";
 import ChatWidgetLoader from "@/components/ChatWidgetLoader";
 import Providers from "@/components/Providers";
+import UtmPassthrough from "@/components/UtmPassthrough";
+import { Suspense } from "react";
+import { getCloudflareBeaconConfig } from "@/lib/cloudflare-web-analytics";
 
 // Funktion för att konstruera base URL för metadata
 function getBaseUrl() {
@@ -21,6 +24,7 @@ function getBaseUrl() {
 }
 
 const baseUrl = getBaseUrl();
+const cfBeaconConfig = getCloudflareBeaconConfig();
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -76,9 +80,19 @@ export default function RootLayout({
           <Hotjar />
           <TikTokPixel />
           <CookieConsentBanner />
+          <Suspense fallback={null}>
+            <UtmPassthrough />
+          </Suspense>
           {children}
           <ChatWidgetLoader />
         </Providers>
+        {cfBeaconConfig ? (
+          <script
+            defer
+            src="https://static.cloudflareinsights.com/beacon.min.js"
+            data-cf-beacon={cfBeaconConfig}
+          />
+        ) : null}
       </body>
     </html>
   );
