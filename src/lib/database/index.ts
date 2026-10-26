@@ -1,7 +1,7 @@
 // Database abstraction layer för Elbespararen v7
 // Stöder både mock data (nu) och Cloudflare D1 (framtida)
 
-import { ElectricityProvider, Lead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis, User, UserStats } from "@/lib/types";
+import { ElectricityProvider, Lead, SolarLead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis, User, UserStats } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
 
 // Mock data för utveckling
@@ -75,6 +75,19 @@ export interface Database {
   updateLead(id: string, lead: Partial<Lead>): Promise<Lead>;
   deleteLead(id: string): Promise<boolean>;
 
+  // Solar leads (Otovo)
+  createSolarLead(
+    lead: Omit<SolarLead, "id" | "createdAt" | "otovoStatus" | "otovoInterestId" | "otovoError"> & {
+      otovoStatus?: SolarLead["otovoStatus"];
+      otovoInterestId?: string | null;
+      otovoError?: string | null;
+    }
+  ): Promise<SolarLead>;
+  updateSolarLeadOtovo(
+    id: string,
+    patch: Pick<SolarLead, "otovoStatus" | "otovoInterestId" | "otovoError">
+  ): Promise<SolarLead>;
+
   // Switch Requests
   getSwitchRequests(): Promise<SwitchRequest[]>;
   getSwitchRequest(id: string): Promise<SwitchRequest | null>;
@@ -125,6 +138,7 @@ declare global {
 class MockDatabase implements Database {
   private providers: ElectricityProvider[] = [...mockProviders];
   private leads: Lead[] = [];
+  private solarLeads: SolarLead[] = [];
   private switchRequests: SwitchRequest[] = [];
   private newsPosts: NewsPost[] = [];
   private chatMessages: ChatMessage[] = [];
@@ -236,6 +250,37 @@ class MockDatabase implements Database {
     }
     this.leads.splice(index, 1);
     return true;
+  }
+
+  async createSolarLead(
+    leadData: Omit<SolarLead, "id" | "createdAt" | "otovoStatus" | "otovoInterestId" | "otovoError"> & {
+      otovoStatus?: SolarLead["otovoStatus"];
+      otovoInterestId?: string | null;
+      otovoError?: string | null;
+    }
+  ): Promise<SolarLead> {
+    const lead: SolarLead = {
+      ...leadData,
+      otovoStatus: leadData.otovoStatus ?? "pending",
+      otovoInterestId: leadData.otovoInterestId ?? null,
+      otovoError: leadData.otovoError ?? null,
+      id: `solar-${Date.now()}`,
+      createdAt: new Date(),
+    };
+    this.solarLeads.push(lead);
+    return lead;
+  }
+
+  async updateSolarLeadOtovo(
+    id: string,
+    patch: Pick<SolarLead, "otovoStatus" | "otovoInterestId" | "otovoError">
+  ): Promise<SolarLead> {
+    const index = this.solarLeads.findIndex((l) => l.id === id);
+    if (index === -1) {
+      throw new Error(`Solar lead with id ${id} not found`);
+    }
+    this.solarLeads[index] = { ...this.solarLeads[index], ...patch };
+    return this.solarLeads[index];
   }
 
   // Switch Request methods
@@ -972,6 +1017,107 @@ class CloudflareDatabase implements Database {
     `).bind(id).run() as D1RunResult;
 
     return (result.meta?.changes || 0) > 0;
+  }
+
+  private mapSolarLeadRow(row: Record<string, unknown>): SolarLead {
+    const yearlyRaw = row.yearly_consumption_kwh;
+    return {
+      id: String(row.id),
+      name: String(row.name || ""),
+      email: String(row.email || ""),
+      phone: String(row.phone || ""),
+      city: String(row.city || ""),
+      address: String(row.address || ""),
+      yearlyConsumptionKwh:
+        yearlyRaw === null || yearlyRaw === undefined ? null : Number(yearlyRaw),
+      message: row.message != null ? String(row.message) : undefined,
+      source: (String(row.source || "homepage") as SolarLead["source"]),
+      otovoStatus: String(row.otovo_status || "pending") as SolarLead["otovoStatus"],
+      otovoInterestId: row.otovo_interest_id != null ? String(row.otovo_interest_id) : null,
+      otovoError: row.otovo_error != null ? String(row.otovo_error) : null,
+      utmId: row.utm_id != null ? String(row.utm_id) : null,
+      createdAt: new Date(String(row.created_at)),
+    };
+  }
+
+  async createSolarLead(
+    leadData: Omit<SolarLead, "id" | "createdAt" | "otovoStatus" | "otovoInterestId" | "otovoError"> & {
+      otovoStatus?: SolarLead["otovoStatus"];
+      otovoInterestId?: string | null;
+      otovoError?: string | null;
+    }
+  ): Promise<SolarLead> {
+    const id = `solar-${Date.now()}`;
+    const now = new Date().toISOString();
+    const otovoStatus = leadData.otovoStatus ?? "pending";
+
+    await this.db
+      .prepare(
+        `INSERT INTO solar_leads (
+          id, name, email, phone, city, address, yearly_consumption_kwh, message,
+          source, otovo_status, otovo_interest_id, otovo_error, utm_id, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      )
+      .bind(
+        id,
+        leadData.name,
+        leadData.email,
+        leadData.phone,
+        leadData.city,
+        leadData.address,
+        leadData.yearlyConsumptionKwh ?? null,
+        leadData.message ?? null,
+        leadData.source,
+        otovoStatus,
+        leadData.otovoInterestId ?? null,
+        leadData.otovoError ?? null,
+        leadData.utmId ?? null,
+        now
+      )
+      .run();
+
+    return {
+      ...leadData,
+      id,
+      otovoStatus,
+      otovoInterestId: leadData.otovoInterestId ?? null,
+      otovoError: leadData.otovoError ?? null,
+      createdAt: new Date(now),
+    };
+  }
+
+  async updateSolarLeadOtovo(
+    id: string,
+    patch: Pick<SolarLead, "otovoStatus" | "otovoInterestId" | "otovoError">
+  ): Promise<SolarLead> {
+    const result = await this.db
+      .prepare(
+        `UPDATE solar_leads SET
+          otovo_status = ?, otovo_interest_id = ?, otovo_error = ?
+        WHERE id = ?`
+      )
+      .bind(
+        patch.otovoStatus,
+        patch.otovoInterestId ?? null,
+        patch.otovoError ?? null,
+        id
+      )
+      .run() as D1RunResult;
+
+    if ((result.meta?.changes || 0) === 0) {
+      throw new Error(`Solar lead with id ${id} not found`);
+    }
+
+    const row = await this.db
+      .prepare(`SELECT * FROM solar_leads WHERE id = ?`)
+      .bind(id)
+      .first();
+
+    if (!row) {
+      throw new Error(`Solar lead with id ${id} not found`);
+    }
+
+    return this.mapSolarLeadRow(row as Record<string, unknown>);
   }
 
   // Switch Request methods

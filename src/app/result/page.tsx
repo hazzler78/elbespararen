@@ -12,6 +12,7 @@ import PremiumValueCTA from "@/components/PremiumValueCTA";
 import { getPriceAreaFromPostalCode } from "@/lib/price-areas";
 import ExtraFeesList from "@/components/ExtraFeesList";
 import ContactForm from "@/components/ContactForm";
+import SolarQuoteForm from "@/components/SolarQuoteForm";
 import ProviderComparison from "@/components/ProviderComparison";
 import { AnalyticsEvents, trackPageView } from "@/lib/analytics";
 import { useAuth } from "@/hooks/useAuth";
@@ -227,6 +228,19 @@ export default function ResultPage() {
               />
             </div>
           )}
+
+          {/* Solar quote after analysis */}
+          <div className="mb-8 bg-gradient-to-b from-amber-50/60 to-white rounded-lg border border-amber-100 p-4 md:p-6">
+            <SolarQuoteForm
+              source="result"
+              withSection={false}
+              defaultConsumption={
+                billData.totalKWh
+                  ? String(Math.round(billData.totalKWh * 12))
+                  : ""
+              }
+            />
+          </div>
 
           {/* Contact Form */}
           {showContactForm && (

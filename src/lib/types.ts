@@ -59,6 +59,46 @@ export interface ContactFormData {
   subscribeNewsletter?: boolean;
 }
 
+export type SolarLeadSource = "homepage" | "result";
+
+export type SolarLeadOtovoStatus =
+  | "pending"
+  | "skipped_no_token"
+  | "validation_failed"
+  | "validate_error"
+  | "create_error"
+  | "success";
+
+export interface SolarLead {
+  id: string;
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  address: string;
+  yearlyConsumptionKwh?: number | null;
+  message?: string;
+  source: SolarLeadSource;
+  otovoStatus: SolarLeadOtovoStatus;
+  otovoInterestId?: string | null;
+  otovoError?: string | null;
+  utmId?: string | null;
+  createdAt: Date;
+}
+
+export interface SolarLeadFormData {
+  name: string;
+  email: string;
+  phone: string;
+  city: string;
+  address?: string;
+  consumption?: string;
+  message?: string;
+  consentOtovo: boolean;
+  source?: SolarLeadSource;
+  utmId?: string;
+}
+
 export interface ContractAlternative {
   namn: string;
   fastpris?: number; // kr/kWh för fastpris
