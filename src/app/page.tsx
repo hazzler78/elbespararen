@@ -10,6 +10,7 @@ import AppHeader from "@/components/AppHeader";
 import Footer from "@/components/Footer";
 import TrustpilotCarousel from "@/components/TrustpilotCarousel";
 import NewsletterSignup from "@/components/NewsletterSignup";
+import SolarQuoteForm from "@/components/SolarQuoteForm";
 import { AnalyticsEvents } from "@/lib/analytics";
 
 function OAuthRedirectHandler() {
@@ -259,6 +260,9 @@ export default function Home() {
           </motion.div>
         </div>
       </section>
+
+      {/* Solar quote — anchor #solceller for elchef.se redirects */}
+      <SolarQuoteForm source="homepage" />
 
       {/* Newsletter Signup */}
       <section className="py-20 px-4 bg-gray-50">

@@ -4,40 +4,10 @@ import { createDatabaseFromBinding } from "@/lib/database";
 import { addToNewsletter, getDefaultNewsletterGroupId } from "@/lib/email";
 import { isTelegramConfigured, sendTelegramMessage, escapeMarkdown } from "@/lib/telegram";
 import { requireAdmin } from "@/lib/admin-auth";
+import { validatePhone } from "@/lib/validate-phone";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
-
-/**
- * Rimlighetskontroll av telefonnummer.
- *
- * Syftet är att stoppa uppenbart påhittade nummer — som `070000000` — innan de blir
- * leads, hamnar i databasen och pingar Mikael. Ett nummer vi ändå inte kan ringa
- * är värdelöst som lead, och skräpet gör statistiken missvisande.
- *
- * Svenska mobilnummer har 10 siffror (07…). Fasta nummer har 7–9 inkl. riktnummer,
- * och utländska nummer tillåts upp till 13. Vi kräver inte 07 — en kund med fast
- * telefon är fortfarande en kund.
- */
-function validatePhone(raw: string): { ok: boolean; reason?: string } {
-  const digits = raw.replace(/[^\d]/g, "").replace(/^46(?=7)/, "0");
-
-  if (digits.length < 7) return { ok: false, reason: "för få siffror" };
-  if (digits.length > 13) return { ok: false, reason: "för många siffror" };
-  if (/^(\d)\1+$/.test(digits)) return { ok: false, reason: "bara samma siffra om och om" };
-
-  if (digits.startsWith("07")) {
-    if (digits.length !== 10) {
-      return { ok: false, reason: "svenskt mobilnummer har 10 siffror" };
-    }
-    const abonnent = digits.slice(2);
-    if (/^0+$/.test(abonnent) || /^(\d)\1+$/.test(abonnent)) {
-      return { ok: false, reason: "abonnentnumret ser påhittat ut" };
-    }
-  }
-
-  return { ok: true };
-}
 
 export async function GET(req: NextRequest) {
   const denied = await requireAdmin(req);
