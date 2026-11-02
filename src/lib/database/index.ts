@@ -3,6 +3,21 @@
 
 import { ElectricityProvider, Lead, SolarLead, SwitchRequest, NewsPost, ChatMessage, PostalCodeAnalytics, BillAnalysis, User, UserStats } from "@/lib/types";
 import type { CloudflareD1Database } from "@/types/cloudflare";
+import {
+  supabaseGetProviders,
+  supabaseGetAllProviders,
+  supabaseGetProvider,
+  supabaseUpsertProvider,
+  supabasePatchProvider,
+  supabaseDeleteProvider,
+  supabaseCreateBillAnalysis,
+  supabaseGetBillAnalyses,
+  supabaseGetBillAnalysis,
+  supabaseCountBillAnalysesSince,
+  supabaseUpdateBillAnalysis,
+  supabaseDeleteBillAnalysis,
+  supabaseGetBillAnalysesByUserId,
+} from "@/lib/supabase/elbasen";
 
 // Mock data för utveckling
 const mockProviders: ElectricityProvider[] = [
@@ -661,51 +676,108 @@ class CloudflareDatabase implements Database {
   }
 
   async getProviders(customerType: "private" | "business" = "private"): Promise<ElectricityProvider[]> {
-    const result = await this.db.prepare(`
-      SELECT * FROM electricity_providers 
-      WHERE is_active = 1 
-        AND customer_type = ?
-      ORDER BY energy_price ASC
-    `).bind(customerType).all();
+    // Hot path: ELbasen Supabase (undviker D1 free-tier read limit)
+    const fromSupabase = await supabaseGetProviders(customerType);
+    if (fromSupabase && fromSupabase.length > 0) {
+      return fromSupabase;
+    }
 
-    const rows = Array.isArray(result.results) ? result.results : [];
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM electricity_providers 
+        WHERE is_active = 1 
+          AND customer_type = ?
+        ORDER BY energy_price ASC
+      `).bind(customerType).all();
 
-    return rows.map((value) => {
-      const row = value as Record<string, unknown>;
-      return {
-        id: String(row.id),
-        name: String(row.name),
-        description: String(row.description),
-        monthlyFee: Number(row.monthly_fee),
-        energyPrice: Number(row.energy_price),
-        freeMonths: Number(row.free_months),
-        contractLength: Number(row.contract_length),
-        contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
-        isActive: Boolean(row.is_active),
-        userHidden: Boolean(row.user_hidden || false),
-        customerType: (row.customer_type as "private" | "business") || "private",
-        features: JSON.parse(String(row.features || "[]")) as string[],
-        logoUrl: row.logo_url && String(row.logo_url).trim() ? String(row.logo_url).trim() : undefined,
-        websiteUrl: row.website_url && String(row.website_url).trim() ? String(row.website_url).trim() : undefined,
-        affiliateUrl: row.affiliate_url && String(row.affiliate_url).trim() ? String(row.affiliate_url).trim() : undefined,
-        phoneNumber: row.phone_number && String(row.phone_number).trim() ? String(row.phone_number).trim() : undefined,
-        avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
-        createdAt: new Date(String(row.created_at)),
-        updatedAt: new Date(String(row.updated_at)),
-      };
-    });
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          name: String(row.name),
+          description: String(row.description),
+          monthlyFee: Number(row.monthly_fee),
+          energyPrice: Number(row.energy_price),
+          freeMonths: Number(row.free_months),
+          contractLength: Number(row.contract_length),
+          contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
+          isActive: Boolean(row.is_active),
+          userHidden: Boolean(row.user_hidden || false),
+          customerType: (row.customer_type as "private" | "business") || "private",
+          features: JSON.parse(String(row.features || "[]")) as string[],
+          logoUrl: row.logo_url && String(row.logo_url).trim() ? String(row.logo_url).trim() : undefined,
+          websiteUrl: row.website_url && String(row.website_url).trim() ? String(row.website_url).trim() : undefined,
+          affiliateUrl: row.affiliate_url && String(row.affiliate_url).trim() ? String(row.affiliate_url).trim() : undefined,
+          phoneNumber: row.phone_number && String(row.phone_number).trim() ? String(row.phone_number).trim() : undefined,
+          avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
+          createdAt: new Date(String(row.created_at)),
+          updatedAt: new Date(String(row.updated_at)),
+        };
+      });
+    } catch (error) {
+      console.error("[Database] getProviders D1 fallback failed:", error);
+      return fromSupabase || [];
+    }
   }
 
   async getAllProviders(): Promise<ElectricityProvider[]> {
-    const result = await this.db.prepare(`
-      SELECT * FROM electricity_providers 
-      ORDER BY energy_price ASC
-    `).all();
+    const fromSupabase = await supabaseGetAllProviders();
+    if (fromSupabase && fromSupabase.length > 0) {
+      return fromSupabase;
+    }
 
-    const rows = Array.isArray(result.results) ? result.results : [];
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM electricity_providers 
+        ORDER BY energy_price ASC
+      `).all();
 
-    return rows.map((value) => {
-      const row = value as Record<string, unknown>;
+      const rows = Array.isArray(result.results) ? result.results : [];
+
+      return rows.map((value) => {
+        const row = value as Record<string, unknown>;
+        return {
+          id: String(row.id),
+          name: String(row.name),
+          description: String(row.description),
+          monthlyFee: Number(row.monthly_fee),
+          energyPrice: Number(row.energy_price),
+          freeMonths: Number(row.free_months),
+          contractLength: Number(row.contract_length),
+          contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
+          isActive: Boolean(row.is_active),
+          userHidden: Boolean(row.user_hidden || false),
+          customerType: (row.customer_type as "private" | "business") || "private",
+          features: JSON.parse(String(row.features || "[]")) as string[],
+          logoUrl: row.logo_url && String(row.logo_url).trim() ? String(row.logo_url).trim() : undefined,
+          websiteUrl: row.website_url && String(row.website_url).trim() ? String(row.website_url).trim() : undefined,
+          affiliateUrl: row.affiliate_url && String(row.affiliate_url).trim() ? String(row.affiliate_url).trim() : undefined,
+          phoneNumber: row.phone_number && String(row.phone_number).trim() ? String(row.phone_number).trim() : undefined,
+          avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
+          createdAt: new Date(String(row.created_at)),
+          updatedAt: new Date(String(row.updated_at)),
+        };
+      });
+    } catch (error) {
+      console.error("[Database] getAllProviders D1 fallback failed:", error);
+      return fromSupabase || [];
+    }
+  }
+
+  async getProvider(id: string): Promise<ElectricityProvider | null> {
+    const fromSupabase = await supabaseGetProvider(id);
+    if (fromSupabase) return fromSupabase;
+
+    try {
+      const result = await this.db.prepare(`
+        SELECT * FROM electricity_providers WHERE id = ?
+      `).bind(id).first();
+
+      if (!result) return null;
+
+      const row = result as Record<string, unknown>;
       return {
         id: String(row.id),
         name: String(row.name),
@@ -718,88 +790,69 @@ class CloudflareDatabase implements Database {
         isActive: Boolean(row.is_active),
         userHidden: Boolean(row.user_hidden || false),
         customerType: (row.customer_type as "private" | "business") || "private",
-        features: JSON.parse(String(row.features || "[]")) as string[],
-        logoUrl: row.logo_url && String(row.logo_url).trim() ? String(row.logo_url).trim() : undefined,
-        websiteUrl: row.website_url && String(row.website_url).trim() ? String(row.website_url).trim() : undefined,
-        affiliateUrl: row.affiliate_url && String(row.affiliate_url).trim() ? String(row.affiliate_url).trim() : undefined,
-        phoneNumber: row.phone_number && String(row.phone_number).trim() ? String(row.phone_number).trim() : undefined,
+        features: JSON.parse(String(row.features || '[]')) as string[],
+        logoUrl: row.logo_url ? String(row.logo_url) : undefined,
+        websiteUrl: row.website_url ? String(row.website_url) : undefined,
+        affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
+        phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
         avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
         createdAt: new Date(String(row.created_at)),
-        updatedAt: new Date(String(row.updated_at)),
+        updatedAt: new Date(String(row.updated_at))
       };
-    });
-  }
-
-  async getProvider(id: string): Promise<ElectricityProvider | null> {
-    const result = await this.db.prepare(`
-      SELECT * FROM electricity_providers WHERE id = ?
-    `).bind(id).first();
-
-    if (!result) return null;
-
-    const row = result as Record<string, unknown>;
-    return {
-      id: String(row.id),
-      name: String(row.name),
-      description: String(row.description),
-      monthlyFee: Number(row.monthly_fee),
-      energyPrice: Number(row.energy_price),
-      freeMonths: Number(row.free_months),
-      contractLength: Number(row.contract_length),
-      contractType: (row.contract_type as "rörligt" | "fastpris") || "rörligt",
-      isActive: Boolean(row.is_active),
-      userHidden: Boolean(row.user_hidden || false),
-      customerType: (row.customer_type as "private" | "business") || "private",
-      features: JSON.parse(String(row.features || '[]')) as string[],
-      logoUrl: row.logo_url ? String(row.logo_url) : undefined,
-      websiteUrl: row.website_url ? String(row.website_url) : undefined,
-      affiliateUrl: row.affiliate_url ? String(row.affiliate_url) : undefined,
-      phoneNumber: row.phone_number ? String(row.phone_number) : undefined,
-      avtalsalternativ: row.avtalsalternativ ? JSON.parse(String(row.avtalsalternativ)) : undefined,
-      createdAt: new Date(String(row.created_at)),
-      updatedAt: new Date(String(row.updated_at))
-    };
+    } catch (error) {
+      console.error("[Database] getProvider D1 fallback failed:", error);
+      return null;
+    }
   }
 
   async createProvider(providerData: Omit<ElectricityProvider, 'id' | 'createdAt' | 'updatedAt'>): Promise<ElectricityProvider> {
     const id = `provider-${Date.now()}`;
     const now = new Date().toISOString();
 
-          await this.db.prepare(`
-            INSERT INTO electricity_providers (
-              id, name, description, monthly_fee, energy_price, free_months, 
-              contract_length, contract_type, is_active, user_hidden, customer_type, features, logo_url, website_url, 
-              affiliate_url, phone_number, avtalsalternativ, created_at, updated_at
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-          `).bind(
-            id,
-            providerData.name,
-            providerData.description,
-            providerData.monthlyFee,
-            providerData.energyPrice,
-            providerData.freeMonths,
-            providerData.contractLength,
-            providerData.contractType,
-            providerData.isActive ? 1 : 0,
-            providerData.userHidden ? 1 : 0,
-            providerData.customerType ?? "private",
-            JSON.stringify(providerData.features),
-            providerData.logoUrl || null,
-            providerData.websiteUrl || null,
-            providerData.affiliateUrl || null,
-            providerData.phoneNumber || null,
-            JSON.stringify(providerData.avtalsalternativ || []),
-            now,
-            now
-          ).run();
-
-    return {
+    const created: ElectricityProvider = {
       ...providerData,
       customerType: providerData.customerType ?? "private",
       id,
       createdAt: new Date(now),
       updatedAt: new Date(now)
     };
+
+    // Primary write: Supabase (hot path)
+    await supabaseUpsertProvider(id, created, now);
+
+    try {
+      await this.db.prepare(`
+        INSERT INTO electricity_providers (
+          id, name, description, monthly_fee, energy_price, free_months, 
+          contract_length, contract_type, is_active, user_hidden, customer_type, features, logo_url, website_url, 
+          affiliate_url, phone_number, avtalsalternativ, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        providerData.name,
+        providerData.description,
+        providerData.monthlyFee,
+        providerData.energyPrice,
+        providerData.freeMonths,
+        providerData.contractLength,
+        providerData.contractType,
+        providerData.isActive ? 1 : 0,
+        providerData.userHidden ? 1 : 0,
+        providerData.customerType ?? "private",
+        JSON.stringify(providerData.features),
+        providerData.logoUrl || null,
+        providerData.websiteUrl || null,
+        providerData.affiliateUrl || null,
+        providerData.phoneNumber || null,
+        JSON.stringify(providerData.avtalsalternativ || []),
+        now,
+        now
+      ).run();
+    } catch (error) {
+      console.warn("[Database] createProvider D1 write skipped:", error);
+    }
+
+    return created;
   }
 
   async updateProvider(id: string, providerData: Partial<ElectricityProvider>): Promise<ElectricityProvider> {
@@ -811,12 +864,17 @@ class CloudflareDatabase implements Database {
     const updated = { ...existing, ...providerData, updatedAt: new Date() };
     const now = updated.updatedAt.toISOString();
 
+    // Primary write: Supabase (hot path for prices/compare)
+    const supabaseOk = await supabasePatchProvider(id, providerData, now);
+    if (!supabaseOk) {
+      // Ensure row exists in Supabase even if patch missed (e.g. only in D1 before)
+      await supabaseUpsertProvider(id, updated, now);
+    }
+
     try {
-      // Build dynamic SQL query based on what fields are being updated
       const fieldsToUpdate: string[] = [];
       const values: any[] = [];
 
-      // Only include fields that are actually being updated
       if (providerData.name !== undefined) {
         fieldsToUpdate.push('name = ?');
         values.push(providerData.name);
@@ -882,42 +940,33 @@ class CloudflareDatabase implements Database {
         values.push(JSON.stringify(providerData.avtalsalternativ || []));
       }
 
-      // Always update the timestamp
       fieldsToUpdate.push('updated_at = ?');
       values.push(now);
 
-      if (fieldsToUpdate.length === 1) { // Only timestamp
-        throw new Error('No fields to update');
+      if (fieldsToUpdate.length > 1) {
+        const sql = `UPDATE electricity_providers SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
+        values.push(id);
+        await this.db.prepare(sql).bind(...values).run();
       }
-
-      const sql = `UPDATE electricity_providers SET ${fieldsToUpdate.join(', ')} WHERE id = ?`;
-      values.push(id);
-
-      console.log('[Database] updateProvider SQL:', sql);
-      console.log('[Database] updateProvider values:', values);
-
-      const result = await this.db.prepare(sql).bind(...values).run() as { meta?: { changes?: number } };
-
-      console.log('[Database] updateProvider result:', result);
-      
-      if (result.meta?.changes === 0) {
-        throw new Error(`No rows were updated for provider ${id}`);
-      }
-
-      return updated;
     } catch (error) {
-      console.error('[Database] updateProvider error:', error);
-      console.error('[Database] Provider data:', updated);
-      throw error;
+      console.warn('[Database] updateProvider D1 write skipped:', error);
     }
+
+    return updated;
   }
 
   async deleteProvider(id: string): Promise<boolean> {
-    const result = await this.db.prepare(`
-      DELETE FROM electricity_providers WHERE id = ?
-    `).bind(id).run() as D1RunResult;
+    await supabaseDeleteProvider(id);
 
-    return (result.meta?.changes || 0) > 0;
+    try {
+      const result = await this.db.prepare(`
+        DELETE FROM electricity_providers WHERE id = ?
+      `).bind(id).run() as D1RunResult;
+      return (result.meta?.changes || 0) > 0;
+    } catch (error) {
+      console.warn('[Database] deleteProvider D1 write skipped:', error);
+      return true;
+    }
   }
 
   // Lead methods
@@ -1655,6 +1704,9 @@ class CloudflareDatabase implements Database {
 
   // Bill Analyses methods
   async getBillAnalyses(limit?: number, validationStatus?: BillAnalysis['validationStatus']): Promise<BillAnalysis[]> {
+    const fromSupabase = await supabaseGetBillAnalyses(limit, validationStatus);
+    if (fromSupabase) return fromSupabase;
+
     try {
       let query = `
         SELECT * FROM bill_analyses
@@ -1714,17 +1766,27 @@ class CloudflareDatabase implements Database {
   }
 
   async countBillAnalysesSince(since: Date): Promise<number> {
-    // created_at lagras som ISO-sträng (toISOString)
-    const sinceIso = since.toISOString();
-    const result = await this.db
-      .prepare(`SELECT COUNT(*) AS c FROM bill_analyses WHERE created_at >= ?`)
-      .bind(sinceIso)
-      .first();
-    const row = result as Record<string, unknown> | null;
-    return row?.c != null ? Number(row.c) : 0;
+    const fromSupabase = await supabaseCountBillAnalysesSince(since);
+    if (fromSupabase != null) return fromSupabase;
+
+    try {
+      const sinceIso = since.toISOString();
+      const result = await this.db
+        .prepare(`SELECT COUNT(*) AS c FROM bill_analyses WHERE created_at >= ?`)
+        .bind(sinceIso)
+        .first();
+      const row = result as Record<string, unknown> | null;
+      return row?.c != null ? Number(row.c) : 0;
+    } catch (error) {
+      console.warn('[Database] countBillAnalysesSince D1 failed:', error);
+      return 0;
+    }
   }
 
   async getBillAnalysis(id: string): Promise<BillAnalysis | null> {
+    const fromSupabase = await supabaseGetBillAnalysis(id);
+    if (fromSupabase) return fromSupabase;
+
     try {
       const result = await this.db.prepare(`
         SELECT * FROM bill_analyses WHERE id = ?
@@ -1766,10 +1828,54 @@ class CloudflareDatabase implements Database {
   }
 
   async createBillAnalysis(analysisData: Omit<BillAnalysis, 'id' | 'createdAt'>): Promise<BillAnalysis> {
-    try {
-      const id = `bill-analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
-      const now = new Date().toISOString();
+    const id = `bill-analysis-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    const now = new Date().toISOString();
 
+    // Primary write: ELbasen Supabase tagged source=elbespararen
+    const created = await supabaseCreateBillAnalysis(id, analysisData, now);
+    if (!created) {
+      // Fall back to D1 if Supabase unavailable
+      try {
+        await this.db.prepare(`
+          INSERT INTO bill_analyses (
+            id, bill_data, savings_data, image_key, image_url, original_file_name,
+            postal_code, price_area, ai_confidence, ai_warnings,
+            validation_status, validation_notes, validated_by, validated_at,
+            ip_address, user_agent, user_id, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(
+          id,
+          JSON.stringify(analysisData.billData),
+          JSON.stringify(analysisData.savings),
+          analysisData.imageKey || null,
+          analysisData.imageUrl || null,
+          analysisData.originalFileName || null,
+          analysisData.postalCode || null,
+          analysisData.priceArea || null,
+          analysisData.aiConfidence || null,
+          analysisData.aiWarnings ? JSON.stringify(analysisData.aiWarnings) : null,
+          analysisData.validationStatus || 'pending',
+          analysisData.validationNotes || null,
+          analysisData.validatedBy || null,
+          analysisData.validatedAt ? analysisData.validatedAt.toISOString() : null,
+          analysisData.ipAddress || null,
+          analysisData.userAgent || null,
+          analysisData.userId || null,
+          now
+        ).run();
+
+        return { ...analysisData, id, createdAt: new Date(now) };
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+        if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+          throw new Error('bill_analyses table does not exist. Please run the migration first.');
+        }
+        throw error;
+      }
+    }
+
+    // Best-effort dual-write to D1 (ignore free-tier failures)
+    try {
       await this.db.prepare(`
         INSERT INTO bill_analyses (
           id, bill_data, savings_data, image_key, image_url, original_file_name,
@@ -1797,28 +1903,22 @@ class CloudflareDatabase implements Database {
         analysisData.userId || null,
         now
       ).run();
-
-      return {
-        ...analysisData,
-        id,
-        createdAt: new Date(now)
-      };
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
-        throw new Error('bill_analyses table does not exist. Please run the migration first.');
-      }
-      throw error;
+      console.warn('[Database] createBillAnalysis D1 dual-write skipped:', error);
     }
+
+    return created;
   }
 
   async updateBillAnalysis(id: string, analysisData: Partial<BillAnalysis>): Promise<BillAnalysis> {
-    try {
-      const existing = await this.getBillAnalysis(id);
-      if (!existing) {
-        throw new Error(`Bill analysis with id ${id} not found`);
-      }
+    const existing = await this.getBillAnalysis(id);
+    if (!existing) {
+      throw new Error(`Bill analysis with id ${id} not found`);
+    }
 
+    await supabaseUpdateBillAnalysis(id, analysisData);
+
+    try {
       const updates: string[] = [];
       const bindings: unknown[] = [];
 
@@ -1847,41 +1947,37 @@ class CloudflareDatabase implements Database {
         bindings.push(analysisData.validatedAt ? analysisData.validatedAt.toISOString() : null);
       }
 
-      if (updates.length === 0) {
-        return existing;
+      if (updates.length > 0) {
+        bindings.push(id);
+        await this.db.prepare(`
+          UPDATE bill_analyses 
+          SET ${updates.join(', ')}
+          WHERE id = ?
+        `).bind(...bindings).run();
       }
-
-      bindings.push(id);
-
-      await this.db.prepare(`
-        UPDATE bill_analyses 
-        SET ${updates.join(', ')}
-        WHERE id = ?
-      `).bind(...bindings).run();
-
-      return await this.getBillAnalysis(id) as BillAnalysis;
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
-        throw new Error('bill_analyses table does not exist. Please run the migration first.');
-      }
-      throw error;
+      console.warn('[Database] updateBillAnalysis D1 write skipped:', error);
     }
+
+    return (await this.getBillAnalysis(id)) as BillAnalysis;
   }
 
   async deleteBillAnalysis(id: string): Promise<boolean> {
+    const supabaseOk = await supabaseDeleteBillAnalysis(id);
+
     try {
       const result = await this.db.prepare(`
         DELETE FROM bill_analyses WHERE id = ?
       `).bind(id).run() as D1RunResult;
 
-      return (result.meta?.changes || 0) > 0;
+      return supabaseOk || (result.meta?.changes || 0) > 0;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
         console.warn('[Database] bill_analyses table does not exist.');
-        return false;
+        return supabaseOk;
       }
+      if (supabaseOk) return true;
       throw error;
     }
   }
@@ -1906,6 +2002,12 @@ class CloudflareDatabase implements Database {
       }
 
       console.log(`[CloudflareDatabase] getBillAnalysesByUserId: userId=${userId}, range=${range}, cutoffDate=${cutoffDate.toISOString()}`);
+
+      const fromSupabase = await supabaseGetBillAnalysesByUserId(userId, cutoffDate.toISOString());
+      if (fromSupabase) {
+        console.log(`[CloudflareDatabase] Found ${fromSupabase.length} analyses in Supabase for user ${userId}`);
+        return fromSupabase;
+      }
       
       const result = await this.db.prepare(`
         SELECT * FROM bill_analyses
