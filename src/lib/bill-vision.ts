@@ -64,8 +64,8 @@ export async function analyzeBillStructured(
 
   const pageHint =
     dataUrls.length > 1
-      ? `Du får ${dataUrls.length} sidor av samma svenska elfaktura. Läs ALLA sidor och sammanställ ett resultat (elnät, elhandel och extra avgifter kan ligga på olika sidor).`
-      : "Analysera denna svenska elfaktura.";
+      ? `Du får ${dataUrls.length} sidor av samma svenska elfaktura. Läs ALLA sidor och sammanställ ett resultat (elnät, elhandel och extra avgifter kan ligga på olika sidor). Leta särskilt efter Rörliga kostnader, Fast påslag och Elavtal årsavgift på elhandelssidan.`
+      : "Analysera denna svenska elfaktura. Om bara en sida syns: leta ändå efter Rörliga kostnader, Fast påslag och årsavgift under elhandel.";
 
   // Build params then cast once — xAI's reasoning_effort isn't in OpenAI SDK types yet,
   // and casting create()'s overload union makes `.choices` disappear from the return type.

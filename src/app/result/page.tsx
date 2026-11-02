@@ -157,6 +157,10 @@ export default function ResultPage() {
             <ResultSummary
               key={`${savings.currentCost}-${savings.potentialSavings}`}
               savings={savings}
+              missingFeesHint={
+                savings.potentialSavings <= 0 &&
+                (!billData.extraFeesDetailed?.length || billData.extraFeesTotal <= 0)
+              }
               onPrimaryCta={() => {
                 if (primarySwitchRef.current) {
                   primarySwitchRef.current();

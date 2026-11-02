@@ -24,9 +24,15 @@ Analysera bilden/bilderna och extrahera kostnader enligt dessa kritiska regler:
 
 ## 4. HITTA EXTRA AVGIFTER (Kundens extra kostnader)
 - Allt annat utöver grundläggande energikostnad och elnät
-- Läs exakt belopp från "Summa"-kolumnen för varje avgift
-- Inkludera: Elcertifikat, Månadsavgift, Priskollen, Påslag, Tillägg, Rörliga kostnader, Fast påslag, Elavtal årsavgift, Miljöpaket, Fossilfri, Rabatt, Kampanjrabatt, etc.
+- Läs exakt belopp från "Summa"-kolumnen / Belopp-kolumnen för varje avgift
+- Inkludera: Elcertifikat, Månadsavgift, Priskollen, Påslag, Tillägg, Rörliga kostnader, Fast påslag / Fasta påslag, Elavtal årsavgift, Miljöpaket, Fossilfri, Rabatt, Kampanjrabatt, etc.
 - Inkludera även 0 kr-avgifter om de är tydligt märkta
+- E.ON / liknande: om texten säger att elpriset "består av" flera rader — ta ALLA rader utom Medelspotpris/Spotpris som extra avgifter:
+  - "Rörliga kostnader" = EXTRA AVGIFT
+  - "Fast påslag" = EXTRA AVGIFT
+  - "Elavtal årsavgift" / årsavgift = EXTRA AVGIFT
+  - Medelspotpris / Spotpris = elhandelCost (INTE extra avgift)
+- Om du ser en elhandelsdel men missar påslag/rörliga kostnader/årsavgift: sänk confidence och varna — hitta dem hellre än att returnera tom extraFeesDetailed
 
 ## 5. ALDRIG INKLUDERA SOM EXTRA AVGIFTER
 - Moms (Moms är skatt, inte avgift)

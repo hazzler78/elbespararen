@@ -1,17 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { SavingsCalculation } from "@/lib/types";
 import { formatCurrency } from "@/lib/calculations";
-import { TrendingDown, Sparkles, Calculator } from "lucide-react";
+import { TrendingDown, Sparkles, Calculator, AlertCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 
 interface ResultSummaryProps {
   savings: SavingsCalculation;
   /** Opens the recommended switch path (e.g. Cheap Energy SaleSys form) */
   onPrimaryCta?: () => void;
+  /** True when AI found no savable fees — often missing elhandel page */
+  missingFeesHint?: boolean;
 }
 
-export default function ResultSummary({ savings, onPrimaryCta }: ResultSummaryProps) {
+export default function ResultSummary({ savings, onPrimaryCta, missingFeesHint }: ResultSummaryProps) {
   const [displaySavings, setDisplaySavings] = useState<SavingsCalculation | null>(null);
   
   // Debug log för att se vad som kommer in
@@ -41,6 +44,27 @@ export default function ResultSummary({ savings, onPrimaryCta }: ResultSummaryPr
         <h2 className="text-3xl font-bold mb-2">Din besparingspotential</h2>
         <p className="text-muted">Från avgifter du kan slippa genom att byta elhandlare</p>
       </div>
+
+      {/* 0 kr oftast = fel/ofullständig sida, inte "du har inga avgifter" */}
+      {missingFeesHint && potentialSavings <= 0 && (
+        <div className="mb-6 rounded-xl border border-amber-200 bg-amber-50 p-4 text-left flex gap-3">
+          <AlertCircle className="w-5 h-5 text-amber-700 flex-shrink-0 mt-0.5" />
+          <div className="text-sm text-amber-950">
+            <p className="font-semibold mb-1">Hittade inga onödiga avgifter på bilden</p>
+            <p className="mb-2">
+              Elnät och elhandel ligger ofta på olika sidor. Ladda upp 1–3 sidor — särskilt
+              sidan med <strong>Rörliga kostnader</strong>, <strong>Fast påslag</strong> och{" "}
+              <strong>årsavgift</strong> (vanligt hos E.ON m.fl.).
+            </p>
+            <Link
+              href="/upload"
+              className="inline-flex font-semibold text-amber-900 underline underline-offset-2 hover:text-amber-700"
+            >
+              Analysera igen med fler sidor
+            </Link>
+          </div>
+        </div>
+      )}
 
       {/* Huvudsiffra - Besparing */}
       <div
