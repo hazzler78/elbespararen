@@ -43,8 +43,8 @@ describe('/api/chat', () => {
   describe('POST /api/chat', () => {
     it('should return error when OpenAI API key is missing', async () => {
       // Arrange
-      const originalApiKey = process.env.OPENAI_API_KEY;
-      delete process.env.OPENAI_API_KEY;
+      const originalApiKey = process.env.XAI_API_KEY;
+      delete process.env.XAI_API_KEY;
 
       const request = new NextRequest('http://localhost:3000/api/chat', {
         method: 'POST',
@@ -64,13 +64,13 @@ describe('/api/chat', () => {
 
       // Cleanup
       if (originalApiKey) {
-        process.env.OPENAI_API_KEY = originalApiKey;
+        process.env.XAI_API_KEY = originalApiKey;
       }
     });
 
     it('should return error when message is missing', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const request = new NextRequest('http://localhost:3000/api/chat', {
         method: 'POST',
@@ -91,7 +91,7 @@ describe('/api/chat', () => {
 
     it('should return error when message is empty string', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const request = new NextRequest('http://localhost:3000/api/chat', {
         method: 'POST',
@@ -112,7 +112,7 @@ describe('/api/chat', () => {
 
     it('should successfully process chat message without context', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const mockResponse = {
         choices: [{
@@ -145,7 +145,7 @@ describe('/api/chat', () => {
 
       // Verify OpenAI was called correctly
       expect(mockChatCompletions.create).toHaveBeenCalledWith({
-        model: 'gpt-4o-mini',
+        model: 'grok-4.3',
         messages: [
           {
             role: 'system',
@@ -163,7 +163,7 @@ describe('/api/chat', () => {
 
     it('should successfully process chat message with context', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const mockResponse = {
         choices: [{
@@ -203,7 +203,7 @@ describe('/api/chat', () => {
 
       // Verify OpenAI was called with context
       expect(mockChatCompletions.create).toHaveBeenCalledWith({
-        model: 'gpt-4o-mini',
+        model: 'grok-4.3',
         messages: [
           {
             role: 'system',
@@ -225,7 +225,7 @@ describe('/api/chat', () => {
 
     it('should handle OpenAI API errors gracefully', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const openAIError = new Error('OpenAI API rate limit exceeded');
       mockChatCompletions.create.mockRejectedValue(openAIError);
@@ -254,7 +254,7 @@ describe('/api/chat', () => {
 
     it('should handle malformed JSON in request body', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const request = new NextRequest('http://localhost:3000/api/chat', {
         method: 'POST',
@@ -276,7 +276,7 @@ describe('/api/chat', () => {
 
     it('should handle empty response from OpenAI', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const mockResponse = {
         choices: [{
@@ -310,7 +310,7 @@ describe('/api/chat', () => {
 
     it('should validate system prompt contains required elements', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const mockResponse = {
         choices: [{
@@ -345,7 +345,7 @@ describe('/api/chat', () => {
 
     it('should handle very long messages appropriately', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const longMessage = 'A'.repeat(10000); // 10k characters
       const mockResponse = {
@@ -381,7 +381,7 @@ describe('/api/chat', () => {
 
     it('should handle complex context objects', async () => {
       // Arrange
-      process.env.OPENAI_API_KEY = 'test-api-key';
+      process.env.XAI_API_KEY = 'test-api-key';
 
       const mockResponse = {
         choices: [{

@@ -6,7 +6,7 @@
 describe('Chat API - Core Functionality', () => {
   beforeEach(() => {
     // Reset environment
-    delete process.env.OPENAI_API_KEY;
+    delete process.env.XAI_API_KEY;
   });
 
   afterEach(() => {
@@ -160,7 +160,7 @@ Regler:
         success: true,
         reply: 'Detta är ett test-svar från AI:n.',
         meta: {
-          model: 'gpt-4o-mini',
+          model: 'grok-4.3',
           timestamp: new Date().toISOString(),
           messageLength: 25,
           hasContext: false
@@ -170,7 +170,7 @@ Regler:
       expect(successResponse.success).toBe(true);
       expect(successResponse.reply).toBeDefined();
       expect(successResponse.meta).toBeDefined();
-      expect(successResponse.meta.model).toBe('gpt-4o-mini');
+      expect(successResponse.meta.model).toBe('grok-4.3');
     });
 
     it('should return proper error response format', () => {

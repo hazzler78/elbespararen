@@ -1,139 +1,49 @@
-"use client";
-
-import { motion } from "framer-motion";
-import { Shield, Lock, Eye, Trash2, UserCheck, FileText } from "lucide-react";
 import Link from "next/link";
 
+// Integritetspolicy. Källa: docs/integritetspolicy.md (håll dem i synk).
 export default function PrivacyPage() {
   return (
-    <main className="min-h-screen bg-background">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">
-        <div className="max-w-4xl mx-auto text-center">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-          >
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
-              <Shield className="w-5 h-5 text-primary" />
-              <span className="text-sm font-semibold text-primary">Integritet & Villkor</span>
-            </div>
-
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
-              <span className="text-primary">Integritet</span> & Villkor
-            </h1>
-
-            <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
-              Din integritet är vår högsta prioritet. Här kan du läsa om hur vi hanterar 
-              dina uppgifter och vilka villkor som gäller för vår tjänst.
-            </p>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Main Content */}
-      <section className="py-20 px-4">
-        <div className="max-w-4xl mx-auto">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="prose prose-lg max-w-none"
-          >
-            {/* Last Updated */}
-            <div className="bg-primary/5 rounded-lg p-4 mb-8 border border-primary/20">
-              <p className="text-sm text-muted mb-0">
-                <strong>Senast uppdaterad:</strong> 15 januari 2025
-              </p>
-            </div>
-
-            {/* Privacy Policy */}
-            <div className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
+    <main className="min-h-screen bg-background py-16 px-4">
+      <article className="max-w-3xl mx-auto bg-white rounded-xl shadow-sm border border-border p-8">
+        <h1 className="text-3xl md:text-4xl font-bold mb-4 text-foreground">Integritetspolicy – Elbespararen (elbespararen.se och elchef.se)</h1>
+        <p className="text-muted mb-4 leading-relaxed"><strong>Senast uppdaterad: 2 november 2026</strong></p>
+        <p className="text-muted mb-4 leading-relaxed">Den här policyn gäller elbespararen.se och elchef.se. elchef.se leder till samma tjänst och samma system.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">1. Vem ansvarar för dina personuppgifter?</h2>
+        <p className="text-muted mb-4 leading-relaxed">Personuppgiftsansvarig är:</p>
+        <ul className="list-disc pl-6 text-muted mb-4 space-y-2"><li><strong>VKNG LTD</strong> (bolaget bakom varumärkena Elchef, Elbespararen och Strømsjef)</li><li>Registreringsnummer: <strong>HE 477501</strong> (Cyperns bolagsregister)</li><li>Adress: Gladstonos 12–14, Flat 101–102, 8046 Paphos, Cypern</li><li>E-post: <a className="text-primary underline" href="mailto:info@elbespararen.se">info@elbespararen.se</a></li></ul>
+        <p className="text-muted mb-4 leading-relaxed">Mejla oss om du har frågor om hur vi hanterar dina uppgifter eller vill använda dina rättigheter. Vi svarar inom en månad, oftast mycket snabbare.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">2. Vilka uppgifter vi samlar in, varför, och med vilket lagstöd</h2>
+        <div className="overflow-x-auto mb-6"><table className="w-full text-sm text-muted"><thead><tr><th className="text-left p-2 border-b border-border">Uppgifter</th><th className="text-left p-2 border-b border-border">Varför</th><th className="text-left p-2 border-b border-border">Lagstöd (GDPR art. 6)</th></tr></thead><tbody><tr><td className="p-2 border-b border-border align-top"><strong>Fakturabild du laddar upp.</strong> Den innehåller ofta namn, adress, kundnummer, anläggnings-id, förbrukning och belopp.</td><td className="p-2 border-b border-border align-top">Läsa av fakturan med AI och räkna ut vad du kan spara</td><td className="p-2 border-b border-border align-top">Avtal (art. 6.1 b), alltså att leverera tjänsten du ber om</td></tr><tr><td className="p-2 border-b border-border align-top">Postnummer och elområde</td><td className="p-2 border-b border-border align-top">Räkna fram rätt priser</td><td className="p-2 border-b border-border align-top">Avtal (6.1 b)</td></tr><tr><td className="p-2 border-b border-border align-top">Analysresultat (avgifter, besparing)</td><td className="p-2 border-b border-border align-top">Visa resultatet för dig</td><td className="p-2 border-b border-border align-top">Avtal (6.1 b)</td></tr><tr><td className="p-2 border-b border-border align-top">Meddelanden i chatten</td><td className="p-2 border-b border-border align-top">Svara på dina frågor med AI</td><td className="p-2 border-b border-border align-top">Avtal (6.1 b)</td></tr><tr><td className="p-2 border-b border-border align-top">Namn, e-post och telefon när du begär byte, offert (t.ex. solceller) eller kontakt</td><td className="p-2 border-b border-border align-top">Hantera din förfrågan och föra den vidare till den leverantör du valt</td><td className="p-2 border-b border-border align-top">Avtal / åtgärder före avtal (6.1 b)</td></tr><tr><td className="p-2 border-b border-border align-top">E-postadress för nyhetsbrev</td><td className="p-2 border-b border-border align-top">Skicka nyhetsbrev</td><td className="p-2 border-b border-border align-top">Samtycke (6.1 a). Du kan avregistrera dig när som helst.</td></tr><tr><td className="p-2 border-b border-border align-top">Konto- och betalningsuppgifter (Premium)</td><td className="p-2 border-b border-border align-top">Konto och betalning</td><td className="p-2 border-b border-border align-top">Avtal (6.1 b) och bokföringslagen (6.1 c)</td></tr><tr><td className="p-2 border-b border-border align-top">IP-adress och teknisk data</td><td className="p-2 border-b border-border align-top">Säkerhet och felsökning</td><td className="p-2 border-b border-border align-top">Berättigat intresse (6.1 f)</td></tr><tr><td className="p-2 border-b border-border align-top">Statistik och beteendedata via cookies (Google Analytics, Hotjar)</td><td className="p-2 border-b border-border align-top">Förbättra sajten</td><td className="p-2 border-b border-border align-top">Samtycke via cookiebannern (6.1 a)</td></tr><tr><td className="p-2 border-b border-border align-top">Fakturabild som sparas i 30 dagar</td><td className="p-2 border-b border-border align-top">Felsökning, kvalitetskontroll och support om analysen blev fel</td><td className="p-2 border-b border-border align-top">Berättigat intresse (6.1 f)</td></tr></tbody></table></div>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">3. Så hanteras din faktura, helt ärligt</h2>
+        <ul className="list-disc pl-6 text-muted mb-4 space-y-2"><li><strong>Hela fakturabilden skickas till vår AI-leverantör xAI</strong> (modellen Grok, grok-4.3, via api.x.ai) för att läsas av. Den skickas som den är och anonymiseras inte innan.</li><li><strong>xAI sparar ingenting.</strong> Vi använder xAI:s Zero Data Retention (ZDR). Det betyder att xAI inte lagrar din faktura eller svaret efter att analysen är klar, och inte använder dem för att träna sina modeller.</li><li><strong>Vi sparar fakturabilden i 30 dagar</strong> i vår lagring (Supabase, eller Cloudflare R2 som reserv) så att vi kan felsöka och hjälpa dig om analysen blev fel. Efter 30 dagar raderas bilden automatiskt. Den sparade bilden anonymiseras inte.</li><li><strong>Vi tränar inte AI på dina fakturor.</strong></li><li>Ladda bara upp din egen faktura. Vill du dela så lite som möjligt kan du dölja namn, adress och kundnummer innan du laddar upp. Analysen fungerar ändå.</li></ul>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">4. Vilka vi delar uppgifter med (personuppgiftsbiträden och mottagare)</h2>
+        <p className="text-muted mb-4 leading-relaxed">Vi säljer aldrig dina uppgifter. Vi använder följande leverantörer för att driva tjänsten. De får bara behandla uppgifterna för vår räkning.</p>
+        <div className="overflow-x-auto mb-6"><table className="w-full text-sm text-muted"><thead><tr><th className="text-left p-2 border-b border-border">Leverantör</th><th className="text-left p-2 border-b border-border">Vad</th><th className="text-left p-2 border-b border-border">Var</th></tr></thead><tbody><tr><td className="p-2 border-b border-border align-top"><strong>xAI / SpaceX Super Intelligence LLC</strong> (Grok, grok-4.3, api.x.ai)</td><td className="p-2 border-b border-border align-top">AI-analys av fakturor och chatt, med Zero Data Retention (inget sparas)</td><td className="p-2 border-b border-border align-top"><strong>USA.</strong> xAI erbjuder ingen EU-region. xAI kan skicka anrop mellan sina regioner.</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Supabase Inc.</strong></td><td className="p-2 border-b border-border align-top">Databas och lagring av fakturabilder</td><td className="p-2 border-b border-border align-top">EU: Stockholm, Sverige (AWS eu-north-1)</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Cloudflare Inc.</strong> (Workers/Pages, R2)</td><td className="p-2 border-b border-border align-top">Drift av sajten och reservlagring av fakturabilder</td><td className="p-2 border-b border-border align-top">[R2-PLATS/JURISDIKTION] ← KRÄVS. Global drift, USA-bolag.</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Resend</strong></td><td className="p-2 border-b border-border align-top">Utskick av e-post från tjänsten</td><td className="p-2 border-b border-border align-top">USA</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>MailerLite</strong></td><td className="p-2 border-b border-border align-top">Nyhetsbrev</td><td className="p-2 border-b border-border align-top">EU (Litauen) [VERIFIERA]</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Stripe</strong></td><td className="p-2 border-b border-border align-top">Betalningar (Premium)</td><td className="p-2 border-b border-border align-top">EU/USA</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Google (Analytics)</strong> och <strong>Hotjar</strong></td><td className="p-2 border-b border-border align-top">Statistik, bara med samtycke</td><td className="p-2 border-b border-border align-top">USA / EU (Hotjar, Malta)</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Telegram</strong></td><td className="p-2 border-b border-border align-top">Interna aviseringar till oss när du skickar en förfrågan (kontakt, byte, solcellsoffert)</td><td className="p-2 border-b border-border align-top">Globalt / utanför EU</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Salesys</strong> [VERIFIERA ROLL]</td><td className="p-2 border-b border-border align-top">Avtalsbyte mot elbolag, när du själv väljer att byta</td><td className="p-2 border-b border-border align-top">[LAND]</td></tr><tr><td className="p-2 border-b border-border align-top"><strong>Otovo</strong></td><td className="p-2 border-b border-border align-top">Solcellsoffert, bara när du själv begär en</td><td className="p-2 border-b border-border align-top">Norge (EES)</td></tr><tr><td className="p-2 border-b border-border align-top">Det elbolag du väljer att byta till</td><td className="p-2 border-b border-border align-top">Genomföra bytet</td><td className="p-2 border-b border-border align-top">Sverige</td></tr></tbody></table></div>
+        <p className="text-muted mb-4 leading-relaxed">Vi lämnar också ut uppgifter till myndigheter när lagen kräver det.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">5. Ingen AI-träning</h2>
+        <p className="text-muted mb-4 leading-relaxed">Vi använder inte dina fakturor eller chattmeddelanden för att träna eller förbättra AI-modeller. xAI tränar inte heller på det vi skickar. Det framgår av xAI:s säkerhets-FAQ för API:et (docs.x.ai/developers/faq/security), och med ZDR sparas inget alls hos xAI.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">6. Överföring till länder utanför EU/EES</h2>
+        <p className="text-muted mb-4 leading-relaxed">Vissa leverantörer, framför allt <strong>xAI</strong> i USA, behandlar uppgifter utanför EU/EES.</p>
+        <ul className="list-disc pl-6 text-muted mb-4 space-y-2"><li><strong>xAI:</strong> överföringen skyddas av EU-kommissionens standardavtalsklausuler (SCC, beslut 2021/914, modul 2) enligt xAI:s Data Processing Addendum (x.ai/legal/data-processing-addendum, gällande från 22 september 2026). Vi använder xAI:s Zero Data Retention, så xAI sparar inte fakturan eller svaret efter att analysen är klar.</li><li><strong>Övriga USA-leverantörer</strong> (Cloudflare, Resend, Stripe, Google, Supabase Inc.): överföringen sker med stöd av EU–US Data Privacy Framework, där leverantören är certifierad, och/eller standardavtalsklausuler. [VERIFIERA DPF-STATUS PER LEVERANTÖR]</li></ul>
+        <p className="text-muted mb-4 leading-relaxed">Mejla oss om du vill ha en kopia av skyddsåtgärderna.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">7. Hur länge vi sparar uppgifterna</h2>
+        <div className="overflow-x-auto mb-6"><table className="w-full text-sm text-muted"><thead><tr><th className="text-left p-2 border-b border-border">Uppgift</th><th className="text-left p-2 border-b border-border">Lagringstid</th></tr></thead><tbody><tr><td className="p-2 border-b border-border align-top">Fakturabild</td><td className="p-2 border-b border-border align-top">30 dagar, sedan automatisk radering. Tidigare om du ber om det.</td></tr><tr><td className="p-2 border-b border-border align-top">Hos xAI</td><td className="p-2 border-b border-border align-top">Sparas inte (Zero Data Retention)</td></tr><tr><td className="p-2 border-b border-border align-top">Analysresultat</td><td className="p-2 border-b border-border align-top">[X DAGAR]</td></tr><tr><td className="p-2 border-b border-border align-top">Förfrågningar (byte, offert, kontakt)</td><td className="p-2 border-b border-border align-top">[X MÅNADER] efter avslutat ärende</td></tr><tr><td className="p-2 border-b border-border align-top">Nyhetsbrev</td><td className="p-2 border-b border-border align-top">Tills du avregistrerar dig</td></tr><tr><td className="p-2 border-b border-border align-top">Betalningsuppgifter</td><td className="p-2 border-b border-border align-top">7 år (bokföringslagen)</td></tr><tr><td className="p-2 border-b border-border align-top">Teknisk data och loggar</td><td className="p-2 border-b border-border align-top">[X MÅNADER]</td></tr></tbody></table></div>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">8. Dina rättigheter</h2>
+        <p className="text-muted mb-4 leading-relaxed">Du har rätt att:</p>
+        <ul className="list-disc pl-6 text-muted mb-4 space-y-2"><li>få veta vilka uppgifter vi har om dig och få en kopia av dem</li><li>få felaktiga uppgifter rättade</li><li>få dina uppgifter raderade, till exempel din faktura</li><li>begränsa behandlingen och invända mot behandling som bygger på berättigat intresse</li><li>få ut dina uppgifter i ett maskinläsbart format (dataportabilitet)</li><li>när som helst ta tillbaka ett samtycke, till exempel för nyhetsbrev eller cookies</li></ul>
+        <p className="text-muted mb-4 leading-relaxed">Mejla <a className="text-primary underline" href="mailto:info@elbespararen.se">info@elbespararen.se</a>.</p>
+        <p className="text-muted mb-4 leading-relaxed"><strong>Klagomål:</strong> Om du tycker att vi hanterar dina uppgifter fel kan du klaga hos Integritetsskyddsmyndigheten (IMY), www.imy.se, Box 8114, 104 20 Stockholm. Eftersom VKNG LTD är registrerat på Cypern är Cyperns dataskyddsmyndighet (Commissioner for Personal Data Protection, www.dataprotection.gov.cy) ansvarig tillsynsmyndighet, men du kan alltid vända dig till IMY i Sverige.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">9. Säkerhet</h2>
+        <p className="text-muted mb-4 leading-relaxed">Uppgifterna skickas krypterat (HTTPS/TLS). Bara behöriga personer har tillgång till lagrade fakturor.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">10. Cookies</h2>
+        <p className="text-muted mb-4 leading-relaxed">Se vår <a className="text-primary underline" href="/cookies">cookiepolicy</a>. Analys- och beteendecookies (Google Analytics, Hotjar) används bara om du godkänner dem.</p>
+        <h2 className="text-2xl font-bold mt-10 mb-4 text-foreground">11. Ändringar</h2>
+        <p className="text-muted mb-4 leading-relaxed">Vi uppdaterar policyn när tjänsten ändras. Datumet högst upp visar senaste versionen.</p>
+      </article>
+      <section className="max-w-3xl mx-auto mt-8">
+        <div id="terms" className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
               <h2 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-3">
-                <Lock className="w-6 h-6 text-primary" />
-                Integritetspolicy
-              </h2>
-              
-              <h3 className="text-xl font-semibold mb-4 text-foreground">1. Vilka uppgifter samlar vi in?</h3>
-              <p className="text-muted mb-4 leading-relaxed">
-                Vi samlar in följande information för att tillhandahålla och förbättra vår tjänst:
-              </p>
-              <ul className="list-disc pl-6 text-muted mb-6 space-y-2">
-                <li>Din elräkning (som du laddar upp) - sparas för AI-träning</li>
-                <li>Ditt postnummer (för korrekt prisberäkning)</li>
-                <li>Analysresultat och besparingsberäkningar</li>
-                <li>Teknisk information (IP-adress, webbläsare) för säkerhet</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mb-4 text-foreground">2. Hur använder vi dina uppgifter?</h3>
-              <p className="text-muted mb-4 leading-relaxed">
-                Dina uppgifter används för att:
-              </p>
-              <ul className="list-disc pl-6 text-muted mb-6 space-y-2">
-                <li>Analysera din elräkning med AI</li>
-                <li>Beräkna dina besparingsmöjligheter</li>
-                <li>Träna och förbättra vår AI-modell med anonymiserade fakturor</li>
-                <li>Utveckla bättre analysalgoritmer för framtida användare</li>
-                <li>Ge dig teknisk support vid behov</li>
-              </ul>
-
-              <h3 className="text-xl font-semibold mb-4 text-foreground">3. Delar vi dina uppgifter?</h3>
-              <p className="text-muted mb-6 leading-relaxed">
-                <strong>Nej, aldrig.</strong> Vi delar inte, säljer inte eller lånar ut dina personuppgifter till tredje part. 
-                Din elräkning och analysresultat är endast synliga för dig.
-              </p>
-
-              <h3 className="text-xl font-semibold mb-4 text-foreground">4. Hur länge sparar vi dina uppgifter?</h3>
-              <p className="text-muted mb-4 leading-relaxed">
-                Vi sparar dina uppgifter enligt följande:
-              </p>
-              <ul className="list-disc pl-6 text-muted mb-6 space-y-2">
-                <li><strong>Fakturabilder:</strong> Sparas för AI-träning tills du begär radering</li>
-                <li><strong>Personuppgifter:</strong> Anonymiseras omedelbart och används endast för AI-träning</li>
-                <li><strong>Analysresultat:</strong> Sparas i 30 dagar för din åtkomst, sedan raderas</li>
-                <li><strong>Teknisk data:</strong> Sparas i 12 månader för säkerhet och prestanda</li>
-              </ul>
-              <p className="text-muted mb-6 leading-relaxed">
-                Du kan när som helst begära radering av dina uppgifter genom att kontakta oss.
-              </p>
-            </div>
-
-            {/* AI Training Section */}
-            <div className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
-              <h2 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-3">
-                <Eye className="w-6 h-6 text-primary" />
-                AI-träning och förbättring
-              </h2>
-              
-              <h3 className="text-xl font-semibold mb-4 text-foreground">Hur vi använder dina fakturor för AI-träning</h3>
-              <p className="text-muted mb-4 leading-relaxed">
-                För att förbättra vår AI och ge dig bättre analyser använder vi dina fakturor på följande sätt:
-              </p>
-              
-              <ul className="list-disc pl-6 text-muted mb-6 space-y-2">
-                <li><strong>Anonymisering:</strong> Alla personuppgifter (namn, adress, kundnummer) anonymiseras omedelbart</li>
-                <li><strong>Strukturell analys:</strong> AI:n lär sig identifiera olika fakturaformat och avgiftstyper</li>
-                <li><strong>Förbättring:</strong> Varje faktura hjälper oss att bli bättre på att hitta onödiga extra avgifter</li>
-                <li><strong>Transparens:</strong> Du bidrar till att göra elmarknaden mer transparent för alla</li>
-              </ul>
-
-              <div className="bg-primary/5 rounded-lg p-6 border border-primary/20">
-                <h4 className="font-semibold text-primary mb-2">Dina rättigheter</h4>
-                <p className="text-sm text-muted mb-3">
-                  Du har alltid rätt att begära radering av din faktura från våra träningsdata. 
-                  Kontakta oss så hjälper vi dig omedelbart.
-                </p>
-                <a href="mailto:info@elbespararen.se" className="text-sm text-primary hover:underline">
-                  Begär radering av min faktura →
-                </a>
-              </div>
-            </div>
-
-            {/* Terms of Service */}
-            <div id="terms" className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
-              <h2 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-3">
-                <FileText className="w-6 h-6 text-primary" />
+                
                 Användarvillkor
               </h2>
               
@@ -166,117 +76,10 @@ export default function PrivacyPage() {
                 dina egna beslut gällande elavtal och vi kan inte hållas ansvariga för eventuella förluster.
               </p>
             </div>
-
-            {/* Data Protection */}
-            <div className="bg-white rounded-xl shadow-sm border border-border p-8 mb-8">
-              <h2 className="text-2xl font-bold mb-6 text-foreground flex items-center gap-3">
-                <Eye className="w-6 h-6 text-primary" />
-                Dataskydd & GDPR
-              </h2>
-              
-              <h3 className="text-xl font-semibold mb-4 text-foreground">Dina rättigheter enligt GDPR</h3>
-              <p className="text-muted mb-4 leading-relaxed">
-                Som personuppgiftsansvarig följer vi GDPR och du har följande rättigheter:
-              </p>
-              
-              <div className="grid md:grid-cols-2 gap-6 mb-6">
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <UserCheck className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Rätt till information</h4>
-                      <p className="text-sm text-muted">Du har rätt att veta vilka uppgifter vi har om dig</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Trash2 className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Rätt till radering</h4>
-                      <p className="text-sm text-muted">Du kan begära att dina uppgifter raderas</p>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex items-start gap-3">
-                    <FileText className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Rätt till dataportabilitet</h4>
-                      <p className="text-sm text-muted">Du kan få en kopia av dina uppgifter</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-start gap-3">
-                    <Shield className="w-5 h-5 text-primary mt-1 flex-shrink-0" />
-                    <div>
-                      <h4 className="font-semibold">Rätt till rättelse</h4>
-                      <p className="text-sm text-muted">Du kan begära korrigering av felaktiga uppgifter</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <p className="text-muted mb-6 leading-relaxed">
-                <strong>Kontakta oss:</strong> För att utöva dina rättigheter, skicka ett e-postmeddelande till 
-                <a href="mailto:info@elbespararen.se" className="text-primary hover:underline"> info@elbespararen.se</a>
-              </p>
-            </div>
-
-            {/* Contact Information */}
-            <div className="bg-primary/5 rounded-xl p-8 border border-primary/20">
-              <h3 className="text-xl font-semibold mb-4 text-primary">Kontakta oss om integritet</h3>
-              <p className="text-muted mb-4">
-                Har du frågor om vår hantering av personuppgifter eller vill utöva dina rättigheter? 
-                Vi svarar inom 24 timmar.
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <a
-                  href="mailto:info@elbespararen.se"
-                  className="px-6 py-3 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-semibold text-center"
-                >
-                  Skicka e-post
-                </a>
-                <Link
-                  href="/contact"
-                  className="px-6 py-3 border border-primary text-primary rounded-lg hover:bg-primary/5 transition-colors font-semibold text-center"
-                >
-                  Kontakta support
-                </Link>
-              </div>
-            </div>
-          </motion.div>
-        </div>
       </section>
-
-      {/* CTA Section */}
-      <section className="py-20 px-4 bg-gray-50">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-2xl mx-auto text-center"
-        >
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">
-            Känns det säkert?
-          </h2>
-          <p className="text-lg text-muted mb-8">
-            Testa Elbespararen och se hur mycket du kan spara på din elräkning.
-          </p>
-          <Link
-            href="/upload"
-            className="
-              inline-flex items-center gap-2 px-8 py-4
-              bg-primary text-white text-lg font-semibold rounded-lg
-              hover:bg-primary/90 active:scale-[0.98]
-              transition-all duration-200
-            "
-          >
-            Kom igång nu
-            <Shield className="w-5 h-5" />
-          </Link>
-        </motion.div>
-      </section>
+      <p className="max-w-3xl mx-auto mt-6 text-center text-muted">
+        <Link href="/" className="text-primary underline">Tillbaka till startsidan</Link>
+      </p>
     </main>
   );
 }

@@ -71,9 +71,8 @@ export default function AboutPage() {
               </div>
 
               <p className="text-muted mb-8 leading-relaxed">
-                Vår AI lär sig kontinuerligt av varje faktura som analyseras. Genom att träna på tusentals svenska elräkningar 
-                blir vår analys allt mer exakt och kan hitta avgifter som människor skulle missa. Varje faktura du laddar upp 
-                bidrar till att göra elmarknaden mer transparent för alla.
+                Vår AI läser av din faktura och hittar avgifter som människor lätt missar. Vi tränar inte AI på dina fakturor, 
+                och fakturabilden raderas automatiskt efter 30 dagar.
               </p>
             </div>
 
@@ -132,7 +131,7 @@ export default function AboutPage() {
                 </div>
                 <p className="text-muted">
                   Vår AI läser din faktura visuellt och hittar alla onödiga extra avgifter som du skulle missa. 
-                  Genom att träna på tusentals fakturor blir den allt mer exakt. Vi visar exakt vad du betalar för – och vad du kan spara.
+                  Vi tränar inte AI på dina fakturor. Vi visar exakt vad du betalar för – och vad du kan spara.
                 </p>
               </motion.div>
 

@@ -1,0 +1,21 @@
+name: Purge bill images (30 days)
+
+on:
+  schedule:
+    - cron: '30 2 * * *' # dagligen 02:30 UTC
+  workflow_dispatch:
+
+jobs:
+  purge:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete bill images older than 30 days
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          if [ -z "$CRON_SECRET" ]; then echo "CRON_SECRET saknas som repo-secret"; exit 1; fi
+          code=$(curl -s -o out.json -w "%{http_code}" -X POST \
+            "https://elbespararen.se/api/cron/purge-bill-images" \
+            -H "Authorization: Bearer $CRON_SECRET")
+          cat out.json; echo
+          [ "$code" -eq 200 ]

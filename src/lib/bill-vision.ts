@@ -6,7 +6,7 @@ import type OpenAI from "openai";
 import { BILL_SCHEMA } from "@/lib/schema";
 import { SYSTEM_PROMPT, OPENAI_CONFIG } from "@/lib/constants";
 import type { BillData } from "@/lib/types";
-import { getVisionModel, getVisionReasoningParams } from "@/lib/ai-client";
+import { getVisionModel, getVisionReasoningParams, checkZeroDataRetention } from "@/lib/ai-client";
 
 export function parseJsonFromModelContent(content: string): unknown {
   const cleaned = content
@@ -96,9 +96,10 @@ export async function analyzeBillStructured(
     ...getVisionReasoningParams(model),
   };
 
-  const response = await client.chat.completions.create(
-    params as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming
-  );
+  const { data: response, response: rawResponse } = await client.chat.completions
+    .create(params as OpenAI.Chat.ChatCompletionCreateParamsNonStreaming)
+    .withResponse();
+  checkZeroDataRetention(rawResponse.headers);
 
   const content = response.choices[0]?.message?.content;
   if (!content) {
