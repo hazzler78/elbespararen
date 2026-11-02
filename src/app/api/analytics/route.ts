@@ -24,6 +24,7 @@ interface AnalyticsData {
   uniqueVisitors: number;
   pageViews: number;
   analyzedBills: number;
+  analyzedBillsError?: string;
   contractClicks: number;
   topPages: Array<{ path: string; views: number }>;
   visitsByDay: Array<{ date: string; visits: number }>;
@@ -276,16 +277,37 @@ function resolveDbBinding(): unknown {
   return env.DB;
 }
 
+function formatBillCountError(error: unknown): string {
+  const message = error instanceof Error ? error.message : String(error);
+  if (/exceeded D1's free tier|row read limit|code:\s*7500/i.test(message)) {
+    return "D1 free-tier läsgräns nådd — siffran kan inte hämtas just nu (återställs midnatt UTC).";
+  }
+  if (/no such table|bill_analyses/i.test(message)) {
+    return "bill_analyses-tabellen saknas eller är otillgänglig.";
+  }
+  return message || "Kunde inte räkna analyserade fakturor.";
+}
+
 /**
  * Räkna analyserade fakturor från D1 (bill_analyses) med exakt tidsgräns.
  */
-async function countAnalyzedBills(since: Date): Promise<number> {
+async function countAnalyzedBills(
+  since: Date
+): Promise<{ count: number; error?: string }> {
   try {
-    const db = createDatabaseFromBinding(resolveDbBinding());
-    return await db.countBillAnalysesSince(since);
+    const binding = resolveDbBinding();
+    if (!binding) {
+      return {
+        count: 0,
+        error: "D1-binding saknas — kan inte räkna fakturor.",
+      };
+    }
+    const db = createDatabaseFromBinding(binding);
+    const count = await db.countBillAnalysesSince(since);
+    return { count };
   } catch (error) {
     console.error("[analytics] Error in countAnalyzedBills:", error);
-    return 0;
+    return { count: 0, error: formatBillCountError(error) };
   }
 }
 
@@ -369,32 +391,15 @@ export async function GET(request: NextRequest) {
 
     // Hämta data från Google Analytics API
     try {
-      // Aggregerad statistik (inga dimensions — totals/rows[0])
-      // pageViews för webb; screenPageViews som fallback om pageViews saknas
-      let pageMetric = "pageViews";
-      let statsResponse: GAResponse;
-      try {
-        statsResponse = await fetchGAData(
-          gaPropertyId,
-          accessToken,
-          [],
-          ["sessions", "totalUsers", pageMetric],
-          [dateRange]
-        );
-      } catch (pageViewsError) {
-        console.warn(
-          "[analytics] pageViews failed, falling back to screenPageViews:",
-          pageViewsError
-        );
-        pageMetric = "screenPageViews";
-        statsResponse = await fetchGAData(
-          gaPropertyId,
-          accessToken,
-          [],
-          ["sessions", "totalUsers", pageMetric],
-          [dateRange]
-        );
-      }
+      // GA4 web: screenPageViews is the valid metric (pageViews is rejected by Data API)
+      const pageMetric = "screenPageViews";
+      const statsResponse = await fetchGAData(
+        gaPropertyId,
+        accessToken,
+        [],
+        ["sessions", "totalUsers", pageMetric],
+        [dateRange]
+      );
 
       const pagesResponse = await fetchGAData(
         gaPropertyId,
@@ -460,7 +465,8 @@ export async function GET(request: NextRequest) {
       }
 
       // Räkna analyser från D1 med exakt tidsgräns (inte hela kalenderdagar i storage)
-      const analyzedBillsCount = await countAnalyzedBills(bounds.since);
+      const analyzedBillsResult = await countAnalyzedBills(bounds.since);
+      const analyzedBillsCount = analyzedBillsResult.count;
 
       const [sessionsFromTotals, usersFromTotals, pageViewsFromTotals] =
         extractMetricTotals(statsResponse, 3);
@@ -493,6 +499,7 @@ export async function GET(request: NextRequest) {
         uniqueVisitors,
         pageViews,
         analyzedBillsCount,
+        analyzedBillsError: analyzedBillsResult.error,
         contractClicksCount,
         rawTotals: statsResponse.totals,
         rawRows: statsResponse.rows?.length ?? 0,
@@ -503,6 +510,7 @@ export async function GET(request: NextRequest) {
         uniqueVisitors,
         pageViews,
         analyzedBills: analyzedBillsCount,
+        analyzedBillsError: analyzedBillsResult.error,
         contractClicks: contractClicksCount,
         topPages: (pagesResponse.rows || []).slice(0, 10).map((row) => ({
           path: row.dimensionValues[0]?.value || "",

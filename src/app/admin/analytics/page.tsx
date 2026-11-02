@@ -12,6 +12,7 @@ interface AnalyticsData {
     uniqueVisitors: number;
     pageViews: number;
     analyzedBills: number;
+    analyzedBillsError?: string;
     contractClicks: number;
     topPages: Array<{ path: string; views: number }>;
     visitsByDay: Array<{ date: string; visits: number }>;
@@ -128,6 +129,28 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
+          {analytics?.analyzedBillsError && (
+              <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-semibold">Kunde inte hämta analyserade fakturor</p>
+                <p className="mt-1">{analytics.analyzedBillsError}</p>
+              </div>
+            )}
+
+          {analytics &&
+            analytics.analyzedBills > 0 &&
+            analytics.totalVisits === 0 &&
+            analytics.uniqueVisitors === 0 && (
+              <div className="mb-6 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+                <p className="font-semibold">GA-besök är 0 trots {analytics.analyzedBills} analyser</p>
+                <p className="mt-1">
+                  Sajten skickar till mät-ID <code className="text-xs">G-N8JHZQV6CT</code>, men admin
+                  läser troligen fel <code className="text-xs">GOOGLE_ANALYTICS_PROPERTY_ID</code>.
+                  Uppdatera Property ID i produktion till den GA4-property som äger G-N8JHZQV6CT
+                  (Admin → Property settings).
+                </p>
+              </div>
+            )}
+
           {/* Main Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-8">
             <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -179,13 +202,22 @@ export default function AnalyticsPage() {
                 <p className="text-xs sm:text-sm text-gray-500 uppercase tracking-wide">Analyserade fakturor</p>
               </div>
               <p className="text-3xl font-bold text-gray-900">
-                {analytics ? analytics.analyzedBills.toLocaleString('sv-SE') : '0'}
+                {analytics?.analyzedBillsError
+                  ? "—"
+                  : analytics
+                    ? analytics.analyzedBills.toLocaleString("sv-SE")
+                    : "0"}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {timeRange === '24h' ? 'Senaste 24h (exakt tid)' : 
-                 timeRange === '7d' ? 'Senaste 7 dagarna' :
-                 timeRange === '30d' ? 'Senaste 30 dagarna' :
-                 'Senaste 90 dagarna'}
+                {analytics?.analyzedBillsError
+                  ? "D1 kunde inte svara"
+                  : timeRange === "24h"
+                    ? "Senaste 24h (exakt tid)"
+                    : timeRange === "7d"
+                      ? "Senaste 7 dagarna"
+                      : timeRange === "30d"
+                        ? "Senaste 30 dagarna"
+                        : "Senaste 90 dagarna"}
               </p>
             </div>
 

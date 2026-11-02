@@ -1714,23 +1714,14 @@ class CloudflareDatabase implements Database {
   }
 
   async countBillAnalysesSince(since: Date): Promise<number> {
-    try {
-      // created_at lagras som ISO-sträng (toISOString)
-      const sinceIso = since.toISOString();
-      const result = await this.db
-        .prepare(`SELECT COUNT(*) AS c FROM bill_analyses WHERE created_at >= ?`)
-        .bind(sinceIso)
-        .first();
-      const row = result as Record<string, unknown> | null;
-      return row?.c != null ? Number(row.c) : 0;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
-        console.warn('[Database] bill_analyses table does not exist.');
-        return 0;
-      }
-      throw error;
-    }
+    // created_at lagras som ISO-sträng (toISOString)
+    const sinceIso = since.toISOString();
+    const result = await this.db
+      .prepare(`SELECT COUNT(*) AS c FROM bill_analyses WHERE created_at >= ?`)
+      .bind(sinceIso)
+      .first();
+    const row = result as Record<string, unknown> | null;
+    return row?.c != null ? Number(row.c) : 0;
   }
 
   async getBillAnalysis(id: string): Promise<BillAnalysis | null> {
