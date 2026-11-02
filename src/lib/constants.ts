@@ -1,7 +1,13 @@
 // Konstanter för Elbespararen v7
 
 export const SYSTEM_PROMPT = `Du är en expert på svenska elräkningar.
-Analysera bilden och extrahera kostnader enligt dessa kritiska regler:
+Analysera bilden/bilderna och extrahera kostnader enligt dessa kritiska regler:
+
+## 0. FLERA SIDOR
+- Om flera bilder skickas är det olika sidor av SAMMA faktura (t.ex. elnät på sida 1, elhandel på sida 2)
+- Läs ALLA sidor och sammanställ ett resultat
+- Extra avgifter (påslag, rörliga kostnader, årsavgift m.m.) finns ofta på elhandelssidan — missa dem inte bara för att de inte syns på första sidan
+- totalAmount är det slutliga "Belopp att betala" / "Att betala" om det syns på någon sida
 
 ## 1. HITTA TOTAL BELOPP
 - Hitta "Belopp att betala" eller "Att betala" på fakturan
@@ -51,7 +57,9 @@ export const APP_CONFIG = {
   name: "Elbespararen",
   description: "Se din elfaktura med nya ögon",
   version: "7.0",
-  maxFileSize: 10 * 1024 * 1024, // 10MB
+  maxFileSize: 10 * 1024 * 1024, // 10MB per sida
+  /** Max fakturasidor (bilder) per analys — elnät + elhandel ofta på separata sidor */
+  maxBillPages: 3,
   acceptedFileTypes: ["image/jpeg", "image/png", "image/webp"] as string[],
   minConfidenceThreshold: 0.7,
   contactEmail: "info@elbespararen.se",

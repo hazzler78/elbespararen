@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, User, Sparkles, ArrowRight } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, User, Sparkles, ArrowRight, X, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
@@ -15,9 +15,10 @@ interface UploadCardProps {
   isUserLoggedIn?: boolean; // Om användaren redan är inloggad, hoppa över registreringsalternativen
 }
 
+type PagePreview = { file: File; preview: string };
+
 export default function UploadCard({ onUploadSuccess, onUploadError, isUserLoggedIn = false }: UploadCardProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [pages, setPages] = useState<PagePreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<BillData | null>(null);
@@ -28,6 +29,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
   const [detectedArea, setDetectedArea] = useState<string | null>(null);
   const [lastSavedPostalCode, setLastSavedPostalCode] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const addMoreInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Cleanup timeout när komponenten unmountas
@@ -46,9 +48,64 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
     setUserChoiceMade(false);
     setError(null);
     setIsUploading(false);
-    setFile(null);
-    setPreview(null);
+    setPages([]);
   }, []);
+
+  const readPreview = (file: File): Promise<string> =>
+    new Promise((resolve, reject) => {
+      if (!file.type.startsWith("image/")) {
+        resolve("");
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("Kunde inte läsa bilden"));
+      reader.readAsDataURL(file);
+    });
+
+  const addFiles = async (incoming: FileList | File[]) => {
+    const list = Array.from(incoming);
+    if (list.length === 0) return;
+
+    const remaining = APP_CONFIG.maxBillPages - pages.length;
+    if (remaining <= 0) {
+      setError(`Max ${APP_CONFIG.maxBillPages} sidor per analys`);
+      return;
+    }
+
+    const accepted: File[] = [];
+    for (const file of list.slice(0, remaining)) {
+      if (!APP_CONFIG.acceptedFileTypes.includes(file.type)) {
+        setError("Endast JPEG, PNG och WebP tillåts. PDF stöds inte — fotografera varje sida.");
+        continue;
+      }
+      if (file.size > APP_CONFIG.maxFileSize) {
+        setError(`Filen ${file.name} är för stor. Max ${APP_CONFIG.maxFileSize / 1024 / 1024}MB per sida.`);
+        continue;
+      }
+      accepted.push(file);
+    }
+
+    if (accepted.length === 0) return;
+
+    try {
+      const next = await Promise.all(
+        accepted.map(async (file) => ({
+          file,
+          preview: await readPreview(file),
+        }))
+      );
+      setPages((prev) => [...prev, ...next].slice(0, APP_CONFIG.maxBillPages));
+      setError(null);
+    } catch {
+      setError("Kunde inte läsa en eller flera bilder");
+    }
+  };
+
+  const removePage = (index: number) => {
+    setPages((prev) => prev.filter((_, i) => i !== index));
+    setError(null);
+  };
 
   // Funktion för att spara postal code analytics med debounce
   const savePostalCodeAnalytics = useCallback(async (
@@ -91,44 +148,32 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
     }
   }, [lastSavedPostalCode]);
 
-  const handleFileSelect = (selectedFile: File) => {
-    setFile(selectedFile);
-    setError(null);
-
-    // Skapa preview för bilder
-    if (selectedFile.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        setPreview(e.target?.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
-    }
-  };
-
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      handleFileSelect(droppedFile);
+    if (e.dataTransfer.files?.length) {
+      void addFiles(e.dataTransfer.files);
     }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      handleFileSelect(selectedFile);
+    if (e.target.files?.length) {
+      void addFiles(e.target.files);
     }
+    // Allow selecting the same file again after remove
+    e.target.value = "";
   };
 
   const handleUpload = async () => {
-    if (!file) return;
+    if (pages.length === 0) return;
 
     setIsUploading(true);
     setError(null);
 
     try {
       const formData = new FormData();
-      formData.append("file", file);
+      for (const page of pages) {
+        formData.append("file", page.file);
+      }
       
       // Lägg till postnummer och prisområde om de finns
       if (postalCode) {
@@ -312,23 +357,34 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         <div
           onDrop={handleDrop}
           onDragOver={(e) => e.preventDefault()}
-          onClick={() => fileInputRef.current?.click()}
+          onClick={() => {
+            if (pages.length === 0) fileInputRef.current?.click();
+          }}
           className={`
-            border-2 border-dashed rounded-lg p-12 text-center cursor-pointer
+            border-2 border-dashed rounded-lg p-8 sm:p-12 text-center
             transition-colors duration-200
-            ${file ? "border-success bg-success/5" : "border-border hover:border-primary hover:bg-primary/5"}
+            ${pages.length > 0 ? "border-success bg-success/5 cursor-default" : "border-border hover:border-primary hover:bg-primary/5 cursor-pointer"}
           `}
         >
           <input
             ref={fileInputRef}
             type="file"
             accept={APP_CONFIG.acceptedFileTypes.join(",")}
+            multiple
+            onChange={handleChange}
+            className="hidden"
+          />
+          <input
+            ref={addMoreInputRef}
+            type="file"
+            accept={APP_CONFIG.acceptedFileTypes.join(",")}
+            multiple
             onChange={handleChange}
             className="hidden"
           />
 
           <AnimatePresence mode="wait">
-            {!file ? (
+            {pages.length === 0 ? (
               <motion.div
                 key="upload"
                 initial={{ opacity: 0 }}
@@ -338,10 +394,14 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                 <Upload className="w-12 h-12 mx-auto mb-4 text-muted" />
                 <h3 className="text-lg font-semibold mb-2">Ladda upp din elräkning</h3>
                 <p className="text-muted text-sm mb-4">
-                  Dra och släpp eller klicka för att välja fil
+                  Dra och släpp eller klicka för att välja bilder
                 </p>
                 <p className="text-xs text-muted">
-                  JPEG, PNG eller WebP • Max {APP_CONFIG.maxFileSize / 1024 / 1024}MB
+                  1–{APP_CONFIG.maxBillPages} sidor • JPEG, PNG eller WebP • Max{" "}
+                  {APP_CONFIG.maxFileSize / 1024 / 1024}MB per sida
+                </p>
+                <p className="text-xs text-muted mt-2">
+                  Har du elnät och elhandel på olika sidor? Ladda upp båda.
                 </p>
               </motion.div>
             ) : (
@@ -350,31 +410,69 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
+                className="space-y-4"
               >
-                {preview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="max-h-48 mx-auto mb-4 rounded"
-                  />
-                ) : (
-                  <FileImage className="w-12 h-12 mx-auto mb-4 text-success" />
-                )}
-                <div className="flex items-center justify-center gap-2 mb-2">
+                <div className="flex items-center justify-center gap-2 mb-1">
                   <CheckCircle2 className="w-5 h-5 text-success" />
-                  <p className="font-medium">{file.name}</p>
+                  <p className="font-medium">
+                    {pages.length === 1 ? "1 sida vald" : `${pages.length} sidor valda`}
+                  </p>
                 </div>
-                <p className="text-xs text-muted">
-                  {(file.size / 1024).toFixed(1)} KB
-                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {pages.map((page, index) => (
+                    <div
+                      key={`${page.file.name}-${page.file.size}-${index}`}
+                      className="relative rounded-lg border border-border bg-white p-2 text-left"
+                    >
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          removePage(index);
+                        }}
+                        className="absolute -top-2 -right-2 z-10 rounded-full bg-white border border-border p-1 shadow-sm hover:bg-gray-50"
+                        aria-label={`Ta bort sida ${index + 1}`}
+                      >
+                        <X className="w-3.5 h-3.5 text-gray-600" />
+                      </button>
+                      {page.preview ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={page.preview}
+                          alt={`Sida ${index + 1}`}
+                          className="h-28 w-full object-contain rounded mb-2"
+                        />
+                      ) : (
+                        <FileImage className="w-10 h-10 mx-auto my-6 text-success" />
+                      )}
+                      <p className="text-xs font-medium truncate">Sida {index + 1}</p>
+                      <p className="text-[11px] text-muted truncate">{page.file.name}</p>
+                      <p className="text-[11px] text-muted">
+                        {(page.file.size / 1024).toFixed(1)} KB
+                      </p>
+                    </div>
+                  ))}
+                </div>
+                {pages.length < APP_CONFIG.maxBillPages && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      addMoreInputRef.current?.click();
+                    }}
+                    className="inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Lägg till sida ({pages.length}/{APP_CONFIG.maxBillPages})
+                  </button>
+                )}
               </motion.div>
             )}
           </AnimatePresence>
         </div>
 
         {/* Postnummer Input */}
-        {file && (
+        {pages.length > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -438,7 +536,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         </AnimatePresence>
 
         {/* Upload Button */}
-        {file && (
+        {pages.length > 0 && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -455,7 +553,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
             {isUploading ? (
               <>
                 <Loader2 className="w-5 h-5 animate-spin" />
-                Analyserar faktura...
+                Analyserar {pages.length > 1 ? `${pages.length} sidor` : "faktura"}...
               </>
             ) : !priceArea ? (
               <>

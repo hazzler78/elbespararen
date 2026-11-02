@@ -51,10 +51,22 @@ export function normalizeBillData(raw: unknown): BillData {
 
 export async function analyzeBillStructured(
   client: OpenAI,
-  dataUrl: string,
+  dataUrlOrUrls: string | string[],
   customPrompt?: string | null
 ): Promise<BillData> {
   const model = getVisionModel();
+  const dataUrls = (Array.isArray(dataUrlOrUrls) ? dataUrlOrUrls : [dataUrlOrUrls]).filter(
+    (url) => typeof url === "string" && url.length > 0
+  );
+  if (dataUrls.length === 0) {
+    throw new Error("Ingen bild att analysera");
+  }
+
+  const pageHint =
+    dataUrls.length > 1
+      ? `Du får ${dataUrls.length} sidor av samma svenska elfaktura. Läs ALLA sidor och sammanställ ett resultat (elnät, elhandel och extra avgifter kan ligga på olika sidor).`
+      : "Analysera denna svenska elfaktura.";
+
   // Build params then cast once — xAI's reasoning_effort isn't in OpenAI SDK types yet,
   // and casting create()'s overload union makes `.choices` disappear from the return type.
   const params = {
@@ -69,16 +81,16 @@ export async function analyzeBillStructured(
         content: [
           {
             type: "text" as const,
-            text: "Analysera denna svenska elfaktura. Identifiera alla kostnader och extra avgifter som går att undvika genom att byta elhandlare. Svara enligt schemat.",
+            text: `${pageHint} Identifiera alla kostnader och extra avgifter som går att undvika genom att byta elhandlare. Svara enligt schemat.`,
           },
-          {
+          ...dataUrls.map((url) => ({
             type: "image_url" as const,
             image_url: {
-              url: dataUrl,
+              url,
               // "high" multiplies image tokens and latency; bills are readable at auto
               detail: "auto" as const,
             },
-          },
+          })),
         ],
       },
     ],

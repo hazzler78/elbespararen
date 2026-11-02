@@ -34,38 +34,58 @@ export async function POST(
 
     const openai = createAiClient({ timeoutMs: 60_000 });
 
-    // Hämta fil från FormData
+    // Hämta fil(er) från FormData — stöd 1–3 sidor (file / files)
     const formData = await req.formData();
-    const file = formData.get("file") as File;
     const customPrompt = formData.get("prompt") as string;
     const postalCode = (formData.get("postalCode") as string | null) ?? undefined;
     const priceArea = (formData.get("priceArea") as string | null) ?? undefined;
 
-    if (!file) {
+    const rawFiles = [
+      ...formData.getAll("file"),
+      ...formData.getAll("files"),
+    ].filter((entry): entry is File => entry instanceof File && entry.size > 0);
+
+    // Deduplicate by name+size+lastModified in case both keys were sent
+    const seen = new Set<string>();
+    const files: File[] = [];
+    for (const f of rawFiles) {
+      const key = `${f.name}:${f.size}:${f.lastModified}`;
+      if (seen.has(key)) continue;
+      seen.add(key);
+      files.push(f);
+    }
+
+    if (files.length === 0) {
       return NextResponse.json(
         { error: "Ingen fil uppladdad" },
         { status: 400 }
       );
     }
 
-    // Validera filstorlek
-    if (file.size > APP_CONFIG.maxFileSize) {
+    if (files.length > APP_CONFIG.maxBillPages) {
       return NextResponse.json(
-        { error: `Filen är för stor. Max ${APP_CONFIG.maxFileSize / 1024 / 1024}MB` },
+        { error: `Max ${APP_CONFIG.maxBillPages} sidor per analys` },
         { status: 400 }
       );
     }
 
-    // Validera filtyp
-    if (!APP_CONFIG.acceptedFileTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Endast JPEG, PNG och WebP tillåts" },
-        { status: 400 }
-      );
+    for (const file of files) {
+      if (file.size > APP_CONFIG.maxFileSize) {
+        return NextResponse.json(
+          { error: `Filen ${file.name} är för stor. Max ${APP_CONFIG.maxFileSize / 1024 / 1024}MB per sida` },
+          { status: 400 }
+        );
+      }
+      if (!APP_CONFIG.acceptedFileTypes.includes(file.type)) {
+        return NextResponse.json(
+          { error: "Endast JPEG, PNG och WebP tillåts (PDF stöds inte — fotografera varje sida)" },
+          { status: 400 }
+        );
+      }
     }
 
+    const primaryFile = files[0];
     let savedImageResult: Awaited<ReturnType<typeof saveBillImage>> | null = null;
-    let arrayBuffer: ArrayBuffer;
 
     const requestEnv: Record<string, unknown> | undefined =
       (typeof (globalThis as any).getRequestContext === "function"
@@ -83,28 +103,35 @@ export async function POST(
     }
 
     try {
-      savedImageResult = await saveBillImage(file, { postalCode, priceArea }, { env: requestEnv });
-      arrayBuffer = savedImageResult.arrayBuffer;
+      savedImageResult = await saveBillImage(primaryFile, { postalCode, priceArea }, { env: requestEnv });
       console.log(`[parse-bill-v3] Faktura sparad: ${savedImageResult.key} (${savedImageResult.storage})`);
     } catch (storageError) {
       console.error("[parse-bill-v3] Kunde inte spara fakturabild:", storageError);
-      arrayBuffer = await file.arrayBuffer();
       savedImageResult = null;
     }
 
-    // Konvertera fil till Base64
-    const buffer = Buffer.from(arrayBuffer);
-    const base64Image = buffer.toString("base64");
-    const dataUrl = `data:${file.type};base64,${base64Image}`;
+    // Konvertera alla sidor till data URLs för vision
+    const dataUrls: string[] = [];
+    for (const file of files) {
+      const arrayBuffer =
+        savedImageResult && file === primaryFile
+          ? savedImageResult.arrayBuffer
+          : await file.arrayBuffer();
+      const buffer = Buffer.from(arrayBuffer);
+      dataUrls.push(`data:${file.type};base64,${buffer.toString("base64")}`);
+    }
 
-    console.log(`[parse-bill-v3] Analyserar fil: ${file.name} (${file.type}, ${(file.size / 1024).toFixed(1)}KB)`);
+    console.log(
+      `[parse-bill-v3] Analyserar ${files.length} sida(or):`,
+      files.map((f) => `${f.name} (${f.type}, ${(f.size / 1024).toFixed(1)}KB)`).join(", ")
+    );
 
     // One structured vision call first (faster/more reliable than identify+analyze).
-    console.log(`[parse-bill-v3] Analyserar med Grok Vision (structured)...`);
+    console.log(`[parse-bill-v3] Analyserar med Grok Vision (structured, ${dataUrls.length} bild(er))...`);
     let billData: BillData;
 
     try {
-      billData = await analyzeBillStructured(openai, dataUrl, customPrompt);
+      billData = await analyzeBillStructured(openai, dataUrls, customPrompt);
     } catch (structuredError) {
       // One more single-shot call only — never identify+analyze (2× vision ≈ 2+ min).
       console.warn(
@@ -113,7 +140,8 @@ export async function POST(
       );
       try {
         const { generalAI } = await import("@/lib/ai-general");
-        billData = normalizeBillData(await generalAI.analyze(dataUrl));
+        // generalAI is single-image; use first page as best-effort fallback
+        billData = normalizeBillData(await generalAI.analyze(dataUrls[0]));
       } catch (fallbackError) {
         const structuredMsg =
           structuredError instanceof Error ? structuredError.message : String(structuredError);
@@ -168,7 +196,10 @@ export async function POST(
     if (savedImageResult) {
       billData.imageKey = savedImageResult.key;
       billData.imageUrl = savedImageResult.url;
-      billData.originalFileName = file.name;
+      billData.originalFileName =
+        files.length > 1
+          ? `${primaryFile.name} (+${files.length - 1} sida${files.length > 2 ? "or" : ""})`
+          : primaryFile.name;
       billData.uploadedAt = savedImageResult.uploadedAt;
     }
 
@@ -276,8 +307,9 @@ export async function POST(
       success: true,
       data: billData,
       meta: {
-        fileName: file.name,
-        fileSize: file.size,
+        fileName: primaryFile.name,
+        fileSize: files.reduce((sum, f) => sum + f.size, 0),
+        pageCount: files.length,
         timestamp: new Date().toISOString(),
         imageKey: savedImageResult?.key,
         storage: savedImageResult?.storage ?? "unknown",

@@ -308,7 +308,8 @@ function UploadPageContent() {
             Ladda upp din elräkning
           </h1>
           <p className="text-lg text-muted">
-            Ta en skärmbild eller ett foto av din elräkning. Vår AI analyserar den på några sekunder.
+            Ta foto eller skärmbild av din elräkning (1–3 sidor). Elnät och elhandel ligger ofta på
+            olika sidor — ladda upp båda för bästa resultat.
           </p>
         </motion.div>
 
@@ -328,9 +329,9 @@ function UploadPageContent() {
                   Gratisplanen sparar max {saveLimit} fakturor
                 </h2>
                 <p className="text-sm text-gray-600 mt-1">
-                  Du har redan {savedCount} sparade. Du kan fortfarande analysera — men
-                  den här fakturan sparas inte på kontot utan Premium (
-                  {PREMIUM_PRICE_LABEL}).
+                  Du har redan {savedCount} sparade på kontot. Du kan fortfarande ladda upp
+                  och analysera (gärna 1–3 sidor om fakturan är uppdelad) — resultatet sparas
+                  bara inte i historiken utan Premium ({PREMIUM_PRICE_LABEL}).
                 </p>
                 <button
                   type="button"
