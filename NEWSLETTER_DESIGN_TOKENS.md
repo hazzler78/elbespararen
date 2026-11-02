@@ -112,10 +112,10 @@ Arial, Helvetica, sans-serif
 
 ## 🔄 MailerLite Merge Tags
 
-- Name: `{{ subscriber.first_name }}`
-- Email: `{{ subscriber.email }}`
-- Unsubscribe: `{{ unsubscribe }}`
-- Company: `{{ subscriber.company }}` (if available)
+- Name: `{$name|default('där')}`
+- Email: `{$email}`
+- Unsubscribe: `{$unsubscribe}`
+- Company: `{$company}` (if available)
 
 ## 📎 Quick Copy-Paste
 

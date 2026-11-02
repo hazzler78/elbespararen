@@ -119,6 +119,8 @@ export interface Database {
   updateBillAnalysis(id: string, analysis: Partial<BillAnalysis>): Promise<BillAnalysis>;
   deleteBillAnalysis(id: string): Promise<boolean>;
   getBillAnalysesByUserId(userId: string, range?: string): Promise<BillAnalysis[]>;
+  /** Antal analyser skapade sedan `since` (inklusive). */
+  countBillAnalysesSince(since: Date): Promise<number>;
 
   // Users
   getUserByEmail(email: string): Promise<User | null>;
@@ -465,6 +467,11 @@ class MockDatabase implements Database {
     }
     
     return analyses;
+  }
+
+  async countBillAnalysesSince(since: Date): Promise<number> {
+    const sinceMs = since.getTime();
+    return this.billAnalyses.filter((a) => a.createdAt.getTime() >= sinceMs).length;
   }
 
   async getBillAnalysis(id: string): Promise<BillAnalysis | null> {
@@ -1701,6 +1708,26 @@ class CloudflareDatabase implements Database {
       if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
         console.warn('[Database] bill_analyses table does not exist.');
         return [];
+      }
+      throw error;
+    }
+  }
+
+  async countBillAnalysesSince(since: Date): Promise<number> {
+    try {
+      // created_at lagras som ISO-sträng (toISOString)
+      const sinceIso = since.toISOString();
+      const result = await this.db
+        .prepare(`SELECT COUNT(*) AS c FROM bill_analyses WHERE created_at >= ?`)
+        .bind(sinceIso)
+        .first();
+      const row = result as Record<string, unknown> | null;
+      return row?.c != null ? Number(row.c) : 0;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      if (errorMessage.includes('no such table') || errorMessage.includes('bill_analyses')) {
+        console.warn('[Database] bill_analyses table does not exist.');
+        return 0;
       }
       throw error;
     }

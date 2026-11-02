@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { ApiResponse } from "@/lib/types";
-import { createClient } from "@supabase/supabase-js";
 import { requireAdmin } from "@/lib/admin-auth";
+import { createDatabaseFromBinding } from "@/lib/database";
 
 // Edge runtime krävs av next-on-pages för Cloudflare
 export const runtime = 'edge';
@@ -165,22 +165,27 @@ async function fetchGAData(
   options?: { dimensionFilter?: any }
 ): Promise<GAResponse> {
   const url = `https://analyticsdata.googleapis.com/v1beta/properties/${propertyId}:runReport`;
-  
-  const body: any = {
-    dimensions: dimensions.map(d => ({ name: d })),
-    metrics: metrics.map(m => ({ name: m })),
+
+  // Tom dimensions-array kan ge konstiga svar — utelämna fältet helt
+  const body: Record<string, unknown> = {
+    metrics: metrics.map((m) => ({ name: m })),
     dateRanges,
+    metricAggregations: ["TOTAL"],
   };
+
+  if (dimensions.length > 0) {
+    body.dimensions = dimensions.map((d) => ({ name: d }));
+  }
 
   if (options?.dimensionFilter) {
     body.dimensionFilter = options.dimensionFilter;
   }
-  
+
   const response = await fetch(url, {
-    method: 'POST',
+    method: "POST",
     headers: {
-      'Authorization': `Bearer ${accessToken}`,
-      'Content-Type': 'application/json',
+      Authorization: `Bearer ${accessToken}`,
+      "Content-Type": "application/json",
     },
     body: JSON.stringify(body),
   });
@@ -193,124 +198,93 @@ async function fetchGAData(
   return response.json();
 }
 
-/**
- * Konvertera period till datum-intervall
- */
-function getDateRange(period: string): { startDate: string; endDate: string } {
-  const endDate = new Date();
-  const startDate = new Date();
-  
-  switch (period) {
-    case '24h':
-      startDate.setHours(endDate.getHours() - 24);
-      break;
-    case '7d':
-      startDate.setDate(endDate.getDate() - 7);
-      break;
-    case '30d':
-      startDate.setDate(endDate.getDate() - 30);
-      break;
-    case '90d':
-      startDate.setDate(endDate.getDate() - 90);
-      break;
-    case '12mo':
-      startDate.setMonth(endDate.getMonth() - 12);
-      break;
-    default:
-      startDate.setHours(endDate.getHours() - 24);
+function parseMetric(value: string | undefined | null): number {
+  if (value == null || value === "") return 0;
+  const n = parseInt(value, 10);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/** Läs totals från GA — fallback till rows[0] när rapport saknar dimensions. */
+function extractMetricTotals(response: GAResponse, metricCount: number): number[] {
+  const fromTotals = response.totals?.[0]?.metricValues;
+  if (fromTotals && fromTotals.length > 0) {
+    return Array.from({ length: metricCount }, (_, i) =>
+      parseMetric(fromTotals[i]?.value)
+    );
   }
-  
-  return {
-    startDate: startDate.toISOString().split('T')[0],
-    endDate: endDate.toISOString().split('T')[0],
-  };
+  const fromRow = response.rows?.[0]?.metricValues;
+  if (fromRow && fromRow.length > 0) {
+    return Array.from({ length: metricCount }, (_, i) =>
+      parseMetric(fromRow[i]?.value)
+    );
+  }
+  return Array.from({ length: metricCount }, () => 0);
 }
 
 /**
- * Räkna antal analyserade fakturor från Supabase Storage
+ * Period → exakt tidsfönster + GA-datum (kalenderdagar som täcker fönstret).
+ * GA Data API är dagsbaserad; bill_analyses filtreras på exakt ISO-tid.
  */
-async function countAnalyzedBills(period?: string): Promise<number> {
+function getPeriodBounds(period: string): {
+  since: Date;
+  until: Date;
+  gaStartDate: string;
+  gaEndDate: string;
+} {
+  const until = new Date();
+  const since = new Date(until.getTime());
+
+  switch (period) {
+    case "24h":
+      since.setTime(until.getTime() - 24 * 60 * 60 * 1000);
+      break;
+    case "7d":
+      since.setTime(until.getTime() - 7 * 24 * 60 * 60 * 1000);
+      break;
+    case "30d":
+      since.setTime(until.getTime() - 30 * 24 * 60 * 60 * 1000);
+      break;
+    case "90d":
+      since.setTime(until.getTime() - 90 * 24 * 60 * 60 * 1000);
+      break;
+    case "12mo":
+      since.setMonth(until.getMonth() - 12);
+      break;
+    default:
+      since.setTime(until.getTime() - 24 * 60 * 60 * 1000);
+  }
+
+  return {
+    since,
+    until,
+    gaStartDate: since.toISOString().slice(0, 10),
+    gaEndDate: until.toISOString().slice(0, 10),
+  };
+}
+
+function resolveDbBinding(): unknown {
+  let env: Record<string, unknown> = {};
+  if ((globalThis as any).getRequestContext) {
+    env = (globalThis as any).getRequestContext()?.env ?? {};
+  }
+  if (!env.DB && (process.env as any).DB) {
+    env.DB = (process.env as any).DB;
+  }
+  if (!env.DB && (globalThis as any).env?.DB) {
+    env.DB = (globalThis as any).env.DB;
+  }
+  return env.DB;
+}
+
+/**
+ * Räkna analyserade fakturor från D1 (bill_analyses) med exakt tidsgräns.
+ */
+async function countAnalyzedBills(since: Date): Promise<number> {
   try {
-    // Hämta Supabase-credentials från environment
-    const supabaseUrl = 
-      (globalThis as any).getRequestContext?.()?.env?.SUPABASE_URL ||
-      (globalThis as any).env?.SUPABASE_URL ||
-      (process.env as any).SUPABASE_URL;
-    
-    const supabaseKey = 
-      (globalThis as any).getRequestContext?.()?.env?.SUPABASE_SERVICE_KEY ||
-      (globalThis as any).env?.SUPABASE_SERVICE_KEY ||
-      (process.env as any).SUPABASE_SERVICE_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('[analytics] Supabase credentials saknas för att räkna fakturor');
-      return 0;
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-    });
-
-    const bucket = "bill_images";
-    let count = 0;
-
-    // Om period angiven, filtrera baserat på datum
-    if (period) {
-      const dateRange = getDateRange(period);
-      const start = new Date(dateRange.startDate);
-      const end = new Date(dateRange.endDate);
-      
-      // Lista filer för varje dag i perioden
-      for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-        const datePrefix = d.toISOString().slice(0, 10); // YYYY-MM-DD
-        const path = `bill-uploads/${datePrefix}`;
-        
-        const { data, error } = await supabase.storage
-          .from(bucket)
-          .list(path, { limit: 1000 });
-        
-        if (!error && data) {
-          // Räkna endast filer (inte mappar) - filer har ett id
-          count += data.filter(item => item.id !== null).length;
-        }
-      }
-      
-      return count;
-    }
-
-    // Räkna alla fakturor (ingen period-filter)
-    // Rekursivt lista alla mappar i bill-uploads
-    const { data: folders, error: foldersError } = await supabase.storage
-      .from(bucket)
-      .list("bill-uploads", { limit: 1000 });
-
-    if (foldersError) {
-      console.error('[analytics] Error listing folders from Supabase:', foldersError);
-      return 0;
-    }
-
-    if (!folders) {
-      return 0;
-    }
-
-    // Lista filer i varje datum-mapp
-    for (const folder of folders) {
-      if (folder.id === null && folder.name) {
-        // Detta är en mapp (datum-mapp)
-        const path = `bill-uploads/${folder.name}`;
-        const { data: files, error: filesError } = await supabase.storage
-          .from(bucket)
-          .list(path, { limit: 1000 });
-        
-        if (!filesError && files) {
-          count += files.filter(item => item.id !== null).length;
-        }
-      }
-    }
-
-    return count;
+    const db = createDatabaseFromBinding(resolveDbBinding());
+    return await db.countBillAnalysesSince(since);
   } catch (error) {
-    console.error('[analytics] Error in countAnalyzedBills:', error);
+    console.error("[analytics] Error in countAnalyzedBills:", error);
     return 0;
   }
 }
@@ -384,147 +358,186 @@ export async function GET(request: NextRequest) {
 
     // Hämta tidsperiod från query params (default: 24h)
     const url = new URL(request.url);
-    const period = url.searchParams.get('period') || '24h';
-    const validPeriods = ['24h', '7d', '30d', '90d', '12mo'];
-    const finalPeriod = validPeriods.includes(period) ? period : '24h';
-    const dateRange = getDateRange(finalPeriod);
+    const period = url.searchParams.get("period") || "24h";
+    const validPeriods = ["24h", "7d", "30d", "90d", "12mo"];
+    const finalPeriod = validPeriods.includes(period) ? period : "24h";
+    const bounds = getPeriodBounds(finalPeriod);
+    const dateRange = {
+      startDate: bounds.gaStartDate,
+      endDate: bounds.gaEndDate,
+    };
 
     // Hämta data från Google Analytics API
     try {
-      // Hämta aggregerad statistik
-      const statsResponse = await fetchGAData(
-        gaPropertyId,
-        accessToken,
-        [],
-        ['sessions', 'totalUsers', 'screenPageViews'],
-        [dateRange]
-      );
+      // Aggregerad statistik (inga dimensions — totals/rows[0])
+      // pageViews för webb; screenPageViews som fallback om pageViews saknas
+      let pageMetric = "pageViews";
+      let statsResponse: GAResponse;
+      try {
+        statsResponse = await fetchGAData(
+          gaPropertyId,
+          accessToken,
+          [],
+          ["sessions", "totalUsers", pageMetric],
+          [dateRange]
+        );
+      } catch (pageViewsError) {
+        console.warn(
+          "[analytics] pageViews failed, falling back to screenPageViews:",
+          pageViewsError
+        );
+        pageMetric = "screenPageViews";
+        statsResponse = await fetchGAData(
+          gaPropertyId,
+          accessToken,
+          [],
+          ["sessions", "totalUsers", pageMetric],
+          [dateRange]
+        );
+      }
 
-      // Hämta topp-sidor
       const pagesResponse = await fetchGAData(
         gaPropertyId,
         accessToken,
-        ['pagePath'],
-        ['screenPageViews'],
+        ["pagePath"],
+        [pageMetric],
         [dateRange]
       );
 
-      // Hämta källor
       const sourcesResponse = await fetchGAData(
         gaPropertyId,
         accessToken,
-        ['sessionSource'],
-        ['sessions'],
+        ["sessionSource"],
+        ["sessions"],
         [dateRange]
       );
 
-      // Hämta enheter
       const devicesResponse = await fetchGAData(
         gaPropertyId,
         accessToken,
-        ['deviceCategory'],
-        ['sessions'],
+        ["deviceCategory"],
+        ["sessions"],
         [dateRange]
       );
 
-      // Hämta tidsdata
       const timeseriesResponse = await fetchGAData(
         gaPropertyId,
         accessToken,
-        ['date'],
-        ['sessions'],
+        ["date"],
+        ["sessions"],
         [dateRange]
       );
 
-      // Hämta contract click events
       let contractClicksCount = 0;
       try {
         const contractClicksResponse = await fetchGAData(
           gaPropertyId,
           accessToken,
-          ['eventName'],
-          ['eventCount'],
+          ["eventName"],
+          ["eventCount"],
           [dateRange],
-          { 
+          {
             dimensionFilter: {
               filter: {
-                fieldName: 'eventName',
+                fieldName: "eventName",
                 stringFilter: {
-                  matchType: 'EXACT',
-                  value: 'contract_click'
-                }
-              }
-            }
+                  matchType: "EXACT",
+                  value: "contract_click",
+                },
+              },
+            },
           }
         );
-        contractClicksCount = contractClicksResponse.totals?.[0]?.metricValues?.[0]?.value 
-          ? parseInt(contractClicksResponse.totals[0].metricValues[0].value, 10)
-          : (contractClicksResponse.rows || []).reduce((sum, row) => 
-              sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
-            );
+        const clickTotals = extractMetricTotals(contractClicksResponse, 1);
+        contractClicksCount =
+          clickTotals[0] ||
+          (contractClicksResponse.rows || []).reduce(
+            (sum, row) => sum + parseMetric(row.metricValues[0]?.value),
+            0
+          );
       } catch (eventError) {
-        console.warn('[analytics] Could not fetch contract clicks:', eventError);
-        // Fortsätt utan contract clicks om det misslyckas
+        console.warn("[analytics] Could not fetch contract clicks:", eventError);
       }
 
-      // Räkna analyserade fakturor från Supabase
-      const analyzedBillsCount = await countAnalyzedBills(finalPeriod);
+      // Räkna analyser från D1 med exakt tidsgräns (inte hela kalenderdagar i storage)
+      const analyzedBillsCount = await countAnalyzedBills(bounds.since);
 
-      // Transformera data till vårt format
-      const totalStats = statsResponse.totals?.[0]?.metricValues || [];
-      
-      // Beräkna totals från detaljdata som fallback
-      const totalPageViews = (pagesResponse.rows || []).reduce((sum, row) => 
-        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      const [sessionsFromTotals, usersFromTotals, pageViewsFromTotals] =
+        extractMetricTotals(statsResponse, 3);
+
+      const totalPageViewsFromPages = (pagesResponse.rows || []).reduce(
+        (sum, row) => sum + parseMetric(row.metricValues[0]?.value),
+        0
       );
-      const totalSessions = (sourcesResponse.rows || []).reduce((sum, row) => 
-        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      const totalSessionsFromSources = (sourcesResponse.rows || []).reduce(
+        (sum, row) => sum + parseMetric(row.metricValues[0]?.value),
+        0
       );
-      const totalDevices = (devicesResponse.rows || []).reduce((sum, row) => 
-        sum + parseInt(row.metricValues[0]?.value || '0', 10), 0
+      const totalSessionsFromDevices = (devicesResponse.rows || []).reduce(
+        (sum, row) => sum + parseMetric(row.metricValues[0]?.value),
+        0
       );
-      
-      // Debug: Logga vad vi får från API
-      console.log('[analytics] Total stats from API:', {
-        totals: totalStats,
-        calculatedSessions: totalSessions,
-        calculatedPageViews: totalPageViews,
-        calculatedDevices: totalDevices,
+
+      const totalVisits =
+        sessionsFromTotals ||
+        totalSessionsFromSources ||
+        totalSessionsFromDevices;
+      const uniqueVisitors = usersFromTotals || totalVisits;
+      const pageViews = pageViewsFromTotals || totalPageViewsFromPages;
+
+      console.log("[analytics] Parsed stats:", {
+        period: finalPeriod,
+        since: bounds.since.toISOString(),
+        gaRange: dateRange,
+        totalVisits,
+        uniqueVisitors,
+        pageViews,
+        analyzedBillsCount,
+        contractClicksCount,
+        rawTotals: statsResponse.totals,
+        rawRows: statsResponse.rows?.length ?? 0,
       });
-      
+
       const data: AnalyticsData = {
-        // Använd totals från API om tillgängligt, annars beräkna från detaljdata
-        totalVisits: totalStats[0]?.value ? parseInt(totalStats[0].value, 10) : (totalSessions || totalDevices),
-        uniqueVisitors: totalStats[1]?.value ? parseInt(totalStats[1].value, 10) : totalDevices,
-        pageViews: totalStats[2]?.value ? parseInt(totalStats[2].value, 10) : totalPageViews,
+        totalVisits,
+        uniqueVisitors,
+        pageViews,
         analyzedBills: analyzedBillsCount,
         contractClicks: contractClicksCount,
-        topPages: (pagesResponse.rows || [])
-          .slice(0, 10)
-          .map(row => ({
-            path: row.dimensionValues[0]?.value || '',
-            views: parseInt(row.metricValues[0]?.value || '0', 10),
-          })),
-        visitsByDay: (timeseriesResponse.rows || []).map(row => ({
-          date: row.dimensionValues[0]?.value || '',
-          visits: parseInt(row.metricValues[0]?.value || '0', 10),
+        topPages: (pagesResponse.rows || []).slice(0, 10).map((row) => ({
+          path: row.dimensionValues[0]?.value || "",
+          views: parseMetric(row.metricValues[0]?.value),
         })),
-        referrers: (sourcesResponse.rows || [])
-          .slice(0, 10)
-          .map(row => ({
-            source: row.dimensionValues[0]?.value || 'Direct',
-            visits: parseInt(row.metricValues[0]?.value || '0', 10),
-          })),
+        visitsByDay: (timeseriesResponse.rows || []).map((row) => ({
+          date: row.dimensionValues[0]?.value || "",
+          visits: parseMetric(row.metricValues[0]?.value),
+        })),
+        referrers: (sourcesResponse.rows || []).slice(0, 10).map((row) => ({
+          source: row.dimensionValues[0]?.value || "Direct",
+          visits: parseMetric(row.metricValues[0]?.value),
+        })),
         devices: (() => {
           const deviceRows = devicesResponse.rows || [];
-          const desktopRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'desktop');
-          const mobileRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'mobile');
-          const tabletRow = deviceRows.find(r => r.dimensionValues[0]?.value === 'tablet');
-          
+          const desktopRow = deviceRows.find(
+            (r) => r.dimensionValues[0]?.value === "desktop"
+          );
+          const mobileRow = deviceRows.find(
+            (r) => r.dimensionValues[0]?.value === "mobile"
+          );
+          const tabletRow = deviceRows.find(
+            (r) => r.dimensionValues[0]?.value === "tablet"
+          );
+
           return {
-            desktop: desktopRow ? parseInt(desktopRow.metricValues[0]?.value || '0', 10) : 0,
-            mobile: mobileRow ? parseInt(mobileRow.metricValues[0]?.value || '0', 10) : 0,
-            tablet: tabletRow ? parseInt(tabletRow.metricValues[0]?.value || '0', 10) : 0,
+            desktop: desktopRow
+              ? parseMetric(desktopRow.metricValues[0]?.value)
+              : 0,
+            mobile: mobileRow
+              ? parseMetric(mobileRow.metricValues[0]?.value)
+              : 0,
+            tablet: tabletRow
+              ? parseMetric(tabletRow.metricValues[0]?.value)
+              : 0,
           };
         })(),
         lastUpdated: new Date().toISOString(),

@@ -182,7 +182,7 @@ export default function AnalyticsPage() {
                 {analytics ? analytics.analyzedBills.toLocaleString('sv-SE') : '0'}
               </p>
               <p className="text-xs text-gray-500 mt-1">
-                {timeRange === '24h' ? 'Senaste 24h' : 
+                {timeRange === '24h' ? 'Senaste 24h (exakt tid)' : 
                  timeRange === '7d' ? 'Senaste 7 dagarna' :
                  timeRange === '30d' ? 'Senaste 30 dagarna' :
                  'Senaste 90 dagarna'}

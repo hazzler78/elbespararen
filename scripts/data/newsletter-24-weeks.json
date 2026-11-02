@@ -1,0 +1,548 @@
+{
+  "series": "EB 24v 2026-27",
+  "groupName": "Elbespararen nyhetsbrev",
+  "groupId": "169680723602572313",
+  "fromName": "Elbespararen",
+  "fromEmail": "info@elbespararen.se",
+  "replyTo": "info@elbespararen.se",
+  "timezoneId": 363,
+  "sendHour": "08",
+  "sendMinute": "30",
+  "startDate": "2026-10-15",
+  "weeks": [
+    {
+      "n": 1,
+      "slug": "las-fakturan",
+      "subject": "Så läser du elräkningen på 5 minuter",
+      "preheader": "Ordlista + checklista — utan jargong.",
+      "title": "Läs fakturan rätt",
+      "hook": "De flesta betalar för poster de inte förstår. När du ser vad som är nät, elhandel och skatt blir det lättare att spara — och svårare att bli lurad.",
+      "sections": [
+        {
+          "h": "Fyra rader som alltid finns",
+          "body": "1) Elhandel (själva elen) 2) Nätavgift (ledningarna) 3) Energiskatt + moms 4) Eventuella tillägg (påslag, fakturaavgift, försäkring). Du kan byta elhandelsbolag — men inte nätägare."
+        },
+        {
+          "h": "Gör så här i dag",
+          "body": "Ta senaste fakturan. Markera de fyra posterna. Skriv ner kWh och totalt belopp. Spara bilden — den är basen för allt annat vi går igenom i den här serien."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Analysera din faktura gratis",
+      "ps": "Nästa vecka: spot vs fast — när vilket vinner.",
+      "ctaPromise": "Dina fyra fakturarader utskrivna — nät, elhandel, skatt och tillägg. Tar cirka 30 sekunder."
+    },
+    {
+      "n": 2,
+      "slug": "spot-vs-fast",
+      "subject": "Rörligt eller fast — när vilket vinner för dig",
+      "preheader": "Ingen säljpitch. Bara när vad lönar sig.",
+      "title": "Spot vs fast — utan jargong",
+      "hook": "Rörligt (spot) är inte alltid billigast. Fast är inte alltid “tryggt och dyrt”. Det beror på hur du förbrukar och hur länge du binder dig.",
+      "sections": [
+        {
+          "h": "Välj rörligt om…",
+          "body": "Du tål variation månad till månad, kan flytta förbrukning (t.ex. elbil/tvätt), och vill undvika bindningstid."
+        },
+        {
+          "h": "Välj fast om…",
+          "body": "Du vill budgetera exakt, har hög vinterförbrukning, eller sover dåligt av prissvängningar. Kolla alltid vad som händer efter kampanjperioden."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Se vad du betalar idag",
+      "ps": "Tips: jämför alltid öre/kWh + årsavgift + villkor — inte bara “från-pris”.",
+      "ctaPromise": "En uppdelning av vad du betalar idag, så du kan välja rörligt eller fast utifrån din faktiska förbrukning."
+    },
+    {
+      "n": 3,
+      "slug": "dolda-avgifter",
+      "subject": "7 små poster som äter 100–400 kr/år",
+      "preheader": "Checklista du kan bocka av på kvällskvisten.",
+      "title": "Dolda avgifter på fakturan",
+      "hook": "Det är sällan en stor “bluff”. Det är många små rader. Tillsammans blir de kännbara.",
+      "sections": [
+        {
+          "h": "Leta efter detta",
+          "body": "Faktura-/aviavgift, “miljöval” du inte bett om, försäkringstillägg, högt påslag på spot, dubbla abonnemang, felaktig säkring/effekt, och avgifter som fortsätter efter kampanj."
+        },
+        {
+          "h": "Regel",
+          "body": "Förstår du inte en rad på 10 sekunder — markera den. Antingen ska den bort, eller så ska bolaget förklara den begripligt."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Låt AI:n flagga misstänkta poster",
+      "ps": "Du behöver inte bli expert. Du behöver en vana att ifrågasätta.",
+      "ctaPromise": "Misstänkta småposter flaggade på just din faktura — aviavgift, tillägg och oklart påslag."
+    },
+    {
+      "n": 4,
+      "slug": "elomraden",
+      "subject": "Varför grannen betalar mindre för «samma» elavtal",
+      "preheader": "Elområde i klartext — och hur du ser ditt.",
+      "title": "Elområde SE1–SE4",
+      "hook": "Sverige är delat i fyra elområden. Spotpriset skiljer sig — ibland kraftigt. Ett “billigt” avtal i fel jämförelse blir missvisande.",
+      "sections": [
+        {
+          "h": "Hitta ditt område",
+          "body": "Det står ofta på fakturan eller hos ditt elhandelsbolag. Södra Sverige (SE4) har historiskt ofta högre spot än norr."
+        },
+        {
+          "h": "Praktiskt tips",
+          "body": "När du jämför avtal: filtrera alltid på ditt elområde. Annars jämför du äpplen med päron."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Analysera faktura (inkl. område)",
+      "ps": "Nästa vecka: vad du faktiskt kan byta — och vad du sitter fast i.",
+      "ctaPromise": "Vilket elområde din faktura hör till, så du slutar jämföra mot fel pris."
+    },
+    {
+      "n": 5,
+      "slug": "nat-vs-elhandel",
+      "subject": "Du kan byta elbolag — men inte ledningarna",
+      "preheader": "Slipper du förvirringen en gång för alla.",
+      "title": "Nät vs elhandel",
+      "hook": "Många försöker “byta allt” och blir besvikna. Det finns två bolag på de flesta fakturor — med helt olika spelregler.",
+      "sections": [
+        {
+          "h": "Elhandelsbolag",
+          "body": "Säljer elen. Här byter du avtal, förhandlar påslag, och kan spara mest på själva kilowattimmen."
+        },
+        {
+          "h": "Nätägare",
+          "body": "Äger ledningarna där du bor. Du byter sällan (bara om du flyttar). Men du kan ibland påverka effekttariffer och säkringsnivå."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Se bättre elavtal",
+      "ps": "Byt elhandel med öppna ögon — nätet lämnar vi till nästa nivå.",
+      "ctaPromise": "Vilken halvdel av fakturan du faktiskt kan byta — och vilken som sitter fast i nätet."
+    },
+    {
+      "n": 6,
+      "slug": "vinter",
+      "subject": "10 grejer före kylan — rankade efter effekt",
+      "preheader": "Gör de tre översta innan snön kommer.",
+      "title": "Vinterförberedelse",
+      "hook": "Vintern avgör årets elnota. Små vanor + rätt avtal slår “Köp ny pryl”-tänket de flesta gånger.",
+      "sections": [
+        {
+          "h": "Hög effekt (gör först)",
+          "body": "1) Kolla avtalet inför vintern 2) Sänk inne 1° om det går 3) Täta fönster/dörrar 4) Timstyra värme/elbil 5) Stäng av standby."
+        },
+        {
+          "h": "Medel effekt",
+          "body": "6) Duschvanor 7) Tvätta fulla maskiner 8) Element bakom möbler 9) Frys/ kyl tätning 10) En faktura-analys i månaden."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Ta en vinter-baseline nu",
+      "ps": "En baslinje i oktober gör december begriplig.",
+      "ctaPromise": "En vinter-baseline från din senaste faktura, så december blir begriplig."
+    },
+    {
+      "n": 7,
+      "slug": "bytestid",
+      "subject": "Byt elavtal 30–60 dagar för sent — och det blir dyrt",
+      "preheader": "Uppsägning, bindning och bytefönster — enkelt.",
+      "title": "Timing för byte",
+      "hook": "Fel timing kostar mer än fel avtal. Rätt timing är ofta 30–60 dagar innan bindning/kampanj tar slut.",
+      "sections": [
+        {
+          "h": "Kolla tre datum",
+          "body": "Bindningstidens slut, uppsägningstid, och när “kampanjpris” övergår till normalpris. Skriv in dem i kalendern."
+        },
+        {
+          "h": "Tumregel",
+          "body": "Jämför alltid nya alternativ innan du blir automatiskt förlängd. Tyst förlängning är dyrt."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Jämför avtal i lugn och ro",
+      "ps": "Du ska byta när du är redo — inte när telefonförsäljaren är det.",
+      "ctaPromise": "Dina avtalsdatum och villkor som underlag innan du jämför nästa avtal."
+    },
+    {
+      "n": 8,
+      "slug": "historik",
+      "subject": "En faktura ljuger — historiken berättar sanningen",
+      "preheader": "Därför räcker inte “senaste månaden”.",
+      "title": "Historik = sanning",
+      "hook": "En mild oktober säger nästan inget om din årsnota. Trend över 6–12 månader visar om besparingen håller.",
+      "sections": [
+        {
+          "h": "Vad historik ger dig",
+          "body": "Du ser säsong, avvikande månader, och om ett “bra avtal” faktiskt blev billigare över tid."
+        },
+        {
+          "h": "Gratis vs mer",
+          "body": "På Elbespararen sparar gratisplanen ett par analyser. Premium låser upp hela historiken + CSV — just för den här typen av uppföljning."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Lås upp historik (Premium)",
+      "ps": "Betala bara om historiken faktiskt hjälper dig besluta. Annars fortsätt gratis.",
+      "ctaPromise": "Trend över flera månader — inte bara senaste fakturan — så du ser om besparingen håller."
+    },
+    {
+      "n": 9,
+      "slug": "paslag",
+      "subject": "Är ditt «billiga» avtal dyrt i påslag?",
+      "preheader": "En snabb modell i tre steg.",
+      "title": "Påslag & marginal",
+      "hook": "\"Billig el\" med högt påslag blir dyr. Påslaget är ofta där bolaget tjänar pengar — i tysthet.",
+      "sections": [
+        {
+          "h": "Tre steg",
+          "body": "1) Hitta spot/referens 2) Hitta ditt påslag (öre/kWh eller %) 3) Multiplicera med din årsförbrukning. Där har du den verkliga kostnaden för “tjänsten”."
+        },
+        {
+          "h": "Varningssignal",
+          "body": "Oklart påslag, “paketpris” utan uppdelning, eller avgifter som ändras utan tydligt mejl."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Få posterna uppdelade",
+      "ps": "Transparency > snygg app.",
+      "ctaPromise": "Påslaget uträknat från dina poster, så du ser om «billig el» faktiskt är dyr."
+    },
+    {
+      "n": 10,
+      "slug": "uppvarmning",
+      "subject": "1° lägre inne — vad det kan betyda i vinter",
+      "preheader": "Vad som är teknik vs beteende.",
+      "title": "Uppvärmning & el",
+      "hook": "Har du elvärme är avtalet viktigt — men en grads skillnad över vintern är också en faktura.",
+      "sections": [
+        {
+          "h": "Teknik",
+          "body": "Värmepump, termostater, zonindelning. Stora investeringar — räkna payback innan du köper."
+        },
+        {
+          "h": "Beteende",
+          "body": "Nattetid, fönster på glänt, handdukstork dygnet runt. Billiga vanor först, sedan prylar."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Se din kostnadstrend",
+      "ps": "Mät före och efter. Annars gissar du.",
+      "ctaPromise": "Hur uppvärmning och vanor syns i din kostnadstrend över tid."
+    },
+    {
+      "n": 11,
+      "slug": "skatt-stod",
+      "subject": "Den här delen av elräkningen kan du inte byta bort",
+      "preheader": "Skatt, moms och stöd utan brus.",
+      "title": "Moms, skatt, stöd",
+      "hook": "En del av fakturan är lagstadgad. Där vinner du inte genom att “byta bolag”. Fokusera energi där du har rådighet.",
+      "sections": [
+        {
+          "h": "Svårt att påverka",
+          "body": "Energiskatt, moms, vissa nätregler. Följ nyheter — men låt dem inte stoppa praktiska åtgärder."
+        },
+        {
+          "h": "Du kan påverka",
+          "body": "Elhandelsavtal, påslag, förbrukning, timing, och att säga nej till add-ons."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Separator på din faktura",
+      "ps": "Kontroll där det går. Acceptans där det måste.",
+      "ctaPromise": "Vad på fakturan som är lagstadgat respektive vad du kan påverka själv."
+    },
+    {
+      "n": 12,
+      "slug": "halvar",
+      "subject": "3 saker som återkommer på dyra elräkningar",
+      "preheader": "Halvtid i serien. Gör en 15-minuters audit.",
+      "title": "Halvårskrönika",
+      "hook": "Efter många analyser återkommer samma tre mönster: oklart påslag, glömda tillägg, och ingen uppföljning efter byte.",
+      "sections": [
+        {
+          "h": "Din mini-audit",
+          "body": "1) Senaste 2–3 fakturorna 2) Markera oförstådda rader 3) Notera kWh och kr 4) Bestäm: behåll, byt, eller bevaka 60 dagar."
+        },
+        {
+          "h": "Om du vill gå djupare",
+          "body": "Spara historiken och exportera. Det är precis därför Premium finns — inte för flash, utan för uppföljning."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Premium för historik + CSV",
+      "ps": "Audit först. Köp sen — om det behövs.",
+      "ctaPromise": "De tre vanligaste läckagen markerade mot dina sparade analyser."
+    },
+    {
+      "n": 13,
+      "slug": "case",
+      "subject": "Från rörig faktura till begriplig månadskostnad",
+      "preheader": "Anonymiserat, steg för steg.",
+      "title": "Anonym case",
+      "hook": "En villaägare hade “bra avtal” men tre tilläggsrader och högt påslag. Efter städning och byte blev månaden begriplig — och lägre.",
+      "sections": [
+        {
+          "h": "Stegen",
+          "body": "1) Analysera 2) Ta bort add-ons 3) Jämför påslag 4) Byt 5) Följ upp 90 dagar. Inget magiskt — bara systematik."
+        },
+        {
+          "h": "Lärdomen",
+          "body": "Besparing utan uppföljning är en känsla. Besparing med historik är ett faktum."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Starta din egen case",
+      "ps": "Din situation är unik. Metoden är densamma.",
+      "ctaPromise": "Samma steg på din faktura: städa tillägg, jämför påslag, följ upp resultatet."
+    },
+    {
+      "n": 14,
+      "slug": "export",
+      "subject": "Skicka detta till rådgivaren innan mötet",
+      "preheader": "Bank, mäklare, energikonsult — samma fil.",
+      "title": "Exportera & rådgivare",
+      "hook": "När någon “ska hjälpa dig med energin” — ge dem data, inte magkänsla. En CSV sparar timmar.",
+      "sections": [
+        {
+          "h": "Vad som ska med",
+          "body": "Period, kWh, kostnad, identifierad besparing, och datum för analys. Ju mer rad = desto bättre beslut."
+        },
+        {
+          "h": "Så gör du",
+          "body": "På Elbespararen: spara analyser och exportera via Premium. Skicka filen innan mötet."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Lås upp CSV-export",
+      "ps": "Bra underlag = färre dåliga säljmöten.",
+      "ctaPromise": "En fil med period, kWh och kostnad som du kan skicka före mötet."
+    },
+    {
+      "n": 15,
+      "slug": "flytt",
+      "subject": "Flyttar du? El-checklista som faktiskt funkar",
+      "preheader": "Nätanmälan, elavtal, slutavläsning.",
+      "title": "Flytt & ny adress",
+      "hook": "Vid flytt uppstår dubbla avtal, glömda uppsägningar och “startavgifter”. En checklista sparar både pengar och irritation.",
+      "sections": [
+        {
+          "h": "Före flytt",
+          "body": "Säg upp/flytta elhandel, anmäl till nätägaren, fotografera mätarställning, spara sista fakturan."
+        },
+        {
+          "h": "Efter inflytt",
+          "body": "Bekräfta att bara ett elhandelsavtal är aktivt. Analysera första fakturan direkt."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Ordna avtal för nya adressen",
+      "ps": "Flyttkaos är dyrt. Systematik är gratis.",
+      "ctaPromise": "Underlag för nya adressen — så du slipper dubbla avtal och glömda uppsägningar."
+    },
+    {
+      "n": 16,
+      "slug": "sol",
+      "subject": "Innan solcellsoffert: ha 12 månaders förbrukning klar",
+      "preheader": "Överskott, nätavgifter och förväntningar.",
+      "title": "Solceller & nät",
+      "hook": "Sol är bra för många — men kalkylen dör om du glömmer nät, växelriktare och din verkliga förbrukningsprofil.",
+      "sections": [
+        {
+          "h": "Tänk så här",
+          "body": "Hur mycket el använder du när solen producerar? Vad händer med överskott? Vilka avgifter tar nätet?"
+        },
+        {
+          "h": "Innan offert",
+          "body": "Ha 12 månaders förbrukning klar. Annars säljs du på genomsnitt som inte är ditt."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Samla din förbrukning först",
+      "ps": "Data före demo.",
+      "ctaPromise": "12 månaders förbrukning samlad, innan du tar ställning till en solcellsoffert."
+    },
+    {
+      "n": 17,
+      "slug": "elbil",
+      "subject": "3 laddregler som skyddar vinsten från bra elavtal",
+      "preheader": "Timing vs spot — utan att bli nörd.",
+      "title": "Elbil & laddning",
+      "hook": "Laddar du “när det passar” kan bilen äta vinsten från ett bra avtal. Tre regler räcker långt.",
+      "sections": [
+        {
+          "h": "Reglerna",
+          "body": "1) Ladda när priset är lågt om du har spot 2) Undvik att maxa effekten i dyra timmar 3) Följ upp kWh till bilen separat en månad."
+        },
+        {
+          "h": "Bonus",
+          "body": "Om du har fast pris: fokusera mer på effekt/säkring och totalkostnad än minutpriser."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Se hur laddning syns på fakturan",
+      "ps": "En månads mätning slår tio tipslistor.",
+      "ctaPromise": "Hur laddningen syns på fakturan — separat från resten av hushållet."
+    },
+    {
+      "n": 18,
+      "slug": "sommar",
+      "subject": "Låg sommarfaktura betyder inte bra avtal",
+      "preheader": "Granska ändå — tyst.",
+      "title": "Sommarens fälla",
+      "hook": "När fakturan är låg slutar vi titta. Där smyger sig höga påslag och tillägg kvar till vintern.",
+      "sections": [
+        {
+          "h": "Sommarcheck",
+          "body": "En snabb analys i juli/augusti. Om något är fel nu blir det dyrare i januari."
+        },
+        {
+          "h": "Behåll vanan",
+          "body": "En faktura i kvartalet. Mer behövs sällan. Mindre är carelöst."
+        }
+      ],
+      "cta": "analyze",
+      "ctaLabel": "Gör sommarchecken",
+      "ps": "Tystnad på fakturan är inte samma sak som kontroll.",
+      "ctaPromise": "En snabb sommarcheck: om något är fel nu syns det innan vintern."
+    },
+    {
+      "n": 19,
+      "slug": "fallor",
+      "subject": "Kampanjpriset tar slut. Sen då?",
+      "preheader": "Checklista innan du skriver på.",
+      "title": "Avtalsfällor",
+      "hook": "Det dyra sitter ofta i villkoren — inte i rubrikpriset.",
+      "sections": [
+        {
+          "h": "Fråga alltid",
+          "body": "Bindningstid? Uppsägningstid? Pris efter kampanj? Påslag? Fakturaavgift? Vad händer vid flytt?"
+        },
+        {
+          "h": "Rött ljus",
+          "body": "Otydligt “rörligt paket”, telefonpress, och “måste bestämma nu”."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Jämför avtal lugnt",
+      "ps": "Bra avtal tål att du sover på saken.",
+      "ctaPromise": "Villkoren som spelar roll efter kampanjpriset — innan du skriver på."
+    },
+    {
+      "n": 20,
+      "slug": "folj-upp",
+      "subject": "Bytte du avtal? Kolla efter 30 dagar om det faktiskt blev billigare",
+      "preheader": "När Premium faktiskt lönar sig.",
+      "title": "Följ upp besparingen",
+      "hook": "Utan uppföljning återgår allt till gamla vanor. En enkel månadstabell räcker.",
+      "sections": [
+        {
+          "h": "Tabellen",
+          "body": "Månad | kWh | kr | anteckning (byte/semester/elbil). Fyll i när fakturan kommer."
+        },
+        {
+          "h": "När verktyg hjälper",
+          "body": "Om du sparar flera analyser och vill se trend + CSV är Premium gjort för det — särskilt kring 49 kr/år."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Premium för uppföljning",
+      "ps": "Verktyg ska spara tid. Annars skippa dem.",
+      "ctaPromise": "En enkel uppföljning: blev bytet faktiskt billigare efter 30 dagar?"
+    },
+    {
+      "n": 21,
+      "slug": "jamfor-ratt",
+      "subject": "Sluta jämföra «från-pris» — räkna så här i stället",
+      "preheader": "kWh, påslag, årsavgift, villkor.",
+      "title": "Jämför rätt",
+      "hook": "Jämförelsesajter ljuger inte alltid — men de förenklar. Du behöver en egen checklista.",
+      "sections": [
+        {
+          "h": "Samma bas",
+          "body": "Samma elområde, samma uppskattad årsförbrukning, samma bindning. Annars blir “vinnaren” meningslös."
+        },
+        {
+          "h": "Räkna total",
+          "body": "(öre/kWh × kWh) + fasta avgifter + kända tillägg. Punkt."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Öppna avtalsjämförelsen",
+      "ps": "Den tråkiga matematiken är din vän.",
+      "ctaPromise": "Jämförelse på samma bas — område, förbrukning och villkor — så «vinnaren» betyder något."
+    },
+    {
+      "n": 22,
+      "slug": "byte-plan",
+      "subject": "Byt elavtal på 7 dagar — utan stress",
+      "preheader": "En plan du kan följa i telefonköerna.",
+      "title": "7-dagars byteplan",
+      "hook": "Byte ska vara tråkigt och förutsägbart — inte dramatiskt.",
+      "sections": [
+        {
+          "h": "Dag 1–2",
+          "body": "Samla fakturor, notera datum och villkor."
+        },
+        {
+          "h": "Dag 3–5",
+          "body": "Jämför 2–3 alternativ. Välj ett. Läs villkor."
+        },
+        {
+          "h": "Dag 6–7",
+          "body": "Teckna, bekräfta uppsägning/övertag, spara bekräftelsemail. Analysera nästa faktura."
+        }
+      ],
+      "cta": "contracts",
+      "ctaLabel": "Börja jämförelsen",
+      "ps": "Stress är säljarens verktyg. Plan är ditt.",
+      "ctaPromise": "En 7-dagarsplan med dina fakturor som startpunkt, utan telefonpress."
+    },
+    {
+      "n": 23,
+      "slug": "aret",
+      "subject": "Dyraste och billigaste månaden — din elöversikt",
+      "preheader": "Mall som funkar i CSV eller anteckningar.",
+      "title": "Året i siffror",
+      "hook": "En årsöversikt tar 20 minuter om du har data — och sparar dig från att gissa nästa vinter.",
+      "sections": [
+        {
+          "h": "Sammanfatta",
+          "body": "Total kWh, total kr, dyraste månad, billigaste månad, byten under året, och en mening: “Vad lärde jag mig?”"
+        },
+        {
+          "h": "Spara den",
+          "body": "Export till CSV om du kan. Annars en enkel tabell. Framtida-du kommer tacka dig."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Exportera årsdata (Premium)",
+      "ps": "Sista steget i serien nästa vecka: planen för nästa vinter.",
+      "ctaPromise": "Dyraste och billigaste månaden samlade, så nästa vinter inte blir gissning."
+    },
+    {
+      "n": 24,
+      "slug": "nasta-vinter",
+      "subject": "Sätt tre tal innan nästa vinter",
+      "preheader": "Vad som är värt att betala för — och inte.",
+      "title": "Plan för nästa vinter",
+      "hook": "Du har nu verktygen: läsa faktura, jämföra avtal, följa upp. Avsluta med en enkel vinterbudget.",
+      "sections": [
+        {
+          "h": "Sätt tre tal",
+          "body": "1) Förväntad vinterförbrukning 2) Maxpris du accepterar 3) Datum då du omprövar avtalet."
+        },
+        {
+          "h": "Vad som kan vara värt pengar",
+          "body": "Ett bättre avtal. Uppföljning (historik/CSV). Ibland teknik. Sällan impulsköp efter en kall faktura."
+        }
+      ],
+      "cta": "premium",
+      "ctaLabel": "Fortsätt med historik (Premium)",
+      "ctaSecondary": "contracts",
+      "ctaSecondaryLabel": "Eller hitta bättre avtal",
+      "ps": "Tack för att du följt serien. Svara på mejlet om du vill att vi fördjupar något ämne.",
+      "ctaPromise": "Tre tal för nästa vinter: förbrukning, maxpris och datum då du omprövar."
+    }
+  ]
+}

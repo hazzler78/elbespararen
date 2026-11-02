@@ -56,7 +56,7 @@
    - The template will be imported with all styling
 
 5. **Customize**
-   - Replace `[Förnamn]` with MailerLite merge tags: `{{ subscriber.name }}` or `{{ subscriber.first_name }}`
+   - Replace `[Förnamn]` with MailerLite's name tag: `{$name|default('där')}`
    - Update links as needed
    - Test with preview
 
@@ -112,9 +112,9 @@ If you prefer the visual editor:
 
 ### Merge Tags
 Replace placeholders with MailerLite merge tags:
-- `[Förnamn]` → `{{ subscriber.first_name }}`
-- `[Email]` → `{{ subscriber.email }}`
-- `[Unsubscribe]` → `{{ unsubscribe }}`
+- `[Förnamn]` → `{$name|default('där')}`
+- `[Email]` → `{$email}`
+- `[Unsubscribe]` → `{$unsubscribe}`
 
 ### Links
 - Main CTA: `https://elbespararen.se/upload`
