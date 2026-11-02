@@ -24,7 +24,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "Sparas min faktura eller personuppgifter någonstans?",
-    answer: "Fakturabilden skickas till vår AI-leverantör xAI (Grok) för analys. xAI sparar inget (Zero Data Retention). Vi sparar bilden i 30 dagar för felsökning och support och raderar den sedan automatiskt. Bilden anonymiseras inte, så dölj gärna namn och adress innan du laddar upp. Vi tränar inte AI på fakturor.",
+    answer: "Fakturabilden skickas till vår AI-leverantör xAI (Grok) för analys. Vi har bett xAI att aktivera Zero Data Retention (ZDR), men det är inte aktivt än — vi uppdaterar integritetspolicyn när det är det. Tills dess kan xAI enligt sina standard-API-villkor spara API-data i upp till 30 dagar för missbruksövervakning och raderar dem därefter; xAI tränar inte på API-data. Vi sparar bilden i 30 dagar för felsökning och support och raderar den sedan automatiskt. Bilden anonymiseras inte, så dölj gärna namn och adress innan du laddar upp. Vi tränar inte AI på fakturor.",
     category: "Säkerhet & Integritet"
   },
   {

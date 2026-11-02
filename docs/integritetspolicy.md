@@ -35,7 +35,7 @@ Mejla oss om du har frågor om hur vi hanterar dina uppgifter eller vill använd
 ## 3. Så hanteras din faktura, helt ärligt
 
 - **Hela fakturabilden skickas till vår AI-leverantör xAI** (modellen Grok, grok-4.3, via api.x.ai) för att läsas av. Den skickas som den är och anonymiseras inte innan.
-- **xAI sparar ingenting.** Vi använder xAI:s Zero Data Retention (ZDR). Det betyder att xAI inte lagrar din faktura eller svaret efter att analysen är klar, och inte använder dem för att träna sina modeller.
+- **xAI och Zero Data Retention (ZDR).** Vi har bett xAI att aktivera Zero Data Retention för vårt konto. Det är inte aktivt än. När det är aktivt uppdaterar vi policyn — då sparas varken din faktura eller svaret hos xAI efter analysen. Tills dess gäller xAI:s vanliga API-villkor: xAI kan spara API-data i upp till 30 dagar för att upptäcka missbruk och raderar dem därefter. xAI tränar inte på API-data.
 - **Vi sparar fakturabilden i 30 dagar** i vår lagring (Supabase, eller Cloudflare R2 som reserv) så att vi kan felsöka och hjälpa dig om analysen blev fel. Efter 30 dagar raderas bilden automatiskt. Den sparade bilden anonymiseras inte.
 - **Vi tränar inte AI på dina fakturor.**
 - Ladda bara upp din egen faktura. Vill du dela så lite som möjligt kan du dölja namn, adress och kundnummer innan du laddar upp. Analysen fungerar ändå.
@@ -46,7 +46,7 @@ Vi säljer aldrig dina uppgifter. Vi använder följande leverantörer för att 
 
 | Leverantör | Vad | Var |
 |---|---|---|
-| **xAI / SpaceX Super Intelligence LLC** (Grok, grok-4.3, api.x.ai) | AI-analys av fakturor och chatt, med Zero Data Retention (inget sparas) | **USA.** xAI erbjuder ingen EU-region. xAI kan skicka anrop mellan sina regioner. |
+| **xAI / SpaceX Super Intelligence LLC** (Grok, grok-4.3, api.x.ai) | AI-analys av fakturor och chatt. Vi har bett om Zero Data Retention (ZDR); tills det är aktivt kan xAI spara API-data i upp till 30 dagar enligt standardvillkor | **USA.** xAI erbjuder ingen EU-region. xAI kan skicka anrop mellan sina regioner. |
 | **Supabase Inc.** | Databas och lagring av fakturabilder | EU: Stockholm, Sverige (AWS eu-north-1) |
 | **Cloudflare Inc.** (Workers/Pages, R2) | Drift av sajten och reservlagring av fakturabilder | [R2-PLATS/JURISDIKTION] ← KRÄVS. Global drift, USA-bolag. |
 | **Resend** | Utskick av e-post från tjänsten | USA |
@@ -62,13 +62,13 @@ Vi lämnar också ut uppgifter till myndigheter när lagen kräver det.
 
 ## 5. Ingen AI-träning
 
-Vi använder inte dina fakturor eller chattmeddelanden för att träna eller förbättra AI-modeller. xAI tränar inte heller på det vi skickar. Det framgår av xAI:s säkerhets-FAQ för API:et (docs.x.ai/developers/faq/security), och med ZDR sparas inget alls hos xAI.
+Vi använder inte dina fakturor eller chattmeddelanden för att träna eller förbättra AI-modeller. xAI tränar inte på API-data enligt xAI:s säkerhets-FAQ för API:et (docs.x.ai/developers/faq/security). Vi har bett xAI att aktivera Zero Data Retention (ZDR); tills det är aktivt kan xAI spara API-data i upp till 30 dagar enligt sina standardvillkor. Vi uppdaterar policyn när ZDR är aktivt.
 
 ## 6. Överföring till länder utanför EU/EES
 
 Vissa leverantörer, framför allt **xAI** i USA, behandlar uppgifter utanför EU/EES.
 
-- **xAI:** överföringen skyddas av EU-kommissionens standardavtalsklausuler (SCC, beslut 2021/914, modul 2) enligt xAI:s Data Processing Addendum (x.ai/legal/data-processing-addendum, gällande från 22 september 2026). Vi använder xAI:s Zero Data Retention, så xAI sparar inte fakturan eller svaret efter att analysen är klar.
+- **xAI:** överföringen skyddas av EU-kommissionens standardavtalsklausuler (SCC, beslut 2021/914, modul 2) enligt xAI:s Data Processing Addendum (x.ai/legal/data-processing-addendum, gällande från 22 september 2026). Vi har bett xAI att aktivera Zero Data Retention (ZDR). Tills det är aktivt kan xAI spara API-data i upp till 30 dagar enligt sina standardvillkor och raderar dem därefter. xAI tränar inte på API-data. Vi uppdaterar policyn när ZDR är aktivt.
 - **Övriga USA-leverantörer** (Cloudflare, Resend, Stripe, Google, Supabase Inc.): överföringen sker med stöd av EU–US Data Privacy Framework, där leverantören är certifierad, och/eller standardavtalsklausuler. [VERIFIERA DPF-STATUS PER LEVERANTÖR]
 
 Mejla oss om du vill ha en kopia av skyddsåtgärderna.
@@ -78,7 +78,7 @@ Mejla oss om du vill ha en kopia av skyddsåtgärderna.
 | Uppgift | Lagringstid |
 |---|---|
 | Fakturabild | 30 dagar, sedan automatisk radering. Tidigare om du ber om det. |
-| Hos xAI | Sparas inte (Zero Data Retention) |
+| Hos xAI | Vi har bett om Zero Data Retention (ZDR), som inte är aktivt än. Tills vidare: upp till 30 dagar enligt xAI:s standard-API-villkor, sedan radering. xAI tränar inte på API-data. |
 | Analysresultat | [X DAGAR] |
 | Förfrågningar (byte, offert, kontakt) | [X MÅNADER] efter avslutat ärende |
 | Nyhetsbrev | Tills du avregistrerar dig |
