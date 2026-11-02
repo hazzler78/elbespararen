@@ -24,7 +24,7 @@ const faqData: FAQItem[] = [
   },
   {
     question: "Sparas min faktura eller personuppgifter någonstans?",
-    answer: "Din faktura sparas för att träna vår AI och förbättra analysen, men alla personuppgifter (namn, adress, kundnummer) anonymiseras omedelbart. Du kan när som helst begära radering av din faktura från våra träningsdata. Analysresultat sparas i 30 dagar för din åtkomst.",
+    answer: "Fakturabilden skickas till vår AI-leverantör xAI (Grok) för analys. xAI sparar inget (Zero Data Retention). Vi sparar bilden i 30 dagar för felsökning och support och raderar den sedan automatiskt. Bilden anonymiseras inte, så dölj gärna namn och adress innan du laddar upp. Vi tränar inte AI på fakturor.",
     category: "Säkerhet & Integritet"
   },
   {
@@ -78,13 +78,13 @@ const faqData: FAQItem[] = [
     category: "Elmarknaden"
   },
   {
-    question: "Hur använder ni min faktura för AI-träning?",
-    answer: "Din faktura används för att träna vår AI att bättre identifiera olika avgiftstyper och fakturaformat. Alla personuppgifter anonymiseras omedelbart - AI:n lär sig endast strukturen och innehållet, inte vem du är. Detta hjälper oss att ge bättre analyser till alla användare.",
+    question: "Använder ni min faktura för AI-träning?",
+    answer: "Nej. Vi tränar inte AI på dina fakturor, och xAI tränar inte heller på det vi skickar via deras API.",
     category: "Teknik & AI"
   },
   {
-    question: "Kan jag begära att min faktura raderas från AI-träningsdata?",
-    answer: "Ja, absolut! Du har alltid rätt att begära radering av din faktura från våra träningsdata. Skicka ett e-post till info@elbespararen.se så hjälper vi dig omedelbart. Vi respekterar ditt val och raderar all data som kan kopplas till dig.",
+    question: "Kan jag begära att min faktura raderas?",
+    answer: "Ja, absolut! Fakturan raderas automatiskt efter 30 dagar, men du kan begära radering tidigare. Skicka ett e-post till info@elbespararen.se så hjälper vi dig omedelbart. Vi respekterar ditt val och raderar all data som kan kopplas till dig.",
     category: "Säkerhet & Integritet"
   }
 ];

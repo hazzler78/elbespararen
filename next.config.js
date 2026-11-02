@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  async redirects() {
+    return [
+      { source: "/gdpr", destination: "/privacy", permanent: true },
+      { source: "/integritetspolicy", destination: "/privacy", permanent: true },
+    ];
+  },
   // Ensure path aliases work in OpenNext builds
   webpack: (config, { isServer, webpack }) => {
     const path = require("path");

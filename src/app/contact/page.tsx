@@ -171,7 +171,7 @@ export default function ContactPage() {
               },
               {
                 question: "Sparas min faktura någonstans?",
-                answer: "Din faktura sparas för AI-träning men personuppgifter anonymiseras omedelbart. Du kan begära radering när som helst."
+                answer: "Fakturabilden skickas till vår AI-leverantör xAI för analys (xAI sparar inget, Zero Data Retention). Vi sparar bilden i 30 dagar för felsökning och raderar den sedan automatiskt. Vi tränar inte AI på fakturor. Du kan begära radering tidigare via info@elbespararen.se."
               },
               {
                 question: "Hur exakt är analysen?",

@@ -1,6 +1,7 @@
 /**
  * xAI / Grok client (OpenAI-compatible SDK).
- * Prefer XAI_API_KEY; OPENAI_API_KEY is accepted as a temporary fallback.
+ * Uses XAI_API_KEY only. The xAI team must have Zero Data Retention (ZDR) enabled
+ * in the xAI Console, because invoices contain personal data (xAI DPA §2.1).
  * Reads Cloudflare Pages bindings via getRequestContext (same pattern as Stripe).
  */
 import OpenAI from "openai";
@@ -70,7 +71,7 @@ export const AI_CHAT_MODEL = DEFAULT_CHAT_MODEL;
 export const AI_VISION_MODEL = DEFAULT_VISION_MODEL;
 
 export function getXaiApiKey(): string | undefined {
-  return getEnvVar("XAI_API_KEY") || getEnvVar("OPENAI_API_KEY");
+  return getEnvVar("XAI_API_KEY");
 }
 
 export function hasXaiApiKey(): boolean {
@@ -103,4 +104,24 @@ export function getAiAuthHeaders(): Record<string, string> {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
+}
+
+/**
+ * xAI returns `x-zero-data-retention: "true" | "false"` on every response.
+ * ZDR is enabled team-wide in the xAI Console (no request flag exists), so we
+ * can only verify it. Logs loudly when ZDR is not active.
+ */
+let hasWarnedZdr = false;
+export function checkZeroDataRetention(headers: Headers | null | undefined): boolean | undefined {
+  const raw = headers?.get("x-zero-data-retention");
+  if (raw == null) return undefined;
+  const active = raw.replace(/"/g, "").trim().toLowerCase() === "true";
+  if (!active && !hasWarnedZdr) {
+    hasWarnedZdr = true;
+    console.error(
+      "[ai-client] VARNING: xAI Zero Data Retention är INTE aktivt för detta team. " +
+        "Aktivera ZDR i xAI Console → Team Settings innan personuppgifter skickas."
+    );
+  }
+  return active;
 }

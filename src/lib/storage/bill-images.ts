@@ -5,8 +5,10 @@ import { createClient } from "@supabase/supabase-js";
 // saknas eller felar.
 //
 // Designmål:
-// - Återanvänd ArrayBuffer för vidare bearbetning (t.ex. OpenAI Vision)
-// - Spara rik metadata för enklare framtida modellträning
+// - Återanvänd ArrayBuffer för vidare bearbetning (xAI Grok Vision)
+// - Bilder sparas ENDAST för felsökning/support och raderas efter
+//   BILL_IMAGE_RETENTION_DAYS (30) dagar via /api/cron/purge-bill-images.
+//   Ingen AI-träning på fakturor.
 // - Inte bryta Edge-runtime genom att importera Node-moduler i produktion
 
 type BillImageMetadata = {
@@ -25,6 +27,12 @@ export type SaveBillImageResult = {
 };
 
 type R2LikeBucket = {
+  list?: (options?: { prefix?: string; cursor?: string; limit?: number }) => Promise<{
+    objects: { key: string }[];
+    truncated?: boolean;
+    cursor?: string;
+  }>;
+  delete?: (keys: string | string[]) => Promise<unknown>;
   put: (
     key: string,
     value: ArrayBuffer | ArrayBufferView | ReadableStream | Blob | string,
@@ -311,3 +319,63 @@ export async function saveBillImage(
 }
 
 
+
+export const BILL_IMAGE_RETENTION_DAYS = 30;
+const BILL_PREFIX = "bill-uploads";
+
+function isExpiredDateFolder(folder: string, cutoff: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(folder) && folder < cutoff;
+}
+
+/**
+ * Raderar fakturabilder äldre än `days` dagar från Supabase (bill_images)
+ * och R2 (BILL_IMAGES). Nycklar har formen bill-uploads/YYYY-MM-DD/<uuid>.<ext>.
+ */
+export async function purgeExpiredBillImages(
+  days: number = BILL_IMAGE_RETENTION_DAYS,
+  options?: { env?: BillImageEnv }
+): Promise<{ cutoff: string; supabaseDeleted: number; r2Deleted: number; errors: string[] }> {
+  const cutoff = new Date(Date.now() - days * 86_400_000).toISOString().slice(0, 10);
+  const errors: string[] = [];
+  let supabaseDeleted = 0;
+  let r2Deleted = 0;
+
+  const supabaseUrl = getRuntimeEnv("SUPABASE_URL");
+  const supabaseKey = getRuntimeEnv("SUPABASE_SERVICE_KEY");
+  if (supabaseUrl && supabaseKey) {
+    const supabase = createClient(supabaseUrl, supabaseKey, { auth: { persistSession: false } });
+    const bucket = supabase.storage.from("bill_images");
+    const { data: folders, error } = await bucket.list(BILL_PREFIX, { limit: 1000 });
+    if (error) errors.push(`supabase list: ${error.message}`);
+    for (const folder of folders ?? []) {
+      if (!isExpiredDateFolder(folder.name, cutoff)) continue;
+      const path = `${BILL_PREFIX}/${folder.name}`;
+      for (;;) {
+        const { data: files, error: listError } = await bucket.list(path, { limit: 1000 });
+        if (listError) { errors.push(`supabase list ${path}: ${listError.message}`); break; }
+        if (!files || files.length === 0) break;
+        const { error: removeError } = await bucket.remove(files.map((f) => `${path}/${f.name}`));
+        if (removeError) { errors.push(`supabase remove ${path}: ${removeError.message}`); break; }
+        supabaseDeleted += files.length;
+      }
+    }
+  } else {
+    errors.push("supabase credentials missing");
+  }
+
+  const env = await resolveR2Binding(options?.env);
+  const r2 = env?.BILL_IMAGES;
+  if (r2?.list && r2?.delete) {
+    let cursor: string | undefined;
+    do {
+      const page = await r2.list({ prefix: `${BILL_PREFIX}/`, cursor, limit: 1000 });
+      const expired = page.objects
+        .map((o) => o.key)
+        .filter((k) => isExpiredDateFolder(k.split("/")[1] ?? "", cutoff));
+      if (expired.length) { await r2.delete(expired); r2Deleted += expired.length; }
+      cursor = page.truncated ? page.cursor : undefined;
+    } while (cursor);
+  }
+
+  return { cutoff, supabaseDeleted, r2Deleted, errors };
+}
