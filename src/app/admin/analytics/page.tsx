@@ -14,6 +14,11 @@ interface AnalyticsData {
     analyzedBills: number;
     analyzedBillsError?: string;
     contractClicks: number;
+    switchFunnel?: {
+      salesysOpened: number;
+      salesysRedirect: number;
+      affiliateRedirect: number;
+    };
     topPages: Array<{ path: string; views: number }>;
     visitsByDay: Array<{ date: string; visits: number }>;
     referrers: Array<{ source: string; visits: number }>;
@@ -237,6 +242,53 @@ export default function AnalyticsPage() {
               </p>
             </div>
           </div>
+
+          {analytics?.switchFunnel && (
+            <div className="bg-white rounded-lg border border-gray-200 p-6 mb-8">
+              <h2 className="text-xl font-bold text-gray-900 mb-2">Byt elavtal-tratt (GA)</h2>
+              <p className="text-sm text-gray-600 mb-4">
+                Mäter SaleSys-modal och affiliate — inte legacy-tabellen{" "}
+                <code className="text-xs">switch_requests</code>.
+              </p>
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">SaleSys öppnad</p>
+                  <p className="text-3xl font-bold text-indigo-700 mt-1">
+                    {analytics.switchFunnel.salesysOpened.toLocaleString("sv-SE")}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">event: salesys_opened</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">SaleSys redirect</p>
+                  <p className="text-3xl font-bold text-violet-700 mt-1">
+                    {analytics.switchFunnel.salesysRedirect.toLocaleString("sv-SE")}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">event: salesys_redirect</p>
+                </div>
+                <div className="rounded-lg border border-gray-200 p-4">
+                  <p className="text-xs text-gray-500 uppercase tracking-wide">Affiliate redirect</p>
+                  <p className="text-3xl font-bold text-sky-700 mt-1">
+                    {analytics.switchFunnel.affiliateRedirect.toLocaleString("sv-SE")}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">event: affiliate_redirect</p>
+                </div>
+                <div className="rounded-lg border border-amber-200 bg-amber-50/50 p-4">
+                  <p className="text-xs text-amber-900 uppercase tracking-wide">Analyser → klick</p>
+                  <p className="text-3xl font-bold text-amber-900 mt-1">
+                    {analytics.analyzedBills > 0
+                      ? `${Math.round(
+                          (100 * (analytics.contractClicks || 0)) / analytics.analyzedBills
+                        )}%`
+                      : "—"}
+                  </p>
+                  <p className="text-xs text-amber-800 mt-1">
+                    {analytics.analyzedBills.toLocaleString("sv-SE")} analyser /{" "}
+                    {(analytics.contractClicks || 0).toLocaleString("sv-SE")} kontraktsklick
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Devices */}
           {analytics && analytics.devices && (

@@ -9,6 +9,7 @@ import {
   SALESYS_EMBED_ORIGIN,
   type SalesysFormConfig,
 } from "@/lib/salesys-forms";
+import { AnalyticsEvents } from "@/lib/analytics";
 
 interface SalesysEmbedModalProps {
   open: boolean;
@@ -19,6 +20,8 @@ interface SalesysEmbedModalProps {
   /** Fallback if customer prefers the provider site */
   externalUrl?: string;
   providerName: string;
+  providerId?: string;
+  pageContext?: string;
 }
 
 const DEFAULT_IFRAME_HEIGHT = 640;
@@ -47,9 +50,12 @@ export default function SalesysEmbedModal({
   attributionReferrer,
   externalUrl,
   providerName,
+  providerId,
+  pageContext = "result",
 }: SalesysEmbedModalProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const openedTrackedRef = useRef(false);
   const [iframeHeight, setIframeHeight] = useState(DEFAULT_IFRAME_HEIGHT);
   const [mounted, setMounted] = useState(false);
   const [embedSrc] = useState(() =>
@@ -73,6 +79,22 @@ export default function SalesysEmbedModal({
       scrollRef.current.scrollTop = 0;
     }
   }, []);
+
+  useEffect(() => {
+    if (!open) {
+      openedTrackedRef.current = false;
+      return;
+    }
+    if (!openedTrackedRef.current) {
+      openedTrackedRef.current = true;
+      AnalyticsEvents.salesysOpened({
+        provider_name: providerName,
+        provider_id: providerId,
+        form_id: form.formId,
+        page_context: pageContext,
+      });
+    }
+  }, [open, providerName, providerId, form.formId, pageContext]);
 
   useEffect(() => {
     if (!open) return;
@@ -138,6 +160,19 @@ export default function SalesysEmbedModal({
         case "redirect": {
           const url = (data as { url?: string }).url;
           if (!url) break;
+          AnalyticsEvents.salesysRedirect({
+            provider_name: providerName,
+            provider_id: providerId,
+            form_id: form.formId,
+            page_context: pageContext,
+            redirect_host: (() => {
+              try {
+                return new URL(url).host;
+              } catch {
+                return undefined;
+              }
+            })(),
+          });
           window.location.assign(url);
           break;
         }
@@ -153,7 +188,7 @@ export default function SalesysEmbedModal({
 
     window.addEventListener("message", onMessage);
     return () => window.removeEventListener("message", onMessage);
-  }, [open, resetModalScroll]);
+  }, [open, resetModalScroll, providerName, providerId, form.formId, pageContext]);
 
   if (!open || !mounted) return null;
 

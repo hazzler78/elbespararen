@@ -26,6 +26,11 @@ interface AnalyticsData {
   analyzedBills: number;
   analyzedBillsError?: string;
   contractClicks: number;
+  switchFunnel: {
+    salesysOpened: number;
+    salesysRedirect: number;
+    affiliateRedirect: number;
+  };
   topPages: Array<{ path: string; views: number }>;
   visitsByDay: Array<{ date: string; visits: number }>;
   referrers: Array<{ source: string; visits: number }>;
@@ -205,7 +210,6 @@ function parseMetric(value: string | undefined | null): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-/** Läs totals från GA — fallback till rows[0] när rapport saknar dimensions. */
 function extractMetricTotals(response: GAResponse, metricCount: number): number[] {
   const fromTotals = response.totals?.[0]?.metricValues;
   if (fromTotals && fromTotals.length > 0) {
@@ -220,6 +224,55 @@ function extractMetricTotals(response: GAResponse, metricCount: number): number[
     );
   }
   return Array.from({ length: metricCount }, () => 0);
+}
+
+const SWITCH_FUNNEL_EVENTS = [
+  "contract_click",
+  "salesys_opened",
+  "salesys_redirect",
+  "affiliate_redirect",
+] as const;
+
+async function fetchGAEventCounts(
+  propertyId: string,
+  accessToken: string,
+  dateRange: { startDate: string; endDate: string },
+  eventNames: readonly string[]
+): Promise<Record<string, number>> {
+  const counts: Record<string, number> = Object.fromEntries(
+    eventNames.map((name) => [name, 0])
+  );
+  if (eventNames.length === 0) return counts;
+
+  try {
+    const response = await fetchGAData(
+      propertyId,
+      accessToken,
+      ["eventName"],
+      ["eventCount"],
+      [dateRange],
+      {
+        dimensionFilter: {
+          filter: {
+            fieldName: "eventName",
+            inListFilter: {
+              values: [...eventNames],
+            },
+          },
+        },
+      }
+    );
+
+    for (const row of response.rows || []) {
+      const name = row.dimensionValues[0]?.value;
+      if (!name || !(name in counts)) continue;
+      counts[name] = parseMetric(row.metricValues[0]?.value);
+    }
+  } catch (error) {
+    console.warn("[analytics] Could not fetch GA event counts:", error);
+  }
+
+  return counts;
 }
 
 /**
@@ -434,34 +487,26 @@ export async function GET(request: NextRequest) {
       );
 
       let contractClicksCount = 0;
+      let switchFunnel = {
+        salesysOpened: 0,
+        salesysRedirect: 0,
+        affiliateRedirect: 0,
+      };
       try {
-        const contractClicksResponse = await fetchGAData(
+        const funnelCounts = await fetchGAEventCounts(
           gaPropertyId,
           accessToken,
-          ["eventName"],
-          ["eventCount"],
-          [dateRange],
-          {
-            dimensionFilter: {
-              filter: {
-                fieldName: "eventName",
-                stringFilter: {
-                  matchType: "EXACT",
-                  value: "contract_click",
-                },
-              },
-            },
-          }
+          dateRange,
+          SWITCH_FUNNEL_EVENTS
         );
-        const clickTotals = extractMetricTotals(contractClicksResponse, 1);
-        contractClicksCount =
-          clickTotals[0] ||
-          (contractClicksResponse.rows || []).reduce(
-            (sum, row) => sum + parseMetric(row.metricValues[0]?.value),
-            0
-          );
+        contractClicksCount = funnelCounts.contract_click ?? 0;
+        switchFunnel = {
+          salesysOpened: funnelCounts.salesys_opened ?? 0,
+          salesysRedirect: funnelCounts.salesys_redirect ?? 0,
+          affiliateRedirect: funnelCounts.affiliate_redirect ?? 0,
+        };
       } catch (eventError) {
-        console.warn("[analytics] Could not fetch contract clicks:", eventError);
+        console.warn("[analytics] Could not fetch switch funnel events:", eventError);
       }
 
       // Räkna analyser från D1 med exakt tidsgräns (inte hela kalenderdagar i storage)
@@ -501,6 +546,7 @@ export async function GET(request: NextRequest) {
         analyzedBillsCount,
         analyzedBillsError: analyzedBillsResult.error,
         contractClicksCount,
+        switchFunnel,
         rawTotals: statsResponse.totals,
         rawRows: statsResponse.rows?.length ?? 0,
       });
@@ -512,6 +558,7 @@ export async function GET(request: NextRequest) {
         analyzedBills: analyzedBillsCount,
         analyzedBillsError: analyzedBillsResult.error,
         contractClicks: contractClicksCount,
+        switchFunnel,
         topPages: (pagesResponse.rows || []).slice(0, 10).map((row) => ({
           path: row.dimensionValues[0]?.value || "",
           views: parseMetric(row.metricValues[0]?.value),

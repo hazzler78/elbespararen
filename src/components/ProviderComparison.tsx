@@ -8,7 +8,7 @@ import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
 import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
 import SwitchProcess from "./SwitchProcess";
 import SalesysEmbedModal from "./SalesysEmbedModal";
-import { trackCustomEvent } from "@/lib/analytics";
+import { AnalyticsEvents, trackCustomEvent } from "@/lib/analytics";
 import { getSalesysFormForProvider } from "@/lib/salesys-forms";
 import type { SalesysFormConfig } from "@/lib/salesys-forms";
 
@@ -50,6 +50,8 @@ export default function ProviderComparison({
   const [salesysEmbed, setSalesysEmbed] = useState<{
     form: SalesysFormConfig;
     providerName: string;
+    providerId: string;
+    pageContext: string;
     attributionReferrer?: string;
     externalUrl?: string;
   } | null>(null);
@@ -260,6 +262,8 @@ export default function ProviderComparison({
       setSalesysEmbed({
         form: salesysForm,
         providerName: comparison.provider.name,
+        providerId: comparison.provider.id,
+        pageContext: enableConsumptionEntry ? "contracts" : "result",
         attributionReferrer: affiliate,
         externalUrl: affiliate,
       });
@@ -267,6 +271,12 @@ export default function ProviderComparison({
     }
 
     if (affiliate && /^https?:\/\//i.test(affiliate)) {
+      AnalyticsEvents.affiliateRedirect({
+        provider_name: comparison.provider.name,
+        provider_id: comparison.provider.id,
+        contract_type: comparison.provider.contractType,
+        page_context: enableConsumptionEntry ? "contracts" : "result",
+      });
       window.location.assign(affiliate);
       return;
     }
@@ -669,6 +679,8 @@ export default function ProviderComparison({
           onClose={() => setSalesysEmbed(null)}
           form={salesysEmbed.form}
           providerName={salesysEmbed.providerName}
+          providerId={salesysEmbed.providerId}
+          pageContext={salesysEmbed.pageContext}
           attributionReferrer={salesysEmbed.attributionReferrer}
           externalUrl={salesysEmbed.externalUrl}
         />
