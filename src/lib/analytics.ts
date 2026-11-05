@@ -136,5 +136,17 @@ export const AnalyticsEvents = {
 
   premiumPageViewed: () =>
     trackEvent('premium_page_view', 'engagement', 'premium'),
+
+  /** User opened in-page SaleSys embed (after contract_click on SaleSys providers). */
+  salesysOpened: (params: Record<string, unknown>) =>
+    trackCustomEvent('salesys_opened', params),
+
+  /** SaleSys iframe postMessage redirect — best-effort completion proxy. */
+  salesysRedirect: (params: Record<string, unknown>) =>
+    trackCustomEvent('salesys_redirect', params),
+
+  /** Off-site affiliate redirect (non-SaleSys providers). */
+  affiliateRedirect: (params: Record<string, unknown>) =>
+    trackCustomEvent('affiliate_redirect', params),
 };
 

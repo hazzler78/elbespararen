@@ -44,6 +44,11 @@ interface AnalyticsData {
     uniqueVisitors: number;
     pageViews: number;
     contractClicks: number;
+    switchFunnel?: {
+      salesysOpened: number;
+      salesysRedirect: number;
+      affiliateRedirect: number;
+    };
     topPages: Array<{ path: string; views: number }>;
     visitsByDay: Array<{ date: string; visits: number }>;
     referrers: Array<{ source: string; visits: number }>;
@@ -269,9 +274,10 @@ export default function AdminPage() {
                 <Link
                   href="/admin/switch-requests"
                   className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  title="Legacy flöde — de flesta byten går via SaleSys eller affiliate"
                 >
                   <ArrowRight className="h-4 w-4 text-gray-500" />
-                  Bytförfrågningar
+                  Bytförfrågningar (legacy)
                 </Link>
                 <Link
                   href="/admin/price-updates"
@@ -342,6 +348,49 @@ export default function AdminPage() {
                   <div>
                     <p className="text-sm text-gray-600">
                       {analyticsData.message || "Konfigurera Google Analytics för att se data."}
+                    </p>
+                  </div>
+                )}
+                {analyticsData.analytics?.switchFunnel && (
+                  <div className="mt-6 pt-6 border-t border-gray-100">
+                    <p className="text-sm font-medium text-gray-900 mb-3">
+                      Byt elavtal-tratt (GA, senaste 24h)
+                    </p>
+                    <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 text-sm">
+                      <div className="rounded-lg bg-gray-50 p-3">
+                        <p className="text-xs text-gray-500">Kontraktsklick</p>
+                        <p className="text-xl font-bold text-gray-900">
+                          {(analyticsData.analytics.contractClicks || 0).toLocaleString("sv-SE")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-indigo-50/80 p-3">
+                        <p className="text-xs text-indigo-800">SaleSys öppnad</p>
+                        <p className="text-xl font-bold text-indigo-900">
+                          {analyticsData.analytics.switchFunnel.salesysOpened.toLocaleString("sv-SE")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-violet-50/80 p-3">
+                        <p className="text-xs text-violet-800">SaleSys redirect</p>
+                        <p className="text-xl font-bold text-violet-900">
+                          {analyticsData.analytics.switchFunnel.salesysRedirect.toLocaleString("sv-SE")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-sky-50/80 p-3">
+                        <p className="text-xs text-sky-800">Affiliate (off-site)</p>
+                        <p className="text-xl font-bold text-sky-900">
+                          {analyticsData.analytics.switchFunnel.affiliateRedirect.toLocaleString("sv-SE")}
+                        </p>
+                      </div>
+                      <div className="rounded-lg bg-emerald-50/80 p-3">
+                        <p className="text-xs text-emerald-800">SaleSys ordrar idag</p>
+                        <p className="text-xl font-bold text-emerald-900">
+                          {isLoadingSalesys ? "…" : (salesysData?.today.elbespararenTotal ?? "–")}
+                        </p>
+                        <p className="text-xs text-emerald-700 mt-1">färdiga byten</p>
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Jämför GA-tratt med SaleSys ordrar (sektionen nedan) — inte tabellen Bytförfrågningar.
                     </p>
                   </div>
                 )}
