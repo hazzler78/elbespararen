@@ -14,6 +14,8 @@ import {
   PREMIUM_PRICE_SEK,
   PREMIUM_PRICE_LABEL,
 } from "@/lib/premium-pricing";
+import { persistPendingAnalysis } from "@/lib/pending-analysis";
+import { BillData } from "@/lib/types";
 
 interface PremiumValueCTAProps {
   /** Potential monthly savings from the current analysis, if known */
@@ -79,6 +81,17 @@ export default function PremiumValueCTA({
   const handleClick = async () => {
     if (!isLoggedIn || !user?.email) {
       AnalyticsEvents.premiumCtaClicked(source);
+      // The result is already on screen. Keep it through signup instead of dropping it.
+      if (typeof window !== "undefined") {
+        const raw = sessionStorage.getItem("billData");
+        if (raw) {
+          try {
+            persistPendingAnalysis(JSON.parse(raw) as BillData);
+          } catch {
+            // Existing storage stays as it is.
+          }
+        }
+      }
       router.push(registerHref);
       return;
     }

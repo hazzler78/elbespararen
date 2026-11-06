@@ -31,8 +31,10 @@ function UploadPageContent() {
   const [savedCount, setSavedCount] = useState(0);
   const [startingCheckout, setStartingCheckout] = useState(false);
   const hasProcessedPendingRef = useRef(false);
+  const handedOffRef = useRef(false);
 
   const handleUploadSuccess = useCallback((data: BillData) => {
+    handedOffRef.current = true;
     // Debug: logga vad som sparas
     console.log('[upload] handleUploadSuccess anropad med:', {
       totalAmount: data.totalAmount,
@@ -208,7 +210,7 @@ function UploadPageContent() {
       
       // Om användaren bara navigerar till upload-sidan (inte från registrering),
       // rensa gammal billData från cookie, localStorage och sessionStorage för att undvika förvirring
-      if (billData && !pendingAnalysis && typeof window !== "undefined") {
+      if (billData && !pendingAnalysis && !handedOffRef.current && typeof window !== "undefined") {
         console.log('[upload] Rensar gammal billData från cookie, localStorage och sessionStorage (användaren navigerade hit, inte från registrering)');
         document.cookie = "pendingBillData=; path=/; max-age=0";
         localStorage.removeItem("pendingBillData");

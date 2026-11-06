@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback, useEffect } from "react";
-import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, User, Sparkles, ArrowRight, X, Plus } from "lucide-react";
+import { Upload, FileImage, Loader2, CheckCircle2, AlertCircle, X, Plus } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { APP_CONFIG } from "@/lib/constants";
 import { BillData, ApiResponse } from "@/lib/types";
@@ -9,21 +9,19 @@ import PostalCodeInput from "./PostalCodeInput";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
 import { messageForAnalysisFailure } from "@/lib/upload-analysis-error";
+import { currentPathname, persistPendingAnalysis, shouldAutoOpenResult } from "@/lib/pending-analysis";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
   onUploadError?: (error: string) => void;
-  isUserLoggedIn?: boolean; // Om användaren redan är inloggad, hoppa över registreringsalternativen
+  isUserLoggedIn?: boolean; // Kept for callers. Guests and logged-in users both open the result.
 }
 
 type PagePreview = { file: File; preview: string };
 
-export default function UploadCard({ onUploadSuccess, onUploadError, isUserLoggedIn = false }: UploadCardProps) {
+export default function UploadCard({ onUploadSuccess, onUploadError }: UploadCardProps) {
   const [pages, setPages] = useState<PagePreview[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<BillData | null>(null);
-  const [userChoiceMade, setUserChoiceMade] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [postalCode, setPostalCode] = useState("");
   const [priceArea, setPriceArea] = useState<string | null>(null);
@@ -32,8 +30,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const continuationRef = useRef<HTMLDivElement>(null);
   const errorRef = useRef<HTMLDivElement>(null);
+  const openedResultRef = useRef(false);
 
   // Cleanup timeout när komponenten unmountas
   useEffect(() => {
@@ -45,20 +43,12 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
   }, []);
 
   useEffect(() => {
-    if (!isAnalysisComplete || userChoiceMade) return;
-    continuationRef.current?.scrollIntoView({ block: "start" });
-  }, [isAnalysisComplete, userChoiceMade]);
-
-  useEffect(() => {
     if (!error) return;
     errorRef.current?.scrollIntoView({ block: "center" });
   }, [error]);
 
   // Rensa state när komponenten mountas för att undvika att visa gammal data
   useEffect(() => {
-    setIsAnalysisComplete(false);
-    setAnalysisResult(null);
-    setUserChoiceMade(false);
     setError(null);
     setIsUploading(false);
     setPages([]);
@@ -177,7 +167,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
   };
 
   const handleUpload = async () => {
-    if (pages.length === 0) return;
+    if (pages.length === 0 || isUploading) return;
+    openedResultRef.current = false;
 
     setIsUploading(true);
     setError(null);
@@ -266,18 +257,18 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         priceArea: priceArea || undefined
       };
 
-      // Track successful bill upload
       AnalyticsEvents.billUploaded(true);
-      
-      setAnalysisResult(enhancedData);
-      setIsAnalysisComplete(true);
       setIsUploading(false);
 
-      // Inloggad användare har redan fått fakturan sparad — gå direkt till resultatet.
-      if (isUserLoggedIn) {
-        console.log('[UploadCard] Användaren är redan inloggad, fakturan är redan sparad. Går direkt till resultat.');
-        onUploadSuccess(enhancedData);
+      // Registration or another route owns the screen. Keep the analysis and do not redirect.
+      if (!shouldAutoOpenResult(currentPathname())) {
+        persistPendingAnalysis(enhancedData);
+        return;
       }
+
+      if (openedResultRef.current) return;
+      openedResultRef.current = true;
+      onUploadSuccess(enhancedData);
     } catch (err) {
       const errorMessage = err instanceof Error
         ? err.message
@@ -290,87 +281,6 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       
       onUploadError?.(errorMessage);
       setIsUploading(false);
-    }
-  };
-
-  const handleUserChoice = (choice: 'register' | 'premium' | 'skip') => {
-    if (userChoiceMade) {
-      console.log('[UploadCard] handleUserChoice: Användaren har redan gjort ett val');
-      return; // Förhindra dubbelklick
-    }
-    
-    console.log('[UploadCard] handleUserChoice:', choice, 'analysisResult:', !!analysisResult);
-    
-    setUserChoiceMade(true);
-    
-    // Om användaren väljer att skapa konto eller bli premium, redirecta
-    if (choice === 'register') {
-      console.log('[UploadCard] Användaren valde att skapa konto');
-      // Spara analysresultatet i cookie så det finns kvar efter OAuth-redirect
-      // Cookies överlever OAuth-redirects bättre än localStorage/sessionStorage
-      if (analysisResult && typeof window !== "undefined") {
-        console.log('[UploadCard] Sparar analysisResult i cookie:', {
-          totalAmount: analysisResult.totalAmount,
-          confidence: analysisResult.confidence,
-          postalCode: analysisResult.postalCode
-        });
-        
-        // Spara i cookie (giltig i 1 timme, säkert för OAuth-redirects)
-        const cookieValue = encodeURIComponent(JSON.stringify(analysisResult));
-        document.cookie = `pendingBillData=${cookieValue}; path=/; max-age=3600; SameSite=Lax`;
-        
-        // Spara också i localStorage och sessionStorage som backup
-        localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
-        sessionStorage.setItem("pendingAnalysis", "true");
-        
-        console.log('[UploadCard] ✅ billData sparad i cookie, localStorage och sessionStorage');
-        
-        // Verifiera att det sparades korrekt
-        const savedBillData = localStorage.getItem("pendingBillData");
-        const savedPending = sessionStorage.getItem("pendingAnalysis");
-        const cookieExists = document.cookie.includes("pendingBillData");
-        console.log('[UploadCard] Verifiering - pendingBillData i cookie:', cookieExists);
-        console.log('[UploadCard] Verifiering - pendingBillData i localStorage:', !!savedBillData);
-        console.log('[UploadCard] Verifiering - pendingAnalysis:', savedPending);
-      } else {
-        console.error('[UploadCard] ❌ analysisResult saknas eller window är undefined!');
-        console.error('[UploadCard] analysisResult:', analysisResult);
-        console.error('[UploadCard] window:', typeof window);
-      }
-      // Redirect till register med callbackUrl tillbaka till upload och pendingAnalysis flag
-      // Vi lägger till pendingAnalysis=1 i URL:en också som backup om sessionStorage försvinner
-      const redirectUrl = `/auth/register?callbackUrl=${encodeURIComponent('/upload?pendingAnalysis=1')}`;
-      console.log('[UploadCard] Redirectar till:', redirectUrl);
-      window.location.href = redirectUrl;
-      return;
-    }
-    
-    if (choice === 'premium') {
-      // Spara analysresultatet i cookie så det finns kvar efter OAuth-redirect
-      if (analysisResult && typeof window !== "undefined") {
-        const cookieValue = encodeURIComponent(JSON.stringify(analysisResult));
-        document.cookie = `pendingBillData=${cookieValue}; path=/; max-age=3600; SameSite=Lax`;
-        localStorage.setItem("pendingBillData", JSON.stringify(analysisResult));
-        sessionStorage.setItem("pendingAnalysis", "true");
-      }
-      // Redirect till premium med callbackUrl tillbaka till upload och pendingAnalysis flag
-      window.location.href = `/premium?callbackUrl=${encodeURIComponent('/upload?pendingAnalysis=1')}`;
-      return;
-    }
-    
-    // Om användaren väljer att hoppa över, visa resultatet direkt
-    if (choice === 'skip') {
-      console.log('[UploadCard] Användaren valde att hoppa över registrering');
-      if (analysisResult) {
-        console.log('[UploadCard] Anropar onUploadSuccess med analysisResult');
-        onUploadSuccess(analysisResult);
-      } else {
-        console.error('[UploadCard] ❌ analysisResult saknas när användaren valde att hoppa över!');
-        console.error('[UploadCard] isAnalysisComplete:', isAnalysisComplete);
-        console.error('[UploadCard] isUploading:', isUploading);
-        // Om analysisResult saknas av någon anledning, visa felmeddelande
-        setError("Kunde inte hitta analysresultatet. Vänligen försök igen.");
-      }
     }
   };
 
@@ -391,7 +301,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
           className={`
             border-2 border-dashed rounded-lg text-center
             transition-colors duration-200
-            ${isAnalysisComplete ? "p-4" : "p-8 sm:p-12"}
+            p-8 sm:p-12
             ${pages.length > 0 ? "border-success bg-success/5 cursor-default" : "border-border hover:border-primary hover:bg-primary/5 cursor-pointer"}
           `}
         >
@@ -469,7 +379,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                         <img
                           src={page.preview}
                           alt={`Sida ${index + 1}`}
-                          className={`${isAnalysisComplete ? "h-16" : "h-28"} w-full object-contain rounded mb-2`}
+                          className="h-28 w-full object-contain rounded mb-2"
                         />
                       ) : (
                         <FileImage className="w-10 h-10 mx-auto my-6 text-success" />
@@ -538,13 +448,11 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                 * Ange ett giltigt postnummer för att fortsätta
               </p>
             )}
-            {!isAnalysisComplete && (
-              <div className="text-xs text-gray-500">
-                💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
-                Rörliga elpriser varierar beroende på var du bor i Sverige. 
-                Vi behöver ditt postnummer för att visa dig de korrekta priserna för ditt område.
-              </div>
-            )}
+            <div className="text-xs text-gray-500">
+              💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
+              Rörliga elpriser varierar beroende på var du bor i Sverige. 
+              Vi behöver ditt postnummer för att visa dig de korrekta priserna för ditt område.
+            </div>
           </motion.div>
         )}
 
@@ -570,7 +478,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         </AnimatePresence>
 
         {/* Upload Button */}
-        {pages.length > 0 && !isAnalysisComplete && (
+        {pages.length > 0 && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -600,95 +508,6 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
             )}
           </motion.button>
         )}
-
-        {/* Registration Options - Shown during and after analysis until user makes a choice */}
-        <AnimatePresence>
-          {(isUploading || (isAnalysisComplete && !userChoiceMade)) && (
-            <motion.div
-              ref={continuationRef}
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: "auto" }}
-              exit={{ opacity: 0, height: 0 }}
-              className="mt-6 pt-6 border-t border-border max-sm:pr-16"
-              style={{ scrollMarginTop: "5rem", scrollMarginBottom: "7rem" }}
-            >
-              <p className="text-sm font-medium text-gray-900 mb-4 text-center">
-                {isUploading ? (
-                  "Medan vi analyserar din faktura..."
-                ) : (
-                  "Analysen är klar"
-                )}
-              </p>
-              {!isUploading && (
-                <button
-                  type="button"
-                  onClick={() => handleUserChoice('skip')}
-                  disabled={userChoiceMade || !analysisResult}
-                  className="
-                    mb-3 w-full py-4 px-6 bg-primary text-white font-semibold rounded-lg
-                    hover:bg-primary/90 active:scale-[0.98]
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                    transition-all duration-200
-                  "
-                >
-                  Se resultatet
-                </button>
-              )}
-              <div className="space-y-3">
-                {/* Skapa konto */}
-                <button
-                  onClick={() => handleUserChoice('register')}
-                  disabled={userChoiceMade}
-                  className="
-                    flex items-center justify-between gap-3
-                    w-full p-4 bg-primary text-white rounded-lg
-                    hover:bg-primary/90 transition-colors
-                    font-medium
-                    group
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-white/20 rounded-lg">
-                      <User className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-semibold">Skapa konto</div>
-                      <div className="text-xs text-white/80">Spara upp till 2 fakturor gratis</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-                {/* Bli premium */}
-                <button
-                  onClick={() => handleUserChoice('premium')}
-                  disabled={userChoiceMade}
-                  className="
-                    flex items-center justify-between gap-3
-                    w-full p-4 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-lg
-                    hover:from-yellow-500 hover:to-yellow-600 transition-colors
-                    font-medium
-                    group
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
-                >
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-yellow-900/20 rounded-lg">
-                      <Sparkles className="w-5 h-5" />
-                    </div>
-                    <div className="text-left">
-                      <div className="font-semibold">Bli Premium — 49 kr/år</div>
-                      <div className="text-xs text-yellow-900/80">Obegränsad historik + CSV-export</div>
-                    </div>
-                  </div>
-                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-                </button>
-
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
 
         {/* Info Text */}
         <div className="mt-6 pt-6 border-t border-border">
