@@ -29,6 +29,7 @@ export async function GET(request: NextRequest) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${cronSecret}`,
         'User-Agent': 'Elbespararen-Cron/1.0'
       }
     });
