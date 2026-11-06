@@ -449,16 +449,27 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <div className="flex items-center gap-3 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
-                {isPremium && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
-                    <Crown className="w-4 h-4" />
-                    <span>Premium</span>
-                  </div>
-                )}
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
+                  <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
+                  {isPremium && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
+                      <Crown className="w-4 h-4" />
+                      <span>Premium</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="sm:hidden shrink-0 flex items-center justify-center p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                  title="Logga ut"
+                  aria-label="Logga ut"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
               {/* User welcome section */}
               {user && (
@@ -503,7 +514,7 @@ export default function DashboardPage() {
                 </p>
               )}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-3 max-[359px]:flex-wrap">
               <select
                 value={timeRange}
                 onChange={(e) => {
@@ -515,7 +526,7 @@ export default function DashboardPage() {
                   }
                   setTimeRange(next);
                 }}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                className="max-w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               >
                 <option value="month">Senaste månaden</option>
                 <option value="3months">Senaste 3 månaderna</option>
@@ -528,18 +539,19 @@ export default function DashboardPage() {
               </select>
               <Link
                 href="/upload"
-                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors max-[359px]:w-full max-[359px]:justify-center"
               >
                 <Upload className="w-4 h-4" />
                 Analysera ny faktura
               </Link>
               <button
+                type="button"
                 onClick={handleSignOut}
-                className="flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
                 title="Logga ut"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logga ut</span>
+                <span>Logga ut</span>
               </button>
             </div>
           </div>
@@ -646,8 +658,8 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Trend Chart - Takes 2 columns */}
           <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-            <div className="flex items-center justify-between mb-6 gap-3">
-              <div>
+            <div className="flex flex-wrap items-start justify-between mb-6 gap-3">
+              <div className="min-w-0">
                 <h2 className="text-xl font-bold text-gray-900">Kostnadstrend</h2>
                 <p className="text-sm text-gray-600">
                   {!isPremium && hiddenAnalysesCount > 0
