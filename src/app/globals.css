@@ -123,9 +123,16 @@ body {
   line-height: 2.5rem;
 }
 
-.md\:text-6xl {
-  font-size: 3.75rem;
-  line-height: 1;
+@media (min-width: 768px) {
+  .md\:text-6xl {
+    font-size: 3.75rem;
+    line-height: 1;
+  }
+
+  .md\:text-xl {
+    font-size: 1.25rem;
+    line-height: 1.75rem;
+  }
 }
 
 .font-bold {
@@ -142,11 +149,6 @@ body {
 
 .text-lg {
   font-size: 1.125rem;
-  line-height: 1.75rem;
-}
-
-.md\:text-xl {
-  font-size: 1.25rem;
   line-height: 1.75rem;
 }
 

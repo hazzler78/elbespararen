@@ -45,15 +45,15 @@ export default function Home() {
       <AppHeader />
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative bg-gradient-to-b from-primary/5 to-background py-20 px-4">
+      <section className="relative bg-gradient-to-b from-primary/5 to-background px-4 pt-6 pb-10 sm:py-16 md:py-20">
         <div className="max-w-4xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            {/* Logo/Title */}
-            <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
+            {/* Same mark as the header; hidden on small screens so the start button stays in the first viewport. */}
+            <div className="hidden sm:inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full mb-6">
               <Image 
                 src={logoError ? "/logos/logo.png" : "/logos/logo_elbespararen.png"} 
                 alt="Elbespararen" 
@@ -67,17 +67,16 @@ export default function Home() {
               />
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold mb-3 sm:mb-6 leading-tight">
               Se din elfaktura<br />
               <span className="text-primary">med nya ögon</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted mb-8 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg md:text-xl text-muted mb-5 sm:mb-8 max-w-xl mx-auto">
               AI-driven analys hittar onödiga extra avgifter och visar exakt hur mycket du kan spara.
-              Börja gratis — Premium ger historik och export när du vill följa besparingen över tid.
             </p>
 
-            {/* CTA */}
+            {/* CTA — primary action, kept above supporting copy so it is on screen at first paint on phones. */}
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
@@ -86,7 +85,7 @@ export default function Home() {
               <Link
                 href="/upload"
                 className="
-                  inline-flex items-center gap-2 px-8 py-4 
+                  inline-flex items-center justify-center gap-2 min-h-12 px-8 py-3.5
                   bg-primary text-white text-lg font-semibold rounded-lg
                   hover:bg-primary/90 active:scale-[0.98]
                   transition-all duration-200 shadow-lg hover:shadow-xl
@@ -97,14 +96,18 @@ export default function Home() {
               </Link>
             </motion.div>
 
+            <p className="mt-4 text-sm text-muted max-w-md mx-auto">
+              Börja gratis. Premium ger historik och export när du vill följa besparingen över tid.
+            </p>
+
             {/* Trust badge */}
             <motion.p
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ delay: 0.5 }}
-              className="mt-6 text-sm text-muted flex items-center justify-center gap-2"
+              className="mt-3 sm:mt-6 text-sm text-muted flex items-center justify-center gap-2"
             >
-              <Shield className="w-4 h-4" />
+              <Shield className="w-4 h-4 shrink-0" />
               100% säkert • Personuppgifter anonymiseras
             </motion.p>
           </motion.div>
