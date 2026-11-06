@@ -218,7 +218,13 @@ export async function POST(request: NextRequest) {
     const body = (await request.json()) as LookupRequest;
     const providerKey = canonicalizeProvider(body.providerName || '');
     const area = normalizeArea(body.area);
-    const kwh = Math.max(0, Number(body.kwh || 0));
+    // Anropare skickar kWh/månad (samma enhet som fakturan och fältet på /contracts).
+    // elprishantering och partnerfilernas intervall är årsförbrukning
+    // (0–4999, 5000–9999, …). Utan *12 hamnar en normal månad alltid i
+    // lägsta rabattsteget och nettopåslaget blir t.ex. +2,05 öre i stället
+    // för det steg som motsvarar hushållets årsförbrukning.
+    const monthlyKwh = Math.max(0, Number(body.kwh || 0));
+    const kwh = monthlyKwh > 0 ? monthlyKwh * 12 : 0;
 
     if (!providerKey) {
       // Return empty data instead of error for unknown providers

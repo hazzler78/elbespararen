@@ -12,13 +12,20 @@ jobs:
     
     steps:
       - name: Update electricity prices
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
         run: |
           echo "🔄 Starting automatic price update..."
-          
-          # Anropa vår price update API
+          if [ -z "$CRON_SECRET" ]; then
+            echo "CRON_SECRET saknas som GitHub Actions-secret. Samma värde som i Cloudflare."
+            exit 1
+          fi
+
+          # Anropa vår price update API (kräver Bearer sedan auth-låset 12 okt 2026)
           response=$(curl -s -w "\n%{http_code}" -X POST \
             "https://elbespararen.pages.dev/api/prices/update" \
             -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $CRON_SECRET" \
             -H "User-Agent: GitHub-Actions/1.0")
           
           # Separera response body och status code

@@ -136,9 +136,11 @@ export default function ProviderComparison({
   useEffect(() => {
     if (!comparisonData) return;
     if (!billData.priceArea) return;
-    // Always fetch a surcharge band even if user hasn't entered consumption yet
-    const providedKwh = Number(enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh);
-    const kwh = Number.isFinite(providedKwh) && providedKwh > 0 ? providedKwh : 2000; // default band
+    // kWh/månad. Tomt fält på /contracts använder fakturans månad, inte 2000
+    // (det talet tolkades som årsförbrukning och låste rabattsteget).
+    const typedKwh = Number(enableConsumptionEntry ? (enteredKwh ?? 0) : billData.totalKWh);
+    const providedKwh = Number.isFinite(typedKwh) && typedKwh > 0 ? typedKwh : Number(billData.totalKWh);
+    const kwh = Number.isFinite(providedKwh) && providedKwh > 0 ? providedKwh : 400;
 
     const variableComparisons = comparisonData.comparisons.filter(c => c.provider.contractType === 'rörligt');
     if (variableComparisons.length === 0) return;
@@ -474,8 +476,15 @@ export default function ProviderComparison({
             </p>
           </div>
           <div>
-            <p className="text-sm text-muted">
-              {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
+            <p
+              className="text-sm text-muted"
+              title={
+                comparison.provider.contractType === "rörligt"
+                  ? "Påslag + rörliga kostnader − nykundsrabatt, inklusive moms. Inte samma siffra som leverantörens rad «Påslag»."
+                  : undefined
+              }
+            >
+              {comparison.provider.contractType === "rörligt" ? "Nettopåslag" : "Fastpris"}
             </p>
             <p className="font-semibold">
               {formatPricePerKwh(priceValue)}
