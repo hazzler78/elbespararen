@@ -8,6 +8,7 @@ import { BillData, ApiResponse } from "@/lib/types";
 import PostalCodeInput from "./PostalCodeInput";
 import { AnalyticsEvents } from "@/lib/analytics";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
+import { messageForAnalysisFailure } from "@/lib/upload-analysis-error";
 
 interface UploadCardProps {
   onUploadSuccess: (data: BillData) => void;
@@ -31,6 +32,8 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
   const fileInputRef = useRef<HTMLInputElement>(null);
   const addMoreInputRef = useRef<HTMLInputElement>(null);
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const continuationRef = useRef<HTMLDivElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
 
   // Cleanup timeout när komponenten unmountas
   useEffect(() => {
@@ -40,6 +43,16 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (!isAnalysisComplete || userChoiceMade) return;
+    continuationRef.current?.scrollIntoView({ block: "start" });
+  }, [isAnalysisComplete, userChoiceMade]);
+
+  useEffect(() => {
+    if (!error) return;
+    errorRef.current?.scrollIntoView({ block: "center" });
+  }, [error]);
 
   // Rensa state när komponenten mountas för att undvika att visa gammal data
   useEffect(() => {
@@ -183,13 +196,21 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         formData.append("priceArea", priceArea);
       }
 
-      const response = await fetch("/api/parse-bill-v3", {
-        method: "POST",
-        body: formData,
-        credentials: 'include' // Include cookies for authentication
-      });
+      let response: Response;
+      try {
+        response = await fetch("/api/parse-bill-v3", {
+          method: "POST",
+          body: formData,
+          credentials: 'include' // Include cookies for authentication
+        });
+      } catch {
+        throw new Error(
+          messageForAnalysisFailure({ network: true })
+        );
+      }
 
-      const result = await response.json() as ApiResponse<BillData> & {
+      const rawBody = await response.text();
+      let result: ApiResponse<BillData> & {
         details?: string;
         meta?: {
           dbSaved?: boolean;
@@ -199,13 +220,21 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
           accountSaveLimit?: number;
         };
       };
+      try {
+        result = rawBody ? JSON.parse(rawBody) : {};
+      } catch {
+        throw new Error(
+          messageForAnalysisFailure({ status: response.status, parseFailed: true })
+        );
+      }
 
       if (!response.ok || !result.success || !result.data) {
-        const details = typeof result.details === "string" ? result.details : "";
         throw new Error(
-          details
-            ? `${result.error || "Kunde inte analysera fakturan"}: ${details}`
-            : result.error || "Kunde inte analysera fakturan"
+          messageForAnalysisFailure({
+            status: response.status,
+            error: typeof result.error === "string" ? result.error : undefined,
+            details: typeof result.details === "string" ? result.details : undefined,
+          })
         );
       }
 
@@ -240,20 +269,19 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
       // Track successful bill upload
       AnalyticsEvents.billUploaded(true);
       
-      // Om användaren redan är inloggad, fakturan är redan sparad med user_id
-      // Gå direkt till resultat utan att visa registreringsalternativen
+      setAnalysisResult(enhancedData);
+      setIsAnalysisComplete(true);
+      setIsUploading(false);
+
+      // Inloggad användare har redan fått fakturan sparad — gå direkt till resultatet.
       if (isUserLoggedIn) {
         console.log('[UploadCard] Användaren är redan inloggad, fakturan är redan sparad. Går direkt till resultat.');
         onUploadSuccess(enhancedData);
-        return;
       }
-      
-      // Spara resultatet och vänta på användarens val (endast om inte inloggad)
-      setAnalysisResult(enhancedData);
-      setIsAnalysisComplete(true);
-      setIsUploading(false); // Analysen är klar, men vi väntar på användarens val
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Något gick fel";
+      const errorMessage = err instanceof Error
+        ? err.message
+        : messageForAnalysisFailure({});
       setError(errorMessage);
       
       // Track failed bill upload
@@ -361,8 +389,9 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
             if (pages.length === 0) fileInputRef.current?.click();
           }}
           className={`
-            border-2 border-dashed rounded-lg p-8 sm:p-12 text-center
+            border-2 border-dashed rounded-lg text-center
             transition-colors duration-200
+            ${isAnalysisComplete ? "p-4" : "p-8 sm:p-12"}
             ${pages.length > 0 ? "border-success bg-success/5 cursor-default" : "border-border hover:border-primary hover:bg-primary/5 cursor-pointer"}
           `}
         >
@@ -440,7 +469,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                         <img
                           src={page.preview}
                           alt={`Sida ${index + 1}`}
-                          className="h-28 w-full object-contain rounded mb-2"
+                          className={`${isAnalysisComplete ? "h-16" : "h-28"} w-full object-contain rounded mb-2`}
                         />
                       ) : (
                         <FileImage className="w-10 h-10 mx-auto my-6 text-success" />
@@ -509,11 +538,13 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                 * Ange ett giltigt postnummer för att fortsätta
               </p>
             )}
-            <div className="text-xs text-gray-500">
-              💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
-              Rörliga elpriser varierar beroende på var du bor i Sverige. 
-              Vi behöver ditt postnummer för att visa dig de korrekta priserna för ditt område.
-            </div>
+            {!isAnalysisComplete && (
+              <div className="text-xs text-gray-500">
+                💡 <strong>Varför behöver vi ditt postnummer?</strong><br />
+                Rörliga elpriser varierar beroende på var du bor i Sverige. 
+                Vi behöver ditt postnummer för att visa dig de korrekta priserna för ditt område.
+              </div>
+            )}
           </motion.div>
         )}
 
@@ -521,10 +552,13 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         <AnimatePresence>
           {error && (
             <motion.div
+              ref={errorRef}
+              role="alert"
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
               className="mt-4 p-4 bg-error/10 border border-error/20 rounded-lg flex items-start gap-3"
+              style={{ scrollMarginTop: "5rem", scrollMarginBottom: "6rem" }}
             >
               <AlertCircle className="w-5 h-5 text-error flex-shrink-0 mt-0.5" />
               <div>
@@ -536,7 +570,7 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         </AnimatePresence>
 
         {/* Upload Button */}
-        {pages.length > 0 && (
+        {pages.length > 0 && !isAnalysisComplete && (
           <motion.button
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
@@ -571,18 +605,35 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
         <AnimatePresence>
           {(isUploading || (isAnalysisComplete && !userChoiceMade)) && (
             <motion.div
+              ref={continuationRef}
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: "auto" }}
               exit={{ opacity: 0, height: 0 }}
-              className="mt-6 pt-6 border-t border-border"
+              className="mt-6 pt-6 border-t border-border max-sm:pr-16"
+              style={{ scrollMarginTop: "5rem", scrollMarginBottom: "7rem" }}
             >
               <p className="text-sm font-medium text-gray-900 mb-4 text-center">
                 {isUploading ? (
                   "Medan vi analyserar din faktura..."
                 ) : (
-                  "Välj ett alternativ för att fortsätta:"
+                  "Analysen är klar"
                 )}
               </p>
+              {!isUploading && (
+                <button
+                  type="button"
+                  onClick={() => handleUserChoice('skip')}
+                  disabled={userChoiceMade || !analysisResult}
+                  className="
+                    mb-3 w-full py-4 px-6 bg-primary text-white font-semibold rounded-lg
+                    hover:bg-primary/90 active:scale-[0.98]
+                    disabled:opacity-50 disabled:cursor-not-allowed
+                    transition-all duration-200
+                  "
+                >
+                  Se resultatet
+                </button>
+              )}
               <div className="space-y-3">
                 {/* Skapa konto */}
                 <button
@@ -634,24 +685,6 @@ export default function UploadCard({ onUploadSuccess, onUploadError, isUserLogge
                   <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </button>
 
-                {/* Hoppa över */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    console.log('[UploadCard] "Hoppa över" knapp klickad');
-                    handleUserChoice('skip');
-                  }}
-                  disabled={userChoiceMade || !analysisResult}
-                  className="
-                    w-full py-2 text-sm text-gray-400 hover:text-gray-500
-                    transition-colors
-                    disabled:opacity-50 disabled:cursor-not-allowed
-                  "
-                  type="button"
-                >
-                  Hoppa över registrering
-                </button>
               </div>
             </motion.div>
           )}

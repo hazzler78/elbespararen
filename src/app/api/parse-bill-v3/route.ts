@@ -11,6 +11,13 @@ import {
   hasXaiApiKey,
 } from "@/lib/ai-client";
 
+function redactSecrets(message: string): string {
+  return message
+    .replace(/sk-[A-Za-z0-9_\-]{6,}/g, "[redacted]")
+    .replace(/Bearer\s+\S+/gi, "Bearer [redacted]")
+    .slice(0, 300);
+}
+
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
 /** Real bills + Grok vision often need >30s on cold CF Workers */
@@ -26,8 +33,9 @@ export async function POST(
 ) {
   try {
     if (!hasXaiApiKey()) {
+      console.error("[parse-bill-v3] XAI_API_KEY saknas");
       return NextResponse.json(
-        { error: "XAI_API_KEY saknas" },
+        { success: false, error: "Kunde inte analysera fakturan" },
         { status: 500 }
       );
     }
@@ -322,15 +330,13 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error("[parse-bill-v3] Error:", error);
-    
     const errorMessage = error instanceof Error ? error.message : "Okänt fel";
-    
+    console.error("[parse-bill-v3] Error:", redactSecrets(errorMessage));
+
     return NextResponse.json(
       {
         success: false,
         error: "Kunde inte analysera fakturan",
-        details: errorMessage
       },
       { status: 500 }
     );
