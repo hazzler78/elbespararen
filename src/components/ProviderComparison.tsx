@@ -19,7 +19,7 @@ interface ProviderComparisonProps {
   hideSavings?: boolean; // Hide savings field for contracts page
   enableConsumptionEntry?: boolean; // On contracts page: ask for kWh and hide prices until provided
   onRequestContact?: () => void;
-  /** Expose "open recommended switch" for hero CTA (prefers SaleSys / Cheap Energy) */
+  /** Expose "open recommended switch" for hero CTA (prefers Cheap Energy) */
   onPrimarySwitchReady?: (openPrimarySwitch: (() => void) | null) => void;
   secondaryCta?: {
     label: string;
@@ -243,13 +243,14 @@ export default function ProviderComparison({
 
     // Prefer in-page SaleSys form (keeps user on Elbespararen)
     if (salesysForm) {
+      const attributionReferrer = affiliate || salesysForm.signupUrl;
       setSalesysEmbed({
         form: salesysForm,
         providerName: comparison.provider.name,
         providerId: comparison.provider.id,
         pageContext: enableConsumptionEntry ? "contracts" : "result",
-        attributionReferrer: affiliate,
-        externalUrl: affiliate,
+        attributionReferrer,
+        externalUrl: attributionReferrer,
       });
       return;
     }
@@ -270,7 +271,7 @@ export default function ProviderComparison({
 
   // Must stay above early returns — otherwise hook count changes when loading finishes
   // and React throws a client-side exception (blank "Application error" page).
-  // Hero "Byt elavtal" → same path as the recommended card (SaleSys / Cheap Energy first)
+  // Hero "Byt elavtal" stays on Cheap Energy when that provider is listed.
   useEffect(() => {
     if (!onPrimarySwitchReady) return;
     if (!comparisonData?.comparisons?.length) {
@@ -279,10 +280,16 @@ export default function ProviderComparison({
     }
 
     const list = comparisonData.comparisons;
-    const withSalesys = list.find((c) => getSalesysFormForProvider(c.provider.name));
+    // The hero stays on Cheap Energy when that provider is listed. The other
+    // partners now embed too, so "first form in the list" would otherwise
+    // steal the main button from Cheap Energy.
+    const cheapEnergy = list.find(
+      (c) => getSalesysFormForProvider(c.provider.name)?.label === "Cheap Energy"
+    );
     const primary =
-      withSalesys ||
+      cheapEnergy ||
       list.find((c) => c.isRecommended) ||
+      list.find((c) => getSalesysFormForProvider(c.provider.name)) ||
       list[0];
 
     onPrimarySwitchReady(() => handleSwitchClick(primary));

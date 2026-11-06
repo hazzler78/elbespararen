@@ -59,7 +59,7 @@ export default function SalesysEmbedModal({
   const [iframeHeight, setIframeHeight] = useState(DEFAULT_IFRAME_HEIGHT);
   const [mounted, setMounted] = useState(false);
   const [embedSrc] = useState(() =>
-    buildSalesysEmbedUrl(form.formId, attributionReferrer)
+    buildSalesysEmbedUrl(form.formId, attributionReferrer, form.signupUrl)
   );
 
   useEffect(() => {

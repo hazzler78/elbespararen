@@ -10,11 +10,19 @@ import ContactForm from "@/components/ContactForm";
 import { BillData, SavingsCalculation, ElectricityProvider } from "@/lib/types";
 import { calculateSavings } from "@/lib/calculations";
 import { isValidSwedishPostalCode } from "@/lib/price-areas";
+import SalesysEmbedModal from "@/components/SalesysEmbedModal";
+import { getSalesysFormForProvider, type SalesysFormConfig } from "@/lib/salesys-forms";
+import { trackCustomEvent } from "@/lib/analytics";
 
 // Hårdkodade länkar som fallback
 const DEFAULT_QUICK_ACTION_LINKS = {
   variable: "https://www.cheapenergy.se/teckna-elavtal/?src=Elbespararen",
-  fixed: "https://www.svealandselbolag.se/teckna-avtal/?src=Elbespararen"
+  fixed: "https://www.svealandselbolag.se/teckna-elavtal/?src=Elbespararen"
+};
+
+const DEFAULT_QUICK_ACTION_NAMES = {
+  variable: "Cheap Energy",
+  fixed: "Svealands Elbolag",
 };
 
 export default function ContractsPage() {
@@ -28,6 +36,17 @@ export default function ContractsPage() {
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [quickActionLinks, setQuickActionLinks] = useState(DEFAULT_QUICK_ACTION_LINKS);
+  const [quickProviders, setQuickProviders] = useState<{
+    variable: ElectricityProvider | null;
+    fixed: ElectricityProvider | null;
+  }>({ variable: null, fixed: null });
+  const [salesysEmbed, setSalesysEmbed] = useState<{
+    form: SalesysFormConfig;
+    providerName: string;
+    providerId: string;
+    attributionReferrer?: string;
+    externalUrl?: string;
+  } | null>(null);
 
   // Cleanup timeout när komponenten unmountas
   useEffect(() => {
@@ -87,14 +106,21 @@ export default function ContractsPage() {
           variable: DEFAULT_QUICK_ACTION_LINKS.variable, // Fallback
           fixed: DEFAULT_QUICK_ACTION_LINKS.fixed // Fallback
         };
+        const providers: {
+          variable: ElectricityProvider | null;
+          fixed: ElectricityProvider | null;
+        } = { variable: null, fixed: null };
 
         // Hitta rörligt provider
         if (variableId) {
           const variableProvider = providersData.data.find(
             p => p.id === variableId && p.contractType === "rörligt"
           );
-          if (variableProvider?.affiliateUrl) {
-            links.variable = variableProvider.affiliateUrl;
+          if (variableProvider) {
+            providers.variable = variableProvider;
+            if (variableProvider.affiliateUrl) {
+              links.variable = variableProvider.affiliateUrl;
+            }
           }
         }
 
@@ -103,11 +129,15 @@ export default function ContractsPage() {
           const fixedProvider = providersData.data.find(
             p => p.id === fixedId && p.contractType === "fastpris"
           );
-          if (fixedProvider?.affiliateUrl) {
-            links.fixed = fixedProvider.affiliateUrl;
+          if (fixedProvider) {
+            providers.fixed = fixedProvider;
+            if (fixedProvider.affiliateUrl) {
+              links.fixed = fixedProvider.affiliateUrl;
+            }
           }
         }
 
+        setQuickProviders(providers);
         setQuickActionLinks(links);
       } catch (error) {
         console.error('[ContractsPage] Error fetching quick action links:', error);
@@ -181,6 +211,36 @@ export default function ContractsPage() {
         );
       }, 1000); // Vänta 1 sekund efter senaste ändringen
     }
+  };
+
+  const openQuickAction = (kind: "variable" | "fixed") => {
+    const provider = quickProviders[kind];
+    const providerName = provider?.name ?? DEFAULT_QUICK_ACTION_NAMES[kind];
+    const form = getSalesysFormForProvider(providerName);
+    const externalUrl =
+      provider?.affiliateUrl || form?.signupUrl || quickActionLinks[kind];
+
+    trackCustomEvent("contract_click", {
+      provider_name: providerName,
+      provider_id: provider?.id,
+      contract_type: kind === "variable" ? "rörligt" : "fastpris",
+      has_affiliate: !!provider?.affiliateUrl,
+      has_salesys_embed: !!form,
+      page_context: "contracts_quick",
+    });
+
+    if (form) {
+      setSalesysEmbed({
+        form,
+        providerName: provider?.name || form.label,
+        providerId: provider?.id || form.formId,
+        attributionReferrer: provider?.affiliateUrl || form.signupUrl,
+        externalUrl,
+      });
+      return;
+    }
+
+    window.open(externalUrl, "_blank", "noopener,noreferrer");
   };
 
   const handleViewContracts = () => {
@@ -294,22 +354,20 @@ export default function ContractsPage() {
               </div>
               {/* Quick action buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-4">
-                <a
-                  href={quickActionLinks.variable}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => openQuickAction("variable")}
                   className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
                 >
                   Rörligt
-                </a>
-                <a
-                  href={quickActionLinks.fixed}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openQuickAction("fixed")}
                   className="w-full py-3 px-6 bg-white border-2 border-primary text-primary font-semibold rounded-lg hover:bg-primary hover:text-white active:scale-[0.98] transition-all duration-200 text-center"
                 >
                   Fastpris med prisgaranti
-                </a>
+                </button>
               </div>
             </div>
 
@@ -379,6 +437,18 @@ export default function ContractsPage() {
         </div>
       </div>
       </main>
+      {salesysEmbed && (
+        <SalesysEmbedModal
+          open={!!salesysEmbed}
+          onClose={() => setSalesysEmbed(null)}
+          form={salesysEmbed.form}
+          providerName={salesysEmbed.providerName}
+          providerId={salesysEmbed.providerId}
+          pageContext="contracts_quick"
+          attributionReferrer={salesysEmbed.attributionReferrer}
+          externalUrl={salesysEmbed.externalUrl}
+        />
+      )}
     </>
   );
 }
