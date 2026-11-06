@@ -449,37 +449,48 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <div className="flex flex-col gap-4 min-w-0 lg:flex-row lg:items-start lg:justify-between">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-x-3 gap-y-2 mb-2">
-                <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
-                {isPremium && (
-                  <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
-                    <Crown className="w-4 h-4" />
-                    <span>Premium</span>
-                  </div>
-                )}
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <div className="flex items-start justify-between gap-3 mb-2">
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-2 min-w-0">
+                  <h1 className="text-3xl font-bold text-gray-900">Mitt Dashboard</h1>
+                  {isPremium && (
+                    <div className="flex items-center gap-1.5 px-3 py-1 bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 rounded-full text-sm font-semibold">
+                      <Crown className="w-4 h-4" />
+                      <span>Premium</span>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSignOut}
+                  className="sm:hidden shrink-0 flex items-center justify-center p-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                  title="Logga ut"
+                  aria-label="Logga ut"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
               {/* User welcome section */}
               {user && (
-                <div className="flex items-center gap-3 mb-1 min-w-0">
+                <div className="flex items-center gap-3 mb-1">
                   {user.user_metadata?.avatar_url ? (
                     <img
                       src={user.user_metadata.avatar_url}
                       alt={user.user_metadata?.full_name || user.email || "User"}
-                      className="w-8 h-8 shrink-0 rounded-full border-2 border-primary"
+                      className="w-8 h-8 rounded-full border-2 border-primary"
                     />
                   ) : (
-                    <div className="w-8 h-8 shrink-0 rounded-full bg-primary flex items-center justify-center border-2 border-primary">
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center border-2 border-primary">
                       <User className="w-4 h-4 text-white" />
                     </div>
                   )}
-                  <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 break-words">
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">
                       Välkommen, {user.user_metadata?.full_name || user.email?.split('@')[0] || 'Användare'}!
                     </p>
                     {user.email && user.user_metadata?.full_name && (
-                      <p className="text-xs text-gray-500 break-words">{user.email}</p>
+                      <p className="text-xs text-gray-500">{user.email}</p>
                     )}
                   </div>
                 </div>
@@ -503,7 +514,7 @@ export default function DashboardPage() {
                 </p>
               )}
             </div>
-            <div className="flex flex-wrap items-center gap-2 w-full min-w-0 lg:w-auto lg:max-w-full lg:justify-end">
+            <div className="flex items-center gap-3 max-[359px]:flex-wrap">
               <select
                 value={timeRange}
                 onChange={(e) => {
@@ -515,7 +526,7 @@ export default function DashboardPage() {
                   }
                   setTimeRange(next);
                 }}
-                className="w-full min-w-0 max-w-full sm:w-auto sm:max-w-xs px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
+                className="max-w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent text-sm"
               >
                 <option value="month">Senaste månaden</option>
                 <option value="3months">Senaste 3 månaderna</option>
@@ -528,18 +539,19 @@ export default function DashboardPage() {
               </select>
               <Link
                 href="/upload"
-                className="flex flex-1 min-w-0 items-center justify-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors sm:flex-none"
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors max-[359px]:w-full max-[359px]:justify-center"
               >
-                <Upload className="w-4 h-4 shrink-0" />
-                <span className="truncate">Analysera ny faktura</span>
+                <Upload className="w-4 h-4" />
+                Analysera ny faktura
               </Link>
               <button
+                type="button"
                 onClick={handleSignOut}
-                className="flex shrink-0 items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
+                className="hidden sm:flex items-center gap-2 px-4 py-2 text-gray-700 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors border border-gray-300"
                 title="Logga ut"
               >
                 <LogOut className="w-4 h-4" />
-                <span className="hidden sm:inline">Logga ut</span>
+                <span>Logga ut</span>
               </button>
             </div>
           </div>
@@ -613,8 +625,8 @@ export default function DashboardPage() {
         </div>
 
         {!isPremium && (
-          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
-            <span className="min-w-0 break-words">
+          <div className="mb-6 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <span>
               {hiddenAnalysesCount > 0
                 ? hiddenPotentialSavings > 0
                   ? `Du har ${hiddenAnalysesCount} dolda analyser med ca ${formatCurrency(hiddenPotentialSavings)} i identifierad besparing. Premium låser upp allt + CSV.`
@@ -631,7 +643,7 @@ export default function DashboardPage() {
               type="button"
               disabled={startingCheckout}
               onClick={() => goPremiumCheckout("dashboard_banner")}
-              className="inline-flex max-w-full items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60 sm:shrink-0"
+              className="shrink-0 inline-flex items-center justify-center rounded-lg bg-amber-600 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
             >
               {startingCheckout
                 ? "Öppnar…"
@@ -643,13 +655,13 @@ export default function DashboardPage() {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8 min-w-0">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Trend Chart - Takes 2 columns */}
-          <div className="lg:col-span-2 min-w-0 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div className="lg:col-span-2 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <div className="flex flex-wrap items-start justify-between mb-6 gap-3">
               <div className="min-w-0">
                 <h2 className="text-xl font-bold text-gray-900">Kostnadstrend</h2>
-                <p className="text-sm text-gray-600 break-words">
+                <p className="text-sm text-gray-600">
                   {!isPremium && hiddenAnalysesCount > 0
                     ? `${analyses.length} synliga · ${hiddenAnalysesCount} dolda — Premium visar hela kurvan`
                     : "Kostnad och identifierad besparing per faktura"}
@@ -660,7 +672,7 @@ export default function DashboardPage() {
                   type="button"
                   disabled={startingCheckout}
                   onClick={() => goPremiumCheckout("dashboard_trend_chart")}
-                  className="inline-flex max-w-full items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
+                  className="shrink-0 inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
                 >
                   {startingCheckout ? "Öppnar…" : `Lås upp — ${PREMIUM_PRICE_LABEL}`}
                   <ArrowUpRight className="h-3.5 w-3.5" />
@@ -685,7 +697,7 @@ export default function DashboardPage() {
                   ? Math.min(hiddenAnalysesCount, 6)
                   : 0;
                 return (
-                  <div className="h-64 min-w-0 flex items-end justify-between gap-2">
+                  <div className="h-64 flex items-end justify-between gap-2">
                     {chartAnalyses.map((analysis) => {
                       const amount = analysis.billData.totalAmount || 0;
                       const savings = analysis.savings?.potentialSavings || 0;
@@ -789,7 +801,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Quick Actions & Recommendations */}
-          <div className="min-w-0 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
             <h2 className="text-xl font-bold text-gray-900 mb-6">Nästa steg</h2>
             
             <div className="space-y-4">
@@ -916,9 +928,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Analyses */}
-        <div className="min-w-0 bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3 mb-6">
-            <div className="min-w-0">
+        <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+          <div className="flex items-center justify-between mb-6">
+            <div>
               <h2 className="text-xl font-bold text-gray-900">Senaste analyser</h2>
               <p className="text-sm text-gray-600">Dina fakturaanalyser över tid</p>
             </div>
@@ -957,8 +969,8 @@ export default function DashboardPage() {
                   key={analysis.id}
                   className="p-4 border border-gray-200 rounded-lg hover:border-primary hover:shadow-md transition-all"
                 >
-                  <div className="flex items-start justify-between gap-3 min-w-0">
-                    <div className="flex-1 min-w-0">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
                       <div className="flex items-center gap-3 mb-2">
                         <div className={`p-2 rounded-lg ${
                           analysis.validationStatus === 'correct' 
@@ -972,7 +984,7 @@ export default function DashboardPage() {
                           )}
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 break-words">
+                          <h3 className="font-semibold text-gray-900">
                             {analysis.billData.period}
                           </h3>
                           <p className="text-sm text-gray-600">
@@ -981,7 +993,7 @@ export default function DashboardPage() {
                         </div>
                       </div>
                       
-                      <div className="flex flex-wrap items-center gap-x-6 gap-y-1 mt-3 text-sm">
+                      <div className="flex items-center gap-6 mt-3 text-sm">
                         <div className="flex items-center gap-2">
                           <TrendingDown className="w-4 h-4 text-green-600" />
                           <span className="text-gray-600">
@@ -996,7 +1008,7 @@ export default function DashboardPage() {
                       </div>
                     </div>
                     
-                    <div className="shrink-0 text-right flex flex-col items-end gap-2">
+                    <div className="text-right flex flex-col items-end gap-2">
                       <div className="text-sm text-gray-500">
                         {new Date(analysis.createdAt).toLocaleDateString('sv-SE')}
                       </div>
@@ -1065,8 +1077,8 @@ export default function DashboardPage() {
       {/* Sticky paywall bar — stays after modal dismiss so return visits still convert */}
       {showStickyPaywall && (
           <div className="fixed bottom-0 inset-x-0 z-40 border-t border-amber-200 bg-amber-50/95 backdrop-blur px-4 py-3 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]">
-            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 min-w-0">
-              <p className="text-sm text-amber-950 break-words min-w-0 pr-16 sm:pr-0">
+            <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <p className="text-sm text-amber-950">
                 {hiddenAnalysesCount > 0
                   ? hiddenPotentialSavings > 0
                     ? `${hiddenAnalysesCount} dolda · ca ${formatCurrency(hiddenPotentialSavings)} i besparing — Premium (${PREMIUM_PRICE_LABEL}) låser upp allt + CSV.`
@@ -1077,7 +1089,7 @@ export default function DashboardPage() {
                 type="button"
                 disabled={startingCheckout}
                 onClick={() => goPremiumCheckout("dashboard_sticky_bar")}
-                className="inline-flex max-w-full items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60 sm:shrink-0"
+                className="shrink-0 inline-flex items-center justify-center gap-1.5 rounded-lg bg-amber-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
               >
                 {startingCheckout
                   ? "Öppnar…"
