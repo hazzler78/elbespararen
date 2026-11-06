@@ -91,7 +91,8 @@ async function resolveVariableMarkup(
         const variableCosts = parseNumber(json.data.variable_costs ?? (json.data as any).variable_costs);
         const elCert = parseNumber(json.data.el_certificate_fee ?? (json.data as any).elCertificateFee);
         const discount = parseNumber(json.data._12_month_discount ?? (json.data as any)['12_month_discount']);
-        // Beräkna påslag = surcharge + variable_costs (om det finns) + cert, sedan lägg till discount
+        // Uppskattad kostnad använder hela tillägget (påslag + rörliga kostnader + rabatt).
+        // energyPrice i databasen är bara påslag och är reserv om uppslaget saknas.
         const markup = surcharge + (variableCosts || 0) + elCert;
         const totalOre = markup + discount;
         if (Number.isFinite(totalOre)) {

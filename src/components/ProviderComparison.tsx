@@ -9,6 +9,7 @@ import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-
 import SwitchProcess from "./SwitchProcess";
 import SalesysEmbedModal from "./SalesysEmbedModal";
 import { AnalyticsEvents, trackCustomEvent } from "@/lib/analytics";
+import { fullEnergyAdderKrInclVat, markupOreExclToKrInclVat } from "@/lib/variable-markup";
 import { getSalesysFormForProvider } from "@/lib/salesys-forms";
 import type { SalesysFormConfig } from "@/lib/salesys-forms";
 
@@ -58,7 +59,8 @@ export default function ProviderComparison({
   const [selectedContracts, setSelectedContracts] = useState<Record<string, number>>({}); // providerId -> selectedContractIndex
   const [enteredKwh, setEnteredKwh] = useState<number | null>(enableConsumptionEntry ? null : billData.totalKWh);
   const [spotPrices, setSpotPrices] = useState<{ [key: string]: number } | null>(null);
-  const [lookupSurcharges, setLookupSurcharges] = useState<Record<string, number>>({}); // providerId -> surcharge (kr/kWh, incl VAT)
+  const [lookupPaslag, setLookupPaslag] = useState<Record<string, number>>({}); // påslag, kr/kWh inkl. moms
+  const [lookupAdder, setLookupAdder] = useState<Record<string, number>>({}); // påslag + rörliga kostnader + rabatt, för kostnad
 
   const getTags = (provider: any): string[] => {
     const tags: string[] = [];
@@ -189,54 +191,34 @@ export default function ProviderComparison({
                 });
               }
               
-              // För Cheap Energy: visa netto-påslag som är skillnaden mellan total och spotpris
-              // Men först, låt oss testa om vi ska visa bara discount-värdet dividerat med 10
-              // eller om vi ska beräkna netto-påslaget annorlunda
-              let surchargeOre: number;
-              
-              let surchargeKrInclVat: number;
-              
-              if (isCheapEnergy) {
-                // För Cheap Energy: Beräkna påslag = surcharge + variable_costs + cert, sedan subtrahera rabatt
-                // Exempel: 4,9 + 4 + 1 = 9,9 öre (påslag), sedan -11 öre (rabatt) = -1,1 öre/kWh
-                const markup = (Number.isFinite(surcharge) ? surcharge : 0) + 
-                               (Number.isFinite(variableCosts) ? variableCosts : 0) + 
-                               (Number.isFinite(cert) ? cert : 0);
-                surchargeOre = markup + (Number.isFinite(discount) ? discount : 0); // 9,9 - 11 = -1,1 öre
-                // Konvertera till kr/kWh och lägg till moms (25%)
-                surchargeKrInclVat = (surchargeOre / 100) * 1.25;
-                console.log(`[ProviderComparison] Cheap Energy: markup=${markup} öre, discount=${discount} öre, total=${surchargeOre} öre/kWh = ${surchargeKrInclVat} kr/kWh (inkl. moms)`);
-              } else {
-                // För andra leverantörer: använd standardberäkning (inkludera variable_costs om det finns)
-                const markup = (Number.isFinite(surcharge) ? surcharge : 0) + 
-                               (Number.isFinite(variableCosts) ? variableCosts : 0) + 
-                               (Number.isFinite(cert) ? cert : 0);
-                surchargeOre = markup + (Number.isFinite(discount) ? discount : 0);
-                surchargeKrInclVat = (surchargeOre / 100) * 1.25;
+              const paslagKr = markupOreExclToKrInclVat(surcharge);
+              const adderKr = fullEnergyAdderKrInclVat({
+                markupOreExcl: surcharge,
+                variableCostsOreExcl: variableCosts,
+                certificateOreExcl: cert,
+                discountOreExcl: discount,
+              });
+
+              if (!Number.isFinite(paslagKr) || !Number.isFinite(adderKr)) {
+                console.warn(`[ProviderComparison] Invalid price for ${c.provider.name}:`, { surcharge, cert, discount, variableCosts });
+                return [c.provider.id, undefined, undefined] as const;
               }
-              
-              if (!Number.isFinite(surchargeKrInclVat)) {
-                console.warn(`[ProviderComparison] Invalid surcharge calculation for ${c.provider.name}:`, { surcharge, cert, discount });
-                return [c.provider.id, undefined] as const;
-              }
-              
-              if (isCheapEnergy) {
-                const surchargeOreDisplay = surchargeKrInclVat * 100; // Konvertera tillbaka till öre för visning
-                console.log(`[ProviderComparison] Cheap Energy calculated surcharge: ${surchargeOreDisplay.toFixed(2)} öre/kWh = ${surchargeKrInclVat} kr/kWh`);
-              }
-              
-              return [c.provider.id, surchargeKrInclVat] as const;
+
+              return [c.provider.id, paslagKr, adderKr] as const;
             } catch {
-              return [c.provider.id, undefined] as const;
+              return [c.provider.id, undefined, undefined] as const;
             }
           })
         );
         if (isCancelled) return;
-        const map: Record<string, number> = {};
-        for (const [pid, val] of results) {
-          if (typeof val === 'number' && isFinite(val)) map[pid] = val;
+        const paslag: Record<string, number> = {};
+        const adder: Record<string, number> = {};
+        for (const [pid, paslagKr, adderKr] of results) {
+          if (typeof paslagKr === "number" && isFinite(paslagKr)) paslag[pid] = paslagKr;
+          if (typeof adderKr === "number" && isFinite(adderKr)) adder[pid] = adderKr;
         }
-        setLookupSurcharges(prev => ({ ...prev, ...map }));
+        setLookupPaslag((prev) => ({ ...prev, ...paslag }));
+        setLookupAdder((prev) => ({ ...prev, ...adder }));
       } catch {
         // ignore
       }
@@ -402,7 +384,9 @@ export default function ProviderComparison({
     const hasMultipleAreaOptions = comparison.provider.contractType === "fastpris" && areaOptions.length > 1;
     const selectedContract = getSelectedContract(comparison.provider);
     const monthlyFee = selectedContract?.månadskostnad || comparison.provider.monthlyFee;
-    const priceValue = selectedContract?.fastpris || lookupSurcharges[comparison.provider.id] || comparison.provider.energyPrice;
+    const priceValue = comparison.provider.contractType === "rörligt"
+      ? (lookupPaslag[comparison.provider.id] ?? comparison.provider.energyPrice)
+      : (selectedContract?.fastpris || comparison.provider.energyPrice);
     const calculatedCost = formatCurrency(calculateProviderCost(comparison, selectedContract));
     const showSavings = !hideSavings && comparison.provider.contractType === "rörligt";
 
@@ -490,11 +474,11 @@ export default function ProviderComparison({
               className="text-sm text-muted"
               title={
                 comparison.provider.contractType === "rörligt"
-                  ? "Påslag + rörliga kostnader − nykundsrabatt, inklusive moms. Inte samma siffra som leverantörens rad «Påslag»."
+                  ? "Bara leverantörens påslag, inklusive moms. Rörliga kostnader och rabatt ingår i beräknad kostnad, inte i den här siffran."
                   : undefined
               }
             >
-              {comparison.provider.contractType === "rörligt" ? "Nettopåslag" : "Fastpris"}
+              {comparison.provider.contractType === "rörligt" ? "Påslag" : "Fastpris"}
             </p>
             <p className="font-semibold">
               {formatPricePerKwh(priceValue)}
@@ -553,7 +537,7 @@ export default function ProviderComparison({
         const area = billData.priceArea?.toLowerCase();
         const spot = area ? (spotPrices[area] || 0) : 0; // kr/kWh
         if (spot > 0) {
-          const surcharge = lookupSurcharges[comparison.provider.id] ?? (comparison.provider.energyPrice || 0); // kr/kWh incl VAT
+          const surcharge = lookupAdder[comparison.provider.id] ?? lookupPaslag[comparison.provider.id] ?? (comparison.provider.energyPrice || 0);
           const monthlyFee = comparison.provider.monthlyFee || 0;
           const kwh = Math.max(0, effectiveKwh);
           const energyCost = (spot + surcharge) * kwh;

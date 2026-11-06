@@ -3,6 +3,7 @@ import { createDatabaseFromBinding } from "@/lib/database";
 import type { ContractAlternative, ElectricityProvider } from "@/lib/types";
 import { getPriceAreaFromPostalCode, PRICE_AREAS, isPriceAreaCode } from "@/lib/price-areas";
 import { getEnvVar, requireAdmin } from "@/lib/admin-auth";
+import { markupOreExclToKrInclVat } from "@/lib/variable-markup";
 
 export const runtime = 'edge';
 
@@ -15,21 +16,6 @@ async function requireAdminOrCron(request: NextRequest): Promise<NextResponse | 
   return requireAdmin(request);
 }
 
-
-function computeEnergyPriceFromComponents(
-  surchargeOre?: number,
-  elCertificateFeeOre?: number,
-  twelveMonthDiscountOre?: number
-): number {
-  const surcharge = Number(surchargeOre ?? 0);
-  const elCert = Number(elCertificateFeeOre ?? 0);
-  const discount = Number(twelveMonthDiscountOre ?? 0);
-  const totalOre = surcharge + elCert + discount;
-  if (!Number.isFinite(totalOre)) return 0;
-  const totalKr = totalOre / 100;
-  const totalKrInclVat = totalKr * 1.25;
-  return Math.max(0, Number(totalKrInclVat.toFixed(6)));
-}
 
 function findAreaArray(obj: any, area: string, providerName?: string): any[] | null {
   if (!obj || typeof obj !== 'object') return null;
@@ -199,9 +185,8 @@ async function fetchSpotPrices(): Promise<Record<string, number>> {
 interface ElprisKalla {
   /** Fastpris per leverantör, i samma form som parseProviderPrices bygger. */
   fast: Map<string, PriceData>;
-  /** Rörligt påslag per leverantör, i öre/kWh exkl. moms (samma enhet som
-   *  extractVariableComponents ger, så computeEnergyPriceFromComponents kan användas). */
-  rorligt: Map<string, number>;
+  /** Rörligt jämförelsepris: bara components.markup (öre/kWh exkl. moms) plus netto månadsavgift. */
+  rorligt: Map<string, { markupOreExcl: number; monthlyFeeKr: number }>;
 }
 
 const ELPRISHANTERING_BASE = "https://elprishantering.com";
@@ -230,11 +215,16 @@ function manadsavgiftEfterRabatt(product: any): number {
 }
 
 /**
- * Väljer rörligt avtal som Elchef gör: billigaste obundna, där kvartspris (annars
- * timpris) jämförs med månadspris på årskostnad. Returnerar påslaget i öre/kWh
- * exkl. moms — det vill säga allt som inte är spotpris.
+ * Väljer vilket obundet rörligt avtal som är billigast på årskostnad (kvartspris,
+ * annars timpris, jämfört med månadspris). Det som sparas som jämförelsepris är
+ * bara det avtalets påslag (components.markup, öre/kWh exkl. moms) — inte
+ * rörliga kostnader eller rabatt. Månadsavgiften är netto efter månadsrabatt.
+ * freeMonths rörs inte: källan säger inte hur lång en kampanj är.
  */
-function valjRorligtPris(produkter: any[], spotOre: number): number | null {
+function valjRorligtPaslag(
+  produkter: any[],
+  spotOre: number
+): { markupOreExcl: number; monthlyFeeKr: number } | null {
   const obundna = produkter.filter((p) => (p?.binding_period_months ?? 0) === 0);
   const perKategori = (typ: string) => obundna.filter((p) => p.type === typ);
   const kvarts = perKategori('quarter_hourly');
@@ -242,27 +232,33 @@ function valjRorligtPris(produkter: any[], spotOre: number): number | null {
   const manad = perKategori('monthly');
   const spotFoljande = kvarts.length ? kvarts : timme;
 
-  const billigaste = (lista: any[]): { paslag: number; kostnad: number } | null => {
-    let bäst: { paslag: number; kostnad: number } | null = null;
+  const billigaste = (lista: any[]): { markupOreExcl: number; monthlyFeeKr: number; kostnad: number } | null => {
+    let bäst: { markupOreExcl: number; monthlyFeeKr: number; kostnad: number } | null = null;
     for (const p of lista) {
       const energy = p?.breakdown?.energy_price_excl_vat;
-      if (typeof energy !== 'number' || !Number.isFinite(energy)) continue;
-      const paslag = Math.round((energy - spotOre) * 100) / 100;
-      const kostnad = manadsavgiftEfterRabatt(p) * 12 + (paslag * FORBRUKNING_KWH) / 100;
-      if (!bäst || kostnad < bäst.kostnad) bäst = { paslag, kostnad };
+      const markup = Number(p?.components?.markup);
+      if (typeof energy !== 'number' || !Number.isFinite(energy) || !Number.isFinite(markup)) continue;
+      const nettopaslag = Math.round((energy - spotOre) * 100) / 100;
+      const monthlyFeeKr = manadsavgiftEfterRabatt(p);
+      const kostnad = monthlyFeeKr * 12 + (nettopaslag * FORBRUKNING_KWH) / 100;
+      if (!bäst || kostnad < bäst.kostnad) bäst = { markupOreExcl: markup, monthlyFeeKr, kostnad };
     }
     return bäst;
   };
 
   const spotVal = billigaste(spotFoljande);
   const manadsVal = billigaste(manad);
-  if (spotVal && manadsVal) return spotVal.kostnad <= manadsVal.kostnad ? spotVal.paslag : manadsVal.paslag;
-  return spotVal?.paslag ?? manadsVal?.paslag ?? null;
+  const vald =
+    spotVal && manadsVal
+      ? (spotVal.kostnad <= manadsVal.kostnad ? spotVal : manadsVal)
+      : (spotVal ?? manadsVal);
+  if (!vald) return null;
+  return { markupOreExcl: vald.markupOreExcl, monthlyFeeKr: vald.monthlyFeeKr };
 }
 
 async function fetchElprishanteringPrices(): Promise<ElprisKalla> {
   const fast = new Map<string, PriceData>();
-  const rorligt = new Map<string, number>();
+  const rorligt = new Map<string, { markupOreExcl: number; monthlyFeeKr: number }>();
 
   for (const area of PRISOMRADEN) {
     const url = `${ELPRISHANTERING_BASE}/v2/prices?price_area=${area.toUpperCase()}&supplier=${ELPRISHANTERING_SLUGS.join(",")}`;
@@ -322,8 +318,8 @@ async function fetchElprishanteringPrices(): Promise<ElprisKalla> {
     if (Number.isFinite(spotOre)) {
       for (const [slug, lista] of perLeverantor) {
         if (rorligt.has(slug)) continue;
-        const paslag = valjRorligtPris(lista, spotOre);
-        if (paslag !== null) rorligt.set(slug, paslag);
+        const paslag = valjRorligtPaslag(lista, spotOre);
+        if (paslag) rorligt.set(slug, paslag);
       }
     }
   }
@@ -819,18 +815,16 @@ export async function POST(request: NextRequest) {
             const updatePayload: Partial<ElectricityProvider> = { isActive: true };
             let action = 'kept_variable_active';
 
-            if (franElpris !== undefined) {
-              // Räknas utan klampning: ett negativt påslag är giltigt och ska visas.
-              // Cheap Energy ligger på -1,36 öre/kWh, alltså -0,017 kr/kWh inkl. moms.
-              // computeEnergyPriceFromComponents klämmer allt under noll till noll.
-              updatePayload.energyPrice = Number(((franElpris / 100) * 1.25).toFixed(6));
+            if (franElpris) {
+              // Bara påslag, inkl. moms. Rörliga kostnader och nykundsrabatt hör inte
+              // hemma här — då blir Svekrafts 0,19 öre ett nettotillägg på 17,61 öre
+              // och går inte att jämföra med ett rent påslag. Negativa påslag behålls.
+              // freeMonths lämnas orörd.
+              updatePayload.energyPrice = markupOreExclToKrInclVat(franElpris.markupOreExcl);
+              updatePayload.monthlyFee = franElpris.monthlyFeeKr;
               action = 'variable_updated';
             } else if (components) {
-              updatePayload.energyPrice = computeEnergyPriceFromComponents(
-                components.surcharge,
-                components.elCertificateFee,
-                components.twelveMonthDiscount
-              );
+              updatePayload.energyPrice = markupOreExclToKrInclVat(components.surcharge);
               action = 'variable_updated';
             } else {
               console.log(`[Price Update] No variable component data for ${canonicalTarget}, keeping existing energy price`);
