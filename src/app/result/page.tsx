@@ -172,33 +172,14 @@ export default function ResultPage() {
             />
           </div>
 
-          {/* Byt first — Premium comes after */}
-          <div className="mb-8">
-            <ProviderComparison
-              billData={billData}
-              savings={savings}
-              onRequestContact={handleScrollToContact}
-              onPrimarySwitchReady={handlePrimarySwitchReady}
-              secondaryCta={{
-                label: "Jämför fler avtal",
-                href: "/contracts"
-              }}
-            />
-          </div>
-
-          {/* Extra Fees */}
+          {/* Breakdown sits under the savings figure, before the contract list */}
           {billData.extraFeesDetailed.length > 0 && (
-            <div
-              className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6"
-            >
+            <div className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6">
               <ExtraFeesList fees={billData.extraFeesDetailed} totalAmount={billData.extraFeesTotal} showConfidence={true} />
             </div>
           )}
 
-          {/* Bill Details */}
-          <div
-            className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6"
-          >
+          <div className="mb-8 bg-white rounded-lg shadow-sm border border-border p-6">
             <h3 className="font-semibold text-lg mb-4">Fakturadetaljer</h3>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -218,6 +199,20 @@ export default function ResultPage() {
                 <p className="font-medium">{Math.round(billData.confidence * 100)}%</p>
               </div>
             </div>
+          </div>
+
+          {/* Contracts after the customer has seen how the number was calculated */}
+          <div className="mb-8">
+            <ProviderComparison
+              billData={billData}
+              savings={savings}
+              onRequestContact={handleScrollToContact}
+              onPrimarySwitchReady={handlePrimarySwitchReady}
+              secondaryCta={{
+                label: "Jämför fler avtal",
+                href: "/contracts"
+              }}
+            />
           </div>
 
           {/* Premium after switch path */}
