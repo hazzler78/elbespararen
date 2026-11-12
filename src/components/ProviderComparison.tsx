@@ -10,6 +10,7 @@ import SwitchProcess from "./SwitchProcess";
 import SalesysEmbedModal from "./SalesysEmbedModal";
 import { AnalyticsEvents, trackCustomEvent } from "@/lib/analytics";
 import { fullEnergyAdderKrInclVat, markupOreExclToKrInclVat } from "@/lib/variable-markup";
+import { hasUsableLookupMarkup } from "@/lib/price-lookup";
 import { getSalesysFormForProvider } from "@/lib/salesys-forms";
 import type { SalesysFormConfig } from "@/lib/salesys-forms";
 
@@ -171,6 +172,10 @@ export default function ProviderComparison({
                 }
                 return 0;
               };
+              if (!hasUsableLookupMarkup(data as { source?: string; surcharge?: number })) {
+                return [c.provider.id, undefined, undefined] as const;
+              }
+
               const surcharge = parse((data as any).surcharge);
               const cert = parse((data as any).el_certificate_fee ?? (data as any).elCertificateFee);
               const discount = parse((data as any)._12_month_discount ?? (data as any)['12_month_discount']);

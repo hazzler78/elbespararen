@@ -9,6 +9,12 @@ export function markupOreExclToKrInclVat(markupOreExcl: number): number {
   return Number(((markupOreExcl / 100) * 1.25).toFixed(6));
 }
 
+/** Omvandling från admin/databas (kr/kWh inkl. moms) till lookup-format (öre/kWh exkl. moms). */
+export function markupKrInclVatToOreExcl(krInclVat: number): number {
+  if (!Number.isFinite(krInclVat)) return 0;
+  return Number(((krInclVat / 1.25) * 100).toFixed(6));
+}
+
 /** Hela kWh-tillägget för en kostnadsuppskattning: påslag + rörliga kostnader + certifikat + rabatt. */
 export function fullEnergyAdderKrInclVat(parts: {
   markupOreExcl?: number;

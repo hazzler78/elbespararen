@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import type { CloudflareD1Database } from "@/types/cloudflare";
+import { markupKrInclVatToOreExcl } from "@/lib/variable-markup";
+import { supabaseFindProviderByName } from "@/lib/supabase/elbasen";
 
 export const runtime = 'edge';
 
@@ -21,7 +23,7 @@ type Normalized = {
   total?: number;
   total_with_vat?: number;
   vat?: number;
-  source: 'live' | 'cache' | 'unknown';
+  source: 'live' | 'cache' | 'database' | 'unknown';
   updatedAt?: string;
 };
 
@@ -50,7 +52,20 @@ const ELPRIS_SLUG: Record<string, string> = {
   'stockholms-el': 'sthlmsel',
   'svealands-el': 'svealandsel',
   'svekraft': 'svekraft',
-  'motala-el': 'motala'
+  'motala-el': 'motala',
+  'tibber': 'tibber',
+  'fortum': 'fortum',
+  'skelleftea-kraft': 'skellefteakraft',
+};
+
+/**
+ * Leverantörer utan partner-JSON men med admin/ELbasen-påslag. Alla rörliga
+ * som inte finns här matchas ändå via databas-fallback på visningsnamnet.
+ */
+const ELPRIS_SLUG_BY_NAME: Record<string, string> = {
+  tibber: 'tibber',
+  fortum: 'fortum',
+  'skelleftea-kraft': 'skellefteakraft',
 };
 
 /**
@@ -130,9 +145,34 @@ async function lookupViaElprishantering(
 function canonicalizeProvider(name: string): string | null {
   const slug = slugify(name || '');
   if (URL_MAP[slug]) return slug;
+  if (ELPRIS_SLUG_BY_NAME[slug]) return slug;
   // Try contains match among slugs
-  const key = Object.keys(URL_MAP).find(k => slug.includes(k) || k.includes(slug));
+  const key =
+    Object.keys(URL_MAP).find((k) => slug.includes(k) || k.includes(slug)) ??
+  Object.keys(ELPRIS_SLUG_BY_NAME).find((k) => slug.includes(k) || k.includes(slug));
   return key ?? null;
+}
+
+async function lookupFromDatabase(
+  providerName: string,
+  area: string
+): Promise<Normalized | null> {
+  const provider = await supabaseFindProviderByName(providerName);
+  if (!provider || provider.contractType !== "rörligt") return null;
+
+  const energyPrice = Number(provider.energyPrice);
+  if (!Number.isFinite(energyPrice)) return null;
+
+  return {
+    area,
+    range: null,
+    surcharge: markupKrInclVatToOreExcl(energyPrice),
+    variable_costs: 0,
+    el_certificate_fee: 0,
+    _12_month_discount: 0,
+    source: "database",
+    updatedAt: provider.updatedAt.toISOString(),
+  };
 }
 
 function normalizeArea(area: string | null | undefined): string {
@@ -227,17 +267,21 @@ export async function POST(request: NextRequest) {
     const kwh = monthlyKwh > 0 ? monthlyKwh * 12 : 0;
 
     if (!providerKey) {
-      // Return empty data instead of error for unknown providers
-      // This prevents console errors when providers aren't in the lookup map
+      const fromDb = await lookupFromDatabase(body.providerName || "", area);
+      if (fromDb) {
+        if (db) await writeCache(db, slugify(body.providerName || ""), area, fromDb);
+        return NextResponse.json({ success: true, data: fromDb });
+      }
+
       console.warn(`[prices/lookup] Unknown provider: ${body.providerName}`);
       const normalized: Normalized = {
         area,
         range: null,
-        source: 'unknown'
+        source: "unknown",
       };
-      return NextResponse.json({ 
-        success: true, 
-        data: normalized
+      return NextResponse.json({
+        success: true,
+        data: normalized,
       });
     }
 
@@ -250,6 +294,15 @@ export async function POST(request: NextRequest) {
     }
 
     const url = URL_MAP[providerKey];
+    if (!url) {
+      const fromDb = await lookupFromDatabase(body.providerName || "", area);
+      if (fromDb) {
+        if (db) await writeCache(db, providerKey, area, fromDb);
+        return NextResponse.json({ success: true, data: fromDb });
+      }
+      const normalized: Normalized = { area, range: null, source: "unknown" };
+      return NextResponse.json({ success: true, data: normalized });
+    }
     // Try live fetch
     try {
       const res = await fetch(url, { headers: { 'Accept': 'application/json' } });
@@ -400,6 +453,11 @@ export async function POST(request: NextRequest) {
           const payload: Normalized = { ...cached.data, source: 'cache', updatedAt: cached.updatedAt };
           return NextResponse.json({ success: true, data: payload });
         }
+      }
+      const fromDb = await lookupFromDatabase(body.providerName || "", area);
+      if (fromDb) {
+        if (db) await writeCache(db, providerKey, area, fromDb);
+        return NextResponse.json({ success: true, data: fromDb });
       }
       throw e;
     }

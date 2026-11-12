@@ -146,6 +146,37 @@ export async function supabaseGetProvider(id: string): Promise<ElectricityProvid
   return data ? mapProviderRow(data as ProviderRow) : null;
 }
 
+/** Matchar leverantörsnamn (case-insensitive, diakritik ignoreras). */
+export async function supabaseFindProviderByName(
+  providerName: string
+): Promise<ElectricityProvider | null> {
+  const supabase = getSupabaseAdmin();
+  if (!supabase) return null;
+
+  const normalize = (value: string) =>
+    value
+      .trim()
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "");
+
+  const needle = normalize(providerName);
+  if (!needle) return null;
+
+  const { data, error } = await supabase
+    .from("electricity_providers")
+    .select("*")
+    .eq("is_active", true);
+
+  if (error) {
+    console.error("[elbasen] findProviderByName:", error.message);
+    return null;
+  }
+
+  const match = (data as ProviderRow[] | null)?.find((row) => normalize(String(row.name)) === needle);
+  return match ? mapProviderRow(match) : null;
+}
+
 export async function supabaseUpsertProvider(
   id: string,
   provider: Omit<ElectricityProvider, "id" | "createdAt" | "updatedAt"> & {

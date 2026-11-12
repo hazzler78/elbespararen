@@ -952,6 +952,25 @@ class CloudflareDatabase implements Database {
       console.warn('[Database] updateProvider D1 write skipped:', error);
     }
 
+    if (providerData.energyPrice !== undefined) {
+      const cacheKey = String(updated.name || "")
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+      if (cacheKey) {
+        try {
+          await this.db
+            .prepare("DELETE FROM price_cache WHERE provider_key = ?")
+            .bind(cacheKey)
+            .run();
+        } catch (error) {
+          console.warn("[Database] price_cache invalidate skipped:", error);
+        }
+      }
+    }
+
     return updated;
   }
 

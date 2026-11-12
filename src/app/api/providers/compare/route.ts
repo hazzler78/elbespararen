@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { ElectricityProvider, ProviderComparison, BillData, ApiResponse } from "@/lib/types";
 import { createDatabaseFromBinding } from "@/lib/database";
 import { filterSavableFees, sumFees } from "@/lib/fee-classification";
+import { hasUsableLookupMarkup } from "@/lib/price-lookup";
+import { markupOreExclToKrInclVat } from "@/lib/variable-markup";
 
 // Edge runtime krävs av next-on-pages
 export const runtime = 'edge';
@@ -86,7 +88,7 @@ async function resolveVariableMarkup(
 
     if (res.ok) {
       const json = await res.json() as ApiResponse<PriceLookupResponse>;
-      if (json.success && json.data) {
+      if (json.success && json.data && hasUsableLookupMarkup(json.data as { source?: string; surcharge?: number })) {
         const surcharge = parseNumber(json.data.surcharge ?? (json.data as any).surcharge);
         const variableCosts = parseNumber(json.data.variable_costs ?? (json.data as any).variable_costs);
         const elCert = parseNumber(json.data.el_certificate_fee ?? (json.data as any).elCertificateFee);
@@ -96,9 +98,7 @@ async function resolveVariableMarkup(
         const markup = surcharge + (variableCosts || 0) + elCert;
         const totalOre = markup + discount;
         if (Number.isFinite(totalOre)) {
-          const totalKr = totalOre / 100;
-          const totalKrInclVat = totalKr * 1.25;
-          // Ta bort Math.max(0, ...) för att tillåta negativa värden (rabatter)
+          const totalKrInclVat = markupOreExclToKrInclVat(totalOre);
           const rounded = Number(totalKrInclVat.toFixed(6));
           lookupCache.set(cacheKey, rounded);
           return rounded;
