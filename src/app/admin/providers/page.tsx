@@ -2,9 +2,13 @@
 
 import { useState, useEffect } from "react";
 import { formatPricePerKwh } from "@/lib/calculations";
-import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone, Zap } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, ExternalLink, Phone, Zap, Upload } from "lucide-react";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
-import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
+import ProviderLogo from "@/components/ProviderLogo";
+import {
+  MAX_PROVIDER_LOGO_BYTES,
+  sanitizeProviderId,
+} from "@/lib/storage/provider-logos";
 
 export default function ProvidersAdminPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
@@ -234,12 +238,11 @@ export default function ProvidersAdminPage() {
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-2">
                           <div className="flex items-center gap-3">
-                            <img
-                              src={resolveProviderLogo(provider.name, provider.logoUrl)}
-                              alt={`${provider.name} logotyp`}
-                              onError={createProviderLogoErrorHandler(provider.name)}
-                              className="h-10 w-10 rounded object-contain bg-white border border-gray-200 p-1"
-                              loading="lazy"
+                            <ProviderLogo
+                              name={provider.name}
+                              logoUrl={provider.logoUrl}
+                              imageClassName="h-10 w-10 rounded object-contain bg-white border border-gray-200 p-1"
+                              textClassName="h-10 w-10 rounded flex items-center justify-center bg-white border border-gray-200 text-[10px] font-semibold text-gray-600"
                             />
                             <h3 className="text-lg sm:text-xl font-bold text-gray-900">{provider.name}</h3>
                           </div>
@@ -447,16 +450,8 @@ function ProviderForm({
 
   const [newFeature, setNewFeature] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-
-  const resolveLogoUrl = (raw: string) => {
-    const value = (raw || "").trim();
-    if (!value) return "";
-    if (/^https?:\/\//i.test(value)) return value; // absolute URL
-    if (value.startsWith("/")) return value; // already relative from public
-    const withFolder = `/logos/${value}`;
-    // append .svg if no extension provided
-    return /\.[a-zA-Z0-9]+$/.test(withFolder) ? withFolder : `${withFolder}.svg`;
-  };
+  const [isUploadingLogo, setIsUploadingLogo] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -483,6 +478,53 @@ function ProviderForm({
       ...formData,
       features: formData.features.filter((_, i) => i !== index)
     });
+  };
+
+  const uploadProviderLogo = async (file: File) => {
+    setLogoUploadError("");
+    if (file.size > MAX_PROVIDER_LOGO_BYTES) {
+      setLogoUploadError(
+        `Filen är för stor (max ${Math.round(MAX_PROVIDER_LOGO_BYTES / (1024 * 1024))} MB).`
+      );
+      return;
+    }
+
+    const allowed = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"];
+    if (file.type && !allowed.includes(file.type)) {
+      setLogoUploadError("Ogiltigt filformat. Använd PNG, JPG, WebP eller SVG.");
+      return;
+    }
+
+    const providerId = provider?.id || sanitizeProviderId(formData.name || "new-provider");
+    setIsUploadingLogo(true);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+      body.append("providerId", providerId);
+
+      const response = await fetch("/api/admin/provider-logos", {
+        method: "POST",
+        credentials: "same-origin",
+        body,
+      });
+      const result = (await response.json()) as {
+        success?: boolean;
+        error?: string;
+        data?: { logoUrl?: string };
+      };
+
+      if (!response.ok || !result.success || !result.data?.logoUrl) {
+        throw new Error(result.error || "Uppladdning misslyckades");
+      }
+
+      setFormData((prev) => ({ ...prev, logoUrl: result.data!.logoUrl! }));
+    } catch (error) {
+      setLogoUploadError(
+        error instanceof Error ? error.message : "Kunde inte ladda upp logotyp"
+      );
+    } finally {
+      setIsUploadingLogo(false);
+    }
   };
 
   return (
@@ -593,31 +635,59 @@ function ProviderForm({
               />
             </div>
 
-          <div>
-            <label className="block text-sm font-medium mb-1">Logotyp URL</label>
+          <div className="md:col-span-2">
+            <label className="block text-sm font-medium mb-1">Logotyp</label>
+            <div className="flex flex-col sm:flex-row gap-3 mb-2">
+              <label className="inline-flex items-center justify-center gap-2 px-4 py-2 border border-border rounded-lg cursor-pointer hover:bg-gray-50 text-sm font-medium">
+                <Upload className="w-4 h-4" />
+                {isUploadingLogo ? "Laddar upp..." : "Ladda upp fil"}
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp,image/svg+xml,.png,.jpg,.jpeg,.webp,.svg"
+                  className="sr-only"
+                  disabled={isUploadingLogo}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void uploadProviderLogo(file);
+                    e.target.value = "";
+                  }}
+                />
+              </label>
+              <button
+                type="button"
+                className="px-4 py-2 border border-border rounded-lg text-sm hover:bg-gray-50"
+                onClick={() => setFormData({ ...formData, logoUrl: "" })}
+              >
+                Ta bort logotyp
+              </button>
+            </div>
+            <p className="text-xs text-muted mb-2">
+              PNG, JPG, WebP eller SVG (max 2 MB). Filen sparas i molnlagring och kopplas via logotyp-URL nedan.
+            </p>
+            {logoUploadError && (
+              <p className="text-xs text-red-600 mb-2">{logoUploadError}</p>
+            )}
+            <label className="block text-sm font-medium mb-1">Logotyp-URL (valfritt)</label>
             <input
               type="text"
-              placeholder="/logos/cheap-energy.svg eller https://..."
+              placeholder="/api/provider-logos/... eller /logos/namn.svg"
               value={formData.logoUrl}
               onChange={(e) => setFormData({ ...formData, logoUrl: e.target.value })}
               className="w-full border border-border rounded-lg px-3 py-2"
             />
-            <p className="text-xs text-muted mt-1">
-              💡 Tips: Använd SVG-format för bästa kvalitet på alla skärmar. PNG/JPG kan bli suddiga på mobila enheter.
-            </p>
-            {formData.logoUrl && (
-              <div className="mt-2 p-2 border border-border rounded-lg bg-white">
-                <p className="text-xs text-muted mb-1">Förhandsgranskning</p>
-                <img 
-                  src={resolveLogoUrl(formData.logoUrl)} 
-                  alt="Logo preview" 
-                  className="h-10 w-auto object-contain max-w-[100px]"
-                  style={{
-                    imageRendering: 'crisp-edges',
-                    WebkitImageRendering: 'crisp-edges'
-                  } as React.CSSProperties}
+            {(formData.logoUrl || formData.name) && (
+              <div className="mt-2 p-2 border border-border rounded-lg bg-white flex items-center gap-3">
+                <ProviderLogo
+                  name={formData.name || "Leverantör"}
+                  logoUrl={formData.logoUrl}
+                  imageClassName="h-10 w-auto object-contain max-w-[120px]"
+                  textClassName="h-10 min-w-[2.5rem] px-2 flex items-center justify-center rounded border border-border bg-gray-50 text-xs font-semibold"
                 />
-                <p className="mt-1 text-[11px] text-muted">Visar: {resolveLogoUrl(formData.logoUrl)}</p>
+                <p className="text-[11px] text-muted break-all">
+                  {formData.logoUrl
+                    ? `Sparad URL: ${formData.logoUrl}`
+                    : "Ingen URL — visar statisk logotyp eller initialer."}
+                </p>
               </div>
             )}
           </div>
