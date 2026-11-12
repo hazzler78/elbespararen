@@ -6,7 +6,7 @@ import { Briefcase, Sparkles, ShieldCheck, LineChart, MessageCircle, ExternalLin
 import Link from "next/link";
 import type { ElectricityProvider, ApiResponse } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
-import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
+import ProviderLogo from "@/components/ProviderLogo";
 
 export default function ForetagPage() {
   const [providers, setProviders] = useState<ElectricityProvider[]>([]);
@@ -161,12 +161,11 @@ export default function ForetagPage() {
                     className="bg-white border border-border rounded-xl p-6 shadow-sm flex flex-col gap-4"
                   >
                     <div className="flex items-start gap-4">
-                      <img
-                        src={resolveProviderLogo(provider.name, provider.logoUrl)}
-                        alt={`${provider.name} logotyp`}
-                        onError={createProviderLogoErrorHandler(provider.name)}
-                        className="h-16 w-16 object-contain rounded-md bg-muted/40 p-2"
-                        loading="lazy"
+                      <ProviderLogo
+                        name={provider.name}
+                        logoUrl={provider.logoUrl}
+                        imageClassName="h-16 w-16 object-contain rounded-md bg-muted/40 p-2"
+                        textClassName="h-16 w-16 flex items-center justify-center rounded-md bg-muted/40 text-sm font-semibold text-gray-700"
                       />
                       <div className="flex-1 space-y-1">
                         <h3 className="text-xl font-semibold text-foreground">{provider.name}</h3>

@@ -204,7 +204,9 @@ export async function PUT(request: NextRequest) {
       userHidden: body.userHidden !== undefined ? Boolean(body.userHidden) : undefined,
       customerType: body.customerType ? (body.customerType === 'business' ? 'business' : 'private') : undefined,
       features: body.features ? (body.features as string[]) : undefined,
-      logoUrl: body.logoUrl && String(body.logoUrl).trim() ? String(body.logoUrl).trim() : undefined,
+      logoUrl: "logoUrl" in body
+        ? String(body.logoUrl ?? "").trim() || ("" as const)
+        : undefined,
       websiteUrl: body.websiteUrl && String(body.websiteUrl).trim() ? String(body.websiteUrl).trim() : undefined,
       affiliateUrl: body.affiliateUrl && String(body.affiliateUrl).trim() ? String(body.affiliateUrl).trim() : undefined,
       phoneNumber: body.phoneNumber && String(body.phoneNumber).trim() ? String(body.phoneNumber).trim() : undefined

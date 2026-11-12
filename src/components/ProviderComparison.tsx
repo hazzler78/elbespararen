@@ -5,7 +5,7 @@ import Link from "next/link";
 import { CheckCircle2, Star, Phone, Zap, ChevronDown } from "lucide-react";
 import type { ProviderComparison, BillData, SavingsCalculation, SwitchRequest, ApiResponse, ContractAlternative } from "@/lib/types";
 import { formatCurrency, formatPricePerKwh } from "@/lib/calculations";
-import { resolveProviderLogo, createProviderLogoErrorHandler } from "@/lib/logo-utils";
+import ProviderLogo from "@/components/ProviderLogo";
 import SwitchProcess from "./SwitchProcess";
 import SalesysEmbedModal from "./SalesysEmbedModal";
 import { AnalyticsEvents, trackCustomEvent } from "@/lib/analytics";
@@ -413,16 +413,9 @@ export default function ProviderComparison({
         <div className="flex items-start justify-between mb-4">
           <div>
             <div className="flex items-center gap-2 mb-1">
-              <img
-                src={resolveProviderLogo(comparison.provider.name, comparison.provider.logoUrl)}
-                alt={`${comparison.provider.name} logo`}
-                onError={createProviderLogoErrorHandler(comparison.provider.name)}
-                className="h-12 w-auto object-contain max-w-[120px]"
-                style={{
-                  imageRendering: 'crisp-edges',
-                  WebkitImageRendering: 'crisp-edges'
-                } as React.CSSProperties}
-                loading="lazy"
+              <ProviderLogo
+                name={comparison.provider.name}
+                logoUrl={comparison.provider.logoUrl}
               />
               <h3 className="font-bold text-lg">{comparison.provider.name}</h3>
             </div>
